@@ -198,6 +198,8 @@ def main(
     last_chunk_generate = None
     video_writer = None
     check_frames = 0
+    video_writer_right = None
+
     for i in range(0, total_frames, frames_chunk - overlap):
         if i + overlap >= total_frames:
             break
@@ -274,6 +276,7 @@ def main(
 
         # 生成したフレームを結合する
         video_frames = torch.stack(video_frames)
+
         # print("Current overlap", cur_overlap)
         if last_chunk_generate is not None:
             last_chunk_generate[-cur_overlap:] = (video_frames[:cur_overlap] + last_chunk_generate[-cur_overlap:] )/ 2
@@ -302,6 +305,23 @@ def main(
                 check_frames += 1
                 f_bgr = cv2.cvtColor(f, cv2.COLOR_RGB2BGR)
                 video_writer.write(f_bgr)
+                
+            if video_writer_right is None:
+                frames_right_path = os.path.join(save_dir, f"{video_name}_right.mp4")
+                height, width, _ = frames_output[0].shape
+                video_writer_right = cv2.VideoWriter(
+                    frames_right_path,
+                    cv2.VideoWriter_fourcc(*"mp4v"),
+                    fps,
+                    (width, height)
+                )
+
+            for f in frames_output:
+                check_frames += 1
+                f_np = (f * 255).permute(1, 2, 0).to(dtype=torch.uint8).cpu().numpy()
+                f_bgr = cv2.cvtColor(f_np, cv2.COLOR_RGB2BGR)
+                video_writer_right.write(f_bgr)
+
             
         # 最終Chunkの処理
         if i + frames_chunk > total_frames:
@@ -313,6 +333,13 @@ def main(
                 f_bgr = cv2.cvtColor(f, cv2.COLOR_RGB2BGR)
                 video_writer.write(f_bgr)
             video_writer.release()
+            
+            for f in frames_output:
+                check_frames += 1
+                f_np = (f * 255).permute(1, 2, 0).to(dtype=torch.uint8).cpu().numpy()
+                f_bgr = cv2.cvtColor(f_np, cv2.COLOR_RGB2BGR)
+                video_writer_right.write(f_bgr)
+            video_writer_right.release()
             break
 
         # 次のChunkのために保存
