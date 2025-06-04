@@ -36,7 +36,7 @@ run_on_gpu() {
 
         # ② Stereo Inpainting（既にあればスキップ）
         inpainting_output="${OUTPUT_DIR}/${filename}_inpainting_results_sbs.mp4"
-        if [ ! -f "$inpainting_output" ]; then
+        # if [ ! -f "$inpainting_output" ]; then
             echo "🛠️ [GPU $gpu_id] Running Stereo Inpainting..."
             CUDA_VISIBLE_DEVICES=$gpu_id python3 inpainting_inference.py \
                 --pre_trained_path "$DIFFUSION_MODEL" \
@@ -44,9 +44,9 @@ run_on_gpu() {
                 --input_video_path "$splatting_output" \
                 --save_dir "$OUTPUT_DIR" \
                 --tile_num 2
-        else
-            echo "⏩ [GPU $gpu_id] Skipping Stereo Inpainting (exists): $inpainting_output"
-        fi
+        # else
+            # echo "⏩ [GPU $gpu_id] Skipping Stereo Inpainting (exists): $inpainting_output"
+        # fi
     done
 }
 
