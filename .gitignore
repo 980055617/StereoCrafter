@@ -2,3 +2,6 @@
 __pycache__/
 outputs/*
 weights/*
+forDownload/*
+outputImages/*
+source_video/*
