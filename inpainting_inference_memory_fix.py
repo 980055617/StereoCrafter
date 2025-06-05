@@ -46,6 +46,9 @@ def spatial_tiled_process(
     height = cond_frames.shape[2]
     width = cond_frames.shape[3]
 
+
+    print(f"==> origin: Height: {height}, Width: {width}, Tile Num: {tile_num}")
+    
     tile_overlap = (128, 128)
     tile_size = (
         int((height + tile_overlap[0] *  (tile_num - 1)) / tile_num), 
@@ -73,7 +76,7 @@ def spatial_tiled_process(
                 i * tile_stride[0] : i * tile_stride[0] + tile_size[0],
                 j * tile_stride[1] : j * tile_stride[1] + tile_size[1],
             ]
-
+            print(f"==> processing Tile {i}, {j}: Height: {cond_tile.shape[2]}, Width: {cond_tile.shape[3]}")
             tile = process_func(
                 frames=cond_tile,
                 frames_mask=mask_tile,
@@ -83,7 +86,7 @@ def spatial_tiled_process(
                 output_type="latent",
                 **kargs,
             ).frames[0]
-
+            print(f"==> To: Height: {tile.shape[2]}, Width: {tile.shape[3]}")
             rows.append(tile)
         cols.append(rows)
 
@@ -277,21 +280,21 @@ def main(
 
 
     frames_sbs = torch.cat([frames_left, frames_output], dim=3)
-    frames_sbs_path = os.path.join(save_dir, f"{video_name}_sbs_{num_inference_steps}.mp4")
+    frames_sbs_path = os.path.join(save_dir, f"{video_name}_sbs_memory_{num_inference_steps}.mp4")
     frames_sbs = (frames_sbs * 255).permute(0, 2, 3, 1).to(dtype=torch.uint8).cpu().numpy()
     write_video_opencv(frames_sbs, fps, frames_sbs_path)
 
 
-    vid_left = (frames_left * 255).permute(0, 2, 3, 1).to(dtype=torch.uint8).cpu().numpy()
-    vid_right = (frames_output * 255).permute(0, 2, 3, 1).to(dtype=torch.uint8).cpu().numpy()
+    # vid_left = (frames_left * 255).permute(0, 2, 3, 1).to(dtype=torch.uint8).cpu().numpy()
+    # vid_right = (frames_output * 255).permute(0, 2, 3, 1).to(dtype=torch.uint8).cpu().numpy()
 
-    vid_left[:, :, :, 1] = 0
-    vid_left[:, :, :, 2] = 0
-    vid_right[:, :, :, 0] = 0
+    # vid_left[:, :, :, 1] = 0
+    # vid_left[:, :, :, 2] = 0
+    # vid_right[:, :, :, 0] = 0
 
-    vid_anaglyph = vid_left + vid_right
-    vid_anaglyph_path = os.path.join(save_dir, f"{video_name}_anaglyph_{num_inference_steps}.mp4")
-    write_video_opencv(vid_anaglyph, fps, vid_anaglyph_path)
+    # vid_anaglyph = vid_left + vid_right
+    # vid_anaglyph_path = os.path.join(save_dir, f"{video_name}_anaglyph_{num_inference_steps}.mp4")
+    # write_video_opencv(vid_anaglyph, fps, vid_anaglyph_path)
 
 
 if __name__ == "__main__":
