@@ -345,9 +345,9 @@ class StableVideoDiffusionInpaintingPipeline(DiffusionPipeline):
     # corresponds to doing no classifier free guidance.
     @property
     def do_classifier_free_guidance(self):
-        if isinstance(self.guidance_scale, (int, float)):
-            return self.guidance_scale
-        return self.guidance_scale.max() > 1
+        gs = self.guidance_scale
+
+        return (isinstance(gs, torch.Tensor) and gs.max() > 1) or (isinstance(gs, (int,float)) and gs > 1)
 
     @property
     def num_timesteps(self):
