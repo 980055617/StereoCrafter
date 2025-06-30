@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.io import write_video
+import matplotlib.pyplot as plt
 
 from diffusers.training_utils import set_seed
 from fire import Fire
@@ -175,7 +176,6 @@ class ForwardWarpStereo(nn.Module):
         disp = disp.contiguous()
         # weights_map = torch.abs(disp)
         weights_map = disp - disp.min()
-        # print(weights_map)
         weights_map = (
             1.414
         ) ** weights_map  # using 1.414 instead of EXP for avoding numerical overflow.
@@ -192,9 +192,11 @@ class ForwardWarpStereo(nn.Module):
         else:
             ones = torch.ones_like(disp, requires_grad=False)
             occlu_map = self.fw(ones, flow)
+            occlu_map = F.avg_pool2d(occlu_map, kernel_size=3, stride=1, padding=1)
             occlu_map.clamp_(0.0, 1.0)
+            occlu_map = (occlu_map > 0.5).float()
             occlu_map = 1.0 - occlu_map
-            return res, occlu_map
+            return res, occlu_map, occlu_map #1 - (output - output.min()) / (output.max() - output.min())
         
 
 def DepthSplatting(
@@ -206,7 +208,8 @@ def DepthSplatting(
         process_length, 
         batch_size):
     '''
-    Depth-Based Video Splatting Using the Video Depth, plus writing out the displacement map as its own video.
+    Depth-Based Video Splatting Using the Video Depth, plus writing out
+    the displacement map and pure occlusion mask as separate videos.
     Args:
         input_video_path: Path to the input video.
         output_video_path: Path to the output video.
@@ -225,23 +228,15 @@ def DepthSplatting(
         depth_vis = depth_vis[:process_length]
 
     # Prepare video writers
-    # 1) Combined grid output
     height, width, _ = input_frames[0].shape
+    # Combined grid output
     out = cv2.VideoWriter(
         output_video_path,
         cv2.VideoWriter_fourcc(*"mp4v"),
         original_fps,
         (width * 2, height * 2)
     )
-    # 2) Displacement (depth) map output as grayscale
-    disp_video_path = output_video_path.replace(".mp4", "_disp_map.mp4")
-    disp_writer = cv2.VideoWriter(
-        disp_video_path,
-        cv2.VideoWriter_fourcc(*"mp4v"),
-        original_fps,
-        (width, height),
-        isColor=False
-    )
+
 
     stereo_projector = ForwardWarpStereo(occlu_map=True).cuda()
     num_frames = len(input_frames)
@@ -254,37 +249,36 @@ def DepthSplatting(
         # Forward warp inputs
         left_video = torch.from_numpy(batch_frames).permute(0, 3, 1, 2).float().cuda()
         disp_map    = torch.from_numpy(batch_depth).unsqueeze(1).float().cuda()
-        print(disp_map)
         disp_map = (disp_map * 2.0 - 1.0) * max_disp
-        with torch.no_grad():
-            right_video, occlusion_mask = stereo_projector(left_video, disp_map)
 
-        right_video     = right_video.cpu().permute(0, 2, 3, 1).numpy()
-        occlusion_mask  = occlusion_mask.cpu().permute(0, 2, 3, 1).numpy().repeat(3, axis=-1)
+        with torch.no_grad():
+            right_video, occlusion_mask, pure_mask = stereo_projector(left_video, disp_map)
+        # Convert to NumPy
+        right_video    = right_video.cpu().permute(0, 2, 3, 1).numpy()
+        occlusion_mask = occlusion_mask.cpu().squeeze(1).numpy()  # shape B,H,W
+        pure_mask      = pure_mask.cpu().squeeze(1).numpy()       # shape B,H,W
 
         for j in range(len(batch_frames)):
-            # 4-panel grid: original / depth visualization / occlusion mask / right warp
+            # 4-panel grid: original / depth visualization / occlusion mask (RGB) / right warp
             top    = np.concatenate([batch_frames[j], batch_depth_vis[j]], axis=1)
-            bottom = np.concatenate([occlusion_mask[j], right_video[j]], axis=1)
+            bottom = np.concatenate([
+                np.stack([occlusion_mask[j]]*3, axis=-1),
+                right_video[j]
+            ], axis=1)
             grid   = np.concatenate([top, bottom], axis=0)
 
             grid_uint8 = np.clip(grid * 255.0, 0, 255).astype(np.uint8)
             grid_bgr   = cv2.cvtColor(grid_uint8, cv2.COLOR_RGB2BGR)
             out.write(grid_bgr)
 
-            # Write displacement map frame (grayscale)
-            depth_frame = batch_depth[j]  # shape: H x W, values in [0,1]
-            depth_uint8 = (depth_frame * 255.0).astype(np.uint8)
-            disp_writer.write(depth_uint8)
-
         # Free GPU memory
-        del left_video, disp_map, right_video, occlusion_mask
+        del left_video, disp_map, right_video, occlusion_mask, pure_mask
         torch.cuda.empty_cache()
         gc.collect()
 
     # Release writers
     out.release()
-    disp_writer.release()
+
 
 
 def main(
@@ -294,7 +288,7 @@ def main(
     pre_trained_path: str,
     max_disp: float = 20.0,
     process_length = -1,
-    batch_size = 20
+    batch_size = 200
 ):
     depthcrafter_demo = DepthCrafterDemo(
         unet_path=unet_path,

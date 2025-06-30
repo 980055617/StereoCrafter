@@ -196,7 +196,8 @@ def main(
     # 修正してchunkごとに呼び出すことにする
     # OOMを回避するために
     total_frames = len(video_reader)
-    # print("total frames", total_frames)
+    print("total frames", total_frames)
+
     last_chunk_generate = None
     video_writer = None
     check_frames = 0
@@ -209,6 +210,8 @@ def main(
         # 末尾調整
         if i + frames_chunk > total_frames:
             cur_i = max(total_frames - frames_chunk, 0)
+            if cur_i == 0:
+                frames_chunk = total_frames
             cur_overlap = i - cur_i + overlap
         else:
             cur_i = i
@@ -293,7 +296,7 @@ def main(
         video_frames = torch.stack(video_frames)
         
         # フレームを上書きするかどうか
-        # video_frames = frames_mask * video_frames + (1 - frames_mask) * frames_warpped
+        video_frames = frames_mask * video_frames + (1 - frames_mask) * frames_warpped
 
         # print("Current overlap", cur_overlap)
         if last_chunk_generate is not None:
@@ -310,7 +313,7 @@ def main(
             # 逐次書き出しをする
             if video_writer is None:
                 
-                frames_sbs_path = os.path.join(save_dir, f"{video_name}_sbs_fix_{num_inference_steps}.mp4")
+                frames_sbs_path = os.path.join(save_dir, f"{video_name}_sbs_replace_{num_inference_steps}.mp4")
                 
                 height, width, _ = frames_sbs_np[0].shape
 
@@ -344,22 +347,39 @@ def main(
 
             
         # 最終Chunkの処理
-        if i + frames_chunk > total_frames:
+        if i + frames_chunk >= total_frames:
+            
             frames_output = video_frames
-            frames_sbs = torch.cat([frames_left[cur_overlap:], frames_output[cur_overlap:]], dim=3)
-            frames_sbs = (frames_sbs * 255).permute(0, 2, 3, 1).to(dtype=torch.uint8).cpu().numpy()
+            frames_sbs = torch.cat([prev_left[cur_overlap:] if last_chunk_generate is not None else frames_left[cur_overlap:],
+                                     frames_output[cur_overlap:]], dim=3)
+            frames_sbs = (frames_sbs * 255).permute(0, 2, 3, 1).to(torch.uint8).cpu().numpy()
+
+            # video_writer が未初期化ならここで必ず初期化
+            if video_writer is None:
+                frames_sbs_path = os.path.join(
+                    save_dir,
+                    f"{video_name}_sbs_replace_{num_inference_steps}.mp4"
+                )
+                h, w, _ = frames_sbs[0].shape
+                video_writer = cv2.VideoWriter(
+                    frames_sbs_path,
+                    cv2.VideoWriter_fourcc(*"mp4v"),
+                    fps,
+                    (w, h)
+                )
+
+            # 書き出し＆クローズ
             for f in frames_sbs:
-                # check_frames += 1
                 f_bgr = cv2.cvtColor(f, cv2.COLOR_RGB2BGR)
                 video_writer.write(f_bgr)
             video_writer.release()
             
-            frame_right = (frames_output * 255).permute(0, 2, 3, 1).to(dtype=torch.uint8).cpu().numpy()
-            for f in frame_right:
-                # check_frames += 1
-                f_bgr = cv2.cvtColor(f, cv2.COLOR_RGB2BGR)
-                video_writer_right.write(f_bgr)
-            video_writer_right.release()
+            # frame_right = (frames_output * 255).permute(0, 2, 3, 1).to(dtype=torch.uint8).cpu().numpy()
+            # for f in frame_right:
+            #     # check_frames += 1
+            #     f_bgr = cv2.cvtColor(f, cv2.COLOR_RGB2BGR)
+            #     video_writer_right.write(f_bgr)
+            # video_writer_right.release()
             break
 
         # 次のChunkのために保存
