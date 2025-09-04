@@ -366,7 +366,7 @@ class StableVideoDiffusionInpaintingPipeline(DiffusionPipeline):
         max_guidance_scale: float = 3.0,
         fps: int = 7,
         motion_bucket_id: int = 127,
-        noise_aug_strength: int = 0.00,
+        noise_aug_strength: float = 0.00,
         decode_chunk_size: Optional[int] = None,
         num_videos_per_prompt: Optional[int] = 1,
         generator: Optional[Union[torch.Generator, List[torch.Generator]]] = None,
