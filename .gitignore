@@ -5,3 +5,5 @@ weights/*
 source_video/*
 forDownload/*
 test/*
+logs/*
+inpainting_inputs/*
