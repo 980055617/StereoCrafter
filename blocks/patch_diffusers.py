@@ -65,6 +65,8 @@ def replace_transformers_with_mamba(
         mamba = MambaSpatioTemporalModel(
             in_channels=in_ch,
             d_model=d_model,  # None -> 実装側で in==out に整合
+            headdim=64, 
+            chunk_size=32,       
         )
         setattr(parent, attr, mamba)
         count += 1

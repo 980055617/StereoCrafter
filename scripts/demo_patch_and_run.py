@@ -36,7 +36,6 @@ def hook_out(label):
 def attach_block_hooks(unet: nn.Module):
     paths = [
         "down_blocks.0.attentions.0",
-        "down_blocks.0.temp_attentions.0",
         "down_blocks.0.resnets.1.spatial_res_block.norm1",
     ]
     for p in paths:
@@ -136,7 +135,7 @@ def main():
             "CrossAttnUpBlockSpatioTemporal",
             "CrossAttnUpBlockSpatioTemporal",
         ),
-        "block_out_channels": (160, 320, 640, 640),
+        "block_out_channels": (320, 320, 640, 640),
         "layers_per_block": 2,
         "cross_attention_dim": 1024,
         "num_attention_heads": (4, 8, 8, 8),
