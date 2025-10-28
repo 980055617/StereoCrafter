@@ -11,6 +11,7 @@
 # =============================================
 from __future__ import annotations
 from typing import Optional, Tuple, Union
+import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -47,6 +48,7 @@ class MambaSpatioTemporalModel(nn.Module):
         use_mem_eff_path: bool = True,
         num_groups_gn: int = 32,
         keep_spatial_mixer: bool = True,
+        spatial_chunk_size: Optional[int] = None,
     ):
         super().__init__()
         self.in_channels = in_channels
@@ -76,6 +78,8 @@ class MambaSpatioTemporalModel(nn.Module):
             chunk_size=temporal_chunk_size,
             use_mem_eff_path=use_mem_eff_path,
         )
+        # 大きな空間次元(H*W)に対して、(B*H*W) 次元でチャンク実行するための上限
+        self.spatial_chunk_size = spatial_chunk_size
 
         # B: ブレンド
         self.blender = AlphaBlender(alpha=0.5, merge_strategy="learned_with_images")
@@ -114,6 +118,12 @@ class MambaSpatioTemporalModel(nn.Module):
         temb = temb.to(target_dtype)
         temb = self.time_embed(temb)              # (B*T, C)
         temb = temb.view(B, T, C).permute(0,2,1).contiguous()[:, :, :, None, None]
+        # Optional one-time debug
+        if getattr(self, "_dbg_time_once", False) is False and os.getenv("MAMBA_DEBUG", "0") == "1":
+            print("[MambaInner] time-embed applied:")
+            print(f"  x: {(B, C, T, H, W)}  t: shape={(t.shape if isinstance(t, torch.Tensor) else None)}, dtype={getattr(t,'dtype',None)}")
+            print(f"  temb: shape={temb.shape}, dtype={temb.dtype}")
+            self._dbg_time_once = True
         return x + temb
 
     def _temporal_path(self, x: torch.Tensor) -> torch.Tensor:
@@ -121,7 +131,15 @@ class MambaSpatioTemporalModel(nn.Module):
         B, C, T, H, W = x.shape
         # (B*H*W, T, C)
         x_seq = x.permute(0, 3, 4, 2, 1).contiguous().view(B * H * W, T, C)
-        y_seq = self.temporal(x_seq)
+        # 空間次元をチャンクしてメモリを抑制
+        if self.spatial_chunk_size is not None and (B * H * W) > self.spatial_chunk_size:
+            chunks = []
+            for i in range(0, B * H * W, self.spatial_chunk_size):
+                part = x_seq[i : i + self.spatial_chunk_size]
+                chunks.append(self.temporal(part))
+            y_seq = torch.cat(chunks, dim=0)
+        else:
+            y_seq = self.temporal(x_seq)
         y = y_seq.view(B, H, W, T, C).permute(0, 4, 3, 1, 2).contiguous()  # (B,C,T,H,W)
         return y
 

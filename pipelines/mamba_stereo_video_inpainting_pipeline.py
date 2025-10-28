@@ -14,6 +14,11 @@ from diffusers.utils import BaseOutput, logging
 from diffusers.utils.torch_utils import is_compiled_module, randn_tensor
 from diffusers.pipelines.pipeline_utils import DiffusionPipeline
 
+# Replace UNet's spatiotemporal transformer blocks with Mamba-backed adapter
+from blocks.mamba_diffusers_adapter import (
+    replace_unet_spatiotemporal_transformer_with_mamba,
+)
+
 
 logger = logging.get_logger(__name__)
 
@@ -41,7 +46,7 @@ def tensor2vid(video: torch.Tensor, processor, output_type="np"):
 
 
 @dataclass
-class StableVideoDiffusionPipelineOutput(BaseOutput):
+class MambaStableVideoDiffusionInpaintingPipelineOutput(BaseOutput):
     r"""
     Output class for zero-shot text-to-video pipeline.
 
@@ -54,7 +59,7 @@ class StableVideoDiffusionPipelineOutput(BaseOutput):
     frames: Union[List[PIL.Image.Image], np.ndarray]
 
 
-class StableVideoDiffusionInpaintingPipeline(DiffusionPipeline):
+class MambaStableVideoDiffusionInpaintingPipeline(DiffusionPipeline):
     r"""
     Pipeline to generate video from an input image using Stable Video Diffusion.
 
@@ -75,7 +80,8 @@ class StableVideoDiffusionInpaintingPipeline(DiffusionPipeline):
     """
 
     model_cpu_offload_seq = "image_encoder->unet->vae"
-    _callback_tensor_inputs = ["latents"]
+    # Allow both the argument name ("latents") and the local denoising variable name ("latents_").
+    _callback_tensor_inputs = ["latents", "latents_"]
 
     def __init__(
         self,
@@ -86,6 +92,13 @@ class StableVideoDiffusionInpaintingPipeline(DiffusionPipeline):
         feature_extractor: CLIPImageProcessor,
     ):
         super().__init__()
+
+        # Swap UNet internal TransformerSpatioTemporalModel with Mamba adapter
+        try:
+            replaced = replace_unet_spatiotemporal_transformer_with_mamba(unet)
+            logger.info(f"Replaced {replaced} TransformerSpatioTemporalModel blocks with Mamba adapter")
+        except Exception as e:
+            logger.warning(f"Mamba adapter replacement failed; using original UNet. Error: {e}")
 
         self.register_modules(
             vae=vae,
@@ -353,7 +366,6 @@ class StableVideoDiffusionInpaintingPipeline(DiffusionPipeline):
     def num_timesteps(self):
         return self._num_timesteps
 
-    @torch.no_grad()
     def __call__(
         self,
         frames: Union[PIL.Image.Image, List[PIL.Image.Image], torch.FloatTensor],
@@ -368,6 +380,7 @@ class StableVideoDiffusionInpaintingPipeline(DiffusionPipeline):
         motion_bucket_id: int = 127,
         noise_aug_strength: int = 0.00,
         decode_chunk_size: Optional[int] = None,
+        vae_encode_chunk_size: Optional[int] = None,
         num_videos_per_prompt: Optional[int] = 1,
         generator: Optional[Union[torch.Generator, List[torch.Generator]]] = None,
         latents: Optional[torch.FloatTensor] = None,
@@ -375,6 +388,7 @@ class StableVideoDiffusionInpaintingPipeline(DiffusionPipeline):
         callback_on_step_end: Optional[Callable[[int, int, Dict], None]] = None,
         callback_on_step_end_tensor_inputs: List[str] = ["latents"],
         return_dict: bool = True,
+        grad_enabled: bool = False,
     ):
         r"""
         The call function to the pipeline for generation.
@@ -429,19 +443,21 @@ class StableVideoDiffusionInpaintingPipeline(DiffusionPipeline):
             return_dict (`bool`, *optional*, defaults to `True`):
                 Whether or not to return a [`~pipelines.stable_diffusion.StableDiffusionPipelineOutput`] instead of a
                 plain tuple.
+            grad_enabled (`bool`, *optional*, defaults to `False`):
+                Enable gradient tracking through the denoising loop. Set to `True` when fine-tuning the UNet.
 
         Returns:
-            [`~pipelines.stable_diffusion.StableVideoDiffusionPipelineOutput`] or `tuple`:
-                If `return_dict` is `True`, [`~pipelines.stable_diffusion.StableVideoDiffusionPipelineOutput`] is returned,
+            [`~pipelines.stable_diffusion.MambaStableVideoDiffusionInpaintingPipelineOutput`] or `tuple`:
+                If `return_dict` is `True`, [`~pipelines.stable_diffusion.MambaStableVideoDiffusionInpaintingPipelineOutput`] is returned,
                 otherwise a `tuple` is returned where the first element is a list of list with the generated frames.
 
         Examples:
 
         ```py
-        from diffusers import StableVideoDiffusionPipeline
+        from diffusers import MambaStableVideoDiffusionPipeline
         from diffusers.utils import load_image, export_to_video
 
-        pipe = StableVideoDiffusionPipeline.from_pretrained("stabilityai/stable-video-diffusion-img2vid-xt", torch_dtype=torch.float16, variant="fp16")
+        pipe = MambaStableVideoDiffusionPipeline.from_pretrained("stabilityai/stable-video-diffusion-img2vid-xt", torch_dtype=torch.float16, variant="fp16")
         pipe.to("cuda")
 
         image = load_image("https://lh3.googleusercontent.com/y-iFOHfLTwkuQSUegpwDdgKmOjRSTvPxat63dQLB25xkTs4lhIbRUFeNBWZzYf370g=s1200")
@@ -451,159 +467,168 @@ class StableVideoDiffusionInpaintingPipeline(DiffusionPipeline):
         export_to_video(frames, "generated.mp4", fps=7)
         ```
         """
-        # 0. Default height and width to unet
-        height = height or self.unet.config.sample_size * self.vae_scale_factor
-        width = width or self.unet.config.sample_size * self.vae_scale_factor
+        def _run_pipeline():
+            # 0. Default height and width to unet
+            height_ = height or self.unet.config.sample_size * self.vae_scale_factor
+            width_ = width or self.unet.config.sample_size * self.vae_scale_factor
 
-        num_frames = num_frames if num_frames is not None else self.unet.config.num_frames
-        decode_chunk_size = decode_chunk_size if decode_chunk_size is not None else num_frames
+            num_frames_ = num_frames if num_frames is not None else self.unet.config.num_frames
+            decode_chunk_size_ = decode_chunk_size if decode_chunk_size is not None else num_frames_
 
-        # 1. Check inputs. Raise error if not correct
-        self.check_inputs(frames, height, width)
+            # 1. Check inputs. Raise error if not correct
+            self.check_inputs(frames, height_, width_)
 
-        # 2. Define call parameters
-        # if isinstance(image, PIL.Image.Image):
-        #     batch_size = 1
-        # elif isinstance(image, list):
-        #     batch_size = len(image)
-        # else:
-        #     batch_size = image.shape[0]
-        batch_size = 1
-        device = self._execution_device
+            # 2. Define call parameters
+            # if isinstance(image, PIL.Image.Image):
+            #     batch_size = 1
+            # elif isinstance(image, list):
+            #     batch_size = len(image)
+            # else:
+            #     batch_size = image.shape[0]
+            batch_size = 1
+            device = self._execution_device
 
-        # here `guidance_scale` is defined analog to the guidance weight `w` of equation (2)
-        # of the Imagen paper: https://arxiv.org/pdf/2205.11487.pdf . `guidance_scale = 1`
-        # corresponds to doing no classifier free guidance.
-        self._guidance_scale = max_guidance_scale
+            # here `guidance_scale` is defined analog to the guidance weight `w` of equation (2)
+            # of the Imagen paper: https://arxiv.org/pdf/2205.11487.pdf . `guidance_scale = 1`
+            # corresponds to doing no classifier free guidance.
+            self._guidance_scale = max_guidance_scale
 
-        # 3. Encode input image
-        image_embeddings = self._encode_image(frames[0:1], device, num_videos_per_prompt, self.do_classifier_free_guidance)
+            # 3. Encode input image
+            image_embeddings = self._encode_image(frames[0:1], device, num_videos_per_prompt, self.do_classifier_free_guidance)
 
-        # NOTE: Stable Diffusion Video was conditioned on fps - 1, which
-        # is why it is reduced here.
-        # See: https://github.com/Stability-AI/generative-models/blob/ed0997173f98eaf8f4edf7ba5fe8f15c6b877fd3/scripts/sampling/simple_video_sample.py#L188
-        fps = fps - 1
+            # NOTE: Stable Diffusion Video was conditioned on fps - 1, which
+            # is why it is reduced here.
+            # See: https://github.com/Stability-AI/generative-models/blob/ed0997173f98eaf8f4edf7ba5fe8f15c6b877fd3/scripts/sampling/simple_video_sample.py#L188
+            fps_ = fps - 1
 
-        # 4. Encode input image using VAE
-        frames = self.image_processor.preprocess(frames, height=height, width=width)
-        noise = randn_tensor(frames.shape, generator=generator, device=frames.device, dtype=frames.dtype)
-        frames = frames + noise_aug_strength * noise
-        
-        frames_mask = self.mask_processor.preprocess(frames_mask, height=height,width=width)
+            # 4. Encode input image using VAE
+            frames_ = self.image_processor.preprocess(frames, height=height_, width=width_)
+            noise = randn_tensor(frames_.shape, generator=generator, device=frames_.device, dtype=frames_.dtype)
+            frames_ = frames_ + noise_aug_strength * noise
 
-        needs_upcasting = self.vae.dtype == torch.float16 and self.vae.config.force_upcast
-        if needs_upcasting:
-            self.vae.to(dtype=torch.float32)
+            frames_mask_ = self.mask_processor.preprocess(frames_mask, height=height_, width=width_)
 
+            needs_upcasting = self.vae.dtype == torch.float16 and self.vae.config.force_upcast
+            if needs_upcasting:
+                self.vae.to(dtype=torch.float32)
 
-        frame_latents = self._encode_vae_frames(frames, device, num_videos_per_prompt, self.do_classifier_free_guidance)
-        frame_latents = frame_latents.to(image_embeddings.dtype)
-        
-        mask_latents = self._encode_mask_frames(frames_mask,device, num_videos_per_prompt, self.do_classifier_free_guidance)
-        mask_latents = mask_latents.to(image_embeddings.dtype)
+            frame_latents = self._encode_vae_frames(
+                frames_,
+                device,
+                num_videos_per_prompt,
+                self.do_classifier_free_guidance,
+                n_frames_per_time=vae_encode_chunk_size if vae_encode_chunk_size is not None else 5,
+            )
+            frame_latents = frame_latents.to(image_embeddings.dtype)
 
-        # cast back to fp16 if needed
-        if needs_upcasting:
-            self.vae.to(dtype=torch.float16)
+            mask_latents = self._encode_mask_frames(frames_mask_, device, num_videos_per_prompt, self.do_classifier_free_guidance)
+            mask_latents = mask_latents.to(image_embeddings.dtype)
 
-        # Repeat the image latents for each frame so we can concatenate them with the noise
-        # image_latents [batch, channels, height, width] ->[batch, num_frames, channels, height, width]
-        # frame_latents = frame_latents.unsqueeze(1).repeat(1, num_frames, 1, 1, 1)
-
-        # 5. Get Added Time IDs
-        added_time_ids = self._get_add_time_ids(
-            fps,
-            motion_bucket_id,
-            noise_aug_strength,
-            image_embeddings.dtype,
-            batch_size,
-            num_videos_per_prompt,
-            self.do_classifier_free_guidance,
-        )
-        added_time_ids = added_time_ids.to(device)
-
-        # 4. Prepare timesteps
-        self.scheduler.set_timesteps(num_inference_steps, device=device)
-        timesteps = self.scheduler.timesteps
-
-        # 5. Prepare latent variables
-        num_channels_latents = self.unet.config.in_channels
-        latents = self.prepare_latents(
-            batch_size * num_videos_per_prompt,
-            num_frames,
-            num_channels_latents,
-            height,
-            width,
-            image_embeddings.dtype,
-            device,
-            generator,
-            latents,
-        )
-
-        # 7. Prepare guidance scale
-        guidance_scale = torch.linspace(min_guidance_scale, max_guidance_scale, num_frames).unsqueeze(0)
-        guidance_scale = guidance_scale.to(device, latents.dtype)
-        guidance_scale = guidance_scale.repeat(batch_size * num_videos_per_prompt, 1)
-        guidance_scale = _append_dims(guidance_scale, latents.ndim)
-
-        self._guidance_scale = guidance_scale
-
-        # 8. Denoising loop
-        num_warmup_steps = len(timesteps) - num_inference_steps * self.scheduler.order
-        self._num_timesteps = len(timesteps)
-        with self.progress_bar(total=num_inference_steps) as progress_bar:
-            for i, t in enumerate(timesteps):
-                # expand the latents if we are doing classifier free guidance
-                latent_model_input = torch.cat([latents] * 2) if self.do_classifier_free_guidance else latents
-                latent_model_input = self.scheduler.scale_model_input(latent_model_input, t)
-
-                # Concatenate image_latents over channels dimention
-                latent_model_input = torch.cat([latent_model_input, frame_latents,mask_latents], dim=2)
-
-                # predict the noise residual
-                # print(f'latent_model_input: {latent_model_input.dtype}, image_embeddings: {image_embeddings.dtype}, t: {t.dtype},added_time_ids:{added_time_ids.dtype} ')
-                noise_pred = self.unet(
-                    latent_model_input,
-                    t,
-                    encoder_hidden_states=image_embeddings,
-                    added_time_ids=added_time_ids,
-                    return_dict=False,
-                )[0]
-
-                # perform guidance
-                if self.do_classifier_free_guidance:
-                    noise_pred_uncond, noise_pred_cond = noise_pred.chunk(2)
-                    noise_pred = noise_pred_uncond + self.guidance_scale * (noise_pred_cond - noise_pred_uncond)
-
-                # compute the previous noisy sample x_t -> x_t-1
-                latents = self.scheduler.step(noise_pred, t, latents).prev_sample
-
-                if callback_on_step_end is not None:
-                    callback_kwargs = {}
-                    for k in callback_on_step_end_tensor_inputs:
-                        callback_kwargs[k] = locals()[k]
-                    callback_outputs = callback_on_step_end(self, i, t, callback_kwargs)
-
-                    latents = callback_outputs.pop("latents", latents)
-
-                if i == len(timesteps) - 1 or ((i + 1) > num_warmup_steps and (i + 1) % self.scheduler.order == 0):
-                    progress_bar.update()
-
-        if not output_type == "latent":
             # cast back to fp16 if needed
             if needs_upcasting:
                 self.vae.to(dtype=torch.float16)
-            frames = self.decode_latents(latents, num_frames, decode_chunk_size)
-            frames = tensor2vid(frames, self.image_processor, output_type=output_type)
-        else:
-            frames = latents
 
-        self.maybe_free_model_hooks()
+            # Repeat the image latents for each frame so we can concatenate them with the noise
+            # image_latents [batch, channels, height, width] ->[batch, num_frames, channels, height, width]
+            # frame_latents = frame_latents.unsqueeze(1).repeat(1, num_frames, 1, 1, 1)
 
-        if not return_dict:
-            return frames
+            # 5. Get Added Time IDs
+            added_time_ids = self._get_add_time_ids(
+                fps_,
+                motion_bucket_id,
+                noise_aug_strength,
+                image_embeddings.dtype,
+                batch_size,
+                num_videos_per_prompt,
+                self.do_classifier_free_guidance,
+            )
+            added_time_ids = added_time_ids.to(device)
 
-        return StableVideoDiffusionPipelineOutput(frames=frames)
+            # 4. Prepare timesteps
+            self.scheduler.set_timesteps(num_inference_steps, device=device)
+            timesteps = self.scheduler.timesteps
+
+            # 5. Prepare latent variables
+            num_channels_latents = self.unet.config.in_channels
+            latents_ = self.prepare_latents(
+                batch_size * num_videos_per_prompt,
+                num_frames_,
+                num_channels_latents,
+                height_,
+                width_,
+                image_embeddings.dtype,
+                device,
+                generator,
+                latents,
+            )
+
+            # 7. Prepare guidance scale
+            guidance_scale = torch.linspace(min_guidance_scale, max_guidance_scale, num_frames_).unsqueeze(0)
+            guidance_scale = guidance_scale.to(device, latents_.dtype)
+            guidance_scale = guidance_scale.repeat(batch_size * num_videos_per_prompt, 1)
+            guidance_scale = _append_dims(guidance_scale, latents_.ndim)
+
+            self._guidance_scale = guidance_scale
+
+            # 8. Denoising loop
+            num_warmup_steps = len(timesteps) - num_inference_steps * self.scheduler.order
+            self._num_timesteps = len(timesteps)
+            with self.progress_bar(total=num_inference_steps) as progress_bar:
+                for i, t in enumerate(timesteps):
+                    # expand the latents if we are doing classifier free guidance
+                    latent_model_input = torch.cat([latents_] * 2) if self.do_classifier_free_guidance else latents_
+                    latent_model_input = self.scheduler.scale_model_input(latent_model_input, t)
+
+                    # Concatenate image_latents over channels dimention
+                    latent_model_input = torch.cat([latent_model_input, frame_latents, mask_latents], dim=2)
+
+                    # predict the noise residual
+                    # print(f'latent_model_input: {latent_model_input.dtype}, image_embeddings: {image_embeddings.dtype}, t: {t.dtype},added_time_ids:{added_time_ids.dtype} ')
+                    noise_pred = self.unet(
+                        latent_model_input,
+                        t,
+                        encoder_hidden_states=image_embeddings,
+                        added_time_ids=added_time_ids,
+                        return_dict=False,
+                    )[0]
+
+                    # perform guidance
+                    if self.do_classifier_free_guidance:
+                        noise_pred_uncond, noise_pred_cond = noise_pred.chunk(2)
+                        noise_pred = noise_pred_uncond + self.guidance_scale * (noise_pred_cond - noise_pred_uncond)
+
+                    # compute the previous noisy sample x_t -> x_t-1
+                    latents_ = self.scheduler.step(noise_pred, t, latents_).prev_sample
+
+                    if callback_on_step_end is not None:
+                        callback_kwargs = {}
+                        for k in callback_on_step_end_tensor_inputs:
+                            callback_kwargs[k] = locals()[k]
+                        callback_outputs = callback_on_step_end(self, i, t, callback_kwargs)
+
+                        latents_ = callback_outputs.pop("latents", latents_)
+
+                    if i == len(timesteps) - 1 or ((i + 1) > num_warmup_steps and (i + 1) % self.scheduler.order == 0):
+                        progress_bar.update()
+
+            if not output_type == "latent":
+                # cast back to fp16 if needed
+                if needs_upcasting:
+                    self.vae.to(dtype=torch.float16)
+                generated_frames = self.decode_latents(latents_, num_frames_, decode_chunk_size_)
+                generated_frames = tensor2vid(generated_frames, self.image_processor, output_type=output_type)
+            else:
+                generated_frames = latents_
+
+            self.maybe_free_model_hooks()
+
+            if not return_dict:
+                return generated_frames
+
+            return MambaStableVideoDiffusionInpaintingPipelineOutput(frames=generated_frames)
+
+        with torch.set_grad_enabled(grad_enabled):
+            return _run_pipeline()
 
 
 # resizing utils
