@@ -71,6 +71,11 @@ def main(
     seed: int = 42,
     tensorboard_log_dir: Union[str, None] = None,
     save_interval_epochs: int = 1,
+    scheduler_type: str = "cosine",
+    scheduler_gamma: float = 0.95,
+    scheduler_t_max: int = 1000,
+    scheduler_eta_min: float = 1e-6,
+    grad_accum_steps: int = 1,
 ) -> None:
     """Fine-tune the stereo inpainting pipeline with shared preprocessing.
 
@@ -103,10 +108,22 @@ def main(
         seed: 乱数シード。
         tensorboard_log_dir: 指定時、TensorBoard ログを有効化 (save_dir からの相対可)。
         save_interval_epochs: 何エポックごとに中間チェックポイントを保存するか (1 なら毎エポック)。
+        scheduler_type: "none" | "cosine" | "exponential"。学習率スケジューラの選択。
+        scheduler_gamma: ExponentialLR 用の減衰係数 (0<gamma<=1)。
+        scheduler_t_max: CosineAnnealingLR の T_max。0 以下なら自動的に総エポック数を使用。
+        scheduler_eta_min: CosineAnnealingLR の最小学習率。
+        grad_accum_steps: 勾配を蓄積するミニバッチ数。1 のときは従来通り即時更新。
     """
     os.makedirs(save_dir, exist_ok=True)
     if save_interval_epochs < 1:
         raise ValueError("save_interval_epochs must be >= 1")
+    if grad_accum_steps < 1:
+        raise ValueError("grad_accum_steps must be >= 1")
+    sched_key = (scheduler_type or "none").lower()
+    if sched_key not in {"none", "cosine", "exponential"}:
+        raise ValueError(f"Unknown scheduler_type: {scheduler_type}")
+    if sched_key == "exponential" and scheduler_gamma <= 0:
+        raise ValueError("scheduler_gamma must be > 0 for ExponentialLR")
     # 乱数シードの固定 (再現性向上)
     set_global_seed(seed)
     # Ctrl+C や SIGTERM を受け取ったら「安全な地点」で停止するためのフラグ
@@ -150,12 +167,19 @@ def main(
     # VAE 側のスライシング/タイル化 (対応していれば有効化)
     enable_vae_memory_helpers(pipeline)
 
-    # 学習用ノイズスケジューラ（拡散の前向きノイズ付加に使用）
-    noise_scheduler = DDPMScheduler(num_train_timesteps=1000, prediction_type="epsilon")
+    # 学習用ノイズスケジューラ（推論側の scheduler 設定に合わせて構築）
+    noise_scheduler = DDPMScheduler.from_config(pipeline.scheduler.config)
+    pred_type = getattr(pipeline.scheduler.config, "prediction_type", None)
+    if pred_type is not None and noise_scheduler.config.prediction_type != pred_type:
+        noise_scheduler.register_to_config(prediction_type=pred_type)
 
     # 学習対象パラメータのみ最適化
     trainable_params = [p for p in pipeline.unet.parameters() if p.requires_grad]
     optimizer = torch.optim.AdamW(trainable_params, lr=learning_rate, weight_decay=weight_decay)
+    optimizer.zero_grad(set_to_none=True)
+    lr_scheduler = None
+    if sched_key == "exponential":
+        lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=scheduler_gamma)
 
     # 簡易 CSV ログ (ステップごとの損失を記録)
     csv_path = os.path.join(save_dir, "train_log.csv")
@@ -184,8 +208,14 @@ def main(
     global_step = 0
     printer = TrainingProgressPrinter(device=device, log_interval=log_interval, enable_mem=True)
     try:
+        accum_counter = 0
         # 学習エポック数の決定: 目標avg_lossが与えられた場合は max_epochs を上限にループ
         planned_epochs_total = max_epochs if (target_avg_loss is not None) else epochs
+        if sched_key == "cosine" and lr_scheduler is None:
+            t_max = scheduler_t_max if scheduler_t_max > 0 else planned_epochs_total
+            lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+                optimizer, T_max=t_max, eta_min=max(scheduler_eta_min, 0.0)
+            )
         for epoch in range(1, planned_epochs_total + 1):
             # エポックごとに動画順をシャッフル
             random.shuffle(video_paths)
@@ -209,7 +239,6 @@ def main(
                 for batch_i, batch in enumerate(batches, start=1):
                     if stop_event.is_set():
                         raise KeyboardInterrupt
-                    optimizer.zero_grad(set_to_none=True)
 
                     # ===== ランダムtの通常学習: 1回のUNet前向きでノイズ予測MSE =====
                     with torch.autocast(device_type=device.type, dtype=torch_dtype, enabled=use_amp):
@@ -289,24 +318,38 @@ def main(
                             target = noise_scheduler.get_velocity(x0, eps, t)
                         else:
                             target = eps
-                        loss = F.mse_loss(noise_pred, target)
+                        loss_raw = F.mse_loss(noise_pred, target)
+
+                        is_last_batch_epoch = (video_idx == len(video_paths)) and (batch_i == len(batches))
+                        accum_counter += 1
+                        accum_scale = grad_accum_steps
+                        if is_last_batch_epoch and accum_counter < grad_accum_steps:
+                            accum_scale = accum_counter
+                        loss = loss_raw / float(accum_scale)
 
                     # 6) backward + optimizer step
                     if scaler.is_enabled():
                         scaler.scale(loss).backward()
-                        scaler.unscale_(optimizer)
-                        torch.nn.utils.clip_grad_norm_(trainable_params, max_grad_norm)
-                        scaler.step(optimizer)
-                        scaler.update()
                     else:
                         loss.backward()
-                        torch.nn.utils.clip_grad_norm_(trainable_params, max_grad_norm)
-                        optimizer.step()
 
-                    # ログ・記録 (1 バッチ = 1 optimizer step)
+                    should_step = (accum_counter >= grad_accum_steps) or is_last_batch_epoch
+                    if should_step:
+                        if scaler.is_enabled():
+                            scaler.unscale_(optimizer)
+                            torch.nn.utils.clip_grad_norm_(trainable_params, max_grad_norm)
+                            scaler.step(optimizer)
+                            scaler.update()
+                        else:
+                            torch.nn.utils.clip_grad_norm_(trainable_params, max_grad_norm)
+                            optimizer.step()
+                        optimizer.zero_grad(set_to_none=True)
+                        accum_counter = 0
+
+                    # ログ・記録 (勾配蓄積の有無に関わらずバッチ単位で記録)
                     global_step += 1
                     epoch_batches += 1
-                    batch_loss_val = loss.detach().item()
+                    batch_loss_val = loss_raw.detach().item()
                     epoch_loss += batch_loss_val
 
                     printer.step(global_step=global_step, batch_idx=batch_i, loss_value=batch_loss_val)
@@ -333,6 +376,10 @@ def main(
                 ckpt_path = os.path.join(save_dir, f"unet_epoch{epoch:03d}.pt")
                 torch.save(pipeline.unet.state_dict(), ckpt_path)
                 print(f"Saved UNet checkpoint to {ckpt_path}")
+            if lr_scheduler is not None:
+                lr_scheduler.step()
+                current_lr = optimizer.param_groups[0]["lr"]
+                print(f"Scheduler step completed. Current learning rate: {current_lr:.6e}")
             # 目標avg_loss に到達したら早期終了
             if (target_avg_loss is not None) and (avg_epoch_loss <= float(target_avg_loss)):
                 print(

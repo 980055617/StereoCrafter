@@ -26,13 +26,14 @@ def main(
     unet_path: str,
     input_video_path: str,
     save_dir: str,
-    frames_chunk: int = 23,
+    frames_chunk: int = 11,
     overlap: int = 3,
     tile_num: int = 1,
     *,
     precision: str = "fp16",
     use_mamba: bool = False,
     unet_state_path: str | None = None,
+    noise_seed: int | None = None,
 ):
     
     # precision handling (simple)
@@ -111,6 +112,12 @@ def main(
             pass
 
     pipeline = pipeline.to("cuda")
+    generator = None
+    if noise_seed is not None:
+        seed_val = int(noise_seed)
+        torch.manual_seed(seed_val)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(seed_val)
 
     os.makedirs(save_dir, exist_ok=True)
     video_name = input_video_path.split("/")[-1].replace(".mp4", "").replace("_splatting_results", "") + "_inpainting_results"
@@ -157,7 +164,8 @@ def main(
             fps=7,
             motion_bucket_id=127,
             noise_aug_strength=0.0,
-            num_inference_steps=30,
+            num_inference_steps=8,
+            generator=generator,
         )
 
         video_latents = video_latents.unsqueeze(0)
