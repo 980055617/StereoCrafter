@@ -102,6 +102,10 @@ def replace_top_right(
     # Use source fps to keep layout timing consistent
     from utils.inpainting import write_video_opencv
 
+    _, output_ext = os.path.splitext(output_video)
+    if output_ext == "":
+        output_video = f"{output_video}.mp4"
+
     os.makedirs(os.path.dirname(os.path.abspath(output_video)), exist_ok=True)
     write_video_opencv(out_frames, fps_src, output_video)
 
@@ -129,4 +133,3 @@ def main(
 
 if __name__ == "__main__":
     Fire(main)
-

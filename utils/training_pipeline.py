@@ -12,6 +12,7 @@
 - `no_split_module_classes` で Mamba 関連ブロックの過度な分割を避けています。
 """
 
+import logging
 from typing import Dict
 
 import torch
@@ -21,7 +22,12 @@ from diffusers import AutoencoderKLTemporalDecoder, UNetSpatioTemporalConditionM
 from diffusers.utils.torch_utils import is_compiled_module
 from transformers import CLIPVisionModelWithProjection
 
+from utils.logging_utils import ensure_logging_configured
+
 from pipelines.mamba_stereo_video_inpainting_pipeline import MambaStableVideoDiffusionInpaintingPipeline
+
+
+logger = logging.getLogger(__name__)
 
 
 def load_inpainting_pipeline(
@@ -79,8 +85,28 @@ def maybe_shard_unet(
 
     自動デバイスマップが単一 GPU になる場合は簡易な手動マッピングにフォールバックします。
     """
+    ensure_logging_configured()
     if not shard_unet_across_gpus or not torch.cuda.is_available() or torch.cuda.device_count() < 2:
         return
+
+    def _device_index_from(value) -> int | None:
+        """Normalize accelerate device map values to CUDA device indices."""
+        if isinstance(value, int):
+            return value
+        if isinstance(value, torch.device):
+            if value.type != "cuda":
+                return None
+            return value.index if value.index is not None else 0
+        if isinstance(value, str):
+            value = value.strip().lower()
+            if not value or value.startswith("cpu") or value == "disk":
+                return None
+            if value.startswith("cuda"):
+                parts = value.split(":")
+                if len(parts) == 2 and parts[1].isdigit():
+                    return int(parts[1])
+                return 0
+        return None
 
     try:
         max_memory = {i: f"{per_gpu_max_mem_gib}GiB" for i in range(torch.cuda.device_count())}
@@ -95,23 +121,33 @@ def maybe_shard_unet(
             max_memory=max_memory,
             no_split_module_classes=no_split,
         )
-        used_devices = sorted({int(v) for v in device_map.values() if isinstance(v, int)})
+        used_devices = sorted(
+            {
+                idx
+                for value in device_map.values()
+                for idx in ([_device_index_from(value)] if not isinstance(value, (list, tuple)) else [_device_index_from(v) for v in value])
+                if idx is not None
+            }
+        )
         if (len(device_map) == 1 and "" in device_map) or len(used_devices) < 2:
-            print(f"Auto sharding produced single-device map {device_map}. Falling back to manual split...")
+            ensure_logging_configured()
+            logger.info("Auto sharding produced single-device map %s. Falling back to manual split...", device_map)
             manual_map = _build_manual_unet_map(pipeline.unet)
             pipeline.unet = dispatch_model(pipeline.unet, device_map=manual_map)
-            print(f"Sharded UNet with manual device_map: {manual_map}")
+            logger.info("Sharded UNet with manual device_map: %s", manual_map)
         else:
             pipeline.unet = dispatch_model(pipeline.unet, device_map=device_map)
-            print(f"Sharded UNet across GPUs. Device map uses devices: {used_devices}")
+            ensure_logging_configured()
+            logger.info("Sharded UNet across GPUs. Device map uses devices: %s", used_devices)
     except Exception as err:
-        print(f"Auto sharding failed: {err}. Trying a simple manual split...")
+        ensure_logging_configured()
+        logger.warning("Auto sharding failed: %s. Trying a simple manual split...", err)
         try:
             manual_map = _build_manual_unet_map(pipeline.unet)
             pipeline.unet = dispatch_model(pipeline.unet, device_map=manual_map)
-            print(f"Sharded UNet with manual device_map: {manual_map}")
+            logger.info("Sharded UNet with manual device_map: %s", manual_map)
         except Exception as final_err:
-            print(f"UNet sharding failed, continuing without sharding: {final_err}")
+            logger.warning("UNet sharding failed, continuing without sharding: %s", final_err)
 
 
 def _build_manual_unet_map(unet: torch.nn.Module) -> Dict[str, int]:
@@ -157,31 +193,32 @@ def configure_unet_memory_features(
     2) xFormers -> torch SDP の順で試行
     3) attention slicing を最後に有効化
     """
+    ensure_logging_configured()
     if enable_gradient_checkpointing:
         try:
             pipeline.unet.enable_gradient_checkpointing()
-            print("Enabled gradient checkpointing on UNet")
+            logger.info("Enabled gradient checkpointing on UNet")
         except Exception as err:
-            print(f"Gradient checkpointing not available: {err}")
+            logger.warning("Gradient checkpointing not available: %s", err)
 
     attn_mode_lower = (attn_mode or "").lower()
     if attn_mode_lower in ("auto", "xformers"):
         try:
             pipeline.enable_xformers_memory_efficient_attention()
-            print("Using xFormers memory efficient attention")
+            logger.info("Using xFormers memory efficient attention")
         except Exception as err:
             if attn_mode_lower == "xformers":
-                print(f"xFormers requested but failed: {err}")
+                logger.warning("xFormers requested but failed: %s", err)
             attn_mode_lower = "auto"
     if attn_mode_lower in ("auto", "sdp"):
         try:
             pipeline.unet.set_attn_processor("torch-sdp")
-            print("Using PyTorch scaled dot-product attention")
+            logger.info("Using PyTorch scaled dot-product attention")
         except Exception:
             pass
     try:
         pipeline.enable_attention_slicing()
-        print("Enabled attention slicing")
+        logger.info("Enabled attention slicing")
     except Exception:
         pass
 
@@ -189,17 +226,22 @@ def configure_unet_memory_features(
     if ff_chunk_size is not None and ff_chunk_size > 0:
         try:
             pipeline.unet.enable_forward_chunking(chunk_size=ff_chunk_size, dim=int(ff_chunk_dim))
-            print(f"Enabled UNet forward chunking: chunk_size={ff_chunk_size}, dim={ff_chunk_dim}")
+            logger.info(
+                "Enabled UNet forward chunking: chunk_size=%s, dim=%s",
+                ff_chunk_size,
+                ff_chunk_dim,
+            )
         except Exception as err:
-            print(f"Forward chunking not available: {err}")
+            logger.warning("Forward chunking not available: %s", err)
 
 
 def enable_vae_memory_helpers(pipeline: MambaStableVideoDiffusionInpaintingPipeline) -> None:
     """Turn on optional VAE helper flags if available (slicing/tiling)."""
+    ensure_logging_configured()
     for fn_name in ("enable_slicing", "enable_tiling"):
         try:
             getattr(pipeline.vae, fn_name)()
-            print(f"VAE {fn_name} enabled")
+            logger.info("VAE %s enabled", fn_name)
         except Exception:
             continue
 

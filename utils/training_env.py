@@ -12,12 +12,18 @@ Usage:
     device = get_compute_device()
 """
 
+import logging
 import random
 import signal
 import threading
 from typing import Optional, Sequence
 
 import torch
+
+from utils.logging_utils import ensure_logging_configured
+
+
+logger = logging.getLogger(__name__)
 
 
 def set_global_seed(seed: int) -> None:
@@ -43,13 +49,14 @@ def setup_interrupt_handler(signals: Optional[Sequence[int]] = None) -> threadin
     Returns:
         threading.Event: 割り込み受信時に set() されるイベント。
     """
+    ensure_logging_configured()
     stop_event = threading.Event()
 
     watched = list(signals) if signals is not None else [signal.SIGINT, signal.SIGTERM]
 
     def _handle_sig(signum, _frame):
         if not stop_event.is_set():
-            print(f"Signal {signum} received. Will stop after the current step...")
+            logger.warning("Signal %s received. Will stop after the current step...", signum)
         stop_event.set()
 
     for sig in watched:
@@ -69,5 +76,6 @@ def get_compute_device() -> torch.device:
     """
     if torch.cuda.is_available():
         return torch.device("cuda")
-    print("Warning: CUDA device not detected. Training will run on CPU.")
+    ensure_logging_configured()
+    logger.warning("CUDA device not detected. Training will run on CPU.")
     return torch.device("cpu")

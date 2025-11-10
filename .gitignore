@@ -7,3 +7,4 @@ forDownload/*
 test/*
 logs/*
 inpainting_inputs/*
+video_data/*

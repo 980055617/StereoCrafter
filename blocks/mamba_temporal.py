@@ -29,26 +29,32 @@ class TemporalMamba(nn.Module):
             use_mem_eff_path=use_mem_eff_path,
         )
 
+    def _cuda_forward(self, x_bt_c: torch.Tensor) -> torch.Tensor:
+        """Execute Mamba2 on the tensor's device, respecting mem-eff fallbacks."""
+        use_mem_eff = bool(getattr(self.core, "use_mem_eff_path", False))
+        if not use_mem_eff:
+            try:
+                return self.core(x_bt_c)
+            except RuntimeError as e:
+                msg = str(e)
+                if "causal_conv1d with channel last layout requires strides" in msg:
+                    old = self.core.use_mem_eff_path
+                    self.core.use_mem_eff_path = True
+                    try:
+                        return self.core(x_bt_c)
+                    finally:
+                        self.core.use_mem_eff_path = old
+                raise
+        return self.core(x_bt_c)
+
     def forward(self, x_bt_c: torch.Tensor) -> torch.Tensor:
         # x_bt_c: (B*H*W, T, C)
         # Mamba2 は (B, L, C)。ここでは B'=(B*H*W), L=T
         # CUDA 環境で非メモリ効率パスが stride 制約で失敗する場合、自動で mem‑eff パスへフォールバック。
         if x_bt_c.is_cuda and hasattr(self, "core"):
-            use_mem_eff = bool(getattr(self.core, "use_mem_eff_path", False))
-            if not use_mem_eff:
-                try:
-                    return self.core(x_bt_c)
-                except RuntimeError as e:
-                    msg = str(e)
-                    if "causal_conv1d with channel last layout requires strides" in msg:
-                        old = self.core.use_mem_eff_path
-                        self.core.use_mem_eff_path = True
-                        try:
-                            return self.core(x_bt_c)
-                        finally:
-                            self.core.use_mem_eff_path = old
-                    raise
-            # use_mem_eff_path=True の場合はそのまま
-            return self.core(x_bt_c)
+            device = x_bt_c.device
+            # Triton kernel inside Mamba2 expects the current device to match tensor.device.
+            with torch.cuda.device(device):
+                return self._cuda_forward(x_bt_c)
         # CPU などは通常経路
         return self.core(x_bt_c)

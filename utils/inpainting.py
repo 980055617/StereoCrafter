@@ -1,3 +1,4 @@
+import inspect
 import os
 from contextlib import nullcontext
 from typing import Tuple
@@ -36,6 +37,8 @@ def spatial_tiled_process(
     Returns a latent tensor of shape [F, C, H/8, W/8].
     """
     context = nullcontext() if enable_autograd else torch.no_grad()
+    supports_grad_flag = "grad_enabled" in inspect.signature(process_func.__call__).parameters
+
     with context:
         height = cond_frames.shape[2]
         width = cond_frames.shape[3]
@@ -64,16 +67,19 @@ def spatial_tiled_process(
                     j * tile_stride[1] : j * tile_stride[1] + tile_size[1],
                 ]
 
-                tile = process_func(
+                call_kwargs = dict(
                     frames=cond_tile,
                     frames_mask=mask_tile,
                     height=cond_tile.shape[2],
                     width=cond_tile.shape[3],
                     num_frames=len(cond_tile),
                     output_type="latent",
-                    grad_enabled=enable_autograd,
                     **kargs,
-                ).frames[0]
+                )
+                if supports_grad_flag:
+                    call_kwargs["grad_enabled"] = enable_autograd
+
+                tile = process_func(**call_kwargs).frames[0]
 
                 rows.append(tile)
             cols.append(rows)

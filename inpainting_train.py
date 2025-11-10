@@ -1,15 +1,51 @@
 import csv
 import glob
+import inspect
+import json
 import math
 import os
 import random
-from typing import Union
+from pathlib import Path
+from typing import Any, Union
 import warnings
+import logging
 warnings.filterwarnings(
     "ignore",
     category=FutureWarning,
     message=r".*torch.library.impl_abstract.*register_fake.*",
 )
+
+logger = logging.getLogger(__name__)
+
+
+def _resolve_config_path(config: str, config_dir: str) -> Path:
+    """Resolve a config identifier to an existing JSON file path."""
+    config_path = Path(config).expanduser()
+    if not config_path.suffix:
+        config_path = config_path.with_suffix(".json")
+    search_candidates: list[Path] = []
+    if not config_path.is_absolute():
+        base_dir = Path(config_dir).expanduser()
+        search_candidates.append(base_dir / config_path)
+    search_candidates.append(config_path)
+    for candidate in search_candidates:
+        if candidate.exists():
+            return candidate
+
+    searched = ", ".join(str(candidate) for candidate in search_candidates)
+    raise FileNotFoundError(f"Config file '{config}' not found. Searched: {searched}")
+
+
+def _load_config_dict(config: str, config_dir: str) -> dict[str, Any]:
+    """Load a JSON training config into a dictionary."""
+    config_path = _resolve_config_path(config, config_dir)
+    with open(config_path, "r", encoding="utf-8") as fp:
+        data = json.load(fp)
+    if not isinstance(data, dict):
+        raise ValueError(f"Config file '{config_path}' must contain a JSON object at the top level.")
+    ensure_logging_configured()
+    logger.info("Loaded training config from %s", config_path)
+    return data
 
 import torch
 import torch.nn.functional as F
@@ -24,7 +60,7 @@ from utils.training_pipeline import (
     maybe_shard_unet,
 )
 from utils.training_precision import resolve_precision
-from utils.logging_utils import TrainingProgressPrinter
+from utils.logging_utils import TrainingProgressPrinter, ensure_logging_configured, log_vram_usage
 from diffusers.schedulers import DDPMScheduler
 
 try:
@@ -33,7 +69,7 @@ except ImportError:  # pragma: no cover - optional dependency
     SummaryWriter = None
 
 
-def main(
+def _train_main(
     pre_trained_path: str,
     unet_path: str,
     train_glob: str,
@@ -51,6 +87,13 @@ def main(
     noise_aug_strength: float = 0.0,
     decode_chunk_size: int = 2,
     vae_encode_chunk_size: int = 5,
+    random_crop_height: int | None = None,
+    random_crop_width: int | None = None,
+    min_h: int | None = None,
+    min_w: int | None = None,
+    max_h: int | None = None,
+    max_w: int | None = None,
+    crop_multiple: int = 128,
     epochs: int = 1,
     max_epochs: int = 10000,
     target_avg_loss: Union[float, None] = 1e-4,
@@ -64,7 +107,7 @@ def main(
     ff_chunk_dim: int = 1,
     keep_unet_fp32: bool = True,
     shard_unet_across_gpus: bool = False,
-    per_gpu_max_mem_gib: int = 22,
+    per_gpu_max_mem_gib: int = 11,
     mask_loss_weight: float = 1.0,
     recon_loss_weight: float = 0.1,
     log_interval: int = 10,
@@ -96,6 +139,9 @@ def main(
         noise_aug_strength: 条件側へのノイズ付与強度。
         decode_chunk_size: VAE デコード時のフレーム分割数 (省メモリ)。
         vae_encode_chunk_size: VAE へのエンコード時分割数 (省メモリ)。
+        random_crop_height/random_crop_width: 指定時は同じ領域をランダムクロップして学習 (両方指定が必要)。
+        min_h/min_w/max_h/max_w: 動画ごとに高さ/幅の範囲を指定してランダムクロップ。各動画で固定された領域を使用。
+        crop_multiple: クロップ縦横を合わせる倍数。VAE のスケールに合わせて 128 などを推奨。
         epochs: エポック数。
         learning_rate/weight_decay/max_grad_norm: 最適化ハイパーパラメータ。
         precision: "fp16" | "bf16" | "fp32"。AMP の有無を含めて内部で解決。
@@ -114,6 +160,8 @@ def main(
         scheduler_eta_min: CosineAnnealingLR の最小学習率。
         grad_accum_steps: 勾配を蓄積するミニバッチ数。1 のときは従来通り即時更新。
     """
+    ensure_logging_configured()
+    logger.info("Starting training run. Saving artifacts to %s", save_dir)
     os.makedirs(save_dir, exist_ok=True)
     if save_interval_epochs < 1:
         raise ValueError("save_interval_epochs must be >= 1")
@@ -134,6 +182,27 @@ def main(
     # 精度の解決: dtype / autocast の有無 / GradScaler をまとめて取得
     precision_key = (precision or "").lower()
     torch_dtype, use_amp, scaler = resolve_precision(precision, device)
+    logger.info("Using device %s with dtype %s (AMP enabled: %s)", device, torch_dtype, use_amp)
+    crop_multiple = max(1, crop_multiple)
+    crop_size = None
+    crop_min_size = None
+    crop_max_size = None
+    if random_crop_height is not None or random_crop_width is not None:
+        if random_crop_height is None or random_crop_width is None:
+            raise ValueError("random_crop_height and random_crop_width must both be provided when using random cropping.")
+        if random_crop_height > 0 and random_crop_width > 0:
+            crop_size = (random_crop_height, random_crop_width)
+
+    if any(value is not None for value in (min_h, min_w, max_h, max_w)):
+        if not all(value is not None for value in (min_h, min_w, max_h, max_w)):
+            raise ValueError("All of min_h, min_w, max_h, and max_w must be provided together.")
+        if min_h <= 0 or min_w <= 0 or max_h <= 0 or max_w <= 0:
+            raise ValueError("min_h/min_w/max_h/max_w must be positive integers.")
+        if min_h > max_h or min_w > max_w:
+            raise ValueError("min_h/min_w must be less than or equal to max_h/max_w.")
+        crop_min_size = (int(min_h), int(min_w))
+        crop_max_size = (int(max_h), int(max_w))
+        crop_size = None  # override fixed random crop size when range cropping is used
 
     # 事前学習済みの image_encoder/vae と、学習対象の UNet を組み込んだパイプラインを構築
     pipeline = load_inpainting_pipeline(
@@ -142,6 +211,7 @@ def main(
         torch_dtype=torch_dtype,
         device=device,
     )
+    log_vram_usage("After loading inpainting pipeline", device, level=logging.INFO)
     # AMP 安定化のため、UNet のパラメータは FP32 で保持（計算は autocast で半精度）
     # ただしメモリが厳しい場合は --keep_unet_fp32 False で半精度保持に切替可能
     if keep_unet_fp32:
@@ -192,7 +262,7 @@ def main(
     writer_tb = None
     if tensorboard_log_dir:
         if SummaryWriter is None:
-            print(
+            logger.warning(
                 "tensorboard package not available. Install it with `pip install tensorboard` to enable TensorBoard logging."
             )
         else:
@@ -206,7 +276,12 @@ def main(
         raise FileNotFoundError(f"No training videos found for pattern: {train_glob}")
 
     global_step = 0
-    printer = TrainingProgressPrinter(device=device, log_interval=log_interval, enable_mem=True)
+    printer = TrainingProgressPrinter(
+        device=device,
+        log_interval=log_interval,
+        enable_mem=True,
+        logger_obj=logger,
+    )
     try:
         accum_counter = 0
         # 学習エポック数の決定: 目標avg_lossが与えられた場合は max_epochs を上限にループ
@@ -233,12 +308,36 @@ def main(
                     overlap=overlap,
                     device=device,
                     dtype=torch_dtype if precision_key != "fp32" else torch.float32,
+                    random_crop_size=crop_size,
+                    crop_multiple=crop_multiple,
+                    crop_min_size=crop_min_size,
+                    crop_max_size=crop_max_size,
                 )
+                crop_info = getattr(batches, "crop_region_info", None)
+                if crop_info:
+                    logger.info(
+                        "Video %s crop origin=(%d,%d) size=%dx%d (source=%dx%d)",
+                        os.path.basename(video_path),
+                        crop_info["top"],
+                        crop_info["left"],
+                        crop_info["height"],
+                        crop_info["width"],
+                        crop_info["source_height"],
+                        crop_info["source_width"],
+                    )
                 printer.start_video(video_idx=video_idx, batches_total=len(batches))
 
                 for batch_i, batch in enumerate(batches, start=1):
                     if stop_event.is_set():
                         raise KeyboardInterrupt
+
+                    if device.type == "cuda":
+                        torch.cuda.reset_peak_memory_stats(device)
+                        log_vram_usage(
+                            f"VRAM before processing video {video_idx} batch {batch_i}",
+                            device,
+                            level=logging.DEBUG,
+                        )
 
                     # ===== ランダムtの通常学習: 1回のUNet前向きでノイズ予測MSE =====
                     with torch.autocast(device_type=device.type, dtype=torch_dtype, enabled=use_amp):
@@ -367,6 +466,14 @@ def main(
                                 f"{batch_loss_val:.6f}",
                             ]
                         )
+                    if device.type == "cuda":
+                        peak_allocated_mib = torch.cuda.max_memory_allocated(device) / float(1024**2)
+                        logger.debug(
+                            "VRAM peak allocated during video %d batch %d: %.1f MiB",
+                            video_idx,
+                            batch_i,
+                            peak_allocated_mib,
+                        )
 
             # エポック平均を表示して毎エポック後にチェックポイントを保存
             avg_epoch_loss = epoch_loss / max(epoch_batches, 1)
@@ -375,15 +482,17 @@ def main(
             if epoch % save_interval_epochs == 0:
                 ckpt_path = os.path.join(save_dir, f"unet_epoch{epoch:03d}.pt")
                 torch.save(pipeline.unet.state_dict(), ckpt_path)
-                print(f"Saved UNet checkpoint to {ckpt_path}")
+                logger.info("Saved UNet checkpoint to %s", ckpt_path)
             if lr_scheduler is not None:
                 lr_scheduler.step()
                 current_lr = optimizer.param_groups[0]["lr"]
-                print(f"Scheduler step completed. Current learning rate: {current_lr:.6e}")
+                logger.info("Scheduler step completed. Current learning rate: %.6e", current_lr)
             # 目標avg_loss に到達したら早期終了
             if (target_avg_loss is not None) and (avg_epoch_loss <= float(target_avg_loss)):
-                print(
-                    f"Target avg_loss {target_avg_loss:.6f} reached at epoch {epoch}. Stopping early."
+                logger.info(
+                    "Target avg_loss %.6f reached at epoch %d. Stopping early.",
+                    target_avg_loss,
+                    epoch,
                 )
                 break
 
@@ -395,19 +504,47 @@ def main(
         int_path = os.path.join(save_dir, "unet_interrupted.pt")
         try:
             torch.save(pipeline.unet.state_dict(), int_path)
-            print(f"Interrupted. Saved UNet checkpoint to {int_path}")
+            logger.info("Interrupted. Saved UNet checkpoint to %s", int_path)
         except Exception as e:
-            print(f"Interrupted. Failed to save checkpoint: {e}")
+            logger.error("Interrupted. Failed to save checkpoint: %s", e)
         if writer_tb:
             writer_tb.close()
         return
 
     final_path = os.path.join(save_dir, "unet_final.pt")
     torch.save(pipeline.unet.state_dict(), final_path)
-    print(f"Training complete. Final UNet weights stored at {final_path}")
+    logger.info("Training complete. Final UNet weights stored at %s", final_path)
 
     if writer_tb:
         writer_tb.close()
+
+
+def main(config: str | None = None, config_dir: str = "train_config", **overrides: Any) -> None:
+    """Entry point for Fire CLI with optional JSON config loading."""
+    ensure_logging_configured()
+    config_identifier = config or os.environ.get("STEREOCRAFT_TRAIN_CONFIG")
+    config_values: dict[str, Any] = {}
+    if config_identifier:
+        config_values.update(_load_config_dict(config_identifier, config_dir))
+    config_values.update(overrides)
+
+    signature = inspect.signature(_train_main)
+    allowed_params = set(signature.parameters.keys())
+    unexpected_keys = set(config_values) - allowed_params
+    if unexpected_keys:
+        unexpected_list = ", ".join(sorted(unexpected_keys))
+        raise ValueError(f"Unknown training parameters: {unexpected_list}")
+
+    missing = [
+        name
+        for name, parameter in signature.parameters.items()
+        if parameter.default is inspect._empty and name not in config_values
+    ]
+    if missing:
+        missing_list = ", ".join(sorted(missing))
+        raise ValueError(f"Missing required training parameters: {missing_list}")
+
+    _train_main(**config_values)
 
 
 if __name__ == "__main__":

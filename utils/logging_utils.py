@@ -11,9 +11,10 @@
 """
 
 import csv
+import logging
 import os
 import time
-from typing import Dict, Iterable, Optional
+from typing import Dict, Iterable, Optional, Tuple, Union
 
 import torch
 
@@ -25,6 +26,108 @@ def ensure_dir(path: str) -> None:
 
 def _bytes_to_mb(x: int) -> float:
     return round(x / (1024**2), 2)
+
+
+logger = logging.getLogger(__name__)
+
+
+def ensure_logging_configured(level: int = logging.DEBUG) -> None:
+    """Configure root logger once with a simple console formatter."""
+    if logging.getLogger().handlers:
+        return
+    logging.basicConfig(
+        level=level,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    )
+
+
+def _normalize_cuda_device(device: Optional[Union[torch.device, int, str]]) -> Optional[int]:
+    """Return a CUDA device index for various device representations."""
+    if not torch.cuda.is_available():
+        return None
+    if device is None:
+        return torch.cuda.current_device()
+    if isinstance(device, int):
+        return device
+    if isinstance(device, torch.device):
+        if device.type != "cuda":
+            return None
+        return device.index if device.index is not None else torch.cuda.current_device()
+    if isinstance(device, str):
+        device = device.strip().lower()
+        if device == "cuda":
+            return torch.cuda.current_device()
+        if device.startswith("cuda:"):
+            _, _, idx = device.partition(":")
+            if idx.isdigit():
+                return int(idx)
+            return torch.cuda.current_device()
+        if device.startswith("gpu"):
+            _, _, idx = device.partition(":")
+            if idx.isdigit():
+                return int(idx)
+    return torch.cuda.current_device()
+
+
+def _try_get_vram_usage_mib(device: Optional[torch.device]) -> Optional[Tuple[float, float]]:
+    """Return (used_mib, total_mib) for the given CUDA device."""
+    if not torch.cuda.is_available():
+        return None
+    try:
+        dev_index = _normalize_cuda_device(device)
+        if dev_index is None:
+            return None
+        torch.cuda.synchronize(dev_index)
+        free_bytes, total_bytes = torch.cuda.mem_get_info(dev_index)
+    except Exception as exc:
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(
+                "torch.cuda.mem_get_info unavailable for device %s: %s; falling back to memory_allocated()",
+                device,
+                exc,
+            )
+        # Fallback: use allocated memory and device properties
+        try:
+            dev_index = _normalize_cuda_device(device)
+            if dev_index is None:
+                return None
+            torch.cuda.synchronize(dev_index)
+            allocated = torch.cuda.memory_allocated(dev_index)
+            total_bytes = torch.cuda.get_device_properties(dev_index).total_memory
+        except Exception:
+            return None
+        used_bytes = allocated
+    else:
+        used_bytes = total_bytes - free_bytes
+    mib = 1024**2
+    return used_bytes / mib, total_bytes / mib
+
+
+def log_vram_usage(message: str, device: Optional[torch.device], *, level: int = logging.INFO) -> None:
+    """Log VRAM usage via torch.cuda.mem_get_info when available."""
+    ensure_logging_configured()
+    if device is None:
+        logger.log(level, "%s (device unavailable)", message)
+        return
+    if not logger.isEnabledFor(level):
+        return
+    usage = _try_get_vram_usage_mib(device)
+    if usage is None:
+        logger.log(level, "%s (VRAM usage unavailable for device %s)", message, device)
+        return
+    used_mib, total_mib = usage
+    mem_breakdown = get_gpu_memory_mb(device)
+    allocated_mb = mem_breakdown.get("allocated_mb", 0.0)
+    reserved_mb = mem_breakdown.get("reserved_mb", 0.0)
+    logger.log(
+        level,
+        "%s (VRAM used: %.1f MiB / %.1f MiB | allocated: %.1f MB | reserved: %.1f MB)",
+        message,
+        used_mib,
+        total_mib,
+        allocated_mb,
+        reserved_mb,
+    )
 
 
 def get_gpu_memory_mb(device: Optional[torch.device] = None) -> Dict[str, float]:
@@ -188,7 +291,18 @@ class TrainingProgressPrinter:
     Control verbosity via log_interval.
     """
 
-    def __init__(self, device: Optional[torch.device] = None, log_interval: int = 10, enable_mem: bool = True):
+    def __init__(
+        self,
+        device: Optional[torch.device] = None,
+        log_interval: int = 10,
+        enable_mem: bool = True,
+        *,
+        log_level: int = logging.INFO,
+        logger_obj: Optional[logging.Logger] = None,
+    ):
+        ensure_logging_configured()
+        self.logger = logger_obj or logging.getLogger(__name__)
+        self.log_level = log_level
         self.device = device
         self.log_interval = max(1, int(log_interval))
         self.enable_mem = enable_mem
@@ -212,6 +326,8 @@ class TrainingProgressPrinter:
     def step(self, *, global_step: int, batch_idx: int, loss_value: float, extra: Optional[Dict[str, float]] = None) -> None:
         if global_step % self.log_interval != 0:
             return
+        if not self.logger.isEnabledFor(self.log_level):
+            return
         t = self.timer.step()
         mem = get_gpu_memory_mb(self.device) if self.enable_mem else {"allocated_mb": 0.0, "reserved_mb": 0.0}
         parts = [
@@ -231,11 +347,14 @@ class TrainingProgressPrinter:
                     parts.append(f"{k}={float(v):.4f}")
                 except Exception:
                     parts.append(f"{k}={v}")
-        print(" ".join(parts))
-        
+        self.logger.log(self.log_level, " ".join(parts))
+
     def finish_epoch(self, avg_loss: float, epoch_batches: int) -> None:
         mem = get_gpu_memory_mb(self.device) if self.enable_mem else {"allocated_mb": 0.0, "reserved_mb": 0.0}
-        print(
+        if not self.logger.isEnabledFor(self.log_level):
+            return
+        message = (
             f"Epoch {self._epoch_idx}/{self._epochs_total} done | avg_loss={avg_loss:.4f} | "
             f"batches={epoch_batches} | mem={mem.get('allocated_mb',0):.0f}/{mem.get('reserved_mb',0):.0f}MB"
         )
+        self.logger.log(self.log_level, message)
