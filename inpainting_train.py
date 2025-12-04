@@ -6,7 +6,7 @@ import math
 import os
 import random
 from pathlib import Path
-from typing import Any, Union
+from typing import Any, Sequence, Union
 import warnings
 import logging
 warnings.filterwarnings(
@@ -119,6 +119,12 @@ def _train_main(
     scheduler_t_max: int = 1000,
     scheduler_eta_min: float = 1e-6,
     grad_accum_steps: int = 1,
+    dataset_split_ratios: Sequence[float] | None = None,
+    dataset_split_group: str = "train",
+    dataset_split_seed: int = 42,
+    eval_split: str | None = None,
+    eval_interval_epochs: int = 1,
+    max_eval_videos: int | None = None,
 ) -> None:
     """Fine-tune the stereo inpainting pipeline with shared preprocessing.
 
@@ -159,6 +165,12 @@ def _train_main(
         scheduler_t_max: CosineAnnealingLR の T_max。0 以下なら自動的に総エポック数を使用。
         scheduler_eta_min: CosineAnnealingLR の最小学習率。
         grad_accum_steps: 勾配を蓄積するミニバッチ数。1 のときは従来通り即時更新。
+        dataset_split_ratios: [train, val, test] の比率を指定 (例: [8,1,1])。None なら全動画を学習に使用。
+        dataset_split_group: ratios 指定時にどの分割("train"/"val"/"test")を使うか。
+        dataset_split_seed: データ分割のシャッフルに使うシード。再現性確保用。
+        eval_split: エポック末に評価するデータ分割名。None なら評価を無効化。
+        eval_interval_epochs: 何エポックごとに eval_split を評価するか。
+        max_eval_videos: 評価に使う動画の上限。None または <=0 なら全件。
     """
     ensure_logging_configured()
     logger.info("Starting training run. Saving artifacts to %s", save_dir)
@@ -167,6 +179,8 @@ def _train_main(
         raise ValueError("save_interval_epochs must be >= 1")
     if grad_accum_steps < 1:
         raise ValueError("grad_accum_steps must be >= 1")
+    if eval_split is not None and eval_interval_epochs < 1:
+        raise ValueError("eval_interval_epochs must be >= 1 when eval_split is set.")
     sched_key = (scheduler_type or "none").lower()
     if sched_key not in {"none", "cosine", "exponential"}:
         raise ValueError(f"Unknown scheduler_type: {scheduler_type}")
@@ -257,6 +271,11 @@ def _train_main(
         with open(csv_path, "w", encoding="utf-8", newline="") as f:
             writer = csv.writer(f)
             writer.writerow(["step", "epoch", "video", "loss_noise_mse"])
+    eval_csv_path = os.path.join(save_dir, "eval_log.csv")
+    if not os.path.exists(eval_csv_path):
+        with open(eval_csv_path, "w", encoding="utf-8", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(["epoch", "split", "video", "batch", "loss_noise_mse"])
 
     # (オプション) TensorBoard ログ
     writer_tb = None
@@ -270,10 +289,217 @@ def _train_main(
             os.makedirs(log_dir, exist_ok=True)
             writer_tb = SummaryWriter(log_dir=log_dir)
 
-    # 入力動画パスをグロブから列挙
-    video_paths = sorted(glob.glob(train_glob))
-    if not video_paths:
+    # 入力動画パスをグロブから列挙し、必要なら分割
+    all_video_paths = sorted(glob.glob(train_glob))
+    if not all_video_paths:
         raise FileNotFoundError(f"No training videos found for pattern: {train_glob}")
+    split_map: dict[str, list[str]] = {key: [] for key in ("train", "val", "test")}
+    split_map["train"] = list(all_video_paths)
+    if dataset_split_ratios:
+        ratios = [float(value) for value in dataset_split_ratios]
+        if len(ratios) != 3:
+            raise ValueError("dataset_split_ratios must contain exactly three values: [train, val, test].")
+        if any(value < 0 for value in ratios):
+            raise ValueError("dataset_split_ratios cannot contain negative values.")
+        ratio_sum = sum(ratios)
+        if ratio_sum <= 0:
+            raise ValueError("dataset_split_ratios must sum to a positive value.")
+        split_key = (dataset_split_group or "train").strip().lower()
+        valid_keys = ("train", "val", "test")
+        if split_key not in valid_keys:
+            raise ValueError(f"dataset_split_group must be one of {valid_keys}, got '{dataset_split_group}'.")
+
+        shuffled = list(all_video_paths)
+        random.Random(dataset_split_seed).shuffle(shuffled)
+        total_videos = len(shuffled)
+        normalized = [ratio / ratio_sum for ratio in ratios]
+        raw_counts = [norm * total_videos for norm in normalized]
+        counts = [math.floor(value) for value in raw_counts]
+        remainder = total_videos - sum(counts)
+        if remainder > 0:
+            fractional_order = sorted(
+                range(len(raw_counts)),
+                key=lambda idx: (raw_counts[idx] - counts[idx]),
+                reverse=True,
+            )
+            for idx in fractional_order[:remainder]:
+                counts[idx] += 1
+        split_map: dict[str, list[str]] = {name: [] for name in valid_keys}
+        cursor = 0
+        for key, count in zip(valid_keys, counts):
+            if count > 0:
+                split_map[key] = shuffled[cursor : cursor + count]
+            cursor += count
+
+        selected = split_map[split_key]
+        if not selected:
+            raise ValueError(
+                f"No videos assigned to split '{dataset_split_group}'. "
+                f"Ratios={ratios}, total_videos={total_videos}"
+            )
+        logger.info(
+            "Dataset split ratios %s (seed=%d) -> counts train=%d val=%d test=%d",
+            ratios,
+            dataset_split_seed,
+            len(split_map["train"]),
+            len(split_map["val"]),
+            len(split_map["test"]),
+        )
+        preview = ", ".join(os.path.basename(path) for path in selected[:3])
+        if preview:
+            extra = "..." if len(selected) > 3 else ""
+            logger.info("Using '%s' split with %d videos (e.g., %s%s)", split_key, len(selected), preview, extra)
+    else:
+        if split_key != "train":
+            raise ValueError(
+                "dataset_split_group other than 'train' requires dataset_split_ratios to define the split sizes."
+            )
+        video_sample = ", ".join(os.path.basename(path) for path in split_map["train"][:3])
+        if video_sample:
+            extra = "..." if len(split_map["train"]) > 3 else ""
+            logger.info(
+                "Using %d videos matched by %s (e.g., %s%s)",
+                len(split_map["train"]),
+                train_glob,
+                video_sample,
+                extra,
+            )
+    video_paths = split_map[split_key]
+
+    def compute_batch_loss(batch: Any) -> torch.Tensor:
+        """Forward UNet once against a mini-batch and return the raw loss tensor."""
+        with torch.autocast(device_type=device.type, dtype=torch_dtype, enabled=use_amp):
+            H, W = batch.cond.shape[2], batch.cond.shape[3]
+            with torch.no_grad():
+                image_embeddings = pipeline._encode_image(
+                    batch.cond[0:1], device=device, num_videos_per_prompt=1, do_classifier_free_guidance=False
+                )
+            frames_cond = pipeline.image_processor.preprocess(batch.cond, height=H, width=W)
+            if noise_aug_strength > 0.0:
+                noise = torch.randn_like(frames_cond)
+                frames_cond = frames_cond + noise_aug_strength * noise
+
+            latent_list = []
+            with torch.no_grad():
+                for i_f in range(0, frames_cond.shape[0], max(1, vae_encode_chunk_size)):
+                    latent_list.append(pipeline.vae.encode(frames_cond[i_f : i_f + max(1, vae_encode_chunk_size)]).latent_dist.mode())
+            frame_latents = torch.cat(latent_list, dim=0).unsqueeze(0)
+            frame_latents = frame_latents.to(image_embeddings.dtype)
+
+            with torch.no_grad():
+                frames_mask = pipeline.mask_processor.preprocess(batch.mask, height=H, width=W)
+                frames_mask = torch.nn.functional.interpolate(frames_mask, scale_factor=1 / pipeline.vae_scale_factor).unsqueeze(0)
+            mask_latents = frames_mask.to(image_embeddings.dtype)
+
+            fps_ = fps_condition - 1
+            add_time_ids = torch.tensor([[fps_, motion_bucket_id, noise_aug_strength]], dtype=image_embeddings.dtype, device=device)
+
+            frames_tgt = pipeline.image_processor.preprocess(batch.target, height=H, width=W)
+            tgt_lat_list = []
+            with torch.no_grad():
+                for i_f in range(0, frames_tgt.shape[0], max(1, vae_encode_chunk_size)):
+                    tgt_lat_list.append(pipeline.vae.encode(frames_tgt[i_f : i_f + max(1, vae_encode_chunk_size)]).latent_dist.mode())
+            x0 = torch.cat(tgt_lat_list, dim=0).unsqueeze(0).to(image_embeddings.dtype)
+            x0 = x0 * pipeline.vae.config.scaling_factor
+
+            t = torch.randint(0, noise_scheduler.config.num_train_timesteps, (1,), device=device, dtype=torch.long)
+            eps = torch.randn_like(x0)
+            x_t = noise_scheduler.add_noise(x0, eps, t)
+
+            latent_model_input = torch.cat([x_t, frame_latents, mask_latents], dim=2)
+            noise_pred = pipeline.unet(
+                latent_model_input,
+                t,
+                encoder_hidden_states=image_embeddings,
+                added_time_ids=add_time_ids,
+                return_dict=False,
+            )[0]
+
+            if getattr(noise_scheduler.config, "prediction_type", "epsilon") == "v_prediction":
+                target = noise_scheduler.get_velocity(x0, eps, t)
+            else:
+                target = eps
+            return F.mse_loss(noise_pred, target)
+
+    def run_evaluation(split_name: str, epoch_idx: int) -> float | None:
+        """Run a full forward pass over the requested split and log average loss."""
+        eval_key = (split_name or "").strip().lower()
+        if not eval_key:
+            return None
+        if eval_key not in split_map:
+            logger.warning("Unknown eval split '%s'; skipping evaluation.", split_name)
+            return None
+        eval_video_paths = split_map[eval_key]
+        if not eval_video_paths:
+            logger.warning("No videos available for eval split '%s'; skipping.", eval_key)
+            return None
+        max_videos = max_eval_videos if (max_eval_videos or 0) > 0 else None
+        total_assigned = len(eval_video_paths)
+        if max_videos is not None and max_videos < total_assigned:
+            eval_video_paths = eval_video_paths[:max_videos]
+            logger.info(
+                "Evaluating split '%s' on %d/%d videos (limited by max_eval_videos).",
+                eval_key,
+                len(eval_video_paths),
+                total_assigned,
+            )
+        else:
+            logger.info("Evaluating split '%s' on %d videos.", eval_key, total_assigned)
+        was_training = pipeline.unet.training
+        pipeline.unet.eval()
+        total_loss = 0.0
+        total_batches = 0
+        try:
+            with torch.no_grad():
+                with open(eval_csv_path, "a", encoding="utf-8", newline="") as eval_f:
+                    writer = csv.writer(eval_f)
+                    for video_idx, video_path in enumerate(eval_video_paths, start=1):
+                        if stop_event.is_set():
+                            raise KeyboardInterrupt
+                        batches = prepare_batches(
+                            video_path,
+                            frames_chunk=frames_chunk,
+                            overlap=overlap,
+                            device=device,
+                            dtype=torch_dtype if precision_key != "fp32" else torch.float32,
+                            random_crop_size=crop_size,
+                            crop_multiple=crop_multiple,
+                            crop_min_size=crop_min_size,
+                            crop_max_size=crop_max_size,
+                        )
+                        for batch_i, batch in enumerate(batches, start=1):
+                            if stop_event.is_set():
+                                raise KeyboardInterrupt
+                            loss_raw = compute_batch_loss(batch)
+                            batch_loss_val = float(loss_raw.detach().item())
+                            total_loss += batch_loss_val
+                            total_batches += 1
+                            writer.writerow(
+                                [
+                                    epoch_idx,
+                                    eval_key,
+                                    os.path.basename(video_path),
+                                    batch_i,
+                                    f"{batch_loss_val:.6f}",
+                                ]
+                            )
+        finally:
+            if was_training:
+                pipeline.unet.train()
+        if total_batches == 0:
+            logger.warning("Evaluation split '%s' produced zero batches.", eval_key)
+            return None
+        avg_loss = total_loss / total_batches
+        logger.info(
+            "Eval split '%s' epoch %d: avg_loss=%.6f over %d batches.",
+            eval_key,
+            epoch_idx,
+            avg_loss,
+            total_batches,
+        )
+        if writer_tb:
+            writer_tb.add_scalar(f"loss/{eval_key}_avg", avg_loss, epoch_idx)
+        return avg_loss
 
     global_step = 0
     printer = TrainingProgressPrinter(
@@ -340,91 +566,28 @@ def _train_main(
                         )
 
                     # ===== ランダムtの通常学習: 1回のUNet前向きでノイズ予測MSE =====
-                    with torch.autocast(device_type=device.type, dtype=torch_dtype, enabled=use_amp):
-                        # 入力形状/サイズ
-                        H, W = batch.cond.shape[2], batch.cond.shape[3]
-
-                        # 1) 条件側のエンコード（CLIP埋め込み + VAE潜在 + マスク潜在）
-                        # CLIP 画像埋め込み（先頭フレーム）
-                        with torch.no_grad():
-                            image_embeddings = pipeline._encode_image(
-                                batch.cond[0:1], device=device, num_videos_per_prompt=1, do_classifier_free_guidance=False
-                            )
-
-                        # cond フレーム前処理（VAE用）+ ノイズ拡張
-                        frames_cond = pipeline.image_processor.preprocess(batch.cond, height=H, width=W)
-                        if noise_aug_strength > 0.0:
-                            noise = torch.randn_like(frames_cond)
-                            frames_cond = frames_cond + noise_aug_strength * noise
-
-                        # cond の VAE 潜在をフレーム分割してエンコード
-                        latent_list = []
-                        with torch.no_grad():
-                            for i_f in range(0, frames_cond.shape[0], max(1, vae_encode_chunk_size)):
-                                latent_list.append(
-                                    pipeline.vae.encode(
-                                        frames_cond[i_f : i_f + max(1, vae_encode_chunk_size)]
-                                    ).latent_dist.mode()
-                                )
-                        frame_latents = torch.cat(latent_list, dim=0).unsqueeze(0)  # [1, F, C, H/8, W/8]
-                        frame_latents = frame_latents.to(image_embeddings.dtype)
-
-                        # マスク潜在（ダウンサンプルして [1,F,1,H/8,W/8]）
-                        with torch.no_grad():
-                            frames_mask = pipeline.mask_processor.preprocess(batch.mask, height=H, width=W)
-                            frames_mask = torch.nn.functional.interpolate(
-                                frames_mask, scale_factor=1 / pipeline.vae_scale_factor
-                            ).unsqueeze(0)
-                        mask_latents = frames_mask.to(image_embeddings.dtype)
-
-                        # 追加時間ID（fps-1, motion_bucket_id, noise_aug_strength）
-                        fps_ = fps_condition - 1
-                        add_time_ids = torch.tensor(
-                            [[fps_, motion_bucket_id, noise_aug_strength]], dtype=image_embeddings.dtype, device=device
+                    loss_raw = compute_batch_loss(batch)
+                    if not torch.isfinite(loss_raw):
+                        bad_value = loss_raw.detach().float().item()
+                        logger.warning(
+                            "Non-finite loss (%.4f) detected at epoch %d video %s batch %d. Skipping update.",
+                            bad_value,
+                            epoch,
+                            os.path.basename(video_path),
+                            batch_i,
                         )
+                        optimizer.zero_grad(set_to_none=True)
+                        if scaler.is_enabled():
+                            scaler.update()
+                        accum_counter = 0
+                        continue
 
-                        # 2) 教師（右目）をVAEで潜在 x0 にエンコード
-                        frames_tgt = pipeline.image_processor.preprocess(batch.target, height=H, width=W)
-                        tgt_lat_list = []
-                        with torch.no_grad():
-                            for i_f in range(0, frames_tgt.shape[0], max(1, vae_encode_chunk_size)):
-                                tgt_lat_list.append(
-                                    pipeline.vae.encode(
-                                        frames_tgt[i_f : i_f + max(1, vae_encode_chunk_size)]
-                                    ).latent_dist.mode()
-                                )
-                        x0 = torch.cat(tgt_lat_list, dim=0).unsqueeze(0).to(image_embeddings.dtype)  # [1,F,C,h,w]
-                        # denoising空間の尺度に合わせる（decode時に1/scaling_factorする設計のため、学習側は掛ける）
-                        x0 = x0 * pipeline.vae.config.scaling_factor
-
-                        # 3) ランダムな t をサンプリングし、ノイズ付加 x_t = alpha_t * x0 + sigma_t * eps
-                        t = torch.randint(0, noise_scheduler.config.num_train_timesteps, (1,), device=device, dtype=torch.long)
-                        eps = torch.randn_like(x0)
-                        x_t = noise_scheduler.add_noise(x0, eps, t)
-
-                        # 4) UNet 前向き（CFG なし）。入力は [x_t, cond潜在, mask潜在] をチャネル結合
-                        latent_model_input = torch.cat([x_t, frame_latents, mask_latents], dim=2)
-                        noise_pred = pipeline.unet(
-                            latent_model_input,
-                            t,
-                            encoder_hidden_states=image_embeddings,
-                            added_time_ids=add_time_ids,
-                            return_dict=False,
-                        )[0]
-
-                        # 5) ターゲット（prediction_type）に応じて損失を計算
-                        if getattr(noise_scheduler.config, "prediction_type", "epsilon") == "v_prediction":
-                            target = noise_scheduler.get_velocity(x0, eps, t)
-                        else:
-                            target = eps
-                        loss_raw = F.mse_loss(noise_pred, target)
-
-                        is_last_batch_epoch = (video_idx == len(video_paths)) and (batch_i == len(batches))
-                        accum_counter += 1
-                        accum_scale = grad_accum_steps
-                        if is_last_batch_epoch and accum_counter < grad_accum_steps:
-                            accum_scale = accum_counter
-                        loss = loss_raw / float(accum_scale)
+                    is_last_batch_epoch = (video_idx == len(video_paths)) and (batch_i == len(batches))
+                    accum_counter += 1
+                    accum_scale = grad_accum_steps
+                    if is_last_batch_epoch and accum_counter < grad_accum_steps:
+                        accum_scale = accum_counter
+                    loss = loss_raw / float(accum_scale)
 
                     # 6) backward + optimizer step
                     if scaler.is_enabled():
@@ -478,6 +641,8 @@ def _train_main(
             # エポック平均を表示して毎エポック後にチェックポイントを保存
             avg_epoch_loss = epoch_loss / max(epoch_batches, 1)
             printer.finish_epoch(avg_loss=avg_epoch_loss, epoch_batches=epoch_batches)
+            if eval_split and (epoch % eval_interval_epochs == 0):
+                run_evaluation(eval_split, epoch)
 
             if epoch % save_interval_epochs == 0:
                 ckpt_path = os.path.join(save_dir, f"unet_epoch{epoch:03d}.pt")

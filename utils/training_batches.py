@@ -12,8 +12,7 @@ from dataclasses import dataclass
 from typing import Iterable, Iterator, List, Optional, Tuple
 
 import torch
-
-from utils.inpainting import read_and_prepare_video
+from decord import VideoReader, cpu
 
 
 @dataclass
@@ -54,6 +53,50 @@ def chunk_frame_ranges(num_frames: int, chunk_size: int, overlap: int) -> Iterat
         start += step
 
 
+class _StreamingVideo:
+    """Wrapper around VideoReader that loads tiled frames on demand."""
+
+    def __init__(self, video_path: str) -> None:
+        self._reader = VideoReader(video_path, ctx=cpu(0))
+        self._video_path = video_path
+        if len(self._reader) == 0:
+            raise ValueError(f"No frames found in video: {video_path}")
+        first = self._reader[0].asnumpy()
+        raw_h, raw_w = first.shape[0], first.shape[1]
+        tile_h = (raw_h // 2) // 128 * 128
+        tile_w = (raw_w // 2) // 128 * 128
+        if tile_h == 0:
+            tile_h = max(raw_h // 2, 1)
+        if tile_w == 0:
+            tile_w = max(raw_w // 2, 1)
+        self._tile_h = tile_h
+        self._tile_w = tile_w
+
+    @property
+    def frame_count(self) -> int:
+        return len(self._reader)
+
+    @property
+    def spatial_hw(self) -> Tuple[int, int]:
+        return self._tile_h, self._tile_w
+
+    def load_chunk(self, start: int, end: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        if start < 0 or end <= start:
+            raise ValueError(f"Invalid chunk range: {start}:{end}")
+        end = min(end, self.frame_count)
+        indices = list(range(start, end))
+        batch = self._reader.get_batch(indices).asnumpy()  # [F, H_total, W_total, 3]
+        frames = torch.from_numpy(batch).permute(0, 3, 1, 2).float() / 255.0
+        height = self._tile_h
+        width = self._tile_w
+        frames = frames[:, :, : height * 2, : width * 2]
+        frames_right = frames[:, :, :height, width:]
+        frames_mask = frames[:, :, height:, :width]
+        frames_warped = frames[:, :, height:, width:]
+        frames_mask = frames_mask.mean(dim=1, keepdim=True)
+        return frames_warped, frames_mask, frames_right
+
+
 class _BatchIterable(Iterable[TrainBatch]):
     """Lazy iterable that moves chunked frames to GPU on-the-fly.
 
@@ -62,9 +105,7 @@ class _BatchIterable(Iterable[TrainBatch]):
 
     def __init__(
         self,
-        frames_warped_cpu: torch.Tensor,
-        frames_mask_cpu: torch.Tensor,
-        frames_right_cpu: torch.Tensor,
+        video_stream: _StreamingVideo,
         frames_chunk: int,
         overlap: int,
         device: torch.device,
@@ -73,12 +114,10 @@ class _BatchIterable(Iterable[TrainBatch]):
         crop_multiple: int = 128,
         crop_region: Optional[Tuple[int, int, int, int]] = None,
     ) -> None:
-        self._frames_warped_cpu = frames_warped_cpu
-        self._frames_mask_cpu = frames_mask_cpu
-        self._frames_right_cpu = frames_right_cpu
-        self._source_hw = (int(frames_warped_cpu.shape[2]), int(frames_warped_cpu.shape[3]))
+        self._video_stream = video_stream
+        self._source_hw = video_stream.spatial_hw
         self._ranges: List[Tuple[int, int]] = list(
-            chunk_frame_ranges(frames_warped_cpu.shape[0], frames_chunk, overlap)
+            chunk_frame_ranges(video_stream.frame_count, frames_chunk, overlap)
         )
         self._device = device
         self._dtype = dtype
@@ -91,9 +130,7 @@ class _BatchIterable(Iterable[TrainBatch]):
 
     def __iter__(self) -> Iterator[TrainBatch]:
         for start, end in self._ranges:
-            cond_cpu = self._frames_warped_cpu[start:end]
-            mask_cpu = self._frames_mask_cpu[start:end]
-            target_cpu = self._frames_right_cpu[start:end]
+            cond_cpu, mask_cpu, target_cpu = self._video_stream.load_chunk(start, end)
 
             if self._crop_region is not None and self._crop_size is not None:
                 cond_cpu, mask_cpu, target_cpu = self._apply_fixed_crop(cond_cpu, mask_cpu, target_cpu)
@@ -212,7 +249,7 @@ def prepare_batches(
     Returns:
         Iterable[TrainBatch]: イテラブル（len() は利用可能）。各反復で GPU にコピーされたチャンクを返す。
     """
-    _, _, frames_warped_cpu, frames_mask_cpu, frames_right_cpu = read_and_prepare_video(video_path, return_right=True)
+    video_stream = _StreamingVideo(video_path)
 
     crop_size = None
     crop_region: Optional[Tuple[int, int, int, int]] = None
@@ -223,11 +260,10 @@ def prepare_batches(
     elif crop_min_size is not None or crop_max_size is not None:
         min_h = crop_min_size[0] if crop_min_size is not None else 1
         min_w = crop_min_size[1] if crop_min_size is not None else 1
-        max_h = crop_max_size[0] if crop_max_size is not None else frames_warped_cpu.shape[2]
-        max_w = crop_max_size[1] if crop_max_size is not None else frames_warped_cpu.shape[3]
+        max_h = crop_max_size[0] if crop_max_size is not None else video_stream.spatial_hw[0]
+        max_w = crop_max_size[1] if crop_max_size is not None else video_stream.spatial_hw[1]
 
-        height = frames_warped_cpu.shape[2]
-        width = frames_warped_cpu.shape[3]
+        height, width = video_stream.spatial_hw
 
         min_h = max(1, min(min_h, height))
         max_h = max(min_h, min(max_h, height))
@@ -245,9 +281,7 @@ def prepare_batches(
         crop_region = (top, left, crop_h, crop_w)
 
     return _BatchIterable(
-        frames_warped_cpu=frames_warped_cpu,
-        frames_mask_cpu=frames_mask_cpu,
-        frames_right_cpu=frames_right_cpu,
+        video_stream=video_stream,
         frames_chunk=frames_chunk,
         overlap=overlap,
         device=device,

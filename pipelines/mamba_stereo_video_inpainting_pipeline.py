@@ -122,6 +122,7 @@ class MambaStableVideoDiffusionInpaintingPipeline(DiffusionPipeline):
 
             # We normalize the image before resizing to match with the original implementation.
             # Then we unnormalize it after resizing.
+            image = image.to(dtype=torch.float32)
             image = image * 2.0 - 1.0
             image = _resize_with_antialiasing(image, (224, 224))
             image = (image + 1.0) / 2.0
@@ -136,6 +137,7 @@ class MambaStableVideoDiffusionInpaintingPipeline(DiffusionPipeline):
                 return_tensors="pt",
             ).pixel_values
         else:
+            image = image.to(dtype=torch.float32)
             image = image * 2.0 - 1.0
             image = _resize_with_antialiasing(image, (224, 224))
             image = (image + 1.0) / 2.0
@@ -525,8 +527,8 @@ class MambaStableVideoDiffusionInpaintingPipeline(DiffusionPipeline):
             mask_latents = mask_latents.to(image_embeddings.dtype)
 
             # cast back to fp16 if needed
-            if needs_upcasting:
-                self.vae.to(dtype=torch.float16)
+            # if needs_upcasting:
+            #     self.vae.to(dtype=torch.float16)
 
             # Repeat the image latents for each frame so we can concatenate them with the noise
             # image_latents [batch, channels, height, width] ->[batch, num_frames, channels, height, width]

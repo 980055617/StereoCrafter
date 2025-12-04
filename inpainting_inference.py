@@ -18,6 +18,7 @@ from diffusers import UNetSpatioTemporalConditionModel
 from diffusers.schedulers import DDPMScheduler
 
 from utils.inpainting import spatial_tiled_process, write_video_opencv, read_and_prepare_video
+from utils.training_pipeline import enable_vae_memory_helpers
 
 
 
@@ -31,6 +32,7 @@ def main(
     tile_num: int = 1,
     *,
     precision: str = "fp16",
+    decode_chunk_size: int = 2,
     use_mamba: bool = False,
     unet_state_path: str | None = None,
     noise_seed: int | None = None,
@@ -84,6 +86,7 @@ def main(
         unet=unet,
         torch_dtype=torch_dtype,
     )
+    enable_vae_memory_helpers(pipeline)
     # Align inference scheduler with training (DDPM-based forward process).
     if getattr(pipeline, "scheduler", None) is not None:
         pipeline.scheduler = DDPMScheduler.from_config(pipeline.scheduler.config)
@@ -110,6 +113,10 @@ def main(
             pipeline.unet.to(dtype=torch_dtype)
         except Exception:
             pass
+
+    if hasattr(pipeline, "vae"):
+        target_dtype = torch.float16 if prec == "fp16" else (torch.bfloat16 if prec == "bf16" else torch.float32)
+        pipeline.vae.to(dtype=target_dtype)
 
     pipeline = pipeline.to("cuda")
     generator = None
@@ -169,10 +176,11 @@ def main(
         )
 
         video_latents = video_latents.unsqueeze(0)
-        if video_latents.dtype == torch.float16:
-            pipeline.vae.to(dtype=torch.float16)
 
-        video_frames = pipeline.decode_latents(video_latents, num_frames=video_latents.shape[1], decode_chunk_size=2)
+        # VAEのデータ型とlatentsのデータ型を合わせる
+        video_latents = video_latents.to(pipeline.vae.dtype)
+
+        video_frames = pipeline.decode_latents(video_latents, num_frames=video_latents.shape[1], decode_chunk_size=decode_chunk_size)
         video_frames = tensor2vid(video_frames, pipeline.image_processor, output_type="pil")[0]
 
         for j in range(len(video_frames)):

@@ -2,6 +2,14 @@
 """
 Utility script to ensure splatting result videos stay in sync with their reference clips.
 
+Common usage patterns:
+  * Delete mismatched outputs immediately:
+        python scripts/cleanup_splatting_results.py \
+            --reference-dir video_data/left_eye --result-dir video_data/splatting
+  * Inspect mismatches without deleting (確認のみ):
+        python scripts/cleanup_splatting_results.py --dry-run --verbose
+            # `--dry-run` prints would-delete entries, `--verbose` shows per-file stats.
+
 By default it compares frame counts/resolution/fps and deletes the splatting result
 whenever a mismatch is detected. You can optionally sample decoded frames for a stricter
 comparison via `--sample-frames`.
