@@ -1,0 +1,13 @@
+{
+  "pre_trained_path": "weights/stable-video-diffusion-img2vid-xt-1-1/",
+  "unet_path": "weights/StereoCrafter/",
+  "input_video_path": "video_data/splatting/0160_splatting_results.mp4",
+  "save_dir": "video_data/model_output/",
+  "frames_chunk": 23,
+  "overlap": 3,
+  "tile_num": 2,
+  "precision": "bf16",
+  "decode_chunk_size": 2,
+  "use_mamba": true,
+  "unet_state_path": "weights/Test/unet_epoch003.pt"
+}

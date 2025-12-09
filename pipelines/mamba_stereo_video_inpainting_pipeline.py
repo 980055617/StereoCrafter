@@ -179,7 +179,7 @@ class MambaStableVideoDiffusionInpaintingPipeline(DiffusionPipeline):
         num_videos_per_prompt,
         do_classifier_free_guidance,
     ):
-        image = image.to(device=device)
+        image = image.to(device=device, dtype=self.vae.dtype)
         image_latents = self.vae.encode(image).latent_dist.mode()
 
         if do_classifier_free_guidance:
@@ -203,7 +203,7 @@ class MambaStableVideoDiffusionInpaintingPipeline(DiffusionPipeline):
         do_classifier_free_guidance,
         n_frames_per_time=5,
     ):
-        frames = frames.to(device=device) # f c h w
+        frames = frames.to(device=device, dtype=self.vae.dtype) # f c h w
         
         # self.vae.to(device=device,dtype=torch.float16)
         latent_list = []

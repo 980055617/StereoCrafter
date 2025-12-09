@@ -105,7 +105,7 @@ def _train_main(
     attn: str = "auto",
     ff_chunk_size: int = 0,
     ff_chunk_dim: int = 1,
-    keep_unet_fp32: bool = True,
+    keep_unet_fp32: bool = False,
     shard_unet_across_gpus: bool = False,
     per_gpu_max_mem_gib: int = 11,
     mask_loss_weight: float = 1.0,
@@ -226,13 +226,15 @@ def _train_main(
         device=device,
     )
     log_vram_usage("After loading inpainting pipeline", device, level=logging.INFO)
-    # AMP 安定化のため、UNet のパラメータは FP32 で保持（計算は autocast で半精度）
-    # ただしメモリが厳しい場合は --keep_unet_fp32 False で半精度保持に切替可能
-    if keep_unet_fp32:
+    # AMP 安定化のため、必要に応じて UNet パラメータのみ FP32 で保持（計算は autocast で半精度）。
+    # bf16 学習時は意図通り半精度になるよう FP32 へは強制変換しない。
+    if keep_unet_fp32 and precision_key != "bf16":
         try:
             pipeline.unet.to(dtype=torch.float32)
         except Exception:
             pass
+    elif keep_unet_fp32 and precision_key == "bf16":
+        logger.info("keep_unet_fp32 requested but precision=bf16; keeping UNet in bf16 to honor precision setting.")
 
     # (オプション) 複数 GPU へ UNet をレイヤー単位で分散配置
     maybe_shard_unet(
@@ -421,6 +423,63 @@ def _train_main(
                 target = eps
             return F.mse_loss(noise_pred, target)
 
+    def _run_preflight_max_crop() -> None:
+        """Try the worst-case crop (max_h/max_w) once to catch OOM before training."""
+        if max_h is None or max_w is None:
+            return
+        if not video_paths:
+            raise ValueError("No videos available for preflight crop check.")
+
+        test_h, test_w = int(max_h), int(max_w)
+        sample_video = video_paths[0]
+        logger.info(
+            "Preflight: checking max crop %dx%d on %s",
+            test_h,
+            test_w,
+            os.path.basename(sample_video),
+        )
+        try:
+            batches_pf = prepare_batches(
+                sample_video,
+                frames_chunk=frames_chunk,
+                overlap=overlap,
+                device=device,
+                dtype=torch_dtype if precision_key != "fp32" else torch.float32,
+                random_crop_size=None,
+                crop_multiple=crop_multiple,
+                crop_min_size=(test_h, test_w),
+                crop_max_size=(test_h, test_w),
+                use_prev_target_overlap=True,
+            )
+            pre_batch = next(iter(batches_pf))
+        except StopIteration:
+            raise ValueError("Preflight crop check failed: no frames yielded from the sample video.")
+        except Exception as err:
+            raise RuntimeError(f"Preflight crop check failed while preparing batch: {err}") from err
+
+        # Run a forward+backward pass to approximate training-time memory usage
+        try:
+            if device.type == "cuda":
+                torch.cuda.empty_cache()
+            optimizer.zero_grad(set_to_none=True)
+            loss_pf = compute_batch_loss(pre_batch)
+            if scaler.is_enabled():
+                scaler.scale(loss_pf).backward()
+                scaler.unscale_(optimizer)
+            else:
+                loss_pf.backward()
+            optimizer.zero_grad(set_to_none=True)
+            if device.type == "cuda":
+                torch.cuda.empty_cache()
+            logger.info("Preflight max-crop succeeded (loss=%.6f). Starting training.", float(loss_pf.detach().item()))
+        except RuntimeError as err:
+            msg = str(err).lower()
+            if "out of memory" in msg or "cuda error" in msg:
+                raise RuntimeError(
+                    f"Preflight max-crop {test_h}x{test_w} failed (OOM). Reduce max_h/max_w or increase tile_num."
+                ) from err
+            raise
+
     def run_evaluation(split_name: str, epoch_idx: int) -> float | None:
         """Run a full forward pass over the requested split and log average loss."""
         eval_key = (split_name or "").strip().lower()
@@ -509,6 +568,7 @@ def _train_main(
         logger_obj=logger,
     )
     try:
+        _run_preflight_max_crop()
         accum_counter = 0
         # 学習エポック数の決定: 目標avg_lossが与えられた場合は max_epochs を上限にループ
         planned_epochs_total = max_epochs if (target_avg_loss is not None) else epochs

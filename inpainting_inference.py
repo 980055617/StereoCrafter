@@ -1,4 +1,6 @@
 import os
+import json
+import inspect
 import numpy as np
 from fire import Fire
 import warnings
@@ -7,6 +9,8 @@ warnings.filterwarnings(
     category=FutureWarning,
     message=r".*torch.library.impl_abstract.*register_fake.*",
 )
+from pathlib import Path
+from typing import Any
 
 import torch
 
@@ -19,6 +23,35 @@ from diffusers.schedulers import DDPMScheduler
 
 from utils.inpainting import spatial_tiled_process, write_video_opencv, read_and_prepare_video
 from utils.training_pipeline import enable_vae_memory_helpers
+
+
+def _resolve_config_path(config: str, config_dir: str) -> Path:
+    """Resolve a config identifier to an existing JSON file path."""
+    config_path = Path(config).expanduser()
+    if not config_path.suffix:
+        config_path = config_path.with_suffix(".json")
+    search_candidates: list[Path] = []
+    if not config_path.is_absolute():
+        base_dir = Path(config_dir).expanduser()
+        search_candidates.append(base_dir / config_path)
+    search_candidates.append(config_path)
+    for candidate in search_candidates:
+        if candidate.exists():
+            return candidate
+
+    searched = ", ".join(str(candidate) for candidate in search_candidates)
+    raise FileNotFoundError(f"Config file '{config}' not found. Searched: {searched}")
+
+
+def _load_config_dict(config: str, config_dir: str) -> dict[str, Any]:
+    """Load a JSON inference config into a dictionary."""
+    config_path = _resolve_config_path(config, config_dir)
+    with open(config_path, "r", encoding="utf-8") as fp:
+        data = json.load(fp)
+    if not isinstance(data, dict):
+        raise ValueError(f"Config file '{config_path}' must contain a JSON object at the top level.")
+    print(f"Loaded inference config from {config_path}")
+    return data
 
 
 
@@ -215,5 +248,32 @@ def main(
     write_video_opencv(vid_anaglyph, fps, vid_anaglyph_path)
 
 
+def run(config: str | None = None, config_dir: str = "config", **overrides: Any) -> None:
+    """Fire entry point with optional JSON config loading (similar to training)."""
+    config_identifier = config or os.environ.get("STEREOCRAFT_INFERENCE_CONFIG")
+    config_values: dict[str, Any] = {}
+    if config_identifier:
+        config_values.update(_load_config_dict(config_identifier, config_dir))
+    config_values.update(overrides)
+
+    signature = inspect.signature(main)
+    required = [
+        name
+        for name, parameter in signature.parameters.items()
+        if parameter.default is inspect._empty
+    ]
+    missing = [name for name in required if name not in config_values]
+    if missing:
+        missing_list = ", ".join(sorted(missing))
+        raise ValueError(f"Missing required inference parameters: {missing_list}")
+
+    unexpected_keys = set(config_values) - set(signature.parameters.keys())
+    if unexpected_keys:
+        unexpected_list = ", ".join(sorted(unexpected_keys))
+        raise ValueError(f"Unknown inference parameters: {unexpected_list}")
+
+    main(**config_values)
+
+
 if __name__ == "__main__":
-    Fire(main)
+    Fire(run)

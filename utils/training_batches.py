@@ -7,12 +7,15 @@
 - mask は 1ch (C=1)。cond/target は 3ch (C=3)。値域は [0,1]
 """
 
+import logging
 import random
 from dataclasses import dataclass
 from typing import Iterable, Iterator, List, Optional, Tuple
 
 import torch
 from decord import VideoReader, cpu
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -113,22 +116,27 @@ class _BatchIterable(Iterable[TrainBatch]):
         crop_size: Optional[Tuple[int, int]] = None,
         crop_multiple: int = 128,
         crop_region: Optional[Tuple[int, int, int, int]] = None,
+        use_prev_target_overlap: bool = False,
     ) -> None:
         self._video_stream = video_stream
         self._source_hw = video_stream.spatial_hw
         self._ranges: List[Tuple[int, int]] = list(
             chunk_frame_ranges(video_stream.frame_count, frames_chunk, overlap)
         )
+        self._overlap = max(0, overlap)
         self._device = device
         self._dtype = dtype
         self._crop_size = crop_size
         self._crop_region = crop_region
         self._crop_multiple = max(1, crop_multiple)
+        self._use_prev_target_overlap = use_prev_target_overlap
+        self._warned_random_crop_overlap = False
 
     def __len__(self) -> int:  # for progress bars
         return len(self._ranges)
 
     def __iter__(self) -> Iterator[TrainBatch]:
+        prev_target_cpu: Optional[torch.Tensor] = None
         for start, end in self._ranges:
             cond_cpu, mask_cpu, target_cpu = self._video_stream.load_chunk(start, end)
 
@@ -137,9 +145,30 @@ class _BatchIterable(Iterable[TrainBatch]):
             elif self._crop_size is not None:
                 cond_cpu, mask_cpu, target_cpu = self._apply_random_crop(cond_cpu, mask_cpu, target_cpu)
 
+            # 直前チャンクの出力（教師フレーム）でオーバーラップ領域を置き換え、推論時の条件付けに近づける
+            if (
+                self._use_prev_target_overlap
+                and prev_target_cpu is not None
+                and self._overlap > 0
+                and start > 0
+            ):
+                # ランダムクロップ（毎チャンク位置が変わる）と併用すると位置がずれるのでスキップ
+                if self._crop_size is not None and self._crop_region is None:
+                    if not self._warned_random_crop_overlap:
+                        logger.warning(
+                            "Skipping overlap conditioning because random crop changes per chunk. "
+                            "Set min_h/min_w & max_h/max_w to fix crop region if you want overlap conditioning."
+                        )
+                        self._warned_random_crop_overlap = True
+                else:
+                    ov = min(self._overlap, cond_cpu.shape[0], prev_target_cpu.shape[0])
+                    if ov > 0:
+                        cond_cpu[:ov] = prev_target_cpu[-ov:]
+
             cond = cond_cpu.to(device=self._device, dtype=self._dtype, non_blocking=True)
             mask = mask_cpu.to(device=self._device, dtype=self._dtype, non_blocking=True)
             target = target_cpu.to(device=self._device, dtype=self._dtype, non_blocking=True)
+            prev_target_cpu = target_cpu.detach().clone() if self._use_prev_target_overlap else None
             yield TrainBatch(cond=cond, mask=mask, target=target)
 
     def _apply_random_crop(
@@ -233,6 +262,7 @@ def prepare_batches(
     crop_multiple: int = 128,
     crop_min_size: Optional[Tuple[int, int]] = None,
     crop_max_size: Optional[Tuple[int, int]] = None,
+    use_prev_target_overlap: bool = True,
 ) -> Iterable[TrainBatch]:
     """Load a stereo tiled video and yield `TrainBatch` lazily per chunk.
 
@@ -245,6 +275,7 @@ def prepare_batches(
         random_crop_size: (height, width)。指定時は cond/mask/target を同じ位置で各チャンクごとにランダムクロップ。
         crop_multiple: クロップ縦横を揃える倍数。VAE のスケールに合わせて 128 などを推奨。
         crop_min_size/crop_max_size: (min_h/min_w), (max_h/max_w)。動画ごとに固定サイズ・開始位置をランダム決定する場合に使用。
+        use_prev_target_overlap: True のとき、オーバーラップ領域の条件フレームを前チャンクのターゲットで置換し、推論時の条件付けを模倣。
 
     Returns:
         Iterable[TrainBatch]: イテラブル（len() は利用可能）。各反復で GPU にコピーされたチャンクを返す。
@@ -289,4 +320,5 @@ def prepare_batches(
         crop_size=crop_size,
         crop_multiple=crop_multiple,
         crop_region=crop_region,
+        use_prev_target_overlap=use_prev_target_overlap,
     )

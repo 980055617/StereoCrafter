@@ -19,12 +19,12 @@
   "scheduler_type": "cosine",
   "scheduler_t_max": 1000,
   "scheduler_eta_min": 5e-06,
-  "precision": "fp32",
+  "precision": "bf16",
   "target_avg_loss": 0.01,
   "grad_accum_steps": 1,
   "shard_unet_across_gpus": false,
   "min_h": 384,
   "min_w": 768,
-  "max_h": 640,
-  "max_w": 1280
+  "max_h": 540,
+  "max_w": 960
 }
