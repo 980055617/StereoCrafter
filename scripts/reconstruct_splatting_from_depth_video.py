@@ -7,7 +7,7 @@ import torch
 from fire import Fire
 
 from dependency.DepthCrafter.depthcrafter.utils import vis_sequence_depth
-from utils.pose3d_export import export_pose_annotations_3d
+from utils.pose3d_export import export_pose_annotations_3d, decode_coco_rle
 from depth_splatting_inference import ForwardWarpStereo, _to_float32_unit_range
 
 
@@ -18,6 +18,50 @@ def _load_depth_array(depth_path: str) -> np.ndarray:
             raise KeyError(f"{depth_path} does not contain key 'depth'")
         return np.asarray(payload["depth"])
     return np.asarray(np.load(depth_path))
+
+
+def _build_frame_union_masks(
+    pose_annotations_path: str,
+    target_height: int,
+    target_width: int,
+) -> dict[int, np.ndarray]:
+    with open(pose_annotations_path, "r", encoding="utf-8") as handle:
+        coco = __import__("json").load(handle)
+
+    images = coco.get("images", [])
+    annotations = coco.get("annotations", [])
+    image_id_to_frame = {int(img["id"]): int(img.get("frame_id", img["id"])) for img in images}
+
+    frame_masks: dict[int, np.ndarray] = {}
+    for anno in annotations:
+        image_id = int(anno.get("image_id"))
+        frame_id = image_id_to_frame.get(image_id)
+        if frame_id is None:
+            continue
+        mask = decode_coco_rle(anno.get("segmentation"))
+        if mask is None:
+            continue
+        bbox = anno.get("bbox")
+        if isinstance(bbox, (list, tuple)) and len(bbox) == 4:
+            x, y, w, h = bbox
+            x0 = max(int(x), 0)
+            y0 = max(int(y), 0)
+            x1 = min(int(x + w), mask.shape[1])
+            y1 = min(int(y + h), mask.shape[0])
+            cropped = np.zeros_like(mask, dtype=bool)
+            cropped[y0:y1, x0:x1] = mask[y0:y1, x0:x1]
+            mask = cropped
+        if mask.shape != (target_height, target_width):
+            mask = cv2.resize(
+                mask.astype(np.uint8),
+                (target_width, target_height),
+                interpolation=cv2.INTER_NEAREST,
+            ).astype(bool)
+        if frame_id not in frame_masks:
+            frame_masks[frame_id] = mask
+        else:
+            frame_masks[frame_id] |= mask
+    return frame_masks
 
 
 def reconstruct_2x2(
@@ -62,6 +106,16 @@ def reconstruct_2x2(
     stereo_projector = ForwardWarpStereo(occlu_map=True).cuda()
     left_frames = []
     depth_list = []
+    frame_ids: list[int] = []
+    frame_union_masks: dict[int, np.ndarray] = {}
+    if pose_annotations_path is None:
+        pose_annotations_path = os.path.join(base_dir, f"{base_name}_2d_pose.json")
+    if os.path.exists(pose_annotations_path):
+        frame_union_masks = _build_frame_union_masks(
+            pose_annotations_path,
+            target_height=h,
+            target_width=w,
+        )
 
     idx = 0
     while True:
@@ -70,6 +124,7 @@ def reconstruct_2x2(
             break
         left_frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
         depth_list.append(depth_array[idx])
+        frame_ids.append(idx)
         idx += 1
 
         if len(left_frames) >= batch_size or idx == frame_count or idx == len(depth_array):
@@ -98,6 +153,17 @@ def reconstruct_2x2(
             occlusion_mask_uint8 = np.multiply(occlusion_mask, 255.0, out=occlusion_mask).astype(np.uint8)
 
             for j in range(len(left_frames_uint8)):
+                if frame_union_masks and j < len(frame_ids):
+                    fid = frame_ids[j]
+                    fm = frame_union_masks.get(fid)
+                    if fm is not None:
+                        if fm.shape != occlusion_mask_uint8[j].shape[:2]:
+                            fm = cv2.resize(
+                                fm.astype(np.uint8),
+                                (occlusion_mask_uint8[j].shape[1], occlusion_mask_uint8[j].shape[0]),
+                                interpolation=cv2.INTER_NEAREST,
+                            ).astype(bool)
+                        occlusion_mask_uint8[j][fm] = 255
                 top = np.concatenate([left_frames_uint8[j], depth_vis[j]], axis=1)
                 bottom = np.concatenate([occlusion_mask_uint8[j], right_video_uint8[j]], axis=1)
                 grid = np.concatenate([top, bottom], axis=0)
@@ -106,12 +172,11 @@ def reconstruct_2x2(
 
             left_frames.clear()
             depth_list.clear()
+            frame_ids.clear()
             torch.cuda.empty_cache()
     cap.release()
     writer.release()
 
-    if pose_annotations_path is None:
-        pose_annotations_path = os.path.join(base_dir, f"{base_name}_2d_pose.json")
     if pose_3d_output_path is None:
         pose_3d_output_path = os.path.join(base_dir, f"{base_name}_3d_pose.json")
 
