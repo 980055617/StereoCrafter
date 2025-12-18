@@ -117,6 +117,8 @@ class _BatchIterable(Iterable[TrainBatch]):
         crop_multiple: int = 128,
         crop_region: Optional[Tuple[int, int, int, int]] = None,
         use_prev_target_overlap: bool = False,
+        overlap_teacher_prob: float = 1.0,
+        overlap_noise_std: float = 0.0,
     ) -> None:
         self._video_stream = video_stream
         self._source_hw = video_stream.spatial_hw
@@ -131,6 +133,8 @@ class _BatchIterable(Iterable[TrainBatch]):
         self._crop_multiple = max(1, crop_multiple)
         self._use_prev_target_overlap = use_prev_target_overlap
         self._warned_random_crop_overlap = False
+        self._overlap_teacher_prob = max(0.0, min(1.0, overlap_teacher_prob))
+        self._overlap_noise_std = max(0.0, float(overlap_noise_std))
 
     def __len__(self) -> int:  # for progress bars
         return len(self._ranges)
@@ -163,7 +167,13 @@ class _BatchIterable(Iterable[TrainBatch]):
                 else:
                     ov = min(self._overlap, cond_cpu.shape[0], prev_target_cpu.shape[0])
                     if ov > 0:
-                        cond_cpu[:ov] = prev_target_cpu[-ov:]
+                        # scheduled sampling: 一定確率で教師(前チャンクGT)を使い、残りは元のcondを保持
+                        if random.random() < self._overlap_teacher_prob:
+                            overlap_val = prev_target_cpu[-ov:].clone()
+                            if self._overlap_noise_std > 0:
+                                noise = torch.randn_like(overlap_val) * self._overlap_noise_std
+                                overlap_val = torch.clamp(overlap_val + noise, 0.0, 1.0)
+                            cond_cpu[:ov] = overlap_val
 
             cond = cond_cpu.to(device=self._device, dtype=self._dtype, non_blocking=True)
             mask = mask_cpu.to(device=self._device, dtype=self._dtype, non_blocking=True)
@@ -263,6 +273,8 @@ def prepare_batches(
     crop_min_size: Optional[Tuple[int, int]] = None,
     crop_max_size: Optional[Tuple[int, int]] = None,
     use_prev_target_overlap: bool = True,
+    overlap_teacher_prob: float = 1.0,
+    overlap_noise_std: float = 0.0,
 ) -> Iterable[TrainBatch]:
     """Load a stereo tiled video and yield `TrainBatch` lazily per chunk.
 
@@ -321,4 +333,6 @@ def prepare_batches(
         crop_multiple=crop_multiple,
         crop_region=crop_region,
         use_prev_target_overlap=use_prev_target_overlap,
+        overlap_teacher_prob=overlap_teacher_prob,
+        overlap_noise_std=overlap_noise_std,
     )

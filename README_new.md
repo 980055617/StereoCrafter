@@ -41,3 +41,32 @@ python train_mamba_adapter.py \
 ## 注意
 - 原本ファイルの厳密な差分修正は行っていません（提供状態のまま格納）。
 - 学習ロジックは `train_mamba_adapter.py` に集約しています。
+
+## 追加: pose_annotations を使った擬似3D BBox 出力（別スクリプト）
+推定深度と COCO 形式の `pose_annotations.json`（例: `video_data/test/pose_annotations.json`）から、各アノテーションに **擬似3D BBox**（`bbox3d` / 8頂点 `corners` 含む）を追記したJSONを作成できます。
+
+### 1) depth_splatting（1x2動画の生成）
+`depth_splatting_inference.py` は **必ず深度を `.npz`（key=`depth`）で保存**し、`--debug_video True` のときだけ 1x2 の結果動画を出力します（左=元動画、右=深度可視化）。
+
+```bash
+python depth_splatting_inference.py \
+  --input_video_path ./video_data/left_eye/example.mp4 \
+  --output_video_path ./outcome/example_splatting.mp4 \
+  --debug_video True  # デバッグ時のみ動画を書きたい場合
+```
+
+### 2) 3D BBox の生成
+保存された `.npz` の深度と `pose_annotations.json` を合わせて 3D BBox JSON を生成します。右目＋オクルージョン付きの2x2動画も再生成できます。
+
+```bash
+python scripts/reconstruct_splatting_from_depth_video.py \
+  ./video_data/left_eye/example.mp4 \
+  ./outcome/example_splatting.npz \
+  ./outcome/example_splatting_2x2.mp4 \
+  --pose_annotations_path ./video_data/test/pose_annotations.json \
+  --pose_3d_output_path ./outcome/example_pose3d.json
+```
+
+カメラ内部パラメータ（intrinsics）が分かる場合は、`{"fx": ..., "fy": ..., "cx": ..., "cy": ...}` のJSONを用意して `--intrinsics_path` を指定してください（未指定の場合は unitless の正規化カメラ座標系で出力します）。
+
+補足: 2x2動画の再生成のみ行いたい場合は `--pose_annotations_path` を省略できます。`scripts/export_pose3d_from_depth.py` でも同じ `.npz` を使って pose3d JSON だけを作成できます。

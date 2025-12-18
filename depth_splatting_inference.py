@@ -564,9 +564,7 @@ def DepthSplatting(
         depth_vis, 
         max_disp, 
         process_length, 
-        batch_size,
-        elr_mask_path: Optional[str] = None,
-        elr_mask_alpha: float = 0.6):
+        batch_size):
     '''
     Depth-Based Video Splatting Using the Video Depth.
     Args:
@@ -588,8 +586,6 @@ def DepthSplatting(
         video_depth = video_depth[:process_length]
         depth_vis = depth_vis[:process_length]
 
-    stereo_projector = ForwardWarpStereo(occlu_map=True).cuda()
-
     num_frames = len(input_frames)
     height, width, _ = input_frames[0].shape
 
@@ -598,70 +594,28 @@ def DepthSplatting(
         output_video_path, 
         cv2.VideoWriter_fourcc(*"mp4v"),
         original_fps, 
-        (width * 2, height * 2)
+        (width * 2, height)
     )
-    elr_overlay = None
-    if elr_mask_path:
-        try:
-            elr_overlay = ElrMaskOverlay.from_file(
-                elr_mask_path,
-                target_height=height,
-                target_width=width,
-            )
-        except FileNotFoundError:
-            LOGGER.error("ELR mask file not found: %s", elr_mask_path)
-            raise
-        except Exception as exc:
-            LOGGER.error("Failed to load ELR mask file %s: %s", elr_mask_path, exc)
-            raise
     LOGGER.info(
         "Preparing to write output sequence T=%d frames to %s",
         num_frames,
         output_video_path,
     )
 
+    depth_vis_uint8_full = (
+        np.clip(depth_vis, 0.0, 1.0, out=depth_vis) * 255.0
+    ).astype(np.uint8)
+
     for i in range(0, num_frames, batch_size):
         batch_frames = _to_float32_unit_range(input_frames[i:i+batch_size])
-        batch_depth = video_depth[i:i+batch_size]
-        batch_depth_vis = depth_vis[i:i+batch_size]
+        batch_depth_vis = depth_vis_uint8_full[i:i+batch_size]
 
-        left_video = torch.from_numpy(batch_frames).permute(0, 3, 1, 2).float().cuda()
-        disp_map = torch.from_numpy(batch_depth).unsqueeze(1).float().cuda()
+        batch_frames_uint8 = (np.clip(batch_frames, 0.0, 1.0) * 255.0).astype(np.uint8)
 
-        disp_map = disp_map * 2.0 - 1.0
-        disp_map = disp_map * max_disp
-
-        with torch.no_grad():
-            right_video, occlusion_mask = stereo_projector(left_video, disp_map)
-
-        right_video = right_video.cpu().permute(0, 2, 3, 1).numpy()
-        occlusion_mask = occlusion_mask.cpu().permute(0, 2, 3, 1).numpy().repeat(3, axis=-1)
-
-        for j in range(len(batch_frames)):
-            global_frame_idx = i + j
-            video_grid_top = np.concatenate([batch_frames[j], batch_depth_vis[j]], axis=1)
-            mask_panel = occlusion_mask[j]
-            if elr_overlay is not None:
-                overlay = elr_overlay.get_overlay(global_frame_idx)
-                if overlay is not None:
-                    overlay_rgb, overlay_mask = overlay
-                    mask_panel = _blend_mask_with_overlay(
-                        mask_panel,
-                        overlay_rgb,
-                        overlay_mask,
-                        alpha=elr_mask_alpha,
-                    )
-            video_grid_bottom = np.concatenate([mask_panel, right_video[j]], axis=1)
-            video_grid = np.concatenate([video_grid_top, video_grid_bottom], axis=0)
-
-            video_grid_uint8 = np.clip(video_grid * 255.0, 0, 255).astype(np.uint8)
-            video_grid_bgr = cv2.cvtColor(video_grid_uint8, cv2.COLOR_RGB2BGR)
+        for j in range(len(batch_frames_uint8)):
+            video_grid = np.concatenate([batch_frames_uint8[j], batch_depth_vis[j]], axis=1)
+            video_grid_bgr = cv2.cvtColor(video_grid, cv2.COLOR_RGB2BGR)
             out.write(video_grid_bgr)
-
-        # Free up GPU memory
-        del left_video, disp_map, right_video, occlusion_mask
-        torch.cuda.empty_cache()
-        gc.collect()
 
     out.release()
     LOGGER.info("Finished writing %d frames to %s", num_frames, output_video_path)
@@ -674,34 +628,17 @@ class DepthSplattingStreamer:
         fps: float,
         frame_width: int,
         frame_height: int,
-        max_disp: float,
-        batch_size: int,
-        elr_mask_path: Optional[str] = None,
-        elr_mask_alpha: float = 0.6,
     ) -> None:
-        self.max_disp = max_disp
-        self.batch_size = batch_size
-        self.output_video_path = output_video_path
-        self.elr_mask_alpha = elr_mask_alpha
-        self.stereo_projector = ForwardWarpStereo(occlu_map=True).cuda()
         self.writer = cv2.VideoWriter(
             output_video_path,
             cv2.VideoWriter_fourcc(*"mp4v"),
             fps,
-            (frame_width * 2, frame_height * 2),
+            (frame_width * 2, frame_height),
         )
-        self.elr_overlay: Optional[ElrMaskOverlay] = None
-        if elr_mask_path:
-            self.elr_overlay = ElrMaskOverlay.from_file(
-                elr_mask_path,
-                target_height=frame_height,
-                target_width=frame_width,
-            )
 
     def process_chunk(
         self,
         frames_chunk: np.ndarray,
-        depth_chunk: np.ndarray,
         depth_vis_chunk: np.ndarray,
         frame_indices: Optional[Sequence[int]] = None,
         chunk_id: Optional[int] = None,
@@ -714,71 +651,27 @@ class DepthSplattingStreamer:
             "Processing %s with input sequence T=%d frames (output target: %s)",
             chunk_label,
             num_frames,
-            self.output_video_path,
+            self.writer,
         )
 
-        for i in range(0, num_frames, self.batch_size):
-            batch_frames = _to_float32_unit_range(frames_chunk[i : i + self.batch_size])
-            batch_depth = np.ascontiguousarray(depth_chunk[i : i + self.batch_size])
-            batch_depth_vis = np.ascontiguousarray(depth_vis_chunk[i : i + self.batch_size])
+        left_frames_uint8 = np.multiply(
+            np.clip(_to_float32_unit_range(frames_chunk), 0.0, 1.0),
+            255.0,
+        ).astype(np.uint8)
+        depth_vis_uint8 = np.clip(depth_vis_chunk, 0, 255).astype(np.uint8)
 
-            left_video = torch.from_numpy(batch_frames).permute(0, 3, 1, 2).float().cuda()
-            disp_map = torch.from_numpy(batch_depth).unsqueeze(1).float().cuda()
-
-            disp_map = disp_map * 2.0 - 1.0
-            disp_map = disp_map * self.max_disp
-
-            with torch.no_grad():
-                right_video, occlusion_mask = self.stereo_projector(left_video, disp_map)
-
-            right_video = right_video.cpu().permute(0, 2, 3, 1).numpy()
-            occlusion_mask = (
-                occlusion_mask.cpu().permute(0, 2, 3, 1).numpy().repeat(3, axis=-1)
+        for j in range(num_frames):
+            video_grid = np.concatenate(
+                [left_frames_uint8[j], depth_vis_uint8[j]],
+                axis=1,
             )
-            np.clip(right_video, 0.0, 1.0, out=right_video)
-            np.clip(occlusion_mask, 0.0, 1.0, out=occlusion_mask)
-            right_video = np.multiply(right_video, 255.0, out=right_video).astype(np.uint8)
-            occlusion_mask = np.multiply(occlusion_mask, 255.0, out=occlusion_mask).astype(np.uint8)
-            left_frames_uint8 = np.multiply(
-                np.clip(batch_frames, 0.0, 1.0, out=batch_frames),
-                255.0,
-                out=batch_frames,
-            ).astype(np.uint8)
+            video_grid_bgr = cv2.cvtColor(video_grid, cv2.COLOR_RGB2BGR)
+            self.writer.write(video_grid_bgr)
 
-            for j in range(len(left_frames_uint8)):
-                video_grid_top = np.concatenate(
-                    [left_frames_uint8[j], batch_depth_vis[j]],
-                    axis=1,
-                )
-                mask_panel = occlusion_mask[j]
-                if self.elr_overlay is not None and frame_indices is not None:
-                    absolute_index = frame_indices[i + j]
-                    overlay = self.elr_overlay.get_overlay(absolute_index)
-                    if overlay is not None:
-                        overlay_rgb, overlay_mask = overlay
-                        mask_panel = _blend_mask_with_overlay(
-                            mask_panel,
-                            overlay_rgb,
-                            overlay_mask,
-                            alpha=self.elr_mask_alpha,
-                        )
-                video_grid_bottom = np.concatenate(
-                    [mask_panel, right_video[j]],
-                    axis=1,
-                )
-                video_grid = np.concatenate([video_grid_top, video_grid_bottom], axis=0)
-
-                video_grid_bgr = cv2.cvtColor(video_grid, cv2.COLOR_RGB2BGR)
-                self.writer.write(video_grid_bgr)
-
-            del left_video, disp_map, right_video, occlusion_mask, batch_frames, batch_depth, batch_depth_vis, left_frames_uint8
-            torch.cuda.empty_cache()
-            gc.collect()
         LOGGER.info(
-            "Finished writing %s with sequence T=%d frames to %s",
+            "Finished writing %s with sequence T=%d frames to output.",
             chunk_label,
             num_frames,
-            self.output_video_path,
         )
 
     def close(self) -> None:
@@ -789,9 +682,9 @@ class DepthSplattingStreamer:
 
 def main(
     input_video_path: str,
-    output_video_path: str,
-    unet_path: str,
-    pre_trained_path: str,
+    output_video_path: Optional[str] = None,
+    unet_path: str = "./weights/DepthCrafter",
+    pre_trained_path: str = "./weights/stable-video-diffusion-img2vid-xt-1-1",
     max_disp: float = 20.0,
     process_length: int = -1,
     batch_size: int = 10,
@@ -804,18 +697,23 @@ def main(
     target_fps: int = -1,
     seed: int = 42,
     track_time: bool = False,
-    save_depth: bool = False,
+    save_depth: bool = True,
     chunk_size: int = -1,
     cpu_offload: Optional[str] = "model",
-    elr_mask_path: Optional[str] = None,
-    elr_mask_alpha: float = 0.6,
+    debug_video: bool = False,
 ):
     cpu_offload_mode = _parse_cpu_offload_mode(cpu_offload)
+    base_dir = os.path.dirname(input_video_path)
+    base_name = os.path.splitext(os.path.basename(input_video_path))[0]
+    if output_video_path is None:
+        output_video_path = os.path.join(base_dir, f"{base_name}_1x2_video.mp4")
+    depth_npz_path = os.path.join(base_dir, f"{base_name}_depth.npz")
     logger, log_file_path = initialize_logging(output_video_path)
     logger.info(
-        "Starting depth splatting run | input: %s | output: %s | logs: %s",
+        "Starting depth splatting run | input: %s | output(mp4 debug?): %s | depth npz: %s | logs: %s",
         input_video_path,
-        output_video_path,
+        output_video_path if debug_video else "(disabled; debug_video=False)",
+        depth_npz_path,
         log_file_path,
     )
     depthcrafter_demo = DepthCrafterDemo(
@@ -825,87 +723,10 @@ def main(
     )
 
     if chunk_size > 0:
-        if save_depth:
-            raise ValueError("Saving depth maps is not supported when chunked processing is enabled.")
+        raise ValueError("chunk_size processing is not supported when always saving depth npz.")
 
-        chunk_iterator, metadata = iterate_video_frame_chunks(
-            video_path=input_video_path,
-            process_length=process_length,
-            target_fps=target_fps,
-            max_res=max_res,
-            dataset=dataset,
-            chunk_size=chunk_size,
-        )
-
-        estimated_chunks = (metadata["total_frames"] + chunk_size - 1) // chunk_size
-        LOGGER.info(
-            "==> processing %d frames as %d chunks of up to %d frames",
-            metadata["total_frames"],
-            estimated_chunks,
-            chunk_size,
-        )
-
-        set_seed(seed)
-        original_reader = VideoReader(input_video_path, ctx=cpu(0))
-        streamer = DepthSplattingStreamer(
-            output_video_path=output_video_path,
-            fps=metadata["original_fps"],
-            frame_width=metadata["original_width"],
-            frame_height=metadata["original_height"],
-            max_disp=max_disp,
-            batch_size=batch_size,
-            elr_mask_path=elr_mask_path,
-            elr_mask_alpha=elr_mask_alpha,
-        )
-
-        try:
-            for chunk_id, (frame_indices, processed_frames) in enumerate(chunk_iterator, start=1):
-                LOGGER.info(
-                    "➡️ Chunk %d: frames %d-%d (input sequence T=%d)",
-                    chunk_id,
-                    frame_indices[0],
-                    frame_indices[-1],
-                    len(frame_indices),
-                )
-                depth_chunk, depth_vis_chunk = depthcrafter_demo.infer_from_frames(
-                    processed_frames,
-                    original_height=metadata["original_height"],
-                    original_width=metadata["original_width"],
-                    num_denoising_steps=num_denoising_steps,
-                    guidance_scale=guidance_scale,
-                    window_size=window_size,
-                    overlap=overlap,
-                    track_time=track_time,
-                )
-                depth_chunk = depth_chunk.astype(np.float16)
-                np.clip(depth_vis_chunk, 0.0, 1.0, out=depth_vis_chunk)
-                depth_vis_chunk = np.multiply(depth_vis_chunk, 255.0, out=depth_vis_chunk).astype(np.uint8)
-                del processed_frames
-
-                original_frames = original_reader.get_batch(frame_indices).asnumpy()
-                streamer.process_chunk(
-                    original_frames,
-                    depth_chunk,
-                    depth_vis_chunk,
-                    frame_indices=frame_indices,
-                    chunk_id=chunk_id,
-                )
-                del original_frames, depth_chunk, depth_vis_chunk
-                gc.collect()
-                LOGGER.info(
-                    "Chunk %d ready for writing (output sequence T=%d)",
-                    chunk_id,
-                    len(frame_indices),
-                )
-        finally:
-            del original_reader
-            streamer.close()
-        LOGGER.info(
-            "Completed streamed writing of total sequence T=%d frames to %s",
-            metadata["total_frames"],
-            output_video_path,
-        )
-        return
+    video_depth: Optional[np.ndarray] = None
+    depth_vis: Optional[np.ndarray] = None
 
     video_depth, depth_vis = depthcrafter_demo.infer(
         input_video_path=input_video_path,
@@ -920,20 +741,23 @@ def main(
         target_fps=target_fps,
         seed=seed,
         track_time=track_time,
-        save_depth=save_depth,
+        save_depth=False,  # we handle saving below
     )
 
-    DepthSplatting(
-        input_video_path, 
-        output_video_path, 
-        video_depth, 
-        depth_vis,
-        max_disp,
-        process_length, 
-        batch_size,
-        elr_mask_path=elr_mask_path,
-        elr_mask_alpha=elr_mask_alpha,
-    )
+    depth_npz_path = os.path.join(base_dir, f"{base_name}_depth.npz")
+    np.savez_compressed(depth_npz_path, depth=video_depth)
+    LOGGER.info("Saved depth npz to %s", depth_npz_path)
+
+    if debug_video:
+        DepthSplatting(
+            input_video_path, 
+            output_video_path, 
+            video_depth, 
+            depth_vis,
+            max_disp,
+            process_length, 
+            batch_size,
+        )
 
 
 if __name__ == "__main__":

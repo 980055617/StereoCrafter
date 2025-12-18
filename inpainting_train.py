@@ -5,10 +5,12 @@ import json
 import math
 import os
 import random
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Sequence, Union
 import warnings
 import logging
+from functools import lru_cache
 warnings.filterwarnings(
     "ignore",
     category=FutureWarning,
@@ -110,6 +112,11 @@ def _train_main(
     per_gpu_max_mem_gib: int = 11,
     mask_loss_weight: float = 1.0,
     recon_loss_weight: float = 0.1,
+    perceptual_loss_weight: float = 0.0,
+    ssim_loss_weight: float = 0.0,
+    edge_loss_weight: float = 0.0,
+    mask_focus_weight: float = 1.5,
+    background_weight: float = 1.0,
     log_interval: int = 10,
     seed: int = 42,
     tensorboard_log_dir: Union[str, None] = None,
@@ -118,6 +125,7 @@ def _train_main(
     scheduler_gamma: float = 0.95,
     scheduler_t_max: int = 1000,
     scheduler_eta_min: float = 1e-6,
+    num_warmup_steps: int = 0,
     grad_accum_steps: int = 1,
     dataset_split_ratios: Sequence[float] | None = None,
     dataset_split_group: str = "train",
@@ -125,6 +133,9 @@ def _train_main(
     eval_split: str | None = None,
     eval_interval_epochs: int = 1,
     max_eval_videos: int | None = None,
+    resume_from: str | None = None,
+    overlap_teacher_prob: float = 1.0,
+    overlap_noise_std: float = 0.0,
 ) -> None:
     """Fine-tune the stereo inpainting pipeline with shared preprocessing.
 
@@ -156,14 +167,17 @@ def _train_main(
         shard_unet_across_gpus: 2 枚以上の GPU で UNet を分割配置するか。
         per_gpu_max_mem_gib: 自動デバイスマップ作成時の 1GPU あたりメモリ上限(目安)。
         mask_loss_weight/recon_loss_weight: 2 種の L1 損失の重み。
+        perceptual_loss_weight/ssim_loss_weight/edge_loss_weight: 知覚/構造/エッジ損失の重み (0 なら無効)。
+        mask_focus_weight/background_weight: マスク内/外の重み係数 (再構成/SSIM/エッジに適用)。
         log_interval: 何ステップごとにログを表示/記録するか。
         seed: 乱数シード。
         tensorboard_log_dir: 指定時、TensorBoard ログを有効化 (save_dir からの相対可)。
         save_interval_epochs: 何エポックごとに中間チェックポイントを保存するか (1 なら毎エポック)。
-        scheduler_type: "none" | "cosine" | "exponential"。学習率スケジューラの選択。
+        scheduler_type: "none" | "cosine" | "cosine_with_warmup" | "exponential"。学習率スケジューラの選択。
         scheduler_gamma: ExponentialLR 用の減衰係数 (0<gamma<=1)。
         scheduler_t_max: CosineAnnealingLR の T_max。0 以下なら自動的に総エポック数を使用。
         scheduler_eta_min: CosineAnnealingLR の最小学習率。
+        num_warmup_steps: cosine_with_warmup の線形ウォームアップ (エポック数)。
         grad_accum_steps: 勾配を蓄積するミニバッチ数。1 のときは従来通り即時更新。
         dataset_split_ratios: [train, val, test] の比率を指定 (例: [8,1,1])。None なら全動画を学習に使用。
         dataset_split_group: ratios 指定時にどの分割("train"/"val"/"test")を使うか。
@@ -171,6 +185,9 @@ def _train_main(
         eval_split: エポック末に評価するデータ分割名。None なら評価を無効化。
         eval_interval_epochs: 何エポックごとに eval_split を評価するか。
         max_eval_videos: 評価に使う動画の上限。None または <=0 なら全件。
+        resume_from: 保存済みのフルチェックポイント（optimizer/scheduler/scaler含む）へのパス。None なら save_dir/train_state_latest.pt があれば自動で使用。
+        overlap_teacher_prob: オーバーラップ領域を前チャンクGTで置換する確率（scheduled sampling用, 0〜1）。
+        overlap_noise_std: 上記置換時に加えるノイズの標準偏差。0 なら無効。
     """
     ensure_logging_configured()
     logger.info("Starting training run. Saving artifacts to %s", save_dir)
@@ -182,10 +199,12 @@ def _train_main(
     if eval_split is not None and eval_interval_epochs < 1:
         raise ValueError("eval_interval_epochs must be >= 1 when eval_split is set.")
     sched_key = (scheduler_type or "none").lower()
-    if sched_key not in {"none", "cosine", "exponential"}:
+    if sched_key not in {"none", "cosine", "cosine_with_warmup", "exponential"}:
         raise ValueError(f"Unknown scheduler_type: {scheduler_type}")
     if sched_key == "exponential" and scheduler_gamma <= 0:
         raise ValueError("scheduler_gamma must be > 0 for ExponentialLR")
+    if sched_key == "cosine_with_warmup" and num_warmup_steps < 0:
+        raise ValueError("num_warmup_steps must be >= 0 for cosine_with_warmup")
     # 乱数シードの固定 (再現性向上)
     set_global_seed(seed)
     # Ctrl+C や SIGTERM を受け取ったら「安全な地点」で停止するためのフラグ
@@ -268,16 +287,18 @@ def _train_main(
         lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=scheduler_gamma)
 
     # 簡易 CSV ログ (ステップごとの損失を記録)
-    csv_path = os.path.join(save_dir, "train_log.csv")
+    run_tag = datetime.now().strftime("%Y%m%d_%H%M%S")
+    csv_path = os.path.join(save_dir, f"train_log_{run_tag}.csv")
     if not os.path.exists(csv_path):
         with open(csv_path, "w", encoding="utf-8", newline="") as f:
             writer = csv.writer(f)
             writer.writerow(["step", "epoch", "video", "loss_noise_mse"])
-    eval_csv_path = os.path.join(save_dir, "eval_log.csv")
+    eval_csv_path = os.path.join(save_dir, f"eval_log_{run_tag}.csv")
     if not os.path.exists(eval_csv_path):
         with open(eval_csv_path, "w", encoding="utf-8", newline="") as f:
             writer = csv.writer(f)
             writer.writerow(["epoch", "split", "video", "batch", "loss_noise_mse"])
+    logger.info("Log files for this run: train=%s eval=%s", csv_path, eval_csv_path)
 
     # (オプション) TensorBoard ログ
     writer_tb = None
@@ -290,6 +311,56 @@ def _train_main(
             log_dir = tensorboard_log_dir if os.path.isabs(tensorboard_log_dir) else os.path.join(save_dir, tensorboard_log_dir)
             os.makedirs(log_dir, exist_ok=True)
             writer_tb = SummaryWriter(log_dir=log_dir)
+
+    # チェックポイントの保存/読込
+    ckpt_latest_path = os.path.join(save_dir, "train_state_latest.pt")
+    start_epoch = 1
+    global_step = 0
+    pending_scheduler_state = None
+
+    def _save_full_checkpoint(tag: str, epoch_value: int) -> None:
+        state = {
+            "epoch": int(epoch_value),
+            "global_step": int(global_step),
+            "model": pipeline.unet.state_dict(),
+            "optimizer": optimizer.state_dict(),
+            "scheduler": lr_scheduler.state_dict() if lr_scheduler is not None else None,
+            "scaler": scaler.state_dict() if scaler.is_enabled() else None,
+        }
+        path = os.path.join(save_dir, f"train_state_{tag}.pt")
+        try:
+            torch.save(state, path)
+            torch.save(state, ckpt_latest_path)
+            logger.info("Saved full checkpoint (%s)", path)
+        except Exception as err:
+            logger.warning("Failed to save checkpoint %s: %s", path, err)
+
+    # 自動/明示リジューム
+    resume_candidate = resume_from
+    if resume_candidate is None and os.path.exists(ckpt_latest_path):
+        resume_candidate = ckpt_latest_path
+        logger.info("Auto-resuming from %s", resume_candidate)
+    if resume_candidate:
+        try:
+            ckpt = torch.load(resume_candidate, map_location=device)
+            pipeline.unet.load_state_dict(ckpt.get("model", {}))
+            optimizer.load_state_dict(ckpt.get("optimizer", {}))
+            pending_scheduler_state = ckpt.get("scheduler", None)
+            if scaler.is_enabled() and ckpt.get("scaler", None) is not None:
+                scaler.load_state_dict(ckpt["scaler"])
+            global_step = int(ckpt.get("global_step", 0))
+            start_epoch = int(ckpt.get("epoch", 0)) + 1
+            if lr_scheduler is not None and pending_scheduler_state is not None:
+                lr_scheduler.load_state_dict(pending_scheduler_state)
+                pending_scheduler_state = None
+            logger.info(
+                "Resumed from %s (epoch=%d, global_step=%d)",
+                resume_candidate,
+                start_epoch - 1,
+                global_step,
+            )
+        except Exception as err:
+            logger.warning("Failed to resume from %s: %s. Starting fresh.", resume_candidate, err)
 
     # 入力動画パスをグロブから列挙し、必要なら分割
     all_video_paths = sorted(glob.glob(train_glob))
@@ -368,6 +439,31 @@ def _train_main(
             )
     video_paths = split_map[split_key]
 
+    perceptual_net = None
+    normalize_for_vgg = None
+    if perceptual_loss_weight > 0:
+        try:
+            from torchvision import models
+        except Exception as err:
+            logger.warning("Perceptual loss disabled (torchvision unavailable): %s", err)
+        else:
+            weights = getattr(models, "VGG16_Weights", None)
+            if weights is not None:
+                vgg_weights = weights.IMAGENET1K_FEATURES
+                perceptual_net = models.vgg16(weights=vgg_weights).features[:16].to(device=device, dtype=torch.float32)
+            else:
+                perceptual_net = models.vgg16(pretrained=True).features[:16].to(device=device, dtype=torch.float32)
+            perceptual_net.eval()
+            for p in perceptual_net.parameters():
+                p.requires_grad_(False)
+            mean = torch.tensor([0.485, 0.456, 0.406], device=device, dtype=torch.float32).view(1, 3, 1, 1)
+            std = torch.tensor([0.229, 0.224, 0.225], device=device, dtype=torch.float32).view(1, 3, 1, 1)
+
+            def _norm(x: torch.Tensor) -> torch.Tensor:
+                return (x - mean) / std
+
+            normalize_for_vgg = _norm
+
     def compute_batch_loss(batch: Any) -> torch.Tensor:
         """Forward UNet once against a mini-batch and return the raw loss tensor."""
         with torch.autocast(device_type=device.type, dtype=torch_dtype, enabled=use_amp):
@@ -396,6 +492,44 @@ def _train_main(
             fps_ = fps_condition - 1
             add_time_ids = torch.tensor([[fps_, motion_bucket_id, noise_aug_strength]], dtype=image_embeddings.dtype, device=device)
 
+            @lru_cache(maxsize=1)
+            def _get_sobel_kernels(device: torch.device, dtype: torch.dtype) -> tuple[torch.Tensor, torch.Tensor]:
+                kx = torch.tensor(
+                    [[[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]], device=device, dtype=dtype
+                ).unsqueeze(0)
+                ky = torch.tensor(
+                    [[[-1, -2, -1], [0, 0, 0], [1, 2, 1]]], device=device, dtype=dtype
+                ).unsqueeze(0)
+                return kx, ky
+
+            def _edge_loss(pred: torch.Tensor, tgt: torch.Tensor, weight_map: torch.Tensor) -> torch.Tensor:
+                kx, ky = _get_sobel_kernels(pred.device, pred.dtype)
+                gx_p = torch.nn.functional.conv2d(pred, kx, padding=1, groups=pred.shape[1])
+                gy_p = torch.nn.functional.conv2d(pred, ky, padding=1, groups=pred.shape[1])
+                gx_t = torch.nn.functional.conv2d(tgt, kx, padding=1, groups=tgt.shape[1])
+                gy_t = torch.nn.functional.conv2d(tgt, ky, padding=1, groups=tgt.shape[1])
+                grad_pred = torch.cat([gx_p, gy_p], dim=1)
+                grad_tgt = torch.cat([gx_t, gy_t], dim=1)
+                return (weight_map * (grad_pred - grad_tgt).abs()).mean()
+
+            def _ssim_loss(pred: torch.Tensor, tgt: torch.Tensor, weight_map: torch.Tensor) -> torch.Tensor:
+                C1 = 0.01 ** 2
+                C2 = 0.03 ** 2
+                mu1 = torch.nn.functional.avg_pool2d(pred, 3, 1, 1)
+                mu2 = torch.nn.functional.avg_pool2d(tgt, 3, 1, 1)
+                mu1_sq = mu1.pow(2)
+                mu2_sq = mu2.pow(2)
+                mu1_mu2 = mu1 * mu2
+
+                sigma1_sq = torch.nn.functional.avg_pool2d(pred * pred, 3, 1, 1) - mu1_sq
+                sigma2_sq = torch.nn.functional.avg_pool2d(tgt * tgt, 3, 1, 1) - mu2_sq
+                sigma12 = torch.nn.functional.avg_pool2d(pred * tgt, 3, 1, 1) - mu1_mu2
+
+                ssim_map = ((2 * mu1_mu2 + C1) * (2 * sigma12 + C2)) / ((mu1_sq + mu2_sq + C1) * (sigma1_sq + sigma2_sq + C2))
+                # SSIM を 1 から距離として扱う (0 がベスト)
+                loss_map = (1 - ssim_map) * 0.5
+                return (loss_map * weight_map).mean()
+
             frames_tgt = pipeline.image_processor.preprocess(batch.target, height=H, width=W)
             tgt_lat_list = []
             with torch.no_grad():
@@ -421,7 +555,56 @@ def _train_main(
                 target = noise_scheduler.get_velocity(x0, eps, t)
             else:
                 target = eps
-            return F.mse_loss(noise_pred, target)
+            noise_loss = F.mse_loss(noise_pred, target)
+
+            aux_losses_enabled = (
+                recon_loss_weight > 0
+                or perceptual_loss_weight > 0
+                or ssim_loss_weight > 0
+                or edge_loss_weight > 0
+            )
+            if not aux_losses_enabled:
+                return noise_loss
+
+            with torch.autocast(device_type=device.type, dtype=torch_dtype, enabled=use_amp):
+                step_out = noise_scheduler.step(noise_pred, t, x_t, return_dict=True)
+                x0_pred = step_out.pred_original_sample
+                decoded = pipeline.decode_latents(x0_pred, num_frames=frames_cond.shape[0], decode_chunk_size=decode_chunk_size)
+            # decode_latents 出力は [-1,1] 想定。0-1 に戻す。
+            pred_img = torch.clamp((decoded + 1.0) / 2.0, 0.0, 1.0)
+            tgt_img = torch.clamp(batch.target, 0.0, 1.0)
+            mask_img = torch.clamp(batch.mask, 0.0, 1.0)
+
+            # [B, C, T, H, W] -> [B*T, C, H, W]
+            pred_bt = pred_img.permute(0, 2, 1, 3, 4).reshape(-1, 3, H, W)
+            tgt_bt = tgt_img.unsqueeze(0).permute(0, 2, 1, 3, 4).reshape(-1, 3, H, W)
+            mask_bt = mask_img.unsqueeze(0).permute(0, 2, 1, 3, 4).reshape(-1, 1, H, W)
+            weight_map = mask_loss_weight * (mask_focus_weight * mask_bt + background_weight * (1.0 - mask_bt))
+
+            loss_total = noise_loss
+
+            if recon_loss_weight > 0:
+                recon_l1 = (weight_map * (pred_bt - tgt_bt).abs()).mean()
+                loss_total = loss_total + recon_loss_weight * recon_l1
+
+            if ssim_loss_weight > 0:
+                ssim_l = _ssim_loss(pred_bt, tgt_bt, weight_map)
+                loss_total = loss_total + ssim_loss_weight * ssim_l
+
+            if edge_loss_weight > 0:
+                edge_l = _edge_loss(pred_bt, tgt_bt, weight_map)
+                loss_total = loss_total + edge_loss_weight * edge_l
+
+            if perceptual_loss_weight > 0 and perceptual_net is not None and normalize_for_vgg is not None:
+                with torch.autocast(device_type=device.type, dtype=torch.float32, enabled=False):
+                    vgg_in_pred = normalize_for_vgg(pred_bt)
+                    vgg_in_tgt = normalize_for_vgg(tgt_bt)
+                    feat_pred = perceptual_net(vgg_in_pred)
+                    feat_tgt = perceptual_net(vgg_in_tgt)
+                    perceptual_l = torch.nn.functional.l1_loss(feat_pred, feat_tgt)
+                loss_total = loss_total + perceptual_loss_weight * perceptual_l
+
+            return loss_total
 
     def _run_preflight_max_crop() -> None:
         """Try the worst-case crop (max_h/max_w) once to catch OOM before training."""
@@ -450,6 +633,8 @@ def _train_main(
                 crop_min_size=(test_h, test_w),
                 crop_max_size=(test_h, test_w),
                 use_prev_target_overlap=True,
+                overlap_teacher_prob=overlap_teacher_prob,
+                overlap_noise_std=overlap_noise_std,
             )
             pre_batch = next(iter(batches_pf))
         except StopIteration:
@@ -525,6 +710,8 @@ def _train_main(
                             crop_multiple=crop_multiple,
                             crop_min_size=crop_min_size,
                             crop_max_size=crop_max_size,
+                            overlap_teacher_prob=overlap_teacher_prob,
+                            overlap_noise_std=overlap_noise_std,
                         )
                         for batch_i, batch in enumerate(batches, start=1):
                             if stop_event.is_set():
@@ -560,7 +747,6 @@ def _train_main(
             writer_tb.add_scalar(f"loss/{eval_key}_avg", avg_loss, epoch_idx)
         return avg_loss
 
-    global_step = 0
     printer = TrainingProgressPrinter(
         device=device,
         log_interval=log_interval,
@@ -572,12 +758,60 @@ def _train_main(
         accum_counter = 0
         # 学習エポック数の決定: 目標avg_lossが与えられた場合は max_epochs を上限にループ
         planned_epochs_total = max_epochs if (target_avg_loss is not None) else epochs
-        if sched_key == "cosine" and lr_scheduler is None:
+        if sched_key in {"cosine", "cosine_with_warmup"} and lr_scheduler is None:
             t_max = scheduler_t_max if scheduler_t_max > 0 else planned_epochs_total
-            lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-                optimizer, T_max=t_max, eta_min=max(scheduler_eta_min, 0.0)
+            t_max = max(int(t_max), 1)
+            eta_min = max(scheduler_eta_min, 0.0)
+            if sched_key == "cosine":
+                lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+                    optimizer, T_max=t_max, eta_min=eta_min
+                )
+            else:
+                warmup_steps = max(int(num_warmup_steps), 0)
+                warmup_steps = min(warmup_steps, t_max)
+                if warmup_steps == 0:
+                    lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+                        optimizer, T_max=t_max, eta_min=eta_min
+                    )
+                else:
+                    base_lrs = [group["lr"] for group in optimizer.param_groups]
+                    base_lr = max(base_lrs[0], 0.0) if base_lrs else 0.0
+                    eta_ratio = (eta_min / base_lr) if base_lr > 0 else 0.0
+                    eta_ratio = min(max(eta_ratio, 0.0), 1.0)
+                    cosine_steps = max(1, t_max - warmup_steps)
+
+                    def lr_lambda(step_idx: int) -> float:
+                        if step_idx < warmup_steps - 1:
+                            factor = (step_idx + 2) / float(warmup_steps)
+                            return max(factor, eta_ratio)
+                        t = step_idx - (warmup_steps - 1)
+                        cosine = (1.0 + math.cos(math.pi * t / cosine_steps)) / 2.0
+                        return eta_ratio + (1.0 - eta_ratio) * cosine
+
+                    lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
+                        optimizer, lr_lambda=lr_lambda
+                    )
+                    if start_epoch == 1 and pending_scheduler_state is None:
+                        initial_factor = max(1.0 / float(warmup_steps), eta_ratio)
+                        for group, lr in zip(optimizer.param_groups, base_lrs):
+                            group["lr"] = lr * initial_factor
+        if lr_scheduler is not None and pending_scheduler_state is not None:
+            try:
+                lr_scheduler.load_state_dict(pending_scheduler_state)
+                logger.info("Restored scheduler state from checkpoint.")
+            except Exception as err:
+                logger.warning("Failed to restore scheduler state: %s", err)
+            pending_scheduler_state = None
+        if start_epoch > planned_epochs_total:
+            logger.info(
+                "Checkpoint epoch (%d) >= planned total epochs (%d). Nothing to do.",
+                start_epoch - 1,
+                planned_epochs_total,
             )
-        for epoch in range(1, planned_epochs_total + 1):
+            return
+        current_epoch = start_epoch - 1
+        for epoch in range(start_epoch, planned_epochs_total + 1):
+            current_epoch = epoch
             # エポックごとに動画順をシャッフル
             random.shuffle(video_paths)
             epoch_loss = 0.0
@@ -598,6 +832,8 @@ def _train_main(
                     crop_multiple=crop_multiple,
                     crop_min_size=crop_min_size,
                     crop_max_size=crop_max_size,
+                    overlap_teacher_prob=overlap_teacher_prob,
+                    overlap_noise_std=overlap_noise_std,
                 )
                 crop_info = getattr(batches, "crop_region_info", None)
                 if crop_info:
@@ -704,10 +940,7 @@ def _train_main(
             if eval_split and (epoch % eval_interval_epochs == 0):
                 run_evaluation(eval_split, epoch)
 
-            if epoch % save_interval_epochs == 0:
-                ckpt_path = os.path.join(save_dir, f"unet_epoch{epoch:03d}.pt")
-                torch.save(pipeline.unet.state_dict(), ckpt_path)
-                logger.info("Saved UNet checkpoint to %s", ckpt_path)
+            _save_full_checkpoint("latest", epoch)
             if lr_scheduler is not None:
                 lr_scheduler.step()
                 current_lr = optimizer.param_groups[0]["lr"]
@@ -726,10 +959,8 @@ def _train_main(
 
     except KeyboardInterrupt:
         # 割り込み時も最後に到達した重みを保存して終了
-        int_path = os.path.join(save_dir, "unet_interrupted.pt")
         try:
-            torch.save(pipeline.unet.state_dict(), int_path)
-            logger.info("Interrupted. Saved UNet checkpoint to %s", int_path)
+            _save_full_checkpoint("interrupted", current_epoch)
         except Exception as e:
             logger.error("Interrupted. Failed to save checkpoint: %s", e)
         if writer_tb:
@@ -738,6 +969,7 @@ def _train_main(
 
     final_path = os.path.join(save_dir, "unet_final.pt")
     torch.save(pipeline.unet.state_dict(), final_path)
+    _save_full_checkpoint("final", current_epoch)
     logger.info("Training complete. Final UNet weights stored at %s", final_path)
 
     if writer_tb:

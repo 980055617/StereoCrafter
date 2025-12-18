@@ -9,5 +9,5 @@
   "precision": "bf16",
   "decode_chunk_size": 2,
   "use_mamba": true,
-  "unet_state_path": "weights/Test/unet_epoch003.pt"
+  "unet_state_path": "weights/Test/unet_epoch021.pt"
 }

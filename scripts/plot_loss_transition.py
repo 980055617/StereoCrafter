@@ -5,10 +5,10 @@ Aggregate train/test log CSVs and visualize average loss transitions per epoch.
 Typical usage (weights/Test/ is the default destination for SD inpainting runs):
     python scripts/plot_train_test_loss.py \
         --train-log weights/Test/train_log.csv \
-        --test-log weights/Test/eval_log.csv \
+        --eval-log weights/Test/eval_log.csv \
         --output weights/Test/loss_transition.png
 
-`--test-log` can point to either eval/test logs (any CSV that stores epoch + loss).
+`--eval-log` can point to either eval/test logs (any CSV that stores epoch + loss).
 When the same epoch appears multiple times the script averages those values before
 plotting, so the resulting curves reflect epoch-level progression.
 """
@@ -17,10 +17,30 @@ from __future__ import annotations
 
 import argparse
 import csv
+import os
+import sys
 from collections import defaultdict
 from pathlib import Path
 from typing import Dict, Iterable, List, Sequence, Tuple
 
+def _select_backend_env() -> None:
+    # If DISPLAY is set but unusable (no Xauthority), drop it to avoid X errors.
+    display = os.environ.get("DISPLAY")
+    wayland = os.environ.get("WAYLAND_DISPLAY")
+    has_xauth = os.environ.get("XAUTHORITY") or os.access(
+        Path.home() / ".Xauthority", os.R_OK
+    )
+
+    if display and not wayland and not has_xauth:
+        os.environ.pop("DISPLAY", None)
+        os.environ.setdefault("MPLBACKEND", "Agg")
+    elif not display and not wayland:
+        os.environ.setdefault("MPLBACKEND", "Agg")
+
+
+_select_backend_env()
+
+import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 
@@ -39,10 +59,17 @@ def parse_args() -> argparse.Namespace:
         help="CSV that tracks training loss per step/epoch.",
     )
     parser.add_argument(
-        "--test-log",
+        "--eval-log",
+        dest="eval_log",
         type=Path,
         default=Path("weights/Test/eval_log.csv"),
         help="CSV for validation/test loss per epoch (set to '' to skip).",
+    )
+    parser.add_argument(
+        "--test-label",
+        type=str,
+        default="eval",
+        help="Legend label for the validation/test curve.",
     )
     parser.add_argument(
         "--loss-column",
@@ -61,11 +88,6 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=None,
         help="Optional path to save the rendered figure (PNG).",
-    )
-    parser.add_argument(
-        "--no-show",
-        action="store_true",
-        help="Skip opening the matplotlib window (useful on headless servers).",
     )
     return parser.parse_args()
 
@@ -129,7 +151,7 @@ def plot_curves(
     train_data: EpochLoss,
     test_data: EpochLoss,
     output: Path | None,
-    show: bool,
+    test_label: str,
 ) -> None:
     if not train_data and not test_data:
         print("Nothing to plot.")
@@ -151,7 +173,7 @@ def plot_curves(
             test_epochs,
             test_losses,
             marker="s",
-            label="test",
+            label=test_label,
             color="#ff7f0e",
         )
 
@@ -168,10 +190,20 @@ def plot_curves(
         fig.savefig(output, dpi=160)
         print(f"Saved plot to: {output}")
 
-    if show:
-        plt.show()
-    else:
-        plt.close(fig)
+    plt.close(fig)
+
+
+def display_available() -> bool:
+    backend = plt.get_backend().lower()
+    if "agg" in backend:
+        return False
+
+    # Presence of a display environment variable is enough for most cases.
+    if os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"):
+        return True
+    if sys.platform.startswith("win") or sys.platform == "darwin":
+        return True
+    return False
 
 
 def align_balanced_passes(
@@ -209,24 +241,54 @@ def align_balanced_passes(
     return trimmed_train, trimmed_test
 
 
+def extract_run_tag(path: Path | None) -> str | None:
+    """
+    Try to pull a timestamp-ish suffix from log filenames like
+    train_log_20251216_055222.csv -> 20251216_055222.
+    Falls back to None when no suffix is present.
+    """
+    if not path:
+        return None
+    stem = path.stem
+
+    for prefix in ("train_log_", "eval_log_"):
+        if stem.startswith(prefix) and len(stem) > len(prefix):
+            return stem[len(prefix) :]
+
+    parts = stem.split("_")
+    if len(parts) >= 2 and all(part.isdigit() for part in parts[-2:]):
+        return "_".join(parts[-2:])
+    return None
+
+
 def main() -> int:
     args = parse_args()
     train_data = read_epoch_averages(args.train_log, args.epoch_column, args.loss_column)
 
     test_data: EpochLoss = []
-    if args.test_log:
-        if args.test_log.exists():
+    if args.eval_log:
+        if args.eval_log.exists():
             test_data = read_epoch_averages(
-                args.test_log, args.epoch_column, args.loss_column
+                args.eval_log, args.epoch_column, args.loss_column
             )
         else:
-            print(f"Test log not found, skipping: {args.test_log}")
+            print(f"Eval log not found, skipping: {args.eval_log}")
 
     train_data, test_data = align_balanced_passes(train_data, test_data)
 
+    output_path = args.output
+    if output_path is None:
+        # Default to saving next to the train log.
+        run_tag = extract_run_tag(args.eval_log) or extract_run_tag(args.train_log)
+        filename = (
+            f"loss_transition_{run_tag}.png" if run_tag else "loss_transition.png"
+        )
+        output_path = args.train_log.with_name(filename)
+        print(f"Saving figure automatically to: {output_path}")
+
     print_epoch_table("Train", train_data)
-    print_epoch_table("Test", test_data)
-    plot_curves(train_data, test_data, args.output, show=not args.no_show)
+    print_epoch_table(args.test_label.capitalize(), test_data)
+    plot_curves(train_data, test_data, output_path, test_label=args.test_label)
     return 0
 
 
