@@ -232,6 +232,33 @@ def compute_3d_aabb(points_xyz: np.ndarray) -> Optional[Dict[str, Any]]:
     }
 
 
+def _rebuild_corners_from_center_size(center: Sequence[float], size: Sequence[float]) -> Dict[str, Any]:
+    center = np.asarray(center, dtype=np.float32)
+    size = np.asarray(size, dtype=np.float32)
+    half = size / 2.0
+    mins = center - half
+    maxs = center + half
+    x0, y0, z0 = mins.tolist()
+    x1, y1, z1 = maxs.tolist()
+    corners = [
+        [float(x0), float(y0), float(z0)],
+        [float(x1), float(y0), float(z0)],
+        [float(x1), float(y1), float(z0)],
+        [float(x0), float(y1), float(z0)],
+        [float(x0), float(y0), float(z1)],
+        [float(x1), float(y0), float(z1)],
+        [float(x1), float(y1), float(z1)],
+        [float(x0), float(y1), float(z1)],
+    ]
+    return {
+        "min": [float(v) for v in mins.tolist()],
+        "max": [float(v) for v in maxs.tolist()],
+        "center": [float(v) for v in center.tolist()],
+        "size": [float(v) for v in size.tolist()],
+        "corners": corners,
+    }
+
+
 def compute_ray_aabb(points_xyrz: np.ndarray) -> Optional[Dict[str, Any]]:
     """
     Compute an axis-aligned box in (x_ray, y_ray, z) space.
@@ -391,6 +418,8 @@ def export_pose_annotations_3d(
     prefer_mask_pointcloud: bool = True,
     mask_pointcloud_max_points: int = 8000,
     bbox3d_space: str = "xyz",
+    ema_bbox_alpha: float = 0.0,
+    debug: bool = False,
 ) -> str:
     """
     Lift COCO-style 2D pose/segmentation annotations to pseudo-3D boxes using predicted depth.
@@ -470,6 +499,7 @@ def export_pose_annotations_3d(
         method: Optional[str] = None
         mask: Optional[np.ndarray] = None
 
+        valid_kp_count = 0  # Count keypoints that pass v>0 and coordinate checks.
         if category_name in {"person", "animal"} and isinstance(keypoints, list) and len(keypoints) >= 3:
             triplets = [keypoints[i : i + 3] for i in range(0, len(keypoints), 3)]
             sampled = []
@@ -482,6 +512,7 @@ def export_pose_annotations_3d(
                 y_f = float(y)
                 if x_f <= 0 or y_f <= 0:
                     continue
+                valid_kp_count += 1
                 patch = depth_patch_values(depth_frame, x_f, y_f, radius=keypoint_depth_radius)
                 if patch.size == 0:
                     continue
@@ -508,8 +539,45 @@ def export_pose_annotations_3d(
                     )
                     points_xyz.append((x_ray, y_ray, z))
             if len(points_xyz) >= min_keypoints_for_3d:
+                sampled_np = np.asarray(sampled, dtype=np.float32)
+                if sampled_np.size > 0:
+                    med = float(np.median(sampled_np))
+                    std = float(np.std(sampled_np))
+                    k_sigma = 1.0
+                    lower = med - k_sigma * std
+                    upper = med + k_sigma * std
+                    if lower > upper:
+                        lower, upper = upper, lower
+                    if debug:
+                        LOGGER.info(
+                            "Keypoint depth stats image_id=%s track_id=%s cat=%s: median=%.4f std=%.4f lower=%.4f upper=%.4f (k=%.1f, n=%d)",
+                            image_id,
+                            anno.get("track_id"),
+                            category_name,
+                            med,
+                            std,
+                            lower,
+                            upper,
+                            k_sigma,
+                            sampled_np.size,
+                        )
+                    # clamp z but keep x,y
+                    sampled_np = np.clip(sampled_np, lower, upper)
+                    points_xyz = [
+                        (pt[0], pt[1], float(np.clip(pt[2], lower, upper)))
+                        for pt in points_xyz
+                    ]
                 method = "keypoints"
-                depth_values = np.asarray(sampled, dtype=np.float32)
+                depth_values = sampled_np
+            else:
+                LOGGER.info(
+                    "Fallback to %s for image_id=%s track_id=%s: valid keypoints=%d < min_keypoints_for_3d=%d",
+                    "mask/bbox",
+                    image_id,
+                    anno.get("track_id"),
+                    valid_kp_count,
+                    min_keypoints_for_3d,
+                )
 
         if method is None:
             segmentation = anno.get("segmentation")
@@ -573,8 +641,9 @@ def export_pose_annotations_3d(
                     depth_frame=depth_frame,
                     intrinsics=intrinsics,
                     max_points=mask_pointcloud_max_points,
-                    z_min=stats["p10"],
-                    z_max=stats["p90"],
+                    # For "other" we keep the full depth range; for human/animal we guard with p10/p90.
+                    z_min=None if category_name == "other" else stats["p10"],
+                    z_max=None if category_name == "other" else stats["p90"],
                 )
             else:
                 aabb = mask_depth_to_ray_aabb(
@@ -582,8 +651,8 @@ def export_pose_annotations_3d(
                     depth_frame=depth_frame,
                     intrinsics=intrinsics,
                     max_points=mask_pointcloud_max_points,
-                    z_min=stats["p10"],
-                    z_max=stats["p90"],
+                    z_min=None if category_name == "other" else stats["p10"],
+                    z_max=None if category_name == "other" else stats["p90"],
                 )
             if aabb is None:
                 method = "bbox"
@@ -634,6 +703,39 @@ def export_pose_annotations_3d(
         }
         anno["bbox3d_method"] = method
         out_annotations.append(anno)
+
+    if ema_bbox_alpha > 0.0:
+        ema_bbox_alpha = float(np.clip(ema_bbox_alpha, 0.0, 1.0))
+        track_prev: Dict[int, Tuple[np.ndarray, np.ndarray]] = {}
+        for anno in sorted(out_annotations, key=lambda a: image_id_to_frame_id.get(int(a.get("image_id", -1)), -1)):
+            tid = anno.get("track_id")
+            bbox3d = anno.get("bbox3d")
+            method = anno.get("bbox3d_method")
+            if tid is None or not isinstance(bbox3d, dict):
+                continue
+            if "center" not in bbox3d or "size" not in bbox3d:
+                continue
+            curr_center = np.asarray(bbox3d["center"], dtype=np.float32)
+            curr_size = np.asarray(bbox3d["size"], dtype=np.float32)
+            prev = track_prev.get(int(tid))
+            # If we lost keypoints/mask and had a previous box, snap to previous to avoid large jumps.
+            if prev is not None and method != "keypoints":
+                prev_c, prev_s = prev
+                curr_center = prev_c
+                curr_size = prev_s
+            if prev is None:
+                sm_center, sm_size = curr_center, curr_size
+            else:
+                prev_c, prev_s = prev
+                sm_center = ema_bbox_alpha * curr_center + (1.0 - ema_bbox_alpha) * prev_c
+                sm_size = ema_bbox_alpha * curr_size + (1.0 - ema_bbox_alpha) * prev_s
+            bbox3d["center"] = sm_center.tolist()
+            bbox3d["size"] = sm_size.tolist()
+            rebuilt = _rebuild_corners_from_center_size(sm_center, sm_size)
+            bbox3d["min"] = rebuilt["min"]
+            bbox3d["max"] = rebuilt["max"]
+            bbox3d["corners"] = rebuilt["corners"]
+            track_prev[int(tid)] = (sm_center, sm_size)
 
     out_coco["annotations"] = out_annotations
     out_coco["pose_3d_meta"] = {

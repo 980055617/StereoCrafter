@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Any, Sequence, Union
 import warnings
 import logging
-from functools import lru_cache
 warnings.filterwarnings(
     "ignore",
     category=FutureWarning,
@@ -49,10 +48,155 @@ def _load_config_dict(config: str, config_dir: str) -> dict[str, Any]:
     logger.info("Loaded training config from %s", config_path)
     return data
 
+
+def _write_run_config_snapshot(
+    save_dir: str,
+    config_values: dict[str, Any],
+    resume_candidate: str | None,
+) -> None:
+    """Persist the resolved training config for this run into save_dir."""
+    if not save_dir:
+        logger.warning("save_dir missing; skipping config snapshot.")
+        return
+    os.makedirs(save_dir, exist_ok=True)
+    run_tag = datetime.now().strftime("%Y%m%d_%H%M%S")
+    path = os.path.join(save_dir, f"train_config_{run_tag}.json")
+    payload = {
+        "timestamp": datetime.now().isoformat(timespec="seconds"),
+        "resume_candidate": resume_candidate,
+        "config": config_values,
+    }
+    try:
+        with open(path, "w", encoding="utf-8") as fp:
+            json.dump(payload, fp, indent=2, sort_keys=True, ensure_ascii=True, default=str)
+        ensure_logging_configured()
+        logger.info("Saved training config snapshot to %s", path)
+    except Exception as err:
+        ensure_logging_configured()
+        logger.warning("Failed to save training config snapshot: %s", err)
+
+
+def _resolve_run_save_dir(save_dir: str) -> str:
+    """Return a per-run save directory under the base save_dir."""
+    if not save_dir:
+        return save_dir
+    normalized = os.path.normpath(save_dir)
+    base_name = os.path.basename(normalized)
+    if base_name.startswith("MambaCrafter_"):
+        return save_dir
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    return os.path.join(save_dir, f"MambaCrafter_{timestamp}")
+
+
+def _find_existing_log(save_dir: str, prefix: str) -> str | None:
+    if not save_dir:
+        return None
+    pattern = os.path.join(save_dir, f"{prefix}_*.csv")
+    matches = [path for path in glob.glob(pattern) if os.path.isfile(path)]
+    if not matches:
+        return None
+    if len(matches) > 1:
+        latest = max(matches, key=os.path.getmtime)
+        logger.warning(
+            "Multiple %s logs found in %s; using most recent: %s",
+            prefix,
+            save_dir,
+            latest,
+        )
+        return latest
+    return matches[0]
+
+
+def _select_log_path(
+    save_dir: str,
+    prefix: str,
+    run_tag: str,
+    *,
+    reuse_existing: bool,
+) -> tuple[str, bool]:
+    if reuse_existing:
+        existing = _find_existing_log(save_dir, prefix)
+        if existing:
+            return existing, True
+    return os.path.join(save_dir, f"{prefix}_{run_tag}.csv"), False
+
+
+def _init_csv_log(csv_path: str, header: Sequence[str]) -> None:
+    if not os.path.exists(csv_path):
+        with open(csv_path, "w", encoding="utf-8", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(list(header))
+
+
+def _trim_csv_log_by_epoch(
+    csv_path: str,
+    *,
+    epoch_index: int,
+    min_epoch: int,
+    header: Sequence[str],
+) -> int:
+    if not os.path.exists(csv_path):
+        return 0
+    tmp_path = f"{csv_path}.tmp"
+    removed = 0
+    header_row = list(header)
+    wrote_header = False
+    saw_row = False
+    with open(csv_path, "r", encoding="utf-8", newline="") as src, open(
+        tmp_path,
+        "w",
+        encoding="utf-8",
+        newline="",
+    ) as dst:
+        reader = csv.reader(src)
+        writer = csv.writer(dst)
+        for row in reader:
+            saw_row = True
+            if not wrote_header:
+                if row == header_row:
+                    writer.writerow(row)
+                    wrote_header = True
+                    continue
+                writer.writerow(header_row)
+                wrote_header = True
+            if not row:
+                continue
+            try:
+                epoch_val = int(row[epoch_index])
+            except Exception:
+                continue
+            if epoch_val < min_epoch:
+                writer.writerow(row)
+            else:
+                removed += 1
+        if not saw_row:
+            writer.writerow(header_row)
+    os.replace(tmp_path, csv_path)
+    return removed
+
+
+def _trim_train_log(csv_path: str, min_epoch: int, header: Sequence[str]) -> int:
+    return _trim_csv_log_by_epoch(
+        csv_path,
+        epoch_index=1,
+        min_epoch=min_epoch,
+        header=header,
+    )
+
+
+def _trim_val_log(csv_path: str, min_epoch: int, header: Sequence[str]) -> int:
+    return _trim_csv_log_by_epoch(
+        csv_path,
+        epoch_index=0,
+        min_epoch=min_epoch,
+        header=header,
+    )
+
 import torch
 import torch.nn.functional as F
 from fire import Fire
 
+from blocks.mamba_diffusers_adapter import MambaSpatioTemporalAdapter
 from utils.training_batches import prepare_batches
 from utils.training_env import get_compute_device, set_global_seed, setup_interrupt_handler
 from utils.training_pipeline import (
@@ -89,8 +233,6 @@ def _train_main(
     noise_aug_strength: float = 0.0,
     decode_chunk_size: int = 2,
     vae_encode_chunk_size: int = 5,
-    random_crop_height: int | None = None,
-    random_crop_width: int | None = None,
     min_h: int | None = None,
     min_w: int | None = None,
     max_h: int | None = None,
@@ -100,6 +242,7 @@ def _train_main(
     max_epochs: int = 10000,
     target_avg_loss: Union[float, None] = 1e-4,
     learning_rate: float = 1e-4,
+    mamba_learning_rate: float | None = None,
     weight_decay: float = 0.0,
     max_grad_norm: float = 1.0,
     precision: str = "fp16",
@@ -110,13 +253,6 @@ def _train_main(
     keep_unet_fp32: bool = False,
     shard_unet_across_gpus: bool = False,
     per_gpu_max_mem_gib: int = 11,
-    mask_loss_weight: float = 1.0,
-    recon_loss_weight: float = 0.1,
-    perceptual_loss_weight: float = 0.0,
-    ssim_loss_weight: float = 0.0,
-    edge_loss_weight: float = 0.0,
-    mask_focus_weight: float = 1.5,
-    background_weight: float = 1.0,
     log_interval: int = 10,
     seed: int = 42,
     tensorboard_log_dir: Union[str, None] = None,
@@ -130,12 +266,13 @@ def _train_main(
     dataset_split_ratios: Sequence[float] | None = None,
     dataset_split_group: str = "train",
     dataset_split_seed: int = 42,
-    eval_split: str | None = None,
-    eval_interval_epochs: int = 1,
-    max_eval_videos: int | None = None,
+    val_split: str | None = None,
+    val_interval_epochs: int = 1,
+    max_val_videos: int | None = None,
     resume_from: str | None = None,
     overlap_teacher_prob: float = 1.0,
     overlap_noise_std: float = 0.0,
+    vae_decode_device: str | None = None,
 ) -> None:
     """Fine-tune the stereo inpainting pipeline with shared preprocessing.
 
@@ -156,19 +293,17 @@ def _train_main(
         noise_aug_strength: 条件側へのノイズ付与強度。
         decode_chunk_size: VAE デコード時のフレーム分割数 (省メモリ)。
         vae_encode_chunk_size: VAE へのエンコード時分割数 (省メモリ)。
-        random_crop_height/random_crop_width: 指定時は同じ領域をランダムクロップして学習 (両方指定が必要)。
         min_h/min_w/max_h/max_w: 動画ごとに高さ/幅の範囲を指定してランダムクロップ。各動画で固定された領域を使用。
         crop_multiple: クロップ縦横を合わせる倍数。VAE のスケールに合わせて 128 などを推奨。
         epochs: エポック数。
-        learning_rate/weight_decay/max_grad_norm: 最適化ハイパーパラメータ。
+        learning_rate: UNet の基本学習率 (Mamba 以外に適用)。
+        mamba_learning_rate: Mamba ブロック用の学習率。None の場合は learning_rate を使用。
+        weight_decay/max_grad_norm: 最適化ハイパーパラメータ。
         precision: "fp16" | "bf16" | "fp32"。AMP の有無を含めて内部で解決。
         enable_gradient_checkpointing: UNet の勾配チェックポイント有効化フラグ。
         attn: "auto" | "xformers" | "sdp"。注意機構の最適化指定。
         shard_unet_across_gpus: 2 枚以上の GPU で UNet を分割配置するか。
         per_gpu_max_mem_gib: 自動デバイスマップ作成時の 1GPU あたりメモリ上限(目安)。
-        mask_loss_weight/recon_loss_weight: 2 種の L1 損失の重み。
-        perceptual_loss_weight/ssim_loss_weight/edge_loss_weight: 知覚/構造/エッジ損失の重み (0 なら無効)。
-        mask_focus_weight/background_weight: マスク内/外の重み係数 (再構成/SSIM/エッジに適用)。
         log_interval: 何ステップごとにログを表示/記録するか。
         seed: 乱数シード。
         tensorboard_log_dir: 指定時、TensorBoard ログを有効化 (save_dir からの相対可)。
@@ -182,12 +317,13 @@ def _train_main(
         dataset_split_ratios: [train, val, test] の比率を指定 (例: [8,1,1])。None なら全動画を学習に使用。
         dataset_split_group: ratios 指定時にどの分割("train"/"val"/"test")を使うか。
         dataset_split_seed: データ分割のシャッフルに使うシード。再現性確保用。
-        eval_split: エポック末に評価するデータ分割名。None なら評価を無効化。
-        eval_interval_epochs: 何エポックごとに eval_split を評価するか。
-        max_eval_videos: 評価に使う動画の上限。None または <=0 なら全件。
+        val_split: エポック末に評価するデータ分割名。None なら評価を無効化。
+        val_interval_epochs: 何エポックごとに val_split を評価するか。
+        max_val_videos: 評価に使う動画の上限。None または <=0 なら全件。
         resume_from: 保存済みのフルチェックポイント（optimizer/scheduler/scaler含む）へのパス。None なら save_dir/train_state_latest.pt があれば自動で使用。
         overlap_teacher_prob: オーバーラップ領域を前チャンクGTで置換する確率（scheduled sampling用, 0〜1）。
         overlap_noise_std: 上記置換時に加えるノイズの標準偏差。0 なら無効。
+        vae_decode_device: 補助損失用の VAE デコードを別デバイスで実行する際の指定 (例: "cuda:1")。
     """
     ensure_logging_configured()
     logger.info("Starting training run. Saving artifacts to %s", save_dir)
@@ -196,8 +332,8 @@ def _train_main(
         raise ValueError("save_interval_epochs must be >= 1")
     if grad_accum_steps < 1:
         raise ValueError("grad_accum_steps must be >= 1")
-    if eval_split is not None and eval_interval_epochs < 1:
-        raise ValueError("eval_interval_epochs must be >= 1 when eval_split is set.")
+    if val_split is not None and val_interval_epochs < 1:
+        raise ValueError("val_interval_epochs must be >= 1 when val_split is set.")
     sched_key = (scheduler_type or "none").lower()
     if sched_key not in {"none", "cosine", "cosine_with_warmup", "exponential"}:
         raise ValueError(f"Unknown scheduler_type: {scheduler_type}")
@@ -217,14 +353,8 @@ def _train_main(
     torch_dtype, use_amp, scaler = resolve_precision(precision, device)
     logger.info("Using device %s with dtype %s (AMP enabled: %s)", device, torch_dtype, use_amp)
     crop_multiple = max(1, crop_multiple)
-    crop_size = None
     crop_min_size = None
     crop_max_size = None
-    if random_crop_height is not None or random_crop_width is not None:
-        if random_crop_height is None or random_crop_width is None:
-            raise ValueError("random_crop_height and random_crop_width must both be provided when using random cropping.")
-        if random_crop_height > 0 and random_crop_width > 0:
-            crop_size = (random_crop_height, random_crop_width)
 
     if any(value is not None for value in (min_h, min_w, max_h, max_w)):
         if not all(value is not None for value in (min_h, min_w, max_h, max_w)):
@@ -235,7 +365,6 @@ def _train_main(
             raise ValueError("min_h/min_w must be less than or equal to max_h/max_w.")
         crop_min_size = (int(min_h), int(min_w))
         crop_max_size = (int(max_h), int(max_w))
-        crop_size = None  # override fixed random crop size when range cropping is used
 
     # 事前学習済みの image_encoder/vae と、学習対象の UNet を組み込んだパイプラインを構築
     pipeline = load_inpainting_pipeline(
@@ -272,6 +401,31 @@ def _train_main(
     # VAE 側のスライシング/タイル化 (対応していれば有効化)
     enable_vae_memory_helpers(pipeline)
 
+    def _resolve_vae_decode_device(requested: str | None, fallback: torch.device) -> torch.device:
+        if not requested:
+            return fallback
+        try:
+            decode_device = torch.device(requested)
+        except Exception as err:
+            logger.warning("Invalid vae_decode_device=%s (%s); using %s", requested, err, fallback)
+            return fallback
+        if decode_device.type == "cuda":
+            if not torch.cuda.is_available():
+                logger.warning("vae_decode_device=%s but CUDA unavailable; using %s", decode_device, fallback)
+                return fallback
+            index = 0 if decode_device.index is None else decode_device.index
+            if index >= torch.cuda.device_count():
+                logger.warning(
+                    "vae_decode_device=%s exceeds CUDA device count (%d); using %s",
+                    decode_device,
+                    torch.cuda.device_count(),
+                    fallback,
+                )
+                return fallback
+        return decode_device
+
+    resolved_vae_decode_device = _resolve_vae_decode_device(vae_decode_device, device)
+
     # 学習用ノイズスケジューラ（推論側の scheduler 設定に合わせて構築）
     noise_scheduler = DDPMScheduler.from_config(pipeline.scheduler.config)
     pred_type = getattr(pipeline.scheduler.config, "prediction_type", None)
@@ -280,37 +434,41 @@ def _train_main(
 
     # 学習対象パラメータのみ最適化
     trainable_params = [p for p in pipeline.unet.parameters() if p.requires_grad]
-    optimizer = torch.optim.AdamW(trainable_params, lr=learning_rate, weight_decay=weight_decay)
+    mamba_param_ids: set[int] = set()
+    for module in pipeline.unet.modules():
+        if isinstance(module, MambaSpatioTemporalAdapter):
+            for p in module.parameters(recurse=True):
+                if p.requires_grad:
+                    mamba_param_ids.add(id(p))
+    if mamba_learning_rate is not None and mamba_param_ids:
+        base_params = [p for p in trainable_params if id(p) not in mamba_param_ids]
+        mamba_params = [p for p in trainable_params if id(p) in mamba_param_ids]
+        optimizer = torch.optim.AdamW(
+            [
+                {"params": base_params, "lr": learning_rate},
+                {"params": mamba_params, "lr": float(mamba_learning_rate)},
+            ],
+            lr=learning_rate,
+            weight_decay=weight_decay,
+        )
+        logger.info(
+            "Optimizer param groups: base=%d (lr=%.2e), mamba=%d (lr=%.2e)",
+            len(base_params),
+            learning_rate,
+            len(mamba_params),
+            float(mamba_learning_rate),
+        )
+    else:
+        if mamba_learning_rate is not None and not mamba_param_ids:
+            logger.warning(
+                "mamba_learning_rate set but no Mamba blocks found in UNet; using single learning_rate=%.2e.",
+                learning_rate,
+            )
+        optimizer = torch.optim.AdamW(trainable_params, lr=learning_rate, weight_decay=weight_decay)
     optimizer.zero_grad(set_to_none=True)
     lr_scheduler = None
     if sched_key == "exponential":
         lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=scheduler_gamma)
-
-    # 簡易 CSV ログ (ステップごとの損失を記録)
-    run_tag = datetime.now().strftime("%Y%m%d_%H%M%S")
-    csv_path = os.path.join(save_dir, f"train_log_{run_tag}.csv")
-    if not os.path.exists(csv_path):
-        with open(csv_path, "w", encoding="utf-8", newline="") as f:
-            writer = csv.writer(f)
-            writer.writerow(["step", "epoch", "video", "loss_noise_mse"])
-    eval_csv_path = os.path.join(save_dir, f"eval_log_{run_tag}.csv")
-    if not os.path.exists(eval_csv_path):
-        with open(eval_csv_path, "w", encoding="utf-8", newline="") as f:
-            writer = csv.writer(f)
-            writer.writerow(["epoch", "split", "video", "batch", "loss_noise_mse"])
-    logger.info("Log files for this run: train=%s eval=%s", csv_path, eval_csv_path)
-
-    # (オプション) TensorBoard ログ
-    writer_tb = None
-    if tensorboard_log_dir:
-        if SummaryWriter is None:
-            logger.warning(
-                "tensorboard package not available. Install it with `pip install tensorboard` to enable TensorBoard logging."
-            )
-        else:
-            log_dir = tensorboard_log_dir if os.path.isabs(tensorboard_log_dir) else os.path.join(save_dir, tensorboard_log_dir)
-            os.makedirs(log_dir, exist_ok=True)
-            writer_tb = SummaryWriter(log_dir=log_dir)
 
     # チェックポイントの保存/読込
     ckpt_latest_path = os.path.join(save_dir, "train_state_latest.pt")
@@ -318,7 +476,7 @@ def _train_main(
     global_step = 0
     pending_scheduler_state = None
 
-    def _save_full_checkpoint(tag: str, epoch_value: int) -> None:
+    def _save_full_checkpoint(tag: str, epoch_value: int, *, update_latest: bool = True) -> None:
         state = {
             "epoch": int(epoch_value),
             "global_step": int(global_step),
@@ -330,13 +488,15 @@ def _train_main(
         path = os.path.join(save_dir, f"train_state_{tag}.pt")
         try:
             torch.save(state, path)
-            torch.save(state, ckpt_latest_path)
+            if update_latest:
+                torch.save(state, ckpt_latest_path)
             logger.info("Saved full checkpoint (%s)", path)
         except Exception as err:
             logger.warning("Failed to save checkpoint %s: %s", path, err)
 
     # 自動/明示リジューム
     resume_candidate = resume_from
+    did_resume = False
     if resume_candidate is None and os.path.exists(ckpt_latest_path):
         resume_candidate = ckpt_latest_path
         logger.info("Auto-resuming from %s", resume_candidate)
@@ -353,6 +513,7 @@ def _train_main(
             if lr_scheduler is not None and pending_scheduler_state is not None:
                 lr_scheduler.load_state_dict(pending_scheduler_state)
                 pending_scheduler_state = None
+            did_resume = True
             logger.info(
                 "Resumed from %s (epoch=%d, global_step=%d)",
                 resume_candidate,
@@ -361,6 +522,67 @@ def _train_main(
             )
         except Exception as err:
             logger.warning("Failed to resume from %s: %s. Starting fresh.", resume_candidate, err)
+            did_resume = False
+
+    train_log_header = ["step", "epoch", "video", "timestep", "loss_noise_mse"]
+    val_log_header = ["step", "epoch", "video", "timestep", "loss_noise_mse"]
+    train_metric_keys = ["timestep", "loss_noise_mse"]
+    val_metric_keys = ["timestep", "loss_noise_mse"]
+
+    # Keep val header aligned with train for downstream tooling.
+    val_log_header = list(train_log_header)
+    val_metric_keys = list(train_metric_keys)
+
+    def _format_metric(metrics: dict[str, torch.Tensor], key: str) -> str:
+        value = metrics.get(key)
+        if value is None:
+            return ""
+        return f"{float(value.detach().float().cpu().item()):.6f}"
+
+    # 簡易 CSV ログ (ステップごとの損失を記録)
+    run_tag = datetime.now().strftime("%Y%m%d_%H%M%S")
+    csv_path, train_log_exists = _select_log_path(
+        save_dir,
+        "train_log",
+        run_tag,
+        reuse_existing=did_resume,
+    )
+    val_csv_path, val_log_exists = _select_log_path(
+        save_dir,
+        "val_log",
+        run_tag,
+        reuse_existing=did_resume,
+    )
+    trimmed_train = 0
+    trimmed_val = 0
+    if train_log_exists and did_resume:
+        trimmed_train = _trim_train_log(csv_path, start_epoch, train_log_header)
+    else:
+        _init_csv_log(csv_path, train_log_header)
+    if val_log_exists and did_resume:
+        trimmed_val = _trim_val_log(val_csv_path, start_epoch, val_log_header)
+    else:
+        _init_csv_log(val_csv_path, val_log_header)
+    if did_resume and (trimmed_train or trimmed_val):
+        logger.info(
+            "Trimmed log rows for epochs >= %d (train=%d, val=%d).",
+            start_epoch,
+            trimmed_train,
+            trimmed_val,
+        )
+    logger.info("Log files for this run: train=%s val=%s", csv_path, val_csv_path)
+
+    # (オプション) TensorBoard ログ
+    writer_tb = None
+    if tensorboard_log_dir:
+        if SummaryWriter is None:
+            logger.warning(
+                "tensorboard package not available. Install it with `pip install tensorboard` to enable TensorBoard logging."
+            )
+        else:
+            log_dir = tensorboard_log_dir if os.path.isabs(tensorboard_log_dir) else os.path.join(save_dir, tensorboard_log_dir)
+            os.makedirs(log_dir, exist_ok=True)
+            writer_tb = SummaryWriter(log_dir=log_dir)
 
     # 入力動画パスをグロブから列挙し、必要なら分割
     all_video_paths = sorted(glob.glob(train_glob))
@@ -439,33 +661,8 @@ def _train_main(
             )
     video_paths = split_map[split_key]
 
-    perceptual_net = None
-    normalize_for_vgg = None
-    if perceptual_loss_weight > 0:
-        try:
-            from torchvision import models
-        except Exception as err:
-            logger.warning("Perceptual loss disabled (torchvision unavailable): %s", err)
-        else:
-            weights = getattr(models, "VGG16_Weights", None)
-            if weights is not None:
-                vgg_weights = weights.IMAGENET1K_FEATURES
-                perceptual_net = models.vgg16(weights=vgg_weights).features[:16].to(device=device, dtype=torch.float32)
-            else:
-                perceptual_net = models.vgg16(pretrained=True).features[:16].to(device=device, dtype=torch.float32)
-            perceptual_net.eval()
-            for p in perceptual_net.parameters():
-                p.requires_grad_(False)
-            mean = torch.tensor([0.485, 0.456, 0.406], device=device, dtype=torch.float32).view(1, 3, 1, 1)
-            std = torch.tensor([0.229, 0.224, 0.225], device=device, dtype=torch.float32).view(1, 3, 1, 1)
-
-            def _norm(x: torch.Tensor) -> torch.Tensor:
-                return (x - mean) / std
-
-            normalize_for_vgg = _norm
-
-    def compute_batch_loss(batch: Any) -> torch.Tensor:
-        """Forward UNet once against a mini-batch and return the raw loss tensor."""
+    def compute_batch_loss(batch: Any) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
+        """Forward UNet once against a mini-batch and return loss + per-component metrics."""
         with torch.autocast(device_type=device.type, dtype=torch_dtype, enabled=use_amp):
             H, W = batch.cond.shape[2], batch.cond.shape[3]
             with torch.no_grad():
@@ -477,12 +674,21 @@ def _train_main(
                 noise = torch.randn_like(frames_cond)
                 frames_cond = frames_cond + noise_aug_strength * noise
 
+            vae_device = resolved_vae_decode_device
+            if next(pipeline.vae.parameters()).device != vae_device:
+                pipeline.vae.to(vae_device)
+            frames_cond_vae = frames_cond.to(vae_device)
+
             latent_list = []
             with torch.no_grad():
                 for i_f in range(0, frames_cond.shape[0], max(1, vae_encode_chunk_size)):
-                    latent_list.append(pipeline.vae.encode(frames_cond[i_f : i_f + max(1, vae_encode_chunk_size)]).latent_dist.mode())
+                    latent_list.append(
+                        pipeline.vae.encode(
+                            frames_cond_vae[i_f : i_f + max(1, vae_encode_chunk_size)]
+                        ).latent_dist.mode()
+                    )
             frame_latents = torch.cat(latent_list, dim=0).unsqueeze(0)
-            frame_latents = frame_latents.to(image_embeddings.dtype)
+            frame_latents = frame_latents.to(image_embeddings.dtype).to(device)
 
             with torch.no_grad():
                 frames_mask = pipeline.mask_processor.preprocess(batch.mask, height=H, width=W)
@@ -492,50 +698,17 @@ def _train_main(
             fps_ = fps_condition - 1
             add_time_ids = torch.tensor([[fps_, motion_bucket_id, noise_aug_strength]], dtype=image_embeddings.dtype, device=device)
 
-            @lru_cache(maxsize=1)
-            def _get_sobel_kernels(device: torch.device, dtype: torch.dtype) -> tuple[torch.Tensor, torch.Tensor]:
-                kx = torch.tensor(
-                    [[[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]], device=device, dtype=dtype
-                ).unsqueeze(0)
-                ky = torch.tensor(
-                    [[[-1, -2, -1], [0, 0, 0], [1, 2, 1]]], device=device, dtype=dtype
-                ).unsqueeze(0)
-                return kx, ky
-
-            def _edge_loss(pred: torch.Tensor, tgt: torch.Tensor, weight_map: torch.Tensor) -> torch.Tensor:
-                kx, ky = _get_sobel_kernels(pred.device, pred.dtype)
-                gx_p = torch.nn.functional.conv2d(pred, kx, padding=1, groups=pred.shape[1])
-                gy_p = torch.nn.functional.conv2d(pred, ky, padding=1, groups=pred.shape[1])
-                gx_t = torch.nn.functional.conv2d(tgt, kx, padding=1, groups=tgt.shape[1])
-                gy_t = torch.nn.functional.conv2d(tgt, ky, padding=1, groups=tgt.shape[1])
-                grad_pred = torch.cat([gx_p, gy_p], dim=1)
-                grad_tgt = torch.cat([gx_t, gy_t], dim=1)
-                return (weight_map * (grad_pred - grad_tgt).abs()).mean()
-
-            def _ssim_loss(pred: torch.Tensor, tgt: torch.Tensor, weight_map: torch.Tensor) -> torch.Tensor:
-                C1 = 0.01 ** 2
-                C2 = 0.03 ** 2
-                mu1 = torch.nn.functional.avg_pool2d(pred, 3, 1, 1)
-                mu2 = torch.nn.functional.avg_pool2d(tgt, 3, 1, 1)
-                mu1_sq = mu1.pow(2)
-                mu2_sq = mu2.pow(2)
-                mu1_mu2 = mu1 * mu2
-
-                sigma1_sq = torch.nn.functional.avg_pool2d(pred * pred, 3, 1, 1) - mu1_sq
-                sigma2_sq = torch.nn.functional.avg_pool2d(tgt * tgt, 3, 1, 1) - mu2_sq
-                sigma12 = torch.nn.functional.avg_pool2d(pred * tgt, 3, 1, 1) - mu1_mu2
-
-                ssim_map = ((2 * mu1_mu2 + C1) * (2 * sigma12 + C2)) / ((mu1_sq + mu2_sq + C1) * (sigma1_sq + sigma2_sq + C2))
-                # SSIM を 1 から距離として扱う (0 がベスト)
-                loss_map = (1 - ssim_map) * 0.5
-                return (loss_map * weight_map).mean()
-
             frames_tgt = pipeline.image_processor.preprocess(batch.target, height=H, width=W)
             tgt_lat_list = []
             with torch.no_grad():
                 for i_f in range(0, frames_tgt.shape[0], max(1, vae_encode_chunk_size)):
-                    tgt_lat_list.append(pipeline.vae.encode(frames_tgt[i_f : i_f + max(1, vae_encode_chunk_size)]).latent_dist.mode())
+                    tgt_lat_list.append(
+                        pipeline.vae.encode(
+                            frames_tgt[i_f : i_f + max(1, vae_encode_chunk_size)].to(vae_device)
+                        ).latent_dist.mode()
+                    )
             x0 = torch.cat(tgt_lat_list, dim=0).unsqueeze(0).to(image_embeddings.dtype)
+            x0 = x0.to(device)
             x0 = x0 * pipeline.vae.config.scaling_factor
 
             t = torch.randint(0, noise_scheduler.config.num_train_timesteps, (1,), device=device, dtype=torch.long)
@@ -556,55 +729,7 @@ def _train_main(
             else:
                 target = eps
             noise_loss = F.mse_loss(noise_pred, target)
-
-            aux_losses_enabled = (
-                recon_loss_weight > 0
-                or perceptual_loss_weight > 0
-                or ssim_loss_weight > 0
-                or edge_loss_weight > 0
-            )
-            if not aux_losses_enabled:
-                return noise_loss
-
-            with torch.autocast(device_type=device.type, dtype=torch_dtype, enabled=use_amp):
-                step_out = noise_scheduler.step(noise_pred, t, x_t, return_dict=True)
-                x0_pred = step_out.pred_original_sample
-                decoded = pipeline.decode_latents(x0_pred, num_frames=frames_cond.shape[0], decode_chunk_size=decode_chunk_size)
-            # decode_latents 出力は [-1,1] 想定。0-1 に戻す。
-            pred_img = torch.clamp((decoded + 1.0) / 2.0, 0.0, 1.0)
-            tgt_img = torch.clamp(batch.target, 0.0, 1.0)
-            mask_img = torch.clamp(batch.mask, 0.0, 1.0)
-
-            # [B, C, T, H, W] -> [B*T, C, H, W]
-            pred_bt = pred_img.permute(0, 2, 1, 3, 4).reshape(-1, 3, H, W)
-            tgt_bt = tgt_img.unsqueeze(0).permute(0, 2, 1, 3, 4).reshape(-1, 3, H, W)
-            mask_bt = mask_img.unsqueeze(0).permute(0, 2, 1, 3, 4).reshape(-1, 1, H, W)
-            weight_map = mask_loss_weight * (mask_focus_weight * mask_bt + background_weight * (1.0 - mask_bt))
-
-            loss_total = noise_loss
-
-            if recon_loss_weight > 0:
-                recon_l1 = (weight_map * (pred_bt - tgt_bt).abs()).mean()
-                loss_total = loss_total + recon_loss_weight * recon_l1
-
-            if ssim_loss_weight > 0:
-                ssim_l = _ssim_loss(pred_bt, tgt_bt, weight_map)
-                loss_total = loss_total + ssim_loss_weight * ssim_l
-
-            if edge_loss_weight > 0:
-                edge_l = _edge_loss(pred_bt, tgt_bt, weight_map)
-                loss_total = loss_total + edge_loss_weight * edge_l
-
-            if perceptual_loss_weight > 0 and perceptual_net is not None and normalize_for_vgg is not None:
-                with torch.autocast(device_type=device.type, dtype=torch.float32, enabled=False):
-                    vgg_in_pred = normalize_for_vgg(pred_bt)
-                    vgg_in_tgt = normalize_for_vgg(tgt_bt)
-                    feat_pred = perceptual_net(vgg_in_pred)
-                    feat_tgt = perceptual_net(vgg_in_tgt)
-                    perceptual_l = torch.nn.functional.l1_loss(feat_pred, feat_tgt)
-                loss_total = loss_total + perceptual_loss_weight * perceptual_l
-
-            return loss_total
+            return noise_loss, {"timestep": t, "loss_noise_mse": noise_loss}
 
     def _run_preflight_max_crop() -> None:
         """Try the worst-case crop (max_h/max_w) once to catch OOM before training."""
@@ -628,7 +753,6 @@ def _train_main(
                 overlap=overlap,
                 device=device,
                 dtype=torch_dtype if precision_key != "fp32" else torch.float32,
-                random_crop_size=None,
                 crop_multiple=crop_multiple,
                 crop_min_size=(test_h, test_w),
                 crop_max_size=(test_h, test_w),
@@ -647,7 +771,7 @@ def _train_main(
             if device.type == "cuda":
                 torch.cuda.empty_cache()
             optimizer.zero_grad(set_to_none=True)
-            loss_pf = compute_batch_loss(pre_batch)
+            loss_pf, _ = compute_batch_loss(pre_batch)
             if scaler.is_enabled():
                 scaler.scale(loss_pf).backward()
                 scaler.unscale_(optimizer)
@@ -665,39 +789,39 @@ def _train_main(
                 ) from err
             raise
 
-    def run_evaluation(split_name: str, epoch_idx: int) -> float | None:
+    def run_validation(split_name: str, epoch_idx: int) -> float | None:
         """Run a full forward pass over the requested split and log average loss."""
-        eval_key = (split_name or "").strip().lower()
-        if not eval_key:
+        val_key = (split_name or "").strip().lower()
+        if not val_key:
             return None
-        if eval_key not in split_map:
-            logger.warning("Unknown eval split '%s'; skipping evaluation.", split_name)
+        if val_key not in split_map:
+            logger.warning("Unknown val split '%s'; skipping validation.", split_name)
             return None
-        eval_video_paths = split_map[eval_key]
-        if not eval_video_paths:
-            logger.warning("No videos available for eval split '%s'; skipping.", eval_key)
+        val_video_paths = split_map[val_key]
+        if not val_video_paths:
+            logger.warning("No videos available for val split '%s'; skipping.", val_key)
             return None
-        max_videos = max_eval_videos if (max_eval_videos or 0) > 0 else None
-        total_assigned = len(eval_video_paths)
+        max_videos = max_val_videos if (max_val_videos or 0) > 0 else None
+        total_assigned = len(val_video_paths)
         if max_videos is not None and max_videos < total_assigned:
-            eval_video_paths = eval_video_paths[:max_videos]
+            val_video_paths = val_video_paths[:max_videos]
             logger.info(
-                "Evaluating split '%s' on %d/%d videos (limited by max_eval_videos).",
-                eval_key,
-                len(eval_video_paths),
+                "Validating split '%s' on %d/%d videos (limited by max_val_videos).",
+                val_key,
+                len(val_video_paths),
                 total_assigned,
             )
         else:
-            logger.info("Evaluating split '%s' on %d videos.", eval_key, total_assigned)
+            logger.info("Validating split '%s' on %d videos.", val_key, total_assigned)
         was_training = pipeline.unet.training
         pipeline.unet.eval()
         total_loss = 0.0
         total_batches = 0
         try:
             with torch.no_grad():
-                with open(eval_csv_path, "a", encoding="utf-8", newline="") as eval_f:
-                    writer = csv.writer(eval_f)
-                    for video_idx, video_path in enumerate(eval_video_paths, start=1):
+                with open(val_csv_path, "a", encoding="utf-8", newline="") as val_f:
+                    writer = csv.writer(val_f)
+                    for video_idx, video_path in enumerate(val_video_paths, start=1):
                         if stop_event.is_set():
                             raise KeyboardInterrupt
                         batches = prepare_batches(
@@ -706,7 +830,6 @@ def _train_main(
                             overlap=overlap,
                             device=device,
                             dtype=torch_dtype if precision_key != "fp32" else torch.float32,
-                            random_crop_size=crop_size,
                             crop_multiple=crop_multiple,
                             crop_min_size=crop_min_size,
                             crop_max_size=crop_max_size,
@@ -716,35 +839,30 @@ def _train_main(
                         for batch_i, batch in enumerate(batches, start=1):
                             if stop_event.is_set():
                                 raise KeyboardInterrupt
-                            loss_raw = compute_batch_loss(batch)
+                            loss_raw, metrics = compute_batch_loss(batch)
                             batch_loss_val = float(loss_raw.detach().item())
                             total_loss += batch_loss_val
                             total_batches += 1
                             writer.writerow(
-                                [
-                                    epoch_idx,
-                                    eval_key,
-                                    os.path.basename(video_path),
-                                    batch_i,
-                                    f"{batch_loss_val:.6f}",
-                                ]
+                                [batch_i, epoch_idx, f"{val_key}/{os.path.basename(video_path)}"]
+                                + [_format_metric(metrics, key) for key in val_metric_keys]
                             )
         finally:
             if was_training:
                 pipeline.unet.train()
         if total_batches == 0:
-            logger.warning("Evaluation split '%s' produced zero batches.", eval_key)
+            logger.warning("Validation split '%s' produced zero batches.", val_key)
             return None
         avg_loss = total_loss / total_batches
         logger.info(
-            "Eval split '%s' epoch %d: avg_loss=%.6f over %d batches.",
-            eval_key,
+            "Val split '%s' epoch %d: avg_loss=%.6f over %d batches.",
+            val_key,
             epoch_idx,
             avg_loss,
             total_batches,
         )
         if writer_tb:
-            writer_tb.add_scalar(f"loss/{eval_key}_avg", avg_loss, epoch_idx)
+            writer_tb.add_scalar(f"loss/{val_key}_avg", avg_loss, epoch_idx)
         return avg_loss
 
     printer = TrainingProgressPrinter(
@@ -828,7 +946,6 @@ def _train_main(
                     overlap=overlap,
                     device=device,
                     dtype=torch_dtype if precision_key != "fp32" else torch.float32,
-                    random_crop_size=crop_size,
                     crop_multiple=crop_multiple,
                     crop_min_size=crop_min_size,
                     crop_max_size=crop_max_size,
@@ -862,7 +979,7 @@ def _train_main(
                         )
 
                     # ===== ランダムtの通常学習: 1回のUNet前向きでノイズ予測MSE =====
-                    loss_raw = compute_batch_loss(batch)
+                    loss_raw, metrics = compute_batch_loss(batch)
                     if not torch.isfinite(loss_raw):
                         bad_value = loss_raw.detach().float().item()
                         logger.warning(
@@ -913,17 +1030,14 @@ def _train_main(
                     printer.step(global_step=global_step, batch_idx=batch_i, loss_value=batch_loss_val)
 
                     if writer_tb:
-                        writer_tb.add_scalar("loss/noise_mse", batch_loss_val, global_step)
+                        noise_val = metrics.get("loss_noise_mse", loss_raw)
+                        writer_tb.add_scalar("loss/noise_mse", noise_val.detach().item(), global_step)
 
                     with open(csv_path, "a", encoding="utf-8", newline="") as f:
                         writer = csv.writer(f)
                         writer.writerow(
-                            [
-                                global_step,
-                                epoch,
-                                os.path.basename(video_path),
-                                f"{batch_loss_val:.6f}",
-                            ]
+                            [global_step, epoch, os.path.basename(video_path)]
+                            + [_format_metric(metrics, key) for key in train_metric_keys]
                         )
                     if device.type == "cuda":
                         peak_allocated_mib = torch.cuda.max_memory_allocated(device) / float(1024**2)
@@ -937,8 +1051,8 @@ def _train_main(
             # エポック平均を表示して毎エポック後にチェックポイントを保存
             avg_epoch_loss = epoch_loss / max(epoch_batches, 1)
             printer.finish_epoch(avg_loss=avg_epoch_loss, epoch_batches=epoch_batches)
-            if eval_split and (epoch % eval_interval_epochs == 0):
-                run_evaluation(eval_split, epoch)
+            if val_split and (epoch % val_interval_epochs == 0):
+                run_validation(val_split, epoch)
 
             _save_full_checkpoint("latest", epoch)
             if lr_scheduler is not None:
@@ -960,7 +1074,7 @@ def _train_main(
     except KeyboardInterrupt:
         # 割り込み時も最後に到達した重みを保存して終了
         try:
-            _save_full_checkpoint("interrupted", current_epoch)
+            _save_full_checkpoint("interrupted", current_epoch, update_latest=False)
         except Exception as e:
             logger.error("Interrupted. Failed to save checkpoint: %s", e)
         if writer_tb:
@@ -1000,6 +1114,20 @@ def main(config: str | None = None, config_dir: str = "train_config", **override
     if missing:
         missing_list = ", ".join(sorted(missing))
         raise ValueError(f"Missing required training parameters: {missing_list}")
+
+    save_dir = str(config_values.get("save_dir", "")).strip()
+    resolved_save_dir = _resolve_run_save_dir(save_dir)
+    if resolved_save_dir:
+        config_values["save_dir"] = resolved_save_dir
+        if resolved_save_dir != save_dir:
+            logger.info("Resolved save_dir to per-run folder: %s", resolved_save_dir)
+        save_dir = resolved_save_dir
+    resume_candidate = config_values.get("resume_from")
+    if resume_candidate is None and save_dir:
+        ckpt_latest_path = os.path.join(save_dir, "train_state_latest.pt")
+        if os.path.exists(ckpt_latest_path):
+            resume_candidate = ckpt_latest_path
+    _write_run_config_snapshot(save_dir, config_values, resume_candidate)
 
     _train_main(**config_values)
 

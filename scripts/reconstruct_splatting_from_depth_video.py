@@ -74,7 +74,18 @@ def reconstruct_2x2(
     pose_annotations_path: Optional[str] = None,
     pose_3d_output_path: Optional[str] = None,
     intrinsics_path: Optional[str] = None,
+    ema_depth_alpha: float = 0.0,
+    ema_bbox_alpha: float = 0.0,
+    depth_only: bool = False,
+    debug: bool = False,
 ) -> str:
+    if debug:
+        import logging
+
+        logging.basicConfig(
+            level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s"
+        )
+
     cap = cv2.VideoCapture(left_video_path)
     if not cap.isOpened():
         raise FileNotFoundError(f"Failed to open video: {left_video_path}")
@@ -85,6 +96,18 @@ def reconstruct_2x2(
     if depth_path is None:
         depth_path = os.path.join(base_dir, f"{base_name}_depth.npz")
     depth_array = _load_depth_array(depth_path)
+    if ema_depth_alpha > 0.0:
+        ema_depth_alpha = float(np.clip(ema_depth_alpha, 0.0, 1.0))
+        smoothed = np.empty_like(depth_array, dtype=np.float32)
+        prev = None
+        for i, d in enumerate(depth_array):
+            d = d.astype(np.float32, copy=False)
+            if prev is None:
+                prev = d
+            else:
+                prev = ema_depth_alpha * d + (1.0 - ema_depth_alpha) * prev
+            smoothed[i] = prev
+        depth_array = smoothed
     fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
 
@@ -108,14 +131,15 @@ def reconstruct_2x2(
     depth_list = []
     frame_ids: list[int] = []
     frame_union_masks: dict[int, np.ndarray] = {}
-    if pose_annotations_path is None:
-        pose_annotations_path = os.path.join(base_dir, f"{base_name}_2d_pose.json")
-    if os.path.exists(pose_annotations_path):
-        frame_union_masks = _build_frame_union_masks(
-            pose_annotations_path,
-            target_height=h,
-            target_width=w,
-        )
+    if not depth_only:
+        if pose_annotations_path is None:
+            pose_annotations_path = os.path.join(base_dir, f"{base_name}_pose_annotations.json")
+        if os.path.exists(pose_annotations_path):
+            frame_union_masks = _build_frame_union_masks(
+                pose_annotations_path,
+                target_height=h,
+                target_width=w,
+            )
 
     idx = 0
     while True:
@@ -163,7 +187,11 @@ def reconstruct_2x2(
                                 (occlusion_mask_uint8[j].shape[1], occlusion_mask_uint8[j].shape[0]),
                                 interpolation=cv2.INTER_NEAREST,
                             ).astype(bool)
+                        # Left-bottom: occlusion mask in white
                         occlusion_mask_uint8[j][fm] = 255
+                        # Right-bottom: black-out the masked region in right view
+                        right_video_uint8[j][fm] = 0
+
                 top = np.concatenate([left_frames_uint8[j], depth_vis[j]], axis=1)
                 bottom = np.concatenate([occlusion_mask_uint8[j], right_video_uint8[j]], axis=1)
                 grid = np.concatenate([top, bottom], axis=0)
@@ -177,15 +205,18 @@ def reconstruct_2x2(
     cap.release()
     writer.release()
 
-    if pose_3d_output_path is None:
-        pose_3d_output_path = os.path.join(base_dir, f"{base_name}_3d_pose.json")
+    if not depth_only:
+        if pose_3d_output_path is None:
+            pose_3d_output_path = os.path.join(base_dir, f"{base_name}_3d_pose.json")
 
-    export_pose_annotations_3d(
-        pose_annotations_path,
-        depth_array,
-        pose_3d_output_path,
-        intrinsics_path=intrinsics_path,
-    )
+        export_pose_annotations_3d(
+            pose_annotations_path,
+            depth_array,
+            pose_3d_output_path,
+            intrinsics_path=intrinsics_path,
+            ema_bbox_alpha=ema_bbox_alpha,
+            debug=debug,
+        )
 
     return output_2x2_video
 
@@ -200,6 +231,10 @@ def main(
     pose_annotations_path: Optional[str] = None,
     pose_3d_output_path: Optional[str] = None,
     intrinsics_path: Optional[str] = None,
+    ema_depth_alpha: float = 0.0,
+    ema_bbox_alpha: float = 0.0,
+    depth_only: bool = False,
+    debug: bool = False,
 ) -> str:
     return reconstruct_2x2(
         left_video_path=left_video_path,
@@ -210,6 +245,10 @@ def main(
         pose_annotations_path=pose_annotations_path,
         pose_3d_output_path=pose_3d_output_path,
         intrinsics_path=intrinsics_path,
+        ema_depth_alpha=ema_depth_alpha,
+        ema_bbox_alpha=ema_bbox_alpha,
+        depth_only=depth_only,
+        debug=debug,
     )
 
 

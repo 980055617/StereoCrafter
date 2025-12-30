@@ -142,16 +142,19 @@ def write_video_opencv(input_frames, fps, output_video_path):
 
 
 def main(
-    pre_trained_path,
-    unet_path,
     input_video_path,
-    save_dir,
+    pre_trained_path="./weights/stable-video-diffusion-img2vid-xt-1-1",
+    unet_path="./weights/StereoCrafter",
+    num_inference_steps=8,
+    save_dir=None,
     frames_chunk=23,
     overlap=3,
     tile_num=1,
-    decode_chunk_size: int = 2,
 ):
-    
+    pre_trained_path = pre_trained_path or "./weights/stable-video-diffusion-img2vid-xt-1-1"
+    unet_path = unet_path or "./weights/StereoCrafter"
+    save_dir = save_dir or str(Path(input_video_path).parent)
+
     image_encoder = CLIPVisionModelWithProjection.from_pretrained(
         pre_trained_path,
         subfolder="image_encoder",
@@ -223,10 +226,11 @@ def main(
     # "_train" が末尾についていれば落とし、数字部分のみの名前にする
     video_name = stem[:-6] if stem.endswith("_train") else stem
 
-    # SBS をストリーミングで書き出す
+    # SBS をストリーミングで書き出す（元動画を上書きしないよう末尾に _3D を付与）
     width_sbs = width * 2
+    output_filename = f"{video_name}_3D.mp4"
     writer = cv2.VideoWriter(
-        os.path.join(save_dir, f"{video_name}.mp4"),
+        os.path.join(save_dir, output_filename),
         cv2.VideoWriter_fourcc(*"mp4v"),
         fps,
         (width_sbs, height),
@@ -257,7 +261,7 @@ def main(
             fps=7,
             motion_bucket_id=127,
             noise_aug_strength=0.0,
-            num_inference_steps=8,
+            num_inference_steps=num_inference_steps,
         )
 
         video_latents = video_latents.unsqueeze(0)
@@ -267,7 +271,7 @@ def main(
         video_frames = pipeline.decode_latents(
             video_latents,
             num_frames=video_latents.shape[1],
-            decode_chunk_size=decode_chunk_size,
+            decode_chunk_size=2,
         )
         video_frames = tensor2vid(video_frames, pipeline.image_processor, output_type="pil")[0]
 

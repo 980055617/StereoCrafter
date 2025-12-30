@@ -15,8 +15,6 @@
   - chunk_frame_ranges(): 動画フレーム列を推論ポリシーに合わせて時間チャンクへ分割
   - prepare_batches(video_path, ...): 2x2 タイル動画から学習用のチャンク `TrainBatch` を生成
     - 形状: cond/target は [f, 3, H, W]、mask は [f, 1, H, W]
-    - `random_crop_size=(H,W)` を指定すると cond/mask/target を同じ窓でランダムクロップ
-      (VAE のスケールに合わせて `crop_multiple` で整列)
 
 - training_pipeline.py
   - load_inpainting_pipeline(): 事前学習済み image_encoder/vae + 学習対象 unet を束ねたパイプラインを構築
@@ -57,7 +55,6 @@ batches = prepare_batches(
     overlap=3,
     device=device,
     dtype=torch_dtype,
-    random_crop_size=(512, 512),
     crop_multiple=128,
 )
 ```

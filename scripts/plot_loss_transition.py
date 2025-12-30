@@ -1,16 +1,22 @@
 #!/usr/bin/env python3
 """
-Aggregate train/test log CSVs and visualize average loss transitions per epoch.
+Aggregate train/val/test log CSVs and visualize average loss transitions.
 
-Typical usage (weights/Test/ is the default destination for SD inpainting runs):
-    python scripts/plot_train_test_loss.py \
-        --train-log weights/Test/train_log.csv \
-        --eval-log weights/Test/eval_log.csv \
+Typical usage (folder mode):
+    python scripts/plot_loss_transition.py \
+        --log-dir weights/MambaCrafter_20251223_174104
+
+Explicit file usage is still supported:
+    python scripts/plot_loss_transition.py \
+        --train-log weights/Test/train_log_20251210_095055.csv \
+        --val-log weights/Test/val_log_20251223_172946.csv \
         --output weights/Test/loss_transition.png
 
-`--eval-log` can point to either eval/test logs (any CSV that stores epoch + loss).
-When the same epoch appears multiple times the script averages those values before
-plotting, so the resulting curves reflect epoch-level progression.
+Folder mode expects exactly one train_log*.csv and at most one val_log*.csv or
+test_log*.csv in the directory. It writes loss.png next to those logs.
+
+Each log is trimmed independently in epoch mode: if the last epoch has fewer
+rows than the previous epoch, it is considered incomplete and is dropped.
 """
 
 from __future__ import annotations
@@ -21,7 +27,7 @@ import os
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, Iterable, List, Sequence, Tuple
+from typing import Dict, List, Sequence, Tuple
 
 def _select_backend_env() -> None:
     # If DISPLAY is set but unusable (no Xauthority), drop it to avoid X errors.
@@ -46,30 +52,44 @@ from matplotlib.ticker import MaxNLocator
 
 
 EpochLoss = Sequence[Tuple[int, float]]
+CurveSpec = Tuple[str, EpochLoss, str, str]
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Plot train/test loss transitions averaged per epoch."
+        description="Plot train/val/test loss transitions averaged by epoch or step."
+    )
+    parser.add_argument(
+        "--log-dir",
+        type=Path,
+        default=None,
+        help="Directory containing train_log*.csv and val_log*.csv/test_log*.csv (takes precedence).",
     )
     parser.add_argument(
         "--train-log",
         type=Path,
-        default=Path("weights/Test/train_log.csv"),
+        default=None,
         help="CSV that tracks training loss per step/epoch.",
     )
     parser.add_argument(
-        "--eval-log",
-        dest="eval_log",
+        "--val-log",
+        dest="val_log",
         type=Path,
-        default=Path("weights/Test/eval_log.csv"),
-        help="CSV for validation/test loss per epoch (set to '' to skip).",
+        default=None,
+        help="CSV for validation loss per step/epoch.",
+    )
+    parser.add_argument(
+        "--test-log",
+        dest="test_log",
+        type=Path,
+        default=None,
+        help="CSV for test loss per step/epoch.",
     )
     parser.add_argument(
         "--test-label",
         type=str,
-        default="eval",
-        help="Legend label for the validation/test curve.",
+        default=None,
+        help="Legend label for a single val/test curve.",
     )
     parser.add_argument(
         "--loss-column",
@@ -78,10 +98,28 @@ def parse_args() -> argparse.Namespace:
         help="Column name that stores the loss values to average.",
     )
     parser.add_argument(
+        "--group-by",
+        choices=("epoch", "step"),
+        default="epoch",
+        help="X-axis grouping mode: average by epoch or step.",
+    )
+    parser.add_argument(
         "--epoch-column",
         type=str,
         default="epoch",
         help="Column name that stores epoch numbers.",
+    )
+    parser.add_argument(
+        "--step-column",
+        type=str,
+        default="step",
+        help="Column name that stores step numbers (used when --group-by=step).",
+    )
+    parser.add_argument(
+        "--step-bin-size",
+        type=int,
+        default=100,
+        help="Bin size for step min/max envelope (used when --group-by=step).",
     )
     parser.add_argument(
         "--output",
@@ -101,24 +139,56 @@ def ensure_csv(path: Path, label: str) -> None:
         raise FileNotFoundError(f"{label} log is not a file: {path}")
 
 
-def read_epoch_averages(
+def find_unique_log(log_dir: Path, prefix: str) -> Path | None:
+    matches = sorted(log_dir.glob(f"{prefix}*.csv"))
+    if not matches:
+        return None
+    if len(matches) > 1:
+        joined = ", ".join(str(match) for match in matches)
+        raise ValueError(f"Multiple {prefix} logs found in {log_dir}: {joined}")
+    return matches[0]
+
+
+def resolve_logs_from_dir(log_dir: Path) -> tuple[Path, Path | None, Path | None]:
+    if not log_dir.exists():
+        raise FileNotFoundError(f"Log directory not found: {log_dir}")
+    if not log_dir.is_dir():
+        raise NotADirectoryError(f"Log directory is not a directory: {log_dir}")
+
+    train_log = find_unique_log(log_dir, "train_log")
+    if train_log is None:
+        raise FileNotFoundError(f"train_log*.csv not found in {log_dir}")
+    val_log = find_unique_log(log_dir, "val_log")
+    test_log = find_unique_log(log_dir, "test_log")
+    return train_log, val_log, test_log
+
+
+def read_group_losses(
     csv_path: Path,
-    epoch_column: str,
+    x_column: str,
     loss_column: str,
-) -> EpochLoss:
+) -> Dict[int, List[float]]:
     ensure_csv(csv_path, csv_path.stem)
 
     epoch_losses: Dict[int, List[float]] = defaultdict(list)
     with csv_path.open("r", newline="") as handle:
         reader = csv.DictReader(handle)
-        if epoch_column not in reader.fieldnames or loss_column not in reader.fieldnames:
+        fieldnames = reader.fieldnames or []
+        x_key = x_column
+        if x_key not in fieldnames and x_key == "step" and "batch" in fieldnames:
+            x_key = "batch"
+        loss_key = loss_column
+        if loss_key not in fieldnames and loss_key == "loss_total":
+            if "loss_noise_mse" in fieldnames:
+                loss_key = "loss_noise_mse"
+        if x_key not in fieldnames or loss_key not in fieldnames:
             raise KeyError(
                 f"{csv_path}: Missing columns "
-                f"(needed '{epoch_column}' and '{loss_column}')"
+                f"(needed '{x_key}' and '{loss_key}')"
             )
         for row in reader:
-            epoch_raw = row.get(epoch_column)
-            loss_raw = row.get(loss_column)
+            epoch_raw = row.get(x_key)
+            loss_raw = row.get(loss_key)
             if epoch_raw is None or loss_raw is None:
                 continue
             epoch = int(epoch_raw)
@@ -127,6 +197,40 @@ def read_epoch_averages(
             except ValueError:
                 continue
             epoch_losses[epoch].append(loss_val)
+    return epoch_losses
+
+def maybe_drop_incomplete_last_epoch(
+    epoch_losses: Dict[int, List[float]],
+    label: str,
+) -> Dict[int, List[float]]:
+    if len(epoch_losses) < 2:
+        return epoch_losses
+
+    epochs = sorted(epoch_losses)
+    last_epoch = epochs[-1]
+    reference_epoch = epochs[-2]
+    last_count = len(epoch_losses.get(last_epoch, []))
+    reference_count = len(epoch_losses.get(reference_epoch, []))
+    if last_count != reference_count:
+        print(
+            f"{label}: dropping incomplete epoch {last_epoch} "
+            f"(rows={last_count}, expected={reference_count})."
+        )
+        epoch_losses.pop(last_epoch, None)
+    return epoch_losses
+
+
+def read_epoch_averages(
+    csv_path: Path,
+    x_column: str,
+    loss_column: str,
+    *,
+    label: str,
+    drop_incomplete_last: bool = True,
+) -> EpochLoss:
+    epoch_losses = read_group_losses(csv_path, x_column, loss_column)
+    if drop_incomplete_last:
+        epoch_losses = maybe_drop_incomplete_last_epoch(epoch_losses, label)
 
     averages: List[Tuple[int, float]] = []
     for epoch, values in epoch_losses.items():
@@ -138,47 +242,92 @@ def read_epoch_averages(
     return averages
 
 
-def print_epoch_table(name: str, averages: EpochLoss) -> None:
+def print_group_table(name: str, averages: EpochLoss, *, group_label: str) -> None:
     if not averages:
         print(f"No {name} data to report.")
         return
-    print(f"{name} epoch averages:")
+    print(f"{name} {group_label} averages:")
     for epoch, loss in averages:
-        print(f"  epoch {epoch:4d}: {loss:.6f}")
+        print(f"  {group_label} {epoch:4d}: {loss:.6f}")
 
 
 def plot_curves(
-    train_data: EpochLoss,
-    test_data: EpochLoss,
+    curves: Sequence[CurveSpec],
     output: Path | None,
-    test_label: str,
+    *,
+    group_label: str,
+    step_bin_size: int,
 ) -> None:
-    if not train_data and not test_data:
+    if not any(data for _, data, _, _ in curves):
         print("Nothing to plot.")
         return
 
     fig, ax = plt.subplots(figsize=(10, 5))
-    if train_data:
-        train_epochs, train_losses = zip(*train_data)
+    for label, data, marker, color in curves:
+        if not data:
+            continue
+        epochs, losses = zip(*data)
+        plot_marker = None if group_label == "step" else marker
+        line_alpha = 0.25 if group_label == "step" else 1.0
+        line_width = 0.6 if group_label == "step" else 1.5
         ax.plot(
-            train_epochs,
-            train_losses,
-            marker="o",
-            label="train",
-            color="#1f77b4",
+            epochs,
+            losses,
+            marker=plot_marker,
+            label=label,
+            color=color,
+            alpha=line_alpha,
+            linewidth=line_width,
+            zorder=1,
         )
-    if test_data:
-        test_epochs, test_losses = zip(*test_data)
-        ax.plot(
-            test_epochs,
-            test_losses,
-            marker="s",
-            label=test_label,
-            color="#ff7f0e",
-        )
+        if group_label == "step" and step_bin_size > 1:
+            bins: dict[int, list[float]] = {}
+            for x_val, y_val in data:
+                bin_idx = int(x_val) // step_bin_size
+                if bin_idx not in bins:
+                    bins[bin_idx] = [float(x_val), float(x_val), float(y_val), float(y_val)]
+                else:
+                    stats = bins[bin_idx]
+                    stats[0] = min(stats[0], float(x_val))
+                    stats[1] = max(stats[1], float(x_val))
+                    stats[2] = min(stats[2], float(y_val))
+                    stats[3] = max(stats[3], float(y_val))
+            bin_x: list[float] = []
+            bin_min: list[float] = []
+            bin_max: list[float] = []
+            for bin_idx in sorted(bins):
+                min_x, max_x, min_y, max_y = bins[bin_idx]
+                bin_x.append((min_x + max_x) * 0.5)
+                bin_min.append(min_y)
+                bin_max.append(max_y)
+            ax.fill_between(
+                bin_x,
+                bin_min,
+                bin_max,
+                color=color,
+                alpha=0.25,
+                linewidth=0,
+                zorder=2,
+            )
+            ax.plot(
+                bin_x,
+                bin_min,
+                color=color,
+                alpha=0.6,
+                linewidth=1.0,
+                zorder=3,
+            )
+            ax.plot(
+                bin_x,
+                bin_max,
+                color=color,
+                alpha=0.6,
+                linewidth=1.0,
+                zorder=3,
+            )
 
-    ax.set_title("Loss Transition per Epoch")
-    ax.set_xlabel("Epoch")
+    ax.set_title(f"Loss Transition per {group_label.capitalize()}")
+    ax.set_xlabel(group_label.capitalize())
     ax.set_ylabel("Loss")
     ax.grid(True, linestyle="--", alpha=0.4)
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
@@ -206,41 +355,6 @@ def display_available() -> bool:
     return False
 
 
-def align_balanced_passes(
-    train_data: EpochLoss, test_data: EpochLoss
-) -> Tuple[EpochLoss, EpochLoss]:
-    """
-    Trim the newest epochs if train/test have run different counts after epoch 1.
-
-    We assume any mismatch happens at the very end (latest epoch still running).
-    When detected we drop the extra newest points from whichever side is longer
-    so plots only show fully-completed epochs.
-    """
-
-    if not train_data or not test_data:
-        return train_data, test_data
-
-    train_tail = train_data[1:]
-    test_tail = test_data[1:]
-    if not train_tail or not test_tail:
-        return train_data, test_data
-
-    matched_len = min(len(train_tail), len(test_tail))
-    if matched_len == len(train_tail) and matched_len == len(test_tail):
-        return train_data, test_data
-
-    if matched_len == 0:
-        print("Train/test second epochs not both available yet, plotting only epoch 1.")
-    else:
-        print(
-            "Latest train/test epochs mismatch, dropping unfinished epoch before plotting."
-        )
-
-    trimmed_train = list(train_data[:1]) + list(train_tail[:matched_len])
-    trimmed_test = list(test_data[:1]) + list(test_tail[:matched_len])
-    return trimmed_train, trimmed_test
-
-
 def extract_run_tag(path: Path | None) -> str | None:
     """
     Try to pull a timestamp-ish suffix from log filenames like
@@ -251,7 +365,7 @@ def extract_run_tag(path: Path | None) -> str | None:
         return None
     stem = path.stem
 
-    for prefix in ("train_log_", "eval_log_"):
+    for prefix in ("train_log_", "val_log_", "test_log_"):
         if stem.startswith(prefix) and len(stem) > len(prefix):
             return stem[len(prefix) :]
 
@@ -263,32 +377,97 @@ def extract_run_tag(path: Path | None) -> str | None:
 
 def main() -> int:
     args = parse_args()
-    train_data = read_epoch_averages(args.train_log, args.epoch_column, args.loss_column)
+    train_log = args.train_log
+    val_log = args.val_log
+    test_log = args.test_log
+    if args.log_dir:
+        train_log, val_log, test_log = resolve_logs_from_dir(args.log_dir)
+
+    if train_log is None:
+        raise ValueError("Specify --log-dir or --train-log.")
+
+    group_by = args.group_by
+    x_column = args.epoch_column if group_by == "epoch" else args.step_column
+    drop_incomplete = group_by == "epoch"
+
+    train_data = read_epoch_averages(
+        train_log,
+        x_column,
+        args.loss_column,
+        label="train",
+        drop_incomplete_last=drop_incomplete,
+    )
+
+    val_data: EpochLoss = []
+    if val_log:
+        if val_log.exists():
+            try:
+                val_data = read_epoch_averages(
+                    val_log,
+                    x_column,
+                    args.loss_column,
+                    label="val",
+                    drop_incomplete_last=drop_incomplete,
+                )
+            except KeyError as exc:
+                if group_by == "step":
+                    print(f"Val log missing '{x_column}', skipping: {val_log}")
+                else:
+                    raise exc
+        else:
+            print(f"Val log not found, skipping: {val_log}")
 
     test_data: EpochLoss = []
-    if args.eval_log:
-        if args.eval_log.exists():
-            test_data = read_epoch_averages(
-                args.eval_log, args.epoch_column, args.loss_column
-            )
+    if test_log:
+        if test_log.exists():
+            try:
+                test_data = read_epoch_averages(
+                    test_log,
+                    x_column,
+                    args.loss_column,
+                    label="test",
+                    drop_incomplete_last=drop_incomplete,
+                )
+            except KeyError as exc:
+                if group_by == "step":
+                    print(f"Test log missing '{x_column}', skipping: {test_log}")
+                else:
+                    raise exc
         else:
-            print(f"Eval log not found, skipping: {args.eval_log}")
-
-    train_data, test_data = align_balanced_passes(train_data, test_data)
+            print(f"Test log not found, skipping: {test_log}")
 
     output_path = args.output
     if output_path is None:
-        # Default to saving next to the train log.
-        run_tag = extract_run_tag(args.eval_log) or extract_run_tag(args.train_log)
-        filename = (
-            f"loss_transition_{run_tag}.png" if run_tag else "loss_transition.png"
-        )
-        output_path = args.train_log.with_name(filename)
+        filename = f"loss_{group_by}.png"
+        if args.log_dir:
+            output_path = args.log_dir / filename
+        else:
+            run_tag = (
+                extract_run_tag(val_log)
+                or extract_run_tag(test_log)
+                or extract_run_tag(train_log)
+            )
+            filename = f"loss_{group_by}_{run_tag}.png" if run_tag else filename
+            output_path = train_log.with_name(filename)
         print(f"Saving figure automatically to: {output_path}")
 
-    print_epoch_table("Train", train_data)
-    print_epoch_table(args.test_label.capitalize(), test_data)
-    plot_curves(train_data, test_data, output_path, test_label=args.test_label)
+    print_group_table("Train", train_data, group_label=group_by)
+    use_custom_label = args.test_label is not None and not (val_data and test_data)
+    curves: List[CurveSpec] = [("train", train_data, "o", "#1f77b4")]
+    if val_data:
+        label = args.test_label if use_custom_label and not test_data else "val"
+        print_group_table(label, val_data, group_label=group_by)
+        curves.append((label, val_data, "s", "#ff7f0e"))
+    if test_data:
+        label = args.test_label if use_custom_label and not val_data else "test"
+        print_group_table(label, test_data, group_label=group_by)
+        curves.append((label, test_data, "^", "#2ca02c"))
+    plot_curves(
+        curves,
+        output_path,
+        group_label=group_by,
+        step_bin_size=args.step_bin_size,
+    )
     return 0
 
 

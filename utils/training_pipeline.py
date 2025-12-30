@@ -13,6 +13,7 @@
 """
 
 import logging
+import os
 from typing import Dict
 
 import torch
@@ -41,6 +42,15 @@ def load_inpainting_pipeline(
     - image_encoder / vae は推論用に固定 (eval, no grad)
     - unet は学習対象 (train, requires_grad=True)
     """
+    ensure_logging_configured()
+    unet_subdir = "unet_diffusers"
+    expected_unet_dir = os.path.join(unet_path, unet_subdir)
+    logger.info(
+        "Loading UNet from %s (subfolder=%s, exists=%s)",
+        unet_path,
+        unet_subdir,
+        os.path.isdir(expected_unet_dir),
+    )
     image_encoder = CLIPVisionModelWithProjection.from_pretrained(
         pre_trained_path,
         subfolder="image_encoder",
@@ -58,6 +68,13 @@ def load_inpainting_pipeline(
         subfolder="unet_diffusers",
         low_cpu_mem_usage=True,
         torch_dtype=torch_dtype,
+    )
+    logger.info(
+        "Loaded UNet OK: in_channels=%s, out_channels=%s, num_frames=%s, cross_attention_dim=%s",
+        getattr(unet.config, "in_channels", None),
+        getattr(unet.config, "out_channels", None),
+        getattr(unet.config, "num_frames", None),
+        getattr(unet.config, "cross_attention_dim", None),
     )
 
     image_encoder.requires_grad_(False).eval()
@@ -212,8 +229,10 @@ def configure_unet_memory_features(
             attn_mode_lower = "auto"
     if attn_mode_lower in ("auto", "sdp"):
         try:
-            pipeline.unet.set_attn_processor("torch-sdp")
-            logger.info("Using PyTorch scaled dot-product attention")
+            from diffusers.models.attention_processor import AttnProcessor2_0
+
+            pipeline.unet.set_attn_processor(AttnProcessor2_0())
+            logger.info("Using PyTorch scaled dot-product attention (AttnProcessor2_0)")
         except Exception:
             pass
     try:

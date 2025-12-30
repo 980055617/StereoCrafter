@@ -5,12 +5,17 @@ set -euo pipefail
 any_failure=0
 
 show_usage() {
-    echo "Usage: $0 <input_dir> [gpu_ids] [output_dir] [chunk_size] [batch_size]"
+    echo "Usage: $0 <input_dir> [gpu_ids] [output_dir] [batch_size] [window_size] [overlap] [max_res] [process_length] [cpu_offload] [enable_xformers]"
     echo "  input_dir : Directory that contains input video files."
     echo "  gpu_ids   : Comma-separated CUDA device ids (default: 0)."
     echo "  output_dir: Directory to store results (default: ./video_data/splatting)."
-    echo "  chunk_size: Number of frames to process per chunk (default: -1 = whole video)."
-    echo "  batch_size: Frames per splatting batch (default: 10)."
+    echo "  batch_size: Frames per splatting batch (default: 1)."
+    echo "  window_size: Temporal window size for diffusion (default: 70)."
+    echo "  overlap: Temporal overlap between windows (default: 25)."
+    echo "  max_res: Max spatial resolution for resizing (default: 1024)."
+    echo "  process_length: Limit number of frames (-1 = all)."
+    echo "  cpu_offload: none|model|sequential (default: model)."
+    echo "  enable_xformers: true|false (default: false)."
 }
 
 if [[ $# -lt 1 ]]; then
@@ -21,8 +26,13 @@ fi
 input_dir=$1
 gpu_ids=${2:-"0"}
 output_dir=${3:-"./video_data/splatting"}
-chunk_size=${4:-"-1"}
-batch_size=${5:-"10"}
+batch_size=${4:-"1"}
+window_size=${5:-"70"}
+overlap=${6:-"25"}
+max_res=${7:-"1024"}
+process_length=${8:-"-1"}
+cpu_offload=${9:-"model"}
+enable_xformers=${10:-"false"}
 
 if [[ ! -d "$input_dir" ]]; then
     echo "Input directory not found: $input_dir"
@@ -60,14 +70,18 @@ for video_path in "${videos[@]}"; do
     (
         echo "🎬 GPU $gpu_id processing $video_filename..."
 
-        if CUDA_VISIBLE_DEVICES=$gpu_id python3 depth_splatting_inference.py \
+        if CUDA_VISIBLE_DEVICES=$gpu_id python3 depth_splatting_inference_origin.py \
             --pre_trained_path ./weights/stable-video-diffusion-img2vid-xt-1-1 \
             --unet_path ./weights/DepthCrafter \
             --input_video_path "$video_path" \
             --output_video_path "$output_video_path" \
-            --chunk_size "$chunk_size" \
-            --cpu_offload none \
-            --batch_size "$batch_size"; then
+            --batch_size "$batch_size" \
+            --window_size "$window_size" \
+            --overlap "$overlap" \
+            --max_res "$max_res" \
+            --process_length "$process_length" \
+            --cpu_offload "$cpu_offload" \
+            --enable_xformers "$enable_xformers"; then
             echo "✅ Done $video_filename on GPU $gpu_id"
         else
             status=$?

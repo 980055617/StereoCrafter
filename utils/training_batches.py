@@ -113,7 +113,6 @@ class _BatchIterable(Iterable[TrainBatch]):
         overlap: int,
         device: torch.device,
         dtype: torch.dtype,
-        crop_size: Optional[Tuple[int, int]] = None,
         crop_multiple: int = 128,
         crop_region: Optional[Tuple[int, int, int, int]] = None,
         use_prev_target_overlap: bool = False,
@@ -128,11 +127,9 @@ class _BatchIterable(Iterable[TrainBatch]):
         self._overlap = max(0, overlap)
         self._device = device
         self._dtype = dtype
-        self._crop_size = crop_size
         self._crop_region = crop_region
         self._crop_multiple = max(1, crop_multiple)
         self._use_prev_target_overlap = use_prev_target_overlap
-        self._warned_random_crop_overlap = False
         self._overlap_teacher_prob = max(0.0, min(1.0, overlap_teacher_prob))
         self._overlap_noise_std = max(0.0, float(overlap_noise_std))
 
@@ -144,10 +141,8 @@ class _BatchIterable(Iterable[TrainBatch]):
         for start, end in self._ranges:
             cond_cpu, mask_cpu, target_cpu = self._video_stream.load_chunk(start, end)
 
-            if self._crop_region is not None and self._crop_size is not None:
+            if self._crop_region is not None:
                 cond_cpu, mask_cpu, target_cpu = self._apply_fixed_crop(cond_cpu, mask_cpu, target_cpu)
-            elif self._crop_size is not None:
-                cond_cpu, mask_cpu, target_cpu = self._apply_random_crop(cond_cpu, mask_cpu, target_cpu)
 
             # 直前チャンクの出力（教師フレーム）でオーバーラップ領域を置き換え、推論時の条件付けに近づける
             if (
@@ -156,58 +151,21 @@ class _BatchIterable(Iterable[TrainBatch]):
                 and self._overlap > 0
                 and start > 0
             ):
-                # ランダムクロップ（毎チャンク位置が変わる）と併用すると位置がずれるのでスキップ
-                if self._crop_size is not None and self._crop_region is None:
-                    if not self._warned_random_crop_overlap:
-                        logger.warning(
-                            "Skipping overlap conditioning because random crop changes per chunk. "
-                            "Set min_h/min_w & max_h/max_w to fix crop region if you want overlap conditioning."
-                        )
-                        self._warned_random_crop_overlap = True
-                else:
-                    ov = min(self._overlap, cond_cpu.shape[0], prev_target_cpu.shape[0])
-                    if ov > 0:
-                        # scheduled sampling: 一定確率で教師(前チャンクGT)を使い、残りは元のcondを保持
-                        if random.random() < self._overlap_teacher_prob:
-                            overlap_val = prev_target_cpu[-ov:].clone()
-                            if self._overlap_noise_std > 0:
-                                noise = torch.randn_like(overlap_val) * self._overlap_noise_std
-                                overlap_val = torch.clamp(overlap_val + noise, 0.0, 1.0)
-                            cond_cpu[:ov] = overlap_val
+                ov = min(self._overlap, cond_cpu.shape[0], prev_target_cpu.shape[0])
+                if ov > 0:
+                    # scheduled sampling: 一定確率で教師(前チャンクGT)を使い、残りは元のcondを保持
+                    if random.random() < self._overlap_teacher_prob:
+                        overlap_val = prev_target_cpu[-ov:].clone()
+                        if self._overlap_noise_std > 0:
+                            noise = torch.randn_like(overlap_val) * self._overlap_noise_std
+                            overlap_val = torch.clamp(overlap_val + noise, 0.0, 1.0)
+                        cond_cpu[:ov] = overlap_val
 
             cond = cond_cpu.to(device=self._device, dtype=self._dtype, non_blocking=True)
             mask = mask_cpu.to(device=self._device, dtype=self._dtype, non_blocking=True)
             target = target_cpu.to(device=self._device, dtype=self._dtype, non_blocking=True)
             prev_target_cpu = target_cpu.detach().clone() if self._use_prev_target_overlap else None
             yield TrainBatch(cond=cond, mask=mask, target=target)
-
-    def _apply_random_crop(
-        self,
-        cond: torch.Tensor,
-        mask: torch.Tensor,
-        target: torch.Tensor,
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        crop_h, crop_w = self._crop_size  # type: ignore[misc]
-        height = cond.shape[2]
-        width = cond.shape[3]
-
-        crop_h = self._align_dim(crop_h, height)
-        crop_w = self._align_dim(crop_w, width)
-
-        if crop_h >= height and crop_w >= width:
-            return cond, mask, target
-
-        max_top = height - crop_h
-        max_left = width - crop_w
-        top = random.randint(0, max_top) if max_top > 0 else 0
-        left = random.randint(0, max_left) if max_left > 0 else 0
-
-        slice_h = slice(top, top + crop_h)
-        slice_w = slice(left, left + crop_w)
-        cond = cond[:, :, slice_h, slice_w]
-        mask = mask[:, :, slice_h, slice_w]
-        target = target[:, :, slice_h, slice_w]
-        return cond, mask, target
 
     @property
     def crop_region_info(self) -> Optional[dict]:
@@ -268,7 +226,6 @@ def prepare_batches(
     overlap: int,
     device: torch.device,
     dtype: torch.dtype,
-    random_crop_size: Optional[Tuple[int, int]] = None,
     crop_multiple: int = 128,
     crop_min_size: Optional[Tuple[int, int]] = None,
     crop_max_size: Optional[Tuple[int, int]] = None,
@@ -284,7 +241,6 @@ def prepare_batches(
         overlap: チャンク間のオーバーラップ数。
         device: テンソルを配置するデバイス。
         dtype: テンソル化時の dtype。
-        random_crop_size: (height, width)。指定時は cond/mask/target を同じ位置で各チャンクごとにランダムクロップ。
         crop_multiple: クロップ縦横を揃える倍数。VAE のスケールに合わせて 128 などを推奨。
         crop_min_size/crop_max_size: (min_h/min_w), (max_h/max_w)。動画ごとに固定サイズ・開始位置をランダム決定する場合に使用。
         use_prev_target_overlap: True のとき、オーバーラップ領域の条件フレームを前チャンクのターゲットで置換し、推論時の条件付けを模倣。
@@ -294,13 +250,8 @@ def prepare_batches(
     """
     video_stream = _StreamingVideo(video_path)
 
-    crop_size = None
     crop_region: Optional[Tuple[int, int, int, int]] = None
-    if random_crop_size is not None:
-        crop_h, crop_w = random_crop_size
-        if crop_h > 0 and crop_w > 0:
-            crop_size = (crop_h, crop_w)
-    elif crop_min_size is not None or crop_max_size is not None:
+    if crop_min_size is not None or crop_max_size is not None:
         min_h = crop_min_size[0] if crop_min_size is not None else 1
         min_w = crop_min_size[1] if crop_min_size is not None else 1
         max_h = crop_max_size[0] if crop_max_size is not None else video_stream.spatial_hw[0]
@@ -315,7 +266,6 @@ def prepare_batches(
 
         crop_h = random.randint(min_h, max_h)
         crop_w = random.randint(min_w, max_w)
-        crop_size = (crop_h, crop_w)
 
         max_top = max(height - crop_h, 0)
         max_left = max(width - crop_w, 0)
@@ -329,7 +279,6 @@ def prepare_batches(
         overlap=overlap,
         device=device,
         dtype=dtype,
-        crop_size=crop_size,
         crop_multiple=crop_multiple,
         crop_region=crop_region,
         use_prev_target_overlap=use_prev_target_overlap,

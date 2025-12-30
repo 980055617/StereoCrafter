@@ -89,27 +89,32 @@ class MambaSpatioTemporalModel(nn.Module):
 
     def _apply_time_embed(self, x, timesteps):
         # x: (B,C,T,H,W)
-        if timesteps is None:
-            return x
         B, C, T, H, W = x.shape
 
         # tベクトルを用意（BかB*Tを受け取り、足りなければ0..T-1で埋める）
-        t_in = timesteps
-        if t_in.dim() == 0:
-            t_in = t_in[None]
-        if t_in.dim() == 1:
-            if t_in.numel() == B * T:
-                t = t_in
-            elif t_in.numel() == B:
-                # ★ ここで各バッチのtimestepをフレーム数Tぶんに拡張
-                t = t_in.repeat_interleave(T)     # (B*T,)
+        if timesteps is None:
+            # Diffusers' spatiotemporal blocks don't pass diffusion timestep; use frame indices like SVD.
+            t = torch.arange(T, device=x.device).repeat(B)  # (B*T,)
+        else:
+            t_in = timesteps
+            if not isinstance(t_in, torch.Tensor):
+                t_in = torch.tensor(t_in, device=x.device)
+            elif t_in.device != x.device:
+                t_in = t_in.to(x.device)
+            if t_in.dim() == 0:
+                t_in = t_in[None]
+            if t_in.dim() == 1:
+                if t_in.numel() == B * T:
+                    t = t_in
+                elif t_in.numel() == B:
+                    # ★ ここで各バッチのtimestepをフレーム数Tぶんに拡張
+                    t = t_in.repeat_interleave(T)     # (B*T,)
+                else:
+                    t = torch.arange(T, device=x.device) \
+                            .repeat(B)                 # (B*T,)
             else:
                 t = torch.arange(T, device=x.device) \
                         .repeat(B)                 # (B*T,)
-        else:
-            # 想定外形状はフォールバック
-            t = torch.arange(T, device=x.device) \
-                    .repeat(B)                     # (B*T,)
 
         # per-frameで埋め込み → (B*T, C) → (B,C,T,1,1) に整形して加算
         temb = self.time_proj(t)                  # (B*T, C) ここはfp32になりがち

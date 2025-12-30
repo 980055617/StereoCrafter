@@ -2,12 +2,12 @@
   "pre_trained_path": "weights/stable-video-diffusion-img2vid-xt-1-1/",
   "unet_path": "weights/StereoCrafter/",
   "input_video_path": "video_data/splatting/0160_splatting_results.mp4",
-  "save_dir": "video_data/model_output/",
-  "frames_chunk": 23,
+  "save_dir": "weights/MambaCrafter_20251223_174104_old/",
+  "frames_chunk": 10,
   "overlap": 3,
   "tile_num": 2,
   "precision": "bf16",
-  "decode_chunk_size": 2,
-  "use_mamba": true,
-  "unet_state_path": "weights/Test/unet_epoch021.pt"
+  "decode_chunk_size": 8,
+  "num_inference_steps": 30,
+  "unet_state_path": "weights/MambaCrafter_20251223_174104_old/train_state_latest.pt"
 }

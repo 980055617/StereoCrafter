@@ -54,6 +54,25 @@ def _load_config_dict(config: str, config_dir: str) -> dict[str, Any]:
     return data
 
 
+def _resolve_unet_state_path(unet_state_path: str | None) -> str | None:
+    if unet_state_path is None:
+        return None
+    candidate = Path(unet_state_path).expanduser()
+    if candidate.is_dir():
+        pt_files = sorted(
+            p for p in candidate.iterdir() if p.is_file() and p.suffix == ".pt"
+        )
+        if len(pt_files) == 1:
+            return str(pt_files[0])
+        raise ValueError(
+            f"unet_state_path directory has {len(pt_files)} .pt files; "
+            "please pass the specific .pt file path."
+        )
+    if not candidate.exists():
+        raise FileNotFoundError(f"unet_state_path not found: {candidate}")
+    return str(candidate)
+
+
 
 def main(
     pre_trained_path: str,
@@ -63,6 +82,7 @@ def main(
     frames_chunk: int = 11,
     overlap: int = 3,
     tile_num: int = 1,
+    num_inference_steps: int = 8,
     *,
     precision: str = "fp16",
     decode_chunk_size: int = 2,
@@ -96,21 +116,28 @@ def main(
         # variant="fp16",
         torch_dtype=torch_dtype
     )
+    expected_unet_dir = os.path.join(unet_path, "unet_diffusers")
+    print(
+        f"Loaded UNet from {unet_path} (subfolder='unet_diffusers', exists={os.path.isdir(expected_unet_dir)})"
+    )
+    print(
+        "UNet config: in_channels=%s, out_channels=%s, num_frames=%s, cross_attention_dim=%s"
+        % (
+            getattr(unet.config, "in_channels", None),
+            getattr(unet.config, "out_channels", None),
+            getattr(unet.config, "num_frames", None),
+            getattr(unet.config, "cross_attention_dim", None),
+        )
+    )
 
     image_encoder.requires_grad_(False)
     vae.requires_grad_(False)
     unet.requires_grad_(False)
 
-    if use_mamba or (unet_state_path is not None):
-        from pipelines.mamba_stereo_video_inpainting_pipeline import (
-            MambaStableVideoDiffusionInpaintingPipeline as _Pipe,
-            tensor2vid,
-        )
-    else:
-        from pipelines.stereo_video_inpainting import (
-            StableVideoDiffusionInpaintingPipeline as _Pipe,
-            tensor2vid,
-        )
+    from pipelines.mamba_stereo_video_inpainting_pipeline import (
+        MambaStableVideoDiffusionInpaintingPipeline as _Pipe,
+        tensor2vid,
+    )
 
     pipeline = _Pipe.from_pretrained(
         pre_trained_path,
@@ -125,18 +152,33 @@ def main(
         pipeline.scheduler = DDPMScheduler.from_config(pipeline.scheduler.config)
 
     # Optionally load a fine‑tuned UNet state_dict (.pt) produced by training
+    unet_state_path = _resolve_unet_state_path(unet_state_path)
     if unet_state_path is not None and os.path.isfile(unet_state_path):
         # load unet weights safely and cast back to desired dtype
         try:
-            sd = torch.load(unet_state_path, map_location="cpu", weights_only=True)  # torch>=2.4
+            raw_state = torch.load(unet_state_path, map_location="cpu", weights_only=True)  # torch>=2.4
         except TypeError:
-            sd = torch.load(unet_state_path, map_location="cpu")
+            raw_state = torch.load(unet_state_path, map_location="cpu")
+
+        # unwrap training checkpoints that contain optimizer/scheduler, etc.
+        state_dict = None
+        if isinstance(raw_state, dict):
+            for key in ("model", "unet", "state_dict"):
+                if key in raw_state and isinstance(raw_state[key], dict):
+                    state_dict = raw_state[key]
+                    break
+            # if it already looks like a state_dict, use it directly
+            if state_dict is None and all(isinstance(v, torch.Tensor) for v in raw_state.values()):
+                state_dict = raw_state
+        if state_dict is None:
+            state_dict = raw_state
+
         # safer to load on fp32 then cast down if needed
         try:
             pipeline.unet.to(dtype=torch.float32)
         except Exception:
             pass
-        missing, unexpected = pipeline.unet.load_state_dict(sd, strict=False)
+        missing, unexpected = pipeline.unet.load_state_dict(state_dict, strict=False)
         if missing:
             print(f"[warn] Missing keys when loading UNet: {len(missing)} (showing first 5): {missing[:5]}")
         if unexpected:
@@ -204,7 +246,7 @@ def main(
             fps=7,
             motion_bucket_id=127,
             noise_aug_strength=0.0,
-            num_inference_steps=8,
+            num_inference_steps=num_inference_steps,
             generator=generator,
         )
 
