@@ -1,19 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-Compare parameter counts between:
-- Original UNet (Diffusers) under --base_dir (expects subfolder "unet")
-- Mamba-adapted UNet saved under --adapted_dir (e.g., checkpoints/.../unet_diffusers)
+# =============================================
+# File: /workspace/stereocraft/scripts/compare_unet_params.py
+# ---------------------------------------------
+# 目的: UNetパラメータ数の比較
+# =============================================
 
-Usage:
-  python scripts/compare_unet_params.py \
-    --base_dir ./weights/StereoCrafter \
-    --adapted_dir ./checkpoints/mamba-unet-overfit/unet_diffusers
-
-Notes:
-- The adapted UNet is reconstructed by creating a UNet from config, applying the
-  Mamba adapter (reading mamba_adapter.json if present), then loading the adapted state_dict.
-"""
+"""Compare parameter counts between base and Mamba-adapted UNet."""
 import argparse
 import os
 import json
@@ -149,4 +142,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

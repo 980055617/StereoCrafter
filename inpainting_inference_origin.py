@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 import cv2
 import numpy as np
 from fire import Fire
@@ -13,7 +12,6 @@ from diffusers import (
 )
 from diffusers import UNetSpatioTemporalConditionModel
 
-from utils.training_batches import chunk_frame_ranges
 from pipelines.stereo_video_inpainting import StableVideoDiffusionInpaintingPipeline, tensor2vid
 
 
@@ -142,19 +140,15 @@ def write_video_opencv(input_frames, fps, output_video_path):
 
 
 def main(
+    pre_trained_path,
+    unet_path,
     input_video_path,
-    pre_trained_path="./weights/stable-video-diffusion-img2vid-xt-1-1",
-    unet_path="./weights/StereoCrafter",
-    num_inference_steps=8,
-    save_dir=None,
+    save_dir,
     frames_chunk=23,
     overlap=3,
-    tile_num=1,
+    tile_num=1
 ):
-    pre_trained_path = pre_trained_path or "./weights/stable-video-diffusion-img2vid-xt-1-1"
-    unet_path = unet_path or "./weights/StereoCrafter"
-    save_dir = save_dir or str(Path(input_video_path).parent)
-
+    
     image_encoder = CLIPVisionModelWithProjection.from_pretrained(
         pre_trained_path,
         subfolder="image_encoder",
@@ -195,59 +189,55 @@ def main(
 
     video_reader = VideoReader(input_video_path, ctx=cpu(0))
     fps = video_reader.get_avg_fps()
+    frame_indices = list(range(len(video_reader)))
+    frames = video_reader.get_batch(frame_indices)
     num_frames = len(video_reader)
-    if num_frames == 0:
-        raise ValueError(f"No frames found in video: {input_video_path}")
 
-    first = video_reader[0].asnumpy()
-    height_raw, width_raw = first.shape[0] // 2, first.shape[1] // 2
-    height = height_raw // 128 * 128
-    width = width_raw // 128 * 128
+    # [t,h,w,c] -> [t,c,h,w]
+    frames = (
+        torch.tensor(frames.asnumpy()).permute(0, 3, 1, 2).float()
+    )  
 
-    def _load_chunk(start: int, end: int):
-        indices = list(range(start, end))
-        batch = video_reader.get_batch(indices).asnumpy()  # [T,H,W,C]
-        frames = torch.tensor(batch).permute(0, 3, 1, 2).float()  # [T,C,H,W]
-        left = frames[:, :, :height_raw, :width_raw]
-        mask = frames[:, :, height_raw:, :width_raw]
-        warped = frames[:, :, height_raw:, width_raw:]
+    height, width = frames.shape[2] // 2, frames.shape[3] // 2
+    frames_left = frames[:, :, :height, :width]
+    frames_mask = frames[:, :, height:, :width]
+    frames_warpped = frames[:, :, height:, width:]
+    frames = torch.cat([frames_warpped, frames_left, frames_mask], dim=0)
 
-        left = left[:, :, :height, :width] / 255.0
-        warped = warped[:, :, :height, :width] / 255.0
-        mask = mask[:, :, :height, :width] / 255.0
-        mask = mask.mean(dim=1, keepdim=True)
-        return left, warped, mask
+    height = height // 128 * 128
+    width = width // 128 * 128
+    frames = frames[:, :, 0:height, 0:width]
 
-    step = max(frames_chunk - overlap, 1)
-    frame_ranges = list(chunk_frame_ranges(num_frames, frames_chunk, overlap)) if frames_chunk > 0 else [(0, num_frames)]
+    frames = frames / 255.0
+    frames_warpped, frames_left, frames_mask = torch.chunk(frames, chunks=3, dim=0)
+    frames_mask = frames_mask.mean(dim=1, keepdim=True)
 
-    generated_prev = None
-    stem = Path(input_video_path).stem
-    # "_train" が末尾についていれば落とし、数字部分のみの名前にする
-    video_name = stem[:-6] if stem.endswith("_train") else stem
+    results = []
+    generated = None
+    for i in range(0, num_frames, frames_chunk - overlap):
 
-    # SBS をストリーミングで書き出す（元動画を上書きしないよう末尾に _3D を付与）
-    width_sbs = width * 2
-    output_filename = f"{video_name}_3D.mp4"
-    writer = cv2.VideoWriter(
-        os.path.join(save_dir, output_filename),
-        cv2.VideoWriter_fourcc(*"mp4v"),
-        fps,
-        (width_sbs, height),
-    )
+        if i + overlap >= frames_warpped.shape[0]:
+            break
 
-    for start, end in frame_ranges:
-        if end - start <= 0:
-            continue
-        frames_left, frames_warped, frames_mask = _load_chunk(start, end)
+        if generated is not None and i + frames_chunk > frames_warpped.shape[0]:
+            cur_i = max(frames_warpped.shape[0] + overlap - frames_chunk, 0)
+            cur_overlap = i - cur_i + overlap
+        else:
+            cur_i = i
+            cur_overlap = overlap
 
-        input_frames_i = frames_warped.clone()
-        mask_frames_i = frames_mask
+        input_frames_i = frames_warpped[cur_i : cur_i + frames_chunk].clone()
+        mask_frames_i = frames_mask[cur_i : cur_i + frames_chunk]
 
-        if generated_prev is not None and overlap > 0 and start > 0:
-            ov = min(overlap, generated_prev.shape[0], input_frames_i.shape[0])
-            if ov > 0:
-                input_frames_i[:ov] = generated_prev[-ov:]
+        if generated is not None:
+
+            try:
+                input_frames_i[:cur_overlap] = generated[-cur_overlap:]
+            except Exception as e:
+                print(e)
+                print(
+                    f"i: {i}, cur_i: {cur_i}, cur_overlap: {cur_overlap}, input_frames_i: {input_frames_i.shape}, generated: {generated.shape}"
+                )
 
         video_latents = spatial_tiled_process(
             input_frames_i,
@@ -261,18 +251,14 @@ def main(
             fps=7,
             motion_bucket_id=127,
             noise_aug_strength=0.0,
-            num_inference_steps=num_inference_steps,
+            num_inference_steps=8,
         )
 
         video_latents = video_latents.unsqueeze(0)
         if video_latents == torch.float16:
             pipeline.vae.to(dtype=torch.float16)
 
-        video_frames = pipeline.decode_latents(
-            video_latents,
-            num_frames=video_latents.shape[1],
-            decode_chunk_size=2,
-        )
+        video_frames = pipeline.decode_latents(video_latents, num_frames=video_latents.shape[1], decode_chunk_size=2)
         video_frames = tensor2vid(video_frames, pipeline.image_processor, output_type="pil")[0]
 
         for j in range(len(video_frames)):
@@ -282,24 +268,29 @@ def main(
                 / 255.0
             )
         generated = torch.stack(video_frames)
+        if i != 0:
+            generated = generated[cur_overlap:]
+        results.append(generated)
 
-        append_gen = generated if start == 0 else generated[overlap:]
-        append_left = frames_left if start == 0 else frames_left[overlap:]
+    frames_output = torch.cat(results, dim=0).cpu()
 
-        generated_prev = generated
 
-        frames_sbs = torch.cat([append_left, append_gen], dim=3)
-        frames_sbs_np = (
-            (frames_sbs * 255)
-            .permute(0, 2, 3, 1)
-            .to(dtype=torch.uint8)
-            .cpu()
-            .numpy()
-        )
-        for frame in frames_sbs_np:
-            writer.write(frame[:, :, ::-1])  # RGB -> BGR
+    frames_sbs = torch.cat([frames_left, frames_output], dim=3)
+    frames_sbs_path = os.path.join(save_dir, f"{video_name}_sbs.mp4")
+    frames_sbs = (frames_sbs * 255).permute(0, 2, 3, 1).to(dtype=torch.uint8).cpu().numpy()
+    write_video_opencv(frames_sbs, fps, frames_sbs_path)
 
-    writer.release()
+
+    vid_left = (frames_left * 255).permute(0, 2, 3, 1).to(dtype=torch.uint8).cpu().numpy()
+    vid_right = (frames_output * 255).permute(0, 2, 3, 1).to(dtype=torch.uint8).cpu().numpy()
+
+    vid_left[:, :, :, 1] = 0
+    vid_left[:, :, :, 2] = 0
+    vid_right[:, :, :, 0] = 0
+
+    vid_anaglyph = vid_left + vid_right
+    vid_anaglyph_path = os.path.join(save_dir, f"{video_name}_anaglyph.mp4")
+    write_video_opencv(vid_anaglyph, fps, vid_anaglyph_path)
 
 
 if __name__ == "__main__":

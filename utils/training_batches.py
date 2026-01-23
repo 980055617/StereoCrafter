@@ -1,13 +1,13 @@
-"""Batch preparation helpers for training.
+# =============================================
+# File: /workspace/stereocraft/utils/training_batches.py
+# ---------------------------------------------
+# 目的: 学習用バッチ生成（動画チャンク）
+# =============================================
 
-動画を「時間方向のチャンク」に分割し、GPU メモリに優しい形のバッチに詰め替えます。
-
-形状の取り決め:
-- すべてのフレームテンソルは [F, C, H, W]
-- mask は 1ch (C=1)。cond/target は 3ch (C=3)。値域は [0,1]
-"""
+"""Batch prep for 2x2 tiled videos (frames: [F,C,H,W], mask: 1ch)."""
 
 import logging
+import os
 import random
 from dataclasses import dataclass
 from typing import Iterable, Iterator, List, Optional, Tuple
@@ -138,6 +138,9 @@ class _BatchIterable(Iterable[TrainBatch]):
 
     def __iter__(self) -> Iterator[TrainBatch]:
         prev_target_cpu: Optional[torch.Tensor] = None
+        prev_end: Optional[int] = None
+        debug_overlap = os.getenv("TRAIN_DEBUG_OVERLAP") == "1"
+        debug_logged = False
         for start, end in self._ranges:
             cond_cpu, mask_cpu, target_cpu = self._video_stream.load_chunk(start, end)
 
@@ -145,13 +148,22 @@ class _BatchIterable(Iterable[TrainBatch]):
                 cond_cpu, mask_cpu, target_cpu = self._apply_fixed_crop(cond_cpu, mask_cpu, target_cpu)
 
             # 直前チャンクの出力（教師フレーム）でオーバーラップ領域を置き換え、推論時の条件付けに近づける
+            actual_overlap = max(0, (prev_end or 0) - start) if prev_end is not None else 0
+            if debug_overlap and not debug_logged and actual_overlap != self._overlap and start > 0:
+                logger.debug(
+                    "Actual overlap differs from configured overlap (actual=%d, configured=%d) at chunk start=%d",
+                    actual_overlap,
+                    self._overlap,
+                    start,
+                )
+                debug_logged = True
             if (
                 self._use_prev_target_overlap
                 and prev_target_cpu is not None
-                and self._overlap > 0
+                and actual_overlap > 0
                 and start > 0
             ):
-                ov = min(self._overlap, cond_cpu.shape[0], prev_target_cpu.shape[0])
+                ov = min(actual_overlap, cond_cpu.shape[0], prev_target_cpu.shape[0])
                 if ov > 0:
                     # scheduled sampling: 一定確率で教師(前チャンクGT)を使い、残りは元のcondを保持
                     if random.random() < self._overlap_teacher_prob:
@@ -165,6 +177,7 @@ class _BatchIterable(Iterable[TrainBatch]):
             mask = mask_cpu.to(device=self._device, dtype=self._dtype, non_blocking=True)
             target = target_cpu.to(device=self._device, dtype=self._dtype, non_blocking=True)
             prev_target_cpu = target_cpu.detach().clone() if self._use_prev_target_overlap else None
+            prev_end = end
             yield TrainBatch(cond=cond, mask=mask, target=target)
 
     @property
@@ -242,7 +255,7 @@ def prepare_batches(
         device: テンソルを配置するデバイス。
         dtype: テンソル化時の dtype。
         crop_multiple: クロップ縦横を揃える倍数。VAE のスケールに合わせて 128 などを推奨。
-        crop_min_size/crop_max_size: (min_h/min_w), (max_h/max_w)。動画ごとに固定サイズ・開始位置をランダム決定する場合に使用。
+        crop_min_size/crop_max_size: 固定クロップサイズ (H, W)。両方指定し、同一サイズにすること。
         use_prev_target_overlap: True のとき、オーバーラップ領域の条件フレームを前チャンクのターゲットで置換し、推論時の条件付けを模倣。
 
     Returns:
@@ -250,27 +263,32 @@ def prepare_batches(
     """
     video_stream = _StreamingVideo(video_path)
 
+    def _align_dim(desired: int, max_dim: int) -> int:
+        desired = max(1, min(desired, max_dim))
+        if crop_multiple <= 1:
+            return desired
+        aligned = (desired // crop_multiple) * crop_multiple
+        if aligned == 0:
+            aligned = crop_multiple if max_dim >= crop_multiple else max_dim
+        if aligned > max_dim:
+            aligned = max_dim
+        return aligned
+
     crop_region: Optional[Tuple[int, int, int, int]] = None
     if crop_min_size is not None or crop_max_size is not None:
-        min_h = crop_min_size[0] if crop_min_size is not None else 1
-        min_w = crop_min_size[1] if crop_min_size is not None else 1
-        max_h = crop_max_size[0] if crop_max_size is not None else video_stream.spatial_hw[0]
-        max_w = crop_max_size[1] if crop_max_size is not None else video_stream.spatial_hw[1]
-
+        if crop_min_size is None or crop_max_size is None:
+            raise ValueError("crop_min_size and crop_max_size must both be set for fixed crops.")
+        if tuple(crop_min_size) != tuple(crop_max_size):
+            raise ValueError(
+                "Variable crop sizes are no longer supported; set crop_min_size == crop_max_size."
+            )
         height, width = video_stream.spatial_hw
-
-        min_h = max(1, min(min_h, height))
-        max_h = max(min_h, min(max_h, height))
-        min_w = max(1, min(min_w, width))
-        max_w = max(min_w, min(max_w, width))
-
-        crop_h = random.randint(min_h, max_h)
-        crop_w = random.randint(min_w, max_w)
-
+        crop_h = _align_dim(int(crop_min_size[0]), height)
+        crop_w = _align_dim(int(crop_min_size[1]), width)
         max_top = max(height - crop_h, 0)
         max_left = max(width - crop_w, 0)
-        top = random.randint(0, max_top) if max_top > 0 else 0
-        left = random.randint(0, max_left) if max_left > 0 else 0
+        top = max_top // 2
+        left = max_left // 2
         crop_region = (top, left, crop_h, crop_w)
 
     return _BatchIterable(

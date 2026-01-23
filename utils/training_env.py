@@ -1,16 +1,10 @@
-"""Training environment helpers.
+# =============================================
+# File: /workspace/stereocraft/utils/training_env.py
+# ---------------------------------------------
+# 目的: 学習環境の初期化とシード
+# =============================================
 
-主に「学習スクリプトの冒頭に毎回書く」環境まわりの初期化を関数化しています。
-
-- set_global_seed: 乱数シードの一括設定 (Python/Torch/CUDA)
-- setup_interrupt_handler: Ctrl+C/SIGTERM を受けたら安全に停止するためのフラグを返す
-- get_compute_device: CUDA があれば CUDA、なければ CPU を選択
-
-Usage:
-    set_global_seed(42)
-    stop_event = setup_interrupt_handler()  # 学習ループで stop_event.is_set() を監視
-    device = get_compute_device()
-"""
+"""Training environment helpers (seed, interrupts, device selection)."""
 
 import logging
 import random
@@ -27,11 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 def set_global_seed(seed: int) -> None:
-    """Seed Python and torch RNGs for reproducibility.
-
-    Args:
-        seed: 任意の整数。再現性向上のため固定します。
-    """
+    """Seed Python/torch RNGs."""
     random.seed(seed)
     torch.manual_seed(seed)
     if torch.cuda.is_available():
@@ -39,16 +29,7 @@ def set_global_seed(seed: int) -> None:
 
 
 def setup_interrupt_handler(signals: Optional[Sequence[int]] = None) -> threading.Event:
-    """Return an Event that flips when SIGINT/SIGTERM (or provided signals) fire.
-
-    学習ループ中に `stop_event.is_set()` をチェックし、割り込みを安全なポイントで反映します。
-
-    Args:
-        signals: 監視するシグナルのリスト。未指定時は [SIGINT, SIGTERM]。
-
-    Returns:
-        threading.Event: 割り込み受信時に set() されるイベント。
-    """
+    """Return an Event that flips on SIGINT/SIGTERM."""
     ensure_logging_configured()
     stop_event = threading.Event()
 
@@ -69,11 +50,7 @@ def setup_interrupt_handler(signals: Optional[Sequence[int]] = None) -> threadin
 
 
 def get_compute_device() -> torch.device:
-    """Select CUDA if available; fall back to CPU with a warning.
-
-    Returns:
-        torch.device: `cuda` もしくは `cpu`。
-    """
+    """Select CUDA if available; otherwise CPU."""
     if torch.cuda.is_available():
         return torch.device("cuda")
     ensure_logging_configured()

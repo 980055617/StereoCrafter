@@ -1,3 +1,9 @@
+# =============================================
+# File: /workspace/stereocraft/scripts/export_pose3d_from_depth.py
+# ---------------------------------------------
+# 目的: 深度+COCOアノテーションの3D出力
+# =============================================
+
 import os
 from typing import Optional
 
@@ -28,17 +34,7 @@ def main(
     mask_pointcloud_max_points: int = 8000,
     bbox3d_space: str = "xyz",
 ) -> str:
-    """
-    Export pseudo-3D cuboid bboxes (bbox3d) from a depth map + COCO pose annotations.
-
-    Typical flow:
-    1) Run depth_splatting_inference.py with --save_depth True to produce a .npz depth file.
-    2) Run this script with that depth .npz and pose_annotations.json.
-
-    depth_path supports:
-    - .npz with key 'depth' (DepthCrafter save format in this repo)
-    - .npy containing [T,H,W]
-    """
+    """Export pseudo-3D bbox annotations from depth + COCO pose JSON."""
     depth = _load_depth(depth_path)
     if depth.ndim != 3:
         raise ValueError(f"depth must have shape [T,H,W], got {depth.shape}")

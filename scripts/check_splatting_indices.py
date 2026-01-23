@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# =============================================
+# File: /workspace/stereocraft/scripts/check_splatting_indices.py
+# ---------------------------------------------
+# 目的: splatting結果の番号チェック
+# =============================================
+
 """Check for numbering gaps among *_splatting_results files."""
 
 from __future__ import annotations

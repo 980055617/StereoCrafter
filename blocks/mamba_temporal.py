@@ -1,13 +1,14 @@
 # =============================================
-# File: blocks/mamba_temporal.py
+# File: /workspace/stereocraft/blocks/mamba_temporal.py
 # ---------------------------------------------
-# 目的: 時間モデリング（C）
-#  方針: (B*H*W, T, C) を Mamba2 に投入
+# 目的: 時間方向Mamba2ブロック
 # =============================================
+
 import torch
 import torch.nn as nn
 
 from mamba_ssm import Mamba2
+
 
 class TemporalMamba(nn.Module):
     def __init__(
@@ -48,9 +49,7 @@ class TemporalMamba(nn.Module):
         return self.core(x_bt_c)
 
     def forward(self, x_bt_c: torch.Tensor) -> torch.Tensor:
-        # x_bt_c: (B*H*W, T, C)
-        # Mamba2 は (B, L, C)。ここでは B'=(B*H*W), L=T
-        # CUDA 環境で非メモリ効率パスが stride 制約で失敗する場合、自動で mem‑eff パスへフォールバック。
+        # x_bt_c: (B*H*W, T, C) -> Mamba2 expects (B, L, C)
         if x_bt_c.is_cuda and hasattr(self, "core"):
             device = x_bt_c.device
             # Triton kernel inside Mamba2 expects the current device to match tensor.device.

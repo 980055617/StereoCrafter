@@ -1,3 +1,9 @@
+# =============================================
+# File: /workspace/stereocraft/scripts/reconstruct_splatting_from_depth_video.py
+# ---------------------------------------------
+# 目的: 深度から2x2スプラッティング復元
+# =============================================
+
 import os
 from typing import Optional
 

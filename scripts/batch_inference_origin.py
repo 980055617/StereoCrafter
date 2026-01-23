@@ -1,15 +1,10 @@
-"""Batch runner to inpaint the held-out split and save videos.
+# =============================================
+# File: /workspace/stereocraft/scripts/batch_inference_origin.py
+# ---------------------------------------------
+# 目的: 分割テスト用の一括推論
+# =============================================
 
-Usage example:
-  python scripts/batch_inference_origin.py --config config/train.json
-    --pre_trained_path weights/stable-video-diffusion-img2vid-xt-1-1/
-    --unet_path weights/StereoCrafter/
-    --output_dir video_data/model_test_output/origin
-
-データ分割:
-- train.json の dataset_split_ratios / dataset_split_seed を使い、train_glob を分割して
-  dataset_split_group (デフォルト: "test") の動画だけを処理します。
-"""
+"""Batch inpaint a dataset split and save videos."""
 
 import glob
 import json

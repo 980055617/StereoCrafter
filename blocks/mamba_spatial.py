@@ -1,11 +1,12 @@
 # =============================================
-# File: blocks/mamba_spatial.py
+# File: /workspace/stereocraft/blocks/mamba_spatial.py
 # ---------------------------------------------
-# 目的: 空間モデリング（C）
-#  方針: 軽量 ConvNeXt 風 (DWConv + PWConv) を1段/複数段
+# 目的: 空間ミキサのConvブロック
 # =============================================
+
 import torch
 import torch.nn as nn
+
 
 class SpatialMixer(nn.Module):
     def __init__(self, channels: int, hidden_mult: int = 2):
@@ -22,6 +23,3 @@ class SpatialMixer(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # x: (B*T, C, H, W)
         return self.block(x)
-
-
-

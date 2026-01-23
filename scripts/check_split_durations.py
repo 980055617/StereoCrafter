@@ -1,18 +1,11 @@
 #!/usr/bin/env python3
-"""
-Check the dataset split (train/val/test) and report how many videos are
-longer/shorter than a threshold (default: 30 seconds).
+# =============================================
+# File: /workspace/stereocraft/scripts/check_split_durations.py
+# ---------------------------------------------
+# 目的: データ分割の長さ集計
+# =============================================
 
-Defaults match config/train.json:
-- train_glob: /workspace/stereocraft/video_data/train/*.mp4
-- dataset_split_ratios: [8, 1, 1]
-- dataset_split_seed: 7
-
-Usage:
-    python scripts/check_split_durations.py
-    python scripts/check_split_durations.py --threshold 20
-    python scripts/check_split_durations.py --train-glob "/path/to/*.mp4"
-"""
+"""Report train/val/test duration distribution against a threshold."""
 
 from __future__ import annotations
 

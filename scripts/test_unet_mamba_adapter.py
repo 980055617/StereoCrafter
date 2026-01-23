@@ -1,15 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-UNetSpatioTemporalConditionModel の時空間 Transformer を Mamba 実装に置き換えるテスト。
+# =============================================
+# File: /workspace/stereocraft/scripts/test_unet_mamba_adapter.py
+# ---------------------------------------------
+# 目的: Mambaアダプタの基本テスト
+# =============================================
 
-主な検証項目:
-- 置換が行われ、元の TransformerSpatioTemporalModel が存在しないこと
-- 置換後 forward が通り、出力形状が (B, F, C_out, H, W) で有限値であること
-- 逆伝播が通り、入力勾配に NaN/Inf が無いこと
-- CUDA 環境では use_mem_eff_path の ON/OFF どちらでも forward が通ること
-- B>1, F>1 のバリエーションでも正しく動作すること
-"""
+"""Basic tests for Mamba adapter replacement in UNet."""
 
 import torch
 from diffusers.models import UNetSpatioTemporalConditionModel
@@ -98,7 +95,6 @@ def _run_once(use_mem_eff: bool):
     assert torch.isfinite(x.grad).all(), "input grad has NaN/Inf"
 
     # 元の TransformerSpatioTemporalModel が残っていないことを確認
-    from inspect import isclass
     def _has_orig_transformer(m):
         return m.__class__.__name__ == "TransformerSpatioTemporalModel"
     assert not any(_has_orig_transformer(m) for m in unet.modules()), "original Transformer remains"

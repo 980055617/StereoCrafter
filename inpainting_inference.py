@@ -1,77 +1,34 @@
-import os
-import json
 import inspect
-import numpy as np
-from fire import Fire
+import os
 import warnings
+from typing import Any
+
+import numpy as np
+import torch
+from fire import Fire
+from transformers import CLIPVisionModelWithProjection
+from diffusers.models.unets.unet_spatio_temporal_condition import (
+    UNetSpatioTemporalConditionModel,
+)
+from diffusers.models.autoencoders.autoencoder_kl_temporal_decoder import (
+    AutoencoderKLTemporalDecoder,
+)
+from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
+
+from pipelines.mamba_stereo_video_inpainting_pipeline import (
+    MambaStableVideoDiffusionInpaintingPipeline as _Pipe,
+    tensor2vid,
+)
+from utils.inpainting import read_and_prepare_video, spatial_tiled_process, write_video_opencv
+from utils.config_utils import load_json_config
+from utils.model_io import resolve_unet_state_path
+from utils.training_pipeline import enable_vae_memory_helpers
+
 warnings.filterwarnings(
     "ignore",
     category=FutureWarning,
     message=r".*torch.library.impl_abstract.*register_fake.*",
 )
-from pathlib import Path
-from typing import Any
-
-import torch
-
-from transformers import CLIPVisionModelWithProjection
-from diffusers import (
-    AutoencoderKLTemporalDecoder,
-)
-from diffusers import UNetSpatioTemporalConditionModel
-from diffusers.schedulers import DDPMScheduler
-
-from utils.inpainting import spatial_tiled_process, write_video_opencv, read_and_prepare_video
-from utils.training_pipeline import enable_vae_memory_helpers
-
-
-def _resolve_config_path(config: str, config_dir: str) -> Path:
-    """Resolve a config identifier to an existing JSON file path."""
-    config_path = Path(config).expanduser()
-    if not config_path.suffix:
-        config_path = config_path.with_suffix(".json")
-    search_candidates: list[Path] = []
-    if not config_path.is_absolute():
-        base_dir = Path(config_dir).expanduser()
-        search_candidates.append(base_dir / config_path)
-    search_candidates.append(config_path)
-    for candidate in search_candidates:
-        if candidate.exists():
-            return candidate
-
-    searched = ", ".join(str(candidate) for candidate in search_candidates)
-    raise FileNotFoundError(f"Config file '{config}' not found. Searched: {searched}")
-
-
-def _load_config_dict(config: str, config_dir: str) -> dict[str, Any]:
-    """Load a JSON inference config into a dictionary."""
-    config_path = _resolve_config_path(config, config_dir)
-    with open(config_path, "r", encoding="utf-8") as fp:
-        data = json.load(fp)
-    if not isinstance(data, dict):
-        raise ValueError(f"Config file '{config_path}' must contain a JSON object at the top level.")
-    print(f"Loaded inference config from {config_path}")
-    return data
-
-
-def _resolve_unet_state_path(unet_state_path: str | None) -> str | None:
-    if unet_state_path is None:
-        return None
-    candidate = Path(unet_state_path).expanduser()
-    if candidate.is_dir():
-        pt_files = sorted(
-            p for p in candidate.iterdir() if p.is_file() and p.suffix == ".pt"
-        )
-        if len(pt_files) == 1:
-            return str(pt_files[0])
-        raise ValueError(
-            f"unet_state_path directory has {len(pt_files)} .pt files; "
-            "please pass the specific .pt file path."
-        )
-    if not candidate.exists():
-        raise FileNotFoundError(f"unet_state_path not found: {candidate}")
-    return str(candidate)
-
 
 
 def main(
@@ -90,8 +47,6 @@ def main(
     unet_state_path: str | None = None,
     noise_seed: int | None = None,
 ):
-    
-    # precision handling (simple)
     prec = (precision or "fp16").lower()
     torch_dtype = torch.float16 if prec == "fp16" else (torch.bfloat16 if prec == "bf16" else torch.float32)
 
@@ -134,11 +89,6 @@ def main(
     vae.requires_grad_(False)
     unet.requires_grad_(False)
 
-    from pipelines.mamba_stereo_video_inpainting_pipeline import (
-        MambaStableVideoDiffusionInpaintingPipeline as _Pipe,
-        tensor2vid,
-    )
-
     pipeline = _Pipe.from_pretrained(
         pre_trained_path,
         image_encoder=image_encoder,
@@ -152,7 +102,7 @@ def main(
         pipeline.scheduler = DDPMScheduler.from_config(pipeline.scheduler.config)
 
     # Optionally load a fine‑tuned UNet state_dict (.pt) produced by training
-    unet_state_path = _resolve_unet_state_path(unet_state_path)
+    unet_state_path = resolve_unet_state_path(unet_state_path)
     if unet_state_path is not None and os.path.isfile(unet_state_path):
         # load unet weights safely and cast back to desired dtype
         try:
@@ -295,7 +245,9 @@ def run(config: str | None = None, config_dir: str = "config", **overrides: Any)
     config_identifier = config or os.environ.get("STEREOCRAFT_INFERENCE_CONFIG")
     config_values: dict[str, Any] = {}
     if config_identifier:
-        config_values.update(_load_config_dict(config_identifier, config_dir))
+        config_path, payload = load_json_config(config_identifier, config_dir)
+        config_values.update(payload)
+        print(f"Loaded inference config from {config_path}")
     config_values.update(overrides)
 
     signature = inspect.signature(main)

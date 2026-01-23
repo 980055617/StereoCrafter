@@ -1,19 +1,11 @@
 #!/usr/bin/env python3
-"""
-Utility script to ensure splatting result videos stay in sync with their reference clips.
+# =============================================
+# File: /workspace/stereocraft/scripts/cleanup_splatting_results.py
+# ---------------------------------------------
+# 目的: splatting出力の一致検証/削除
+# =============================================
 
-Common usage patterns:
-  * Delete mismatched outputs immediately:
-        python scripts/cleanup_splatting_results.py \
-            --reference-dir video_data/left_eye --result-dir video_data/splatting
-  * Inspect mismatches without deleting (確認のみ):
-        python scripts/cleanup_splatting_results.py --dry-run --verbose
-            # `--dry-run` prints would-delete entries, `--verbose` shows per-file stats.
-
-By default it compares frame counts/resolution/fps and deletes the splatting result
-whenever a mismatch is detected. You can optionally sample decoded frames for a stricter
-comparison via `--sample-frames`.
-"""
+"""Remove *_splatting_results videos that don't match the reference clips."""
 
 from __future__ import annotations
 

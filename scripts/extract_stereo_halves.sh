@@ -1,26 +1,15 @@
 #!/usr/bin/env bash
+# =============================================
+# File: /workspace/stereocraft/scripts/extract_stereo_halves.sh
+# ---------------------------------------------
+# 目的: SBS動画の左右分割
+# =============================================
+
 set -euo pipefail
 
-# Extract left/right halves from side-by-side stereo videos.
-# - Assumes each input video has left eye on the left half and right eye on the right half.
-# - Writes outputs under: <OUTPUT_ROOT>/left_eye and <OUTPUT_ROOT>/right_eye with the same filenames.
-# - Preserves relative subdirectory structure under OUTPUT_ROOT.
-#
-# Usage:
-#   bash scripts/extract_stereo_halves.sh \
-#     -i side_by_side_origin \
-#     -o video_data \
-#     [-e mp4,mov,mkv,avi,webm] \
-#     [-r]
-#
-# Options:
-#   -i   Input root directory (default: side_by_side_origin)
-#   -o   Output root directory (default: video_data)
-#   -e   Comma-separated extensions to include (default: mp4,mov,mkv,avi,webm)
-#   -r   Recurse into subdirectories (default: off)
-#
-# Requirements:
-#   - ffmpeg must be installed and available on PATH
+# Split SBS videos into left/right halves.
+# Usage: bash scripts/extract_stereo_halves.sh -i <in> -o <out> [-e ext1,ext2] [-r]
+# Requires: ffmpeg
 
 usage() {
   echo "Usage: $0 [-i input_root] [-o output_root] [-e ext1,ext2] [-r]" >&2
@@ -111,4 +100,3 @@ for f in "${files[@]}"; do
 done
 
 echo "Done. Left videos: ${LEFT_ROOT}, Right videos: ${RIGHT_ROOT}"
-

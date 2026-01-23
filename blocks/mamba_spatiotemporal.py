@@ -1,41 +1,27 @@
 # =============================================
-# File: blocks/mamba_spatiotemporal.py
+# File: /workspace/stereocraft/blocks/mamba_spatiotemporal.py
 # ---------------------------------------------
-# 目的: A〜E をすべて反映した本体
-#   - A 条件づけ (FiLM)
-#   - B 時間埋め込み + AlphaBlender
-#   - C 二系統 (空間/時間)
-#   - D 入力正規化 + 出力残差
-#   - E return_dict 互換
-# 依存: mamba_utils, mamba_spatial, mamba_temporal
+# 目的: 空間+時間のMamba統合ブロック
 # =============================================
+
 from __future__ import annotations
-from typing import Optional, Tuple, Union
+
+from typing import Optional
+
 import os
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from diffusers.models.embeddings import Timesteps, TimestepEmbedding
 from diffusers.models.resnet import AlphaBlender
 
-from .mamba_utils import  FiLMConditioner, apply_film
+from .mamba_utils import FiLMConditioner, apply_film
 from .mamba_spatial import SpatialMixer
 from .mamba_temporal import TemporalMamba
 
 
 class MambaSpatioTemporalModel(nn.Module):
-    """
-    TransformerSpatioTemporalModel 互換を目標にした Mamba 版。
-    入出力: (B, C, T, H, W)
+    """Diffusers互換のMamba時空間ブロック。(B, C, T, H, W) 入出力。"""
 
-    Args:
-        in_channels: UNet側から入る C。
-        d_model: Mamba 内部次元。未指定なら in_channels。
-        cross_attention_dim: encoder_hidden_states のチャネル数 (A)
-        num_groups_gn: GroupNorm のグループ数 (D)
-        keep_spatial_mixer: True なら空間ミキサを使う (C)
-        temporal_chunk_size: 長い T に対する安定化 (E 実運用ヒント)
-    """
     def __init__(
         self,
         in_channels: int,
@@ -55,15 +41,19 @@ class MambaSpatioTemporalModel(nn.Module):
         self.d_model = d_model or in_channels
         assert self.d_model % headdim == 0, f"d_model={self.d_model} must be divisible by headdim={headdim}"
 
-        # D: 入り口正規化 & 1x1 投影（C を d_model に合わせる）
+        # D: 入り口正規化 & 1x1 投影
         self.norm_in = nn.GroupNorm(num_groups=num_groups_gn, num_channels=in_channels)
         self.in_proj = nn.Conv3d(in_channels, self.d_model, kernel_size=1)
 
         # B: timestep embedding
         self.time_proj = Timesteps(self.d_model, flip_sin_to_cos=True, downscale_freq_shift=0)
-        self.time_embed = TimestepEmbedding(in_channels=self.d_model, time_embed_dim=self.d_model*4, out_dim=self.d_model)
+        self.time_embed = TimestepEmbedding(
+            in_channels=self.d_model,
+            time_embed_dim=self.d_model * 4,
+            out_dim=self.d_model,
+        )
 
-        # A: 条件づけ (FiLM)
+        # A: FiLM 条件づけ
         self.cond = FiLMConditioner(cross_attention_dim, self.d_model) if (cross_attention_dim is not None) else None
 
         # C: 空間/時間の二系統
@@ -78,22 +68,21 @@ class MambaSpatioTemporalModel(nn.Module):
             chunk_size=temporal_chunk_size,
             use_mem_eff_path=use_mem_eff_path,
         )
-        # 大きな空間次元(H*W)に対して、(B*H*W) 次元でチャンク実行するための上限
+        # (B*H*W) でチャンク実行するための上限
         self.spatial_chunk_size = spatial_chunk_size
 
         # B: ブレンド
         self.blender = AlphaBlender(alpha=0.5, merge_strategy="learned_with_images")
 
-        # 出口: 1x1 で元チャネルに戻す + D: 残差を足す
+        # 出口: 1x1 で元チャネルに戻す + 残差
         self.out_proj = nn.Conv3d(self.d_model, in_channels, kernel_size=1)
 
     def _apply_time_embed(self, x, timesteps):
         # x: (B,C,T,H,W)
         B, C, T, H, W = x.shape
 
-        # tベクトルを用意（BかB*Tを受け取り、足りなければ0..T-1で埋める）
+        # tベクトルを用意（B or B*T）
         if timesteps is None:
-            # Diffusers' spatiotemporal blocks don't pass diffusion timestep; use frame indices like SVD.
             t = torch.arange(T, device=x.device).repeat(B)  # (B*T,)
         else:
             t_in = timesteps
@@ -107,22 +96,18 @@ class MambaSpatioTemporalModel(nn.Module):
                 if t_in.numel() == B * T:
                     t = t_in
                 elif t_in.numel() == B:
-                    # ★ ここで各バッチのtimestepをフレーム数Tぶんに拡張
-                    t = t_in.repeat_interleave(T)     # (B*T,)
+                    t = t_in.repeat_interleave(T)  # (B*T,)
                 else:
-                    t = torch.arange(T, device=x.device) \
-                            .repeat(B)                 # (B*T,)
+                    t = torch.arange(T, device=x.device).repeat(B)  # (B*T,)
             else:
-                t = torch.arange(T, device=x.device) \
-                        .repeat(B)                 # (B*T,)
+                t = torch.arange(T, device=x.device).repeat(B)  # (B*T,)
 
-        # per-frameで埋め込み → (B*T, C) → (B,C,T,1,1) に整形して加算
-        temb = self.time_proj(t)                  # (B*T, C) ここはfp32になりがち
-        # TimestepEmbeddingの重みdtypeに合わせる（fp16運用/AMPでも衝突回避）
+        # (B*T, C) -> (B,C,T,1,1)
+        temb = self.time_proj(t)
         target_dtype = self.time_embed.linear_1.weight.dtype
         temb = temb.to(target_dtype)
-        temb = self.time_embed(temb)              # (B*T, C)
-        temb = temb.view(B, T, C).permute(0,2,1).contiguous()[:, :, :, None, None]
+        temb = self.time_embed(temb)
+        temb = temb.view(B, T, C).permute(0, 2, 1).contiguous()[:, :, :, None, None]
         # Optional one-time debug
         if getattr(self, "_dbg_time_once", False) is False and os.getenv("MAMBA_DEBUG", "0") == "1":
             print("[MambaInner] time-embed applied:")
@@ -168,7 +153,6 @@ class MambaSpatioTemporalModel(nn.Module):
         **_: dict,
     ):
         assert hidden_states.dim() == 5, "expected (B,C,T,H,W)"
-        dtype = hidden_states.dtype
         residual = hidden_states
 
         # D: 入力正規化 & 1x1 投影

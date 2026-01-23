@@ -1,5 +1,10 @@
+# =============================================
+# File: /workspace/stereocraft/utils/inpainting.py
+# ---------------------------------------------
+# 目的: インペイント用タイル処理と動画I/O
+# =============================================
+
 import inspect
-import os
 from contextlib import nullcontext
 from typing import Tuple
 
@@ -30,7 +35,7 @@ def spatial_tiled_process(
     tile_num: int,
     spatial_n_compress: int = 8,
     enable_autograd: bool = False,
-    **kargs,
+    **kwargs,
 ) -> torch.Tensor:
     """Run a diffusion pipeline on spatial tiles and stitch the latent tiles.
 
@@ -74,7 +79,7 @@ def spatial_tiled_process(
                     width=cond_tile.shape[3],
                     num_frames=len(cond_tile),
                     output_type="latent",
-                    **kargs,
+                    **kwargs,
                 )
                 if supports_grad_flag:
                     call_kwargs["grad_enabled"] = enable_autograd

@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-"""
-Utility script to compare parameter counts between the default
-Stable Video Diffusion inpainting pipeline and its Mamba-backed variant.
+# =============================================
+# File: /workspace/stereocraft/scripts/count_pipeline_parameters.py
+# ---------------------------------------------
+# 目的: パイプラインのパラメータ数集計
+# =============================================
 
-The script mirrors the module loading logic used by `inpainting_inference.py`
-so that both pipelines are instantiated with identical pretrained weights
-before their parameter counts are computed.
-"""
+"""Compare parameter counts between base and Mamba pipelines."""
 
 from __future__ import annotations
 
@@ -121,7 +120,7 @@ def inspect(
     torch_dtype = _resolve_dtype(precision)
 
     results = []
-    for use_mamba, label, pipeline_cls in (
+    for _, label, pipeline_cls in (
         (False, "Pipeline (use_mamba = False)", StableVideoDiffusionInpaintingPipeline),
         (True, "Pipeline (use_mamba = True)", MambaStableVideoDiffusionInpaintingPipeline),
     ):

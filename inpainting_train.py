@@ -1,15 +1,17 @@
 import csv
+import gc
 import glob
 import inspect
 import json
+import logging
 import math
 import os
 import random
-from datetime import datetime
-from pathlib import Path
-from typing import Any, Sequence, Union
 import warnings
-import logging
+from collections import defaultdict
+from datetime import datetime
+from typing import Any, Callable, Sequence, Union
+
 warnings.filterwarnings(
     "ignore",
     category=FutureWarning,
@@ -18,188 +20,141 @@ warnings.filterwarnings(
 
 logger = logging.getLogger(__name__)
 
-
-def _resolve_config_path(config: str, config_dir: str) -> Path:
-    """Resolve a config identifier to an existing JSON file path."""
-    config_path = Path(config).expanduser()
-    if not config_path.suffix:
-        config_path = config_path.with_suffix(".json")
-    search_candidates: list[Path] = []
-    if not config_path.is_absolute():
-        base_dir = Path(config_dir).expanduser()
-        search_candidates.append(base_dir / config_path)
-    search_candidates.append(config_path)
-    for candidate in search_candidates:
-        if candidate.exists():
-            return candidate
-
-    searched = ", ".join(str(candidate) for candidate in search_candidates)
-    raise FileNotFoundError(f"Config file '{config}' not found. Searched: {searched}")
-
-
-def _load_config_dict(config: str, config_dir: str) -> dict[str, Any]:
-    """Load a JSON training config into a dictionary."""
-    config_path = _resolve_config_path(config, config_dir)
-    with open(config_path, "r", encoding="utf-8") as fp:
-        data = json.load(fp)
-    if not isinstance(data, dict):
-        raise ValueError(f"Config file '{config_path}' must contain a JSON object at the top level.")
-    ensure_logging_configured()
-    logger.info("Loaded training config from %s", config_path)
-    return data
-
-
-def _write_run_config_snapshot(
-    save_dir: str,
-    config_values: dict[str, Any],
-    resume_candidate: str | None,
-) -> None:
-    """Persist the resolved training config for this run into save_dir."""
-    if not save_dir:
-        logger.warning("save_dir missing; skipping config snapshot.")
-        return
-    os.makedirs(save_dir, exist_ok=True)
-    run_tag = datetime.now().strftime("%Y%m%d_%H%M%S")
-    path = os.path.join(save_dir, f"train_config_{run_tag}.json")
-    payload = {
-        "timestamp": datetime.now().isoformat(timespec="seconds"),
-        "resume_candidate": resume_candidate,
-        "config": config_values,
-    }
-    try:
-        with open(path, "w", encoding="utf-8") as fp:
-            json.dump(payload, fp, indent=2, sort_keys=True, ensure_ascii=True, default=str)
-        ensure_logging_configured()
-        logger.info("Saved training config snapshot to %s", path)
-    except Exception as err:
-        ensure_logging_configured()
-        logger.warning("Failed to save training config snapshot: %s", err)
-
-
-def _resolve_run_save_dir(save_dir: str) -> str:
-    """Return a per-run save directory under the base save_dir."""
-    if not save_dir:
-        return save_dir
-    normalized = os.path.normpath(save_dir)
-    base_name = os.path.basename(normalized)
-    if base_name.startswith("MambaCrafter_"):
-        return save_dir
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    return os.path.join(save_dir, f"MambaCrafter_{timestamp}")
-
-
-def _find_existing_log(save_dir: str, prefix: str) -> str | None:
-    if not save_dir:
-        return None
-    pattern = os.path.join(save_dir, f"{prefix}_*.csv")
-    matches = [path for path in glob.glob(pattern) if os.path.isfile(path)]
-    if not matches:
-        return None
-    if len(matches) > 1:
-        latest = max(matches, key=os.path.getmtime)
-        logger.warning(
-            "Multiple %s logs found in %s; using most recent: %s",
-            prefix,
-            save_dir,
-            latest,
-        )
-        return latest
-    return matches[0]
-
-
-def _select_log_path(
-    save_dir: str,
-    prefix: str,
-    run_tag: str,
-    *,
-    reuse_existing: bool,
-) -> tuple[str, bool]:
-    if reuse_existing:
-        existing = _find_existing_log(save_dir, prefix)
-        if existing:
-            return existing, True
-    return os.path.join(save_dir, f"{prefix}_{run_tag}.csv"), False
-
-
-def _init_csv_log(csv_path: str, header: Sequence[str]) -> None:
-    if not os.path.exists(csv_path):
-        with open(csv_path, "w", encoding="utf-8", newline="") as f:
-            writer = csv.writer(f)
-            writer.writerow(list(header))
-
-
-def _trim_csv_log_by_epoch(
-    csv_path: str,
-    *,
-    epoch_index: int,
-    min_epoch: int,
-    header: Sequence[str],
-) -> int:
-    if not os.path.exists(csv_path):
-        return 0
-    tmp_path = f"{csv_path}.tmp"
-    removed = 0
-    header_row = list(header)
-    wrote_header = False
-    saw_row = False
-    with open(csv_path, "r", encoding="utf-8", newline="") as src, open(
-        tmp_path,
-        "w",
-        encoding="utf-8",
-        newline="",
-    ) as dst:
-        reader = csv.reader(src)
-        writer = csv.writer(dst)
-        for row in reader:
-            saw_row = True
-            if not wrote_header:
-                if row == header_row:
-                    writer.writerow(row)
-                    wrote_header = True
-                    continue
-                writer.writerow(header_row)
-                wrote_header = True
-            if not row:
-                continue
-            try:
-                epoch_val = int(row[epoch_index])
-            except Exception:
-                continue
-            if epoch_val < min_epoch:
-                writer.writerow(row)
-            else:
-                removed += 1
-        if not saw_row:
-            writer.writerow(header_row)
-    os.replace(tmp_path, csv_path)
-    return removed
-
-
-def _trim_train_log(csv_path: str, min_epoch: int, header: Sequence[str]) -> int:
-    return _trim_csv_log_by_epoch(
-        csv_path,
-        epoch_index=1,
-        min_epoch=min_epoch,
-        header=header,
-    )
-
-
-def _trim_val_log(csv_path: str, min_epoch: int, header: Sequence[str]) -> int:
-    return _trim_csv_log_by_epoch(
-        csv_path,
-        epoch_index=0,
-        min_epoch=min_epoch,
-        header=header,
-    )
-
 import torch
 import torch.nn.functional as F
+# ---- force reentrant checkpoint (must be BEFORE diffusers imports) ----
+import sys
+import torch.utils.checkpoint as _cp
+
+_ORIG_CP = _cp.checkpoint
+_FORCE_REENTRANT_CP = False
+
+def enable_force_reentrant_checkpoint(enabled: bool) -> None:
+    global _FORCE_REENTRANT_CP
+    _FORCE_REENTRANT_CP = bool(enabled)
+
+def _patched_checkpoint(function, *args, **kwargs):
+    if _FORCE_REENTRANT_CP:
+        kwargs["use_reentrant"] = True
+        kwargs.pop("determinism_check", None)
+    return _ORIG_CP(function, *args, **kwargs)
+
+_cp.checkpoint = _patched_checkpoint
+
+def _patch_modules_holding_checkpoint_symbol() -> None:
+    for m in list(sys.modules.values()):
+        if m is None:
+            continue
+        if hasattr(m, "checkpoint") and getattr(m, "checkpoint") is _ORIG_CP:
+            setattr(m, "checkpoint", _cp.checkpoint)
+
+# optional: if private non-reentrant generator exists, redirect to reentrant
+try:
+    _ORIG_NRR = _cp._checkpoint_without_reentrant_generator  # type: ignore[attr-defined]
+    def _patched_nrr_gen(function, *args, **kwargs):
+        return _cp.checkpoint(function, *args, use_reentrant=True)
+    _cp._checkpoint_without_reentrant_generator = _patched_nrr_gen  # type: ignore[attr-defined]
+except Exception:
+    pass
+# -----------------------------------------------------------------------
+
+def _format_cuda_stats(device: torch.device | None = None) -> str:
+    if not torch.cuda.is_available():
+        return "cuda:unavailable"
+    indices = list(range(torch.cuda.device_count()))
+    if device is not None and device.type == "cuda":
+        idx = 0 if device.index is None else device.index
+        indices = [idx]
+    parts = []
+    for idx in indices:
+        try:
+            alloc = torch.cuda.memory_allocated(idx) / (1024**2)
+            rsv = torch.cuda.memory_reserved(idx) / (1024**2)
+            peak = torch.cuda.max_memory_allocated(idx) / (1024**2)
+            parts.append(f"cuda:{idx} alloc={alloc:.1f}MiB reserved={rsv:.1f}MiB peak_alloc={peak:.1f}MiB")
+        except Exception as err:
+            parts.append(f"cuda:{idx} stats_error={err}")
+    return " | ".join(parts) if parts else "cuda:unknown"
+
+
+def log_cuda_memory_stats(tag: str, *, device: torch.device | None = None, summary: bool = False) -> None:
+    if not torch.cuda.is_available():
+        logger.info("[CUDA:%s] cuda not available", tag)
+        return
+    try:
+        logger.info("[CUDA:%s] %s", tag, _format_cuda_stats(device))
+    except Exception as err:
+        logger.warning("[CUDA:%s] failed to query cuda stats: %s", tag, err)
+    if summary:
+        try:
+            summary_device = device if device is not None else torch.device("cuda")
+            logger.info("[CUDA:%s] summary (abbrev):\n%s", tag, torch.cuda.memory_summary(summary_device, abbreviated=True))
+        except Exception as err:
+            logger.warning("[CUDA:%s] failed to get memory summary: %s", tag, err)
+
+
+def cleanup_cuda(tag: str, *objs: Any) -> None:
+    try:
+        if torch.cuda.is_available():
+            for idx in range(torch.cuda.device_count()):
+                try:
+                    torch.cuda.synchronize(idx)
+                except Exception:
+                    pass
+            logger.info("[CLEANUP:before:%s] %s", tag, _format_cuda_stats())
+    except Exception as err:
+        logger.warning("[CLEANUP:before:%s] failed to query cuda stats: %s", tag, err)
+
+    for obj in objs:
+        try:
+            del obj
+        except Exception:
+            pass
+
+    gc.collect()
+
+    try:
+        if torch.cuda.is_available():
+            for idx in range(torch.cuda.device_count()):
+                try:
+                    torch.cuda.synchronize(idx)
+                except Exception:
+                    pass
+            torch.cuda.empty_cache()
+            try:
+                torch.cuda.ipc_collect()
+            except Exception:
+                pass
+            try:
+                for idx in range(torch.cuda.device_count()):
+                    torch.cuda.reset_peak_memory_stats(idx)
+            except Exception:
+                pass
+            for idx in range(torch.cuda.device_count()):
+                try:
+                    torch.cuda.synchronize(idx)
+                except Exception:
+                    pass
+            logger.info("[CLEANUP:after:%s] %s", tag, _format_cuda_stats())
+    except Exception as err:
+        logger.warning("[CLEANUP:after:%s] failed: %s", tag, err)
+
 from fire import Fire
 
 from blocks.mamba_diffusers_adapter import MambaSpatioTemporalAdapter
+from utils.config_utils import load_json_config
 from utils.training_batches import prepare_batches
 from utils.training_env import get_compute_device, set_global_seed, setup_interrupt_handler
+from utils.training_log_utils import (
+    init_csv_log,
+    resolve_run_save_dir,
+    select_log_path,
+    trim_train_log,
+    trim_val_log,
+    write_run_config_snapshot,
+)
 from utils.training_pipeline import (
+    apply_mamba_runtime_flags,
     configure_unet_memory_features,
     enable_vae_memory_helpers,
     load_inpainting_pipeline,
@@ -221,38 +176,33 @@ def _train_main(
     train_glob: str,
     save_dir: str,
     *,
-    frames_chunk: int = 23,
+    stage_name: str,
+    stage_h: int,
+    stage_w: int,
+    stage_epochs: int,
+    stage_lr: float,
+    stage_idx: int,
     overlap: int = 3,
-    tile_num: int = 1,
-    spatial_n_compress: int = 8,
-    num_inference_steps: int = 8,
-    min_guidance_scale: float = 1.01,
-    max_guidance_scale: float = 1.01,
+    use_prev_target_overlap: bool = True,
     fps_condition: int = 7,
     motion_bucket_id: int = 127,
     noise_aug_strength: float = 0.0,
-    decode_chunk_size: int = 2,
     vae_encode_chunk_size: int = 5,
-    min_h: int | None = None,
-    min_w: int | None = None,
-    max_h: int | None = None,
-    max_w: int | None = None,
-    crop_multiple: int = 128,
-    epochs: int = 1,
-    max_epochs: int = 10000,
     target_avg_loss: Union[float, None] = 1e-4,
-    learning_rate: float = 1e-4,
     mamba_learning_rate: float | None = None,
     weight_decay: float = 0.0,
     max_grad_norm: float = 1.0,
     precision: str = "fp16",
     enable_gradient_checkpointing: bool = True,
+    checkpoint_use_reentrant: bool | None = None,
     attn: str = "auto",
     ff_chunk_size: int = 0,
     ff_chunk_dim: int = 1,
     keep_unet_fp32: bool = False,
-    shard_unet_across_gpus: bool = False,
-    per_gpu_max_mem_gib: int = 11,
+    unet_shard_mode: str = "off",
+    per_gpu_max_mem_gib: int | Sequence[int] = 11,
+    unet_device_map: dict[str, int] | None = None,
+    unet_shard_strategy: str = "two_stage_split",
     log_interval: int = 10,
     seed: int = 42,
     tensorboard_log_dir: Union[str, None] = None,
@@ -263,6 +213,7 @@ def _train_main(
     scheduler_eta_min: float = 1e-6,
     num_warmup_steps: int = 0,
     grad_accum_steps: int = 1,
+    deepspeed: dict[str, Any] | None = None,
     dataset_split_ratios: Sequence[float] | None = None,
     dataset_split_group: str = "train",
     dataset_split_seed: int = 42,
@@ -273,65 +224,36 @@ def _train_main(
     overlap_teacher_prob: float = 1.0,
     overlap_noise_std: float = 0.0,
     vae_decode_device: str | None = None,
-) -> None:
-    """Fine-tune the stereo inpainting pipeline with shared preprocessing.
+    mamba_use_fast_path: bool = True,
+    mamba_autotune_warmup: bool = True,
+    mamba_auto_fallback: bool = True,
+    mamba_fallback_mode: str = "inplace_or_reload",
+    debug_deepspeed_graph: bool = False,
+    debug_deepspeed_param_scan: bool = False,
+) -> bool:
+    """Fine-tune the stereo inpainting pipeline.
 
     Args:
-        pre_trained_path: ベースとなる事前学習済み重み (image_encoder/vae を含む) へのパス。
-        unet_path: 学習対象の UNet 重み (diffusers 形式) へのパス。
-        train_glob: 学習に使う動画のグロブパターン (例: 'video_data/**/*.mp4')。
-        save_dir: ログとチェックポイントの保存先ディレクトリ。
-
-        frames_chunk: 1 回の推論で処理するフレーム数。長い動画を時間方向に分割。
-        overlap: チャンク間のオーバーラップフレーム数 (推論時と同じポリシー)。
-        tile_num: 空間タイルの分割数。GPU メモリが厳しい場合に 2 や 4 に増やす。
-        spatial_n_compress: タイル間の画素重複領域 (ブレンド用)。
-        num_inference_steps: Denoising ステップ数 (学習時の forward で使用)。
-        min_guidance_scale/max_guidance_scale: ガイダンススケールのレンジ。
-        fps_condition: 時間条件付けに使う FPS 値。
-        motion_bucket_id: 動きの強さのバケット ID。
-        noise_aug_strength: 条件側へのノイズ付与強度。
-        decode_chunk_size: VAE デコード時のフレーム分割数 (省メモリ)。
-        vae_encode_chunk_size: VAE へのエンコード時分割数 (省メモリ)。
-        min_h/min_w/max_h/max_w: 動画ごとに高さ/幅の範囲を指定してランダムクロップ。各動画で固定された領域を使用。
-        crop_multiple: クロップ縦横を合わせる倍数。VAE のスケールに合わせて 128 などを推奨。
-        epochs: エポック数。
-        learning_rate: UNet の基本学習率 (Mamba 以外に適用)。
-        mamba_learning_rate: Mamba ブロック用の学習率。None の場合は learning_rate を使用。
-        weight_decay/max_grad_norm: 最適化ハイパーパラメータ。
-        precision: "fp16" | "bf16" | "fp32"。AMP の有無を含めて内部で解決。
-        enable_gradient_checkpointing: UNet の勾配チェックポイント有効化フラグ。
-        attn: "auto" | "xformers" | "sdp"。注意機構の最適化指定。
-        shard_unet_across_gpus: 2 枚以上の GPU で UNet を分割配置するか。
-        per_gpu_max_mem_gib: 自動デバイスマップ作成時の 1GPU あたりメモリ上限(目安)。
-        log_interval: 何ステップごとにログを表示/記録するか。
-        seed: 乱数シード。
-        tensorboard_log_dir: 指定時、TensorBoard ログを有効化 (save_dir からの相対可)。
-        save_interval_epochs: 何エポックごとに中間チェックポイントを保存するか (1 なら毎エポック)。
-        scheduler_type: "none" | "cosine" | "cosine_with_warmup" | "exponential"。学習率スケジューラの選択。
-        scheduler_gamma: ExponentialLR 用の減衰係数 (0<gamma<=1)。
-        scheduler_t_max: CosineAnnealingLR の T_max。0 以下なら自動的に総エポック数を使用。
-        scheduler_eta_min: CosineAnnealingLR の最小学習率。
-        num_warmup_steps: cosine_with_warmup の線形ウォームアップ (エポック数)。
-        grad_accum_steps: 勾配を蓄積するミニバッチ数。1 のときは従来通り即時更新。
-        dataset_split_ratios: [train, val, test] の比率を指定 (例: [8,1,1])。None なら全動画を学習に使用。
-        dataset_split_group: ratios 指定時にどの分割("train"/"val"/"test")を使うか。
-        dataset_split_seed: データ分割のシャッフルに使うシード。再現性確保用。
-        val_split: エポック末に評価するデータ分割名。None なら評価を無効化。
-        val_interval_epochs: 何エポックごとに val_split を評価するか。
-        max_val_videos: 評価に使う動画の上限。None または <=0 なら全件。
-        resume_from: 保存済みのフルチェックポイント（optimizer/scheduler/scaler含む）へのパス。None なら save_dir/train_state_latest.pt があれば自動で使用。
-        overlap_teacher_prob: オーバーラップ領域を前チャンクGTで置換する確率（scheduled sampling用, 0〜1）。
-        overlap_noise_std: 上記置換時に加えるノイズの標準偏差。0 なら無効。
-        vae_decode_device: 補助損失用の VAE デコードを別デバイスで実行する際の指定 (例: "cuda:1")。
+        pre_trained_path: 事前学習済み重み (image_encoder/vae を含む)。
+        unet_path: 学習対象の UNet 重み (diffusers 形式)。
+        train_glob: 学習動画のグロブパターン。
+        save_dir: ログ/チェックポイント保存先。
+        stage_name/stage_h/stage_w: 固定ステージ解像度と名称。
+        stage_epochs/stage_lr: ステージごとの学習設定。
+        use_prev_target_overlap: オーバーラップ領域を前チャンクGTで置換するか。
+        unet_shard_mode: "off" | "on" | "auto"（OOM 時のみ 2GPU へ分割）。
+        precision: "fp16" | "bf16" | "fp32"。
+        dataset_split_ratios/dataset_split_group: 任意の分割設定。
+        resume_from: 既存チェックポイントの再開。
     """
     ensure_logging_configured()
     logger.info("Starting training run. Saving artifacts to %s", save_dir)
+    logger.info(
+        "Tip: set PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True (Pytorch_CUDA_ALLOC_CONF is ignored)."
+    )
     os.makedirs(save_dir, exist_ok=True)
     if save_interval_epochs < 1:
         raise ValueError("save_interval_epochs must be >= 1")
-    if grad_accum_steps < 1:
-        raise ValueError("grad_accum_steps must be >= 1")
     if val_split is not None and val_interval_epochs < 1:
         raise ValueError("val_interval_epochs must be >= 1 when val_split is set.")
     sched_key = (scheduler_type or "none").lower()
@@ -346,33 +268,236 @@ def _train_main(
     # Ctrl+C や SIGTERM を受け取ったら「安全な地点」で停止するためのフラグ
     stop_event = setup_interrupt_handler()
 
-    # 使用デバイスの決定 (CUDA 優先)
-    device = get_compute_device()
-    # 精度の解決: dtype / autocast の有無 / GradScaler をまとめて取得
     precision_key = (precision or "").lower()
+    mixed_precision = "bf16" if precision_key == "bf16" else ("fp16" if precision_key == "fp16" else "no")
+
+    def _write_deepspeed_config(
+        cfg: dict[str, Any],
+        *,
+        grad_steps: int,
+        precision_mode: str,
+    ) -> str:
+        zero_stage = int(cfg.get("zero_stage", 3))
+        ignore_unused = bool(cfg.get("ignore_unused_parameters", zero_stage >= 2))
+        offload_opt = str(cfg.get("offload_optimizer_device", "cpu")).strip().lower()
+        offload_param = str(cfg.get("offload_param_device", "none")).strip().lower()
+        train_batch = cfg.get("train_batch_size", None)
+        train_micro = cfg.get("train_micro_batch_size_per_gpu", None)
+        zero_opt: dict[str, Any] = {
+            "stage": zero_stage,
+            "contiguous_gradients": True,
+            "overlap_comm": True,
+        }
+        if zero_stage >= 2 and ignore_unused:
+            zero_opt["ignore_unused_parameters"] = True
+        if offload_opt not in {"none", "cpu"}:
+            raise ValueError(f"offload_optimizer_device must be 'cpu' or 'none', got {offload_opt}")
+        if offload_param not in {"none", "cpu"}:
+            raise ValueError(f"offload_param_device must be 'cpu' or 'none', got {offload_param}")
+        if offload_opt == "cpu":
+            zero_opt["offload_optimizer"] = {"device": "cpu", "pin_memory": True}
+        if offload_param == "cpu":
+            zero_opt["offload_param"] = {"device": "cpu", "pin_memory": True}
+        ds_cfg: dict[str, Any] = {
+            "zero_optimization": zero_opt,
+            "gradient_accumulation_steps": int(grad_steps),
+        }
+        if train_batch is not None:
+            ds_cfg["train_batch_size"] = int(train_batch)
+        elif train_micro is not None:
+            ds_cfg["train_micro_batch_size_per_gpu"] = int(train_micro)
+        else:
+            ds_cfg["train_micro_batch_size_per_gpu"] = 1
+        if precision_mode == "bf16":
+            ds_cfg["bf16"] = {"enabled": True}
+            ds_cfg["fp16"] = {"enabled": False}
+        elif precision_mode == "fp16":
+            ds_cfg["bf16"] = {"enabled": False}
+            ds_cfg["fp16"] = {"enabled": True}
+        else:
+            ds_cfg["bf16"] = {"enabled": False}
+            ds_cfg["fp16"] = {"enabled": False}
+        path = os.path.join(save_dir, "ds_config.json")
+        with open(path, "w", encoding="utf-8") as fp:
+            json.dump(ds_cfg, fp, indent=2, sort_keys=True, ensure_ascii=True, default=str)
+        return path
+
+    def _ensure_deepspeed_batch_config(ds_path: str, cfg: dict[str, Any]) -> str:
+        try:
+            with open(ds_path, "r", encoding="utf-8") as fp:
+                ds_loaded = json.load(fp)
+        except Exception as err:
+            logger.warning(
+                "DeepSpeed config %s is not readable as JSON; skipping batch-size check: %s",
+                ds_path,
+                err,
+            )
+            return ds_path
+        if "train_batch_size" in ds_loaded or "train_micro_batch_size_per_gpu" in ds_loaded:
+            return ds_path
+        train_batch = cfg.get("train_batch_size", None)
+        train_micro = cfg.get("train_micro_batch_size_per_gpu", None)
+        if train_batch is not None:
+            ds_loaded["train_batch_size"] = int(train_batch)
+            detail = f"train_batch_size={ds_loaded['train_batch_size']}"
+        else:
+            if train_micro is None:
+                train_micro = 1
+            ds_loaded["train_micro_batch_size_per_gpu"] = int(train_micro)
+            detail = f"train_micro_batch_size_per_gpu={ds_loaded['train_micro_batch_size_per_gpu']}"
+        patched_path = os.path.join(save_dir, "ds_config_autofix.json")
+        with open(patched_path, "w", encoding="utf-8") as fp:
+            json.dump(ds_loaded, fp, indent=2, sort_keys=True, ensure_ascii=True, default=str)
+        logger.warning(
+            "DeepSpeed config missing train batch size; wrote %s (%s).",
+            patched_path,
+            detail,
+        )
+        return patched_path
+
+    ds_cfg = deepspeed or {}
+    ds_enabled = bool(ds_cfg.get("enabled", False))
+    accelerator = None
+    is_main_process = True
+    ds_state_dir = None
+    if ds_enabled:
+        ds_grad_steps = int(ds_cfg.get("gradient_accumulation_steps", grad_accum_steps))
+        if ds_grad_steps != grad_accum_steps:
+            logger.info(
+                "DeepSpeed gradient_accumulation_steps override: %d -> %d",
+                grad_accum_steps,
+                ds_grad_steps,
+            )
+            grad_accum_steps = ds_grad_steps
+        ds_config_path = str(ds_cfg.get("deepspeed_config_path", "") or "").strip()
+        if not ds_config_path:
+            ds_config_path = _write_deepspeed_config(
+                ds_cfg, grad_steps=grad_accum_steps, precision_mode=precision_key
+            )
+        ds_config_path = _ensure_deepspeed_batch_config(ds_config_path, ds_cfg)
+        try:
+            from accelerate import Accelerator
+            from accelerate.utils import DeepSpeedPlugin
+        except Exception as err:  # pragma: no cover - optional dependency
+            raise RuntimeError("DeepSpeed enabled but accelerate is not available.") from err
+        ds_plugin = DeepSpeedPlugin(
+            zero_stage=int(ds_cfg.get("zero_stage", 3)),
+            offload_optimizer_device=str(ds_cfg.get("offload_optimizer_device", "cpu")).strip().lower(),
+            offload_param_device=str(ds_cfg.get("offload_param_device", "none")).strip().lower(),
+            gradient_accumulation_steps=int(grad_accum_steps),
+            hf_ds_config=ds_config_path or None,
+        )
+        accelerator = Accelerator(
+            mixed_precision=mixed_precision,
+            deepspeed_plugin=ds_plugin,
+            gradient_accumulation_steps=int(grad_accum_steps),
+        )
+        device = accelerator.device
+        is_main_process = accelerator.is_main_process
+        ds_state_dir = os.path.join(save_dir, "deepspeed_state_latest")
+        logger.info(
+            "DeepSpeed enabled: zero_stage=%s offload_optimizer=%s offload_param=%s config=%s",
+            ds_cfg.get("zero_stage", 3),
+            ds_cfg.get("offload_optimizer_device", "cpu"),
+            ds_cfg.get("offload_param_device", "none"),
+            ds_config_path,
+        )
+    else:
+        # 使用デバイスの決定 (CUDA 優先)
+        device = get_compute_device()
+    # 精度の解決: dtype / autocast の有無 / GradScaler をまとめて取得
+    if grad_accum_steps < 1:
+        raise ValueError("grad_accum_steps must be >= 1")
     torch_dtype, use_amp, scaler = resolve_precision(precision, device)
     logger.info("Using device %s with dtype %s (AMP enabled: %s)", device, torch_dtype, use_amp)
-    crop_multiple = max(1, crop_multiple)
-    crop_min_size = None
-    crop_max_size = None
+    def _use_scaler() -> bool:
+        return (not ds_enabled) and scaler is not None and scaler.is_enabled()
+    if overlap < 0:
+        raise ValueError("overlap must be >= 0")
+    if stage_idx < 1:
+        raise ValueError("stage_idx must be >= 1")
+    if not str(stage_name).strip():
+        raise ValueError("stage_name must be non-empty")
+    stage_h = int(stage_h)
+    stage_w = int(stage_w)
+    if stage_h <= 0 or stage_w <= 0:
+        raise ValueError("stage_h/stage_w must be positive integers.")
+    stage_epochs = int(stage_epochs)
+    if stage_epochs < 1:
+        raise ValueError("stage_epochs must be >= 1")
+    stage_lr = float(stage_lr)
+    if stage_lr <= 0:
+        raise ValueError("stage_lr must be > 0")
 
-    if any(value is not None for value in (min_h, min_w, max_h, max_w)):
-        if not all(value is not None for value in (min_h, min_w, max_h, max_w)):
-            raise ValueError("All of min_h, min_w, max_h, and max_w must be provided together.")
-        if min_h <= 0 or min_w <= 0 or max_h <= 0 or max_w <= 0:
-            raise ValueError("min_h/min_w/max_h/max_w must be positive integers.")
-        if min_h > max_h or min_w > max_w:
-            raise ValueError("min_h/min_w must be less than or equal to max_h/max_w.")
-        crop_min_size = (int(min_h), int(min_w))
-        crop_max_size = (int(max_h), int(max_w))
+    shard_mode = (unet_shard_mode or "off").strip().lower()
+    if shard_mode not in {"off", "on", "auto"}:
+        raise ValueError("unet_shard_mode must be one of: off, on, auto")
+    if ds_enabled:
+        if shard_mode != "off" or unet_device_map is not None:
+            logger.info("DeepSpeed enabled; disabling UNet sharding/device_map.")
+        shard_mode = "off"
+        unet_device_map = None
+    shard_strategy = (unet_shard_strategy or "two_stage_split").strip().lower()
+    if (
+        stage_idx >= 2
+        and unet_device_map is None
+        and shard_strategy in {"two_stage_split", "manual_split", "fallback"}
+    ):
+        shard_strategy = "frontload_gpu1"
+        logger.info(
+            "Stage %d: overriding unet_shard_strategy to frontload_gpu1 to place down_blocks on cuda:1.",
+            stage_idx,
+        )
+    if shard_mode == "off" and unet_device_map is not None:
+        logger.warning("unet_device_map is ignored because unet_shard_mode=off.")
+
+    frames_chunk = 14
+    crop_multiple = 64
+    crop_size = (stage_h, stage_w)
+    crop_min_size = crop_size
+    crop_max_size = crop_size
+    if ff_chunk_size and ff_chunk_dim == 1 and frames_chunk % int(ff_chunk_size) != 0:
+        logger.warning(
+            "ff_chunk_size=%s is not divisible by frames_chunk=%s with ff_chunk_dim=1; overriding to 1.",
+            ff_chunk_size,
+            frames_chunk,
+        )
+        ff_chunk_size = 1
+    mamba_fallback_mode = (mamba_fallback_mode or "inplace_or_reload").strip().lower()
+    if mamba_fallback_mode not in {"inplace_only", "reload_only", "inplace_or_reload"}:
+        raise ValueError("mamba_fallback_mode must be one of: inplace_only, reload_only, inplace_or_reload")
+    effective_mamba_use_fast_path = bool(mamba_use_fast_path)
+    effective_mamba_autotune_warmup = bool(mamba_autotune_warmup)
+
+    def _set_mamba_env(use_fast_path: bool, autotune_warmup: bool) -> None:
+        os.environ["MAMBA_MEM_EFF"] = "1" if use_fast_path else "0"
+        os.environ["MAMBA_USE_MEM_EFF_PATH"] = "1" if use_fast_path else "0"
+        os.environ["MAMBA_AUTOTUNE_WARMUP"] = "1" if autotune_warmup else "0"
+
+    def _log_effective_mamba_flags(context: str) -> None:
+        logger.info(
+            "%s: effective_mamba_use_fast_path=%s effective_mamba_autotune_warmup=%s",
+            context,
+            effective_mamba_use_fast_path,
+            effective_mamba_autotune_warmup,
+        )
+
+    _set_mamba_env(effective_mamba_use_fast_path, effective_mamba_autotune_warmup)
 
     # 事前学習済みの image_encoder/vae と、学習対象の UNet を組み込んだパイプラインを構築
+    log_cuda_memory_stats(
+        f"before_pipeline_load:stage{stage_idx}",
+        device=device,
+        summary=(device.type == "cuda" and stage_idx == 2),
+    )
     pipeline = load_inpainting_pipeline(
         pre_trained_path=pre_trained_path,
         unet_path=unet_path,
         torch_dtype=torch_dtype,
         device=device,
+        pipeline_device=device,
     )
+    log_cuda_memory_stats(f"after_pipeline_load:stage{stage_idx}", device=device)
     log_vram_usage("After loading inpainting pipeline", device, level=logging.INFO)
     # AMP 安定化のため、必要に応じて UNet パラメータのみ FP32 で保持（計算は autocast で半精度）。
     # bf16 学習時は意図通り半精度になるよう FP32 へは強制変換しない。
@@ -384,16 +509,34 @@ def _train_main(
     elif keep_unet_fp32 and precision_key == "bf16":
         logger.info("keep_unet_fp32 requested but precision=bf16; keeping UNet in bf16 to honor precision setting.")
 
-    # (オプション) 複数 GPU へ UNet をレイヤー単位で分散配置
-    maybe_shard_unet(
-        pipeline=pipeline,
-        shard_unet_across_gpus=shard_unet_across_gpus,
-        per_gpu_max_mem_gib=per_gpu_max_mem_gib,
+    def log_param_bytes_by_device(model: torch.nn.Module) -> None:
+        bytes_by_dev = defaultdict(int)
+        for _, p in model.named_parameters():
+            if p.device.type == "cuda":
+                bytes_by_dev[p.device.index] += p.numel() * p.element_size()
+        gib = {k: v / (1024**3) for k, v in bytes_by_dev.items()}
+        logger.info("UNet param bytes by device (GiB): %s", gib)
+
+    if hasattr(pipeline.unet, "hf_device_map"):
+        logger.info("UNet hf_device_map keys: %d", len(pipeline.unet.hf_device_map))
+    log_param_bytes_by_device(pipeline.unet)
+    _log_effective_mamba_flags("Initial mamba flags")
+    updated = apply_mamba_runtime_flags(
+        pipeline.unet,
+        use_fast_path=effective_mamba_use_fast_path,
+        autotune_warmup=effective_mamba_autotune_warmup,
     )
+    if updated:
+        logger.info("Applied mamba runtime flags to %d modules (initial).", updated)
+    if enable_gradient_checkpointing:
+        enable_force_reentrant_checkpoint(True)
+        _patch_modules_holding_checkpoint_symbol()
+        logger.info("Force reentrant checkpointing enabled (use_reentrant=True).")
     # 勾配チェックポイントや注意機構の省メモリ化を有効化
     configure_unet_memory_features(
         pipeline=pipeline,
         enable_gradient_checkpointing=enable_gradient_checkpointing,
+        checkpoint_use_reentrant=checkpoint_use_reentrant,
         attn_mode=attn,
         ff_chunk_size=ff_chunk_size if ff_chunk_size > 0 else None,
         ff_chunk_dim=ff_chunk_dim,
@@ -426,11 +569,718 @@ def _train_main(
 
     resolved_vae_decode_device = _resolve_vae_decode_device(vae_decode_device, device)
 
+    def _resolve_unet_input_device() -> torch.device:
+        """Resolve the device for UNet inputs (conv_in preferred, else first parameter)."""
+        fallback = device
+        conv_in = getattr(pipeline.unet, "conv_in", None)
+        if conv_in is not None:
+            try:
+                ref_param = next(conv_in.parameters())
+                ref_device = ref_param.device
+                if ref_device.type == "cuda" and ref_device.index is None:
+                    return torch.device("cuda:0")
+                return ref_device
+            except StopIteration:
+                pass
+        try:
+            ref_param = next(pipeline.unet.parameters())
+            ref_device = ref_param.device
+            if ref_device.type == "cuda" and ref_device.index is None:
+                return torch.device("cuda:0")
+            return ref_device
+        except StopIteration:
+            pass
+        if fallback.type == "cuda" and fallback.index is None:
+            return torch.device("cuda:0")
+        return fallback
+
+    def _format_device(value: torch.device) -> str:
+        if value.type != "cuda":
+            return str(value)
+        index = 0 if value.index is None else value.index
+        return f"cuda:{index}"
+
     # 学習用ノイズスケジューラ（推論側の scheduler 設定に合わせて構築）
     noise_scheduler = DDPMScheduler.from_config(pipeline.scheduler.config)
     pred_type = getattr(pipeline.scheduler.config, "prediction_type", None)
     if pred_type is not None and noise_scheduler.config.prediction_type != pred_type:
         noise_scheduler.register_to_config(prediction_type=pred_type)
+
+    def compute_batch_loss(batch: Any) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
+        """Forward UNet once against a mini-batch and return loss + per-component metrics."""
+        unet_in_device = _resolve_unet_input_device()
+
+        def _to_unet_entry(tensor: torch.Tensor | None) -> torch.Tensor | None:
+            if tensor is None:
+                return None
+            if isinstance(tensor, torch.Tensor) and tensor.device != unet_in_device:
+                return tensor.to(unet_in_device, non_blocking=True)
+            return tensor
+
+        with torch.autocast(device_type=device.type, dtype=torch_dtype, enabled=use_amp):
+            H, W = batch.cond.shape[2], batch.cond.shape[3]
+            try:
+                if next(pipeline.image_encoder.parameters()).device != device:
+                    pipeline.image_encoder.to(device)
+            except Exception:
+                pass
+            with torch.no_grad():
+                image_embeddings = pipeline._encode_image(
+                    batch.cond[0:1], device=device, num_videos_per_prompt=1, do_classifier_free_guidance=False
+                )
+            frames_cond = pipeline.image_processor.preprocess(batch.cond, height=H, width=W)
+            if noise_aug_strength > 0.0:
+                noise = torch.randn_like(frames_cond)
+                frames_cond = frames_cond + noise_aug_strength * noise
+
+            vae_device = resolved_vae_decode_device
+            if next(pipeline.vae.parameters()).device != vae_device:
+                pipeline.vae.to(vae_device)
+            frames_cond_vae = frames_cond.to(vae_device)
+
+            latent_list = []
+            with torch.no_grad():
+                for i_f in range(0, frames_cond.shape[0], max(1, vae_encode_chunk_size)):
+                    latent_list.append(
+                        pipeline.vae.encode(
+                            frames_cond_vae[i_f : i_f + max(1, vae_encode_chunk_size)]
+                        ).latent_dist.mode()
+                    )
+            frame_latents = torch.cat(latent_list, dim=0).unsqueeze(0)
+            frame_latents *= pipeline.vae.config.scaling_factor
+            frame_latents = frame_latents.to(device=unet_in_device, dtype=image_embeddings.dtype)
+            frame_latents = _to_unet_entry(frame_latents)
+
+            with torch.no_grad():
+                frames_mask = pipeline.mask_processor.preprocess(batch.mask, height=H, width=W)
+                frames_mask = torch.nn.functional.interpolate(
+                    frames_mask, scale_factor=1 / pipeline.vae_scale_factor
+                ).unsqueeze(0)
+            mask_latents = frames_mask.to(device=unet_in_device, dtype=image_embeddings.dtype)
+            mask_latents = _to_unet_entry(mask_latents)
+
+            fps_ = fps_condition - 1
+            add_time_ids = torch.tensor(
+                [[float(fps_), float(motion_bucket_id), float(noise_aug_strength)]],
+                dtype=image_embeddings.dtype,
+                device=unet_in_device,
+            )
+            add_time_ids = _to_unet_entry(add_time_ids)
+
+            frames_tgt = pipeline.image_processor.preprocess(batch.target, height=H, width=W)
+            tgt_lat_list = []
+            with torch.no_grad():
+                for i_f in range(0, frames_tgt.shape[0], max(1, vae_encode_chunk_size)):
+                    tgt_lat_list.append(
+                        pipeline.vae.encode(
+                            frames_tgt[i_f : i_f + max(1, vae_encode_chunk_size)].to(vae_device)
+                        ).latent_dist.mode()
+                    )
+            x0 = torch.cat(tgt_lat_list, dim=0).unsqueeze(0).to(image_embeddings.dtype)
+            x0 = x0.to(device=unet_in_device)
+            x0 = _to_unet_entry(x0)
+            x0 = x0 * pipeline.vae.config.scaling_factor
+
+            t = torch.randint(
+                0,
+                noise_scheduler.config.num_train_timesteps,
+                (1,),
+                device=unet_in_device,
+                dtype=torch.long,
+            )
+            t = _to_unet_entry(t)
+            eps = torch.randn_like(x0)
+            x_t = noise_scheduler.add_noise(x0, eps, t)
+            x_t = x_t.to(dtype=frame_latents.dtype)
+            x_t = _to_unet_entry(x_t)
+
+            image_embeddings = image_embeddings.to(device=unet_in_device, dtype=image_embeddings.dtype)
+            image_embeddings = _to_unet_entry(image_embeddings)
+            logger.debug(
+                "latent devices: x_t=%s frame_latents=%s mask_latents=%s add_time_ids=%s unet_in=%s",
+                x_t.device,
+                frame_latents.device,
+                mask_latents.device,
+                add_time_ids.device,
+                _format_device(unet_in_device),
+            )
+            logger.debug(
+                "latent dtypes: x_t=%s frame_latents=%s mask_latents=%s add_time_ids=%s",
+                x_t.dtype,
+                frame_latents.dtype,
+                mask_latents.dtype,
+                add_time_ids.dtype,
+            )
+            latent_model_input = torch.cat([x_t, frame_latents, mask_latents], dim=2)
+            noise_pred = pipeline.unet(
+                latent_model_input,
+                t,
+                encoder_hidden_states=image_embeddings,
+                added_time_ids=add_time_ids,
+                return_dict=False,
+            )[0]
+
+            if getattr(noise_scheduler.config, "prediction_type", "epsilon") == "v_prediction":
+                target = noise_scheduler.get_velocity(x0, eps, t)
+            else:
+                target = eps
+            noise_loss = F.mse_loss(noise_pred, target)
+            metrics = {"timestep": t.detach(), "loss_noise_mse": noise_loss.detach()}
+            return noise_loss, metrics
+    preflight_batch: Any | None = None
+
+    def _make_preflight_batch() -> Any:
+        sample_videos = sorted(glob.glob(train_glob))
+        if not sample_videos:
+            raise FileNotFoundError(f"No training videos found for pattern: {train_glob}")
+        sample_video = sample_videos[0]
+        logger.info(
+            "Preflight: checking stage crop %dx%d on %s",
+            stage_h,
+            stage_w,
+            os.path.basename(sample_video),
+        )
+        try:
+            batches_pf = prepare_batches(
+                sample_video,
+                frames_chunk=frames_chunk,
+                overlap=overlap,
+                device=device,
+                dtype=torch_dtype if precision_key != "fp32" else torch.float32,
+                crop_multiple=crop_multiple,
+                crop_min_size=(stage_h, stage_w),
+                crop_max_size=(stage_h, stage_w),
+                use_prev_target_overlap=use_prev_target_overlap,
+                overlap_teacher_prob=overlap_teacher_prob,
+                overlap_noise_std=overlap_noise_std,
+            )
+            return next(iter(batches_pf))
+        except StopIteration:
+            raise ValueError("Preflight failed: no frames yielded from the sample video.")
+        except Exception as err:
+            raise RuntimeError(f"Preflight failed while preparing batch: {err}") from err
+
+    def _get_preflight_batch() -> Any:
+        nonlocal preflight_batch
+        if preflight_batch is None:
+            preflight_batch = _make_preflight_batch()
+        return preflight_batch
+
+    def _reset_preflight_batch() -> None:
+        nonlocal preflight_batch
+        preflight_batch = None
+
+    def _is_oom_error(err: BaseException) -> bool:
+        if isinstance(err, torch.cuda.OutOfMemoryError):
+            return True
+        if isinstance(err, RuntimeError):
+            msg = str(err)
+            msg_lower = msg.lower()
+            return "out of memory" in msg_lower or "tried to allocate" in msg_lower
+        return False
+
+    def _apply_mamba_flags_inplace(context: str) -> int:
+        updated = apply_mamba_runtime_flags(
+            pipeline.unet,
+            use_fast_path=effective_mamba_use_fast_path,
+            autotune_warmup=effective_mamba_autotune_warmup,
+        )
+        logger.info("Mamba runtime flags applied (%s): updated_modules=%d", context, updated)
+        return updated
+
+    def _reload_pipeline_for_mamba_fallback(context: str) -> None:
+        nonlocal pipeline
+        logger.info("Mamba fallback reload (%s): rebuilding pipeline with slow flags.", context)
+        old_pipeline = pipeline
+        unet_state = None
+        try:
+            unet_state = pipeline.unet.state_dict()
+        except Exception as err:
+            logger.warning("Failed to capture UNet state before reload: %s", err)
+        try:
+            old_pipeline.to("cpu")
+        except Exception:
+            pass
+        pipeline = None
+        cleanup_cuda(f"before_pipeline_rebuild:{context}", old_pipeline)
+        _set_mamba_env(effective_mamba_use_fast_path, effective_mamba_autotune_warmup)
+        try:
+            pipeline = load_inpainting_pipeline(
+                pre_trained_path=pre_trained_path,
+                unet_path=unet_path,
+                torch_dtype=torch_dtype,
+                device=device,
+                pipeline_device=torch.device("cpu"),
+            )
+        except Exception:
+            pipeline = old_pipeline
+            raise
+        if unet_state is not None:
+            try:
+                missing, unexpected = pipeline.unet.load_state_dict(unet_state, strict=False)
+                if missing or unexpected:
+                    logger.warning(
+                        "Reloaded UNet with state mismatch (missing=%d unexpected=%d).",
+                        len(missing),
+                        len(unexpected),
+                    )
+            except Exception as err:
+                logger.warning("Failed to restore UNet state after reload: %s", err)
+        updated = apply_mamba_runtime_flags(
+            pipeline.unet,
+            use_fast_path=effective_mamba_use_fast_path,
+            autotune_warmup=effective_mamba_autotune_warmup,
+        )
+        if updated:
+            logger.info("Applied mamba runtime flags to %d modules (reload).", updated)
+        try:
+            if next(pipeline.image_encoder.parameters()).device != device:
+                pipeline.image_encoder.to(device)
+        except Exception:
+            pass
+        if enable_gradient_checkpointing:
+            enable_force_reentrant_checkpoint(True)
+            _patch_modules_holding_checkpoint_symbol()
+        configure_unet_memory_features(
+            pipeline=pipeline,
+            enable_gradient_checkpointing=enable_gradient_checkpointing,
+            checkpoint_use_reentrant=checkpoint_use_reentrant,
+            attn_mode=attn,
+            ff_chunk_size=ff_chunk_size if ff_chunk_size > 0 else None,
+            ff_chunk_dim=ff_chunk_dim,
+        )
+        enable_vae_memory_helpers(pipeline)
+        pipeline.unet.train()
+        log_param_bytes_by_device(pipeline.unet)
+        old_pipeline = None
+
+    def _run_preflight_with_mamba_fallback(
+        tag: str,
+        *,
+        post_reload: Callable[[], None] | None = None,
+    ) -> dict[int, float]:
+        nonlocal effective_mamba_use_fast_path, effective_mamba_autotune_warmup
+        try:
+            return _preflight_runner(tag)
+        except Exception as err:
+            if not _is_oom_error(err):
+                raise
+            if not mamba_auto_fallback:
+                raise
+            if not (effective_mamba_use_fast_path or effective_mamba_autotune_warmup):
+                raise
+            logger.warning(
+                "Preflight OOM (%s). Triggering mamba fallback: fast_path/autotune -> false.",
+                tag,
+            )
+            _reset_preflight_batch()
+            effective_mamba_use_fast_path = False
+            effective_mamba_autotune_warmup = False
+            _set_mamba_env(False, False)
+            cleanup_cuda(f"mamba_fallback:{tag}")
+            _log_effective_mamba_flags("Mamba fallback activated")
+
+            if mamba_fallback_mode in {"inplace_only", "inplace_or_reload"}:
+                updated = _apply_mamba_flags_inplace(f"{tag}_inplace")
+                if updated > 0:
+                    try:
+                        return _preflight_runner(f"{tag}_mamba_inplace")
+                    except Exception as err2:
+                        if not _is_oom_error(err2):
+                            raise
+                        logger.warning("Mamba inplace fallback still OOM (%s).", tag)
+                        _reset_preflight_batch()
+                        cleanup_cuda(f"mamba_fallback_retry:{tag}")
+                else:
+                    logger.info("Mamba inplace fallback skipped: no matching modules updated.")
+
+            if mamba_fallback_mode in {"reload_only", "inplace_or_reload"}:
+                _reload_pipeline_for_mamba_fallback(tag)
+                if post_reload is not None:
+                    post_reload()
+                return _preflight_runner(f"{tag}_mamba_reload")
+            raise
+
+    def _preflight_runner(tag: str) -> dict[int, float]:
+        _ = tag
+        batch = _get_preflight_batch()
+        stats: dict[int, float] = {}
+        if device.type == "cuda":
+            torch.cuda.empty_cache()
+            for idx in range(torch.cuda.device_count()):
+                torch.cuda.reset_peak_memory_stats(idx)
+        pipeline.unet.zero_grad(set_to_none=True)
+        loss_pf, _ = compute_batch_loss(batch)
+        if _use_scaler():
+            scaler.scale(loss_pf).backward()
+        else:
+            loss_pf.backward()
+        pipeline.unet.zero_grad(set_to_none=True)
+        if device.type == "cuda":
+            for idx in range(torch.cuda.device_count()):
+                stats[idx] = torch.cuda.max_memory_allocated(idx) / float(1024**2)
+        return stats
+
+    def _build_optimizer_for_dryrun() -> torch.optim.Optimizer:
+        trainable_params = [p for p in pipeline.unet.parameters() if p.requires_grad]
+        mamba_param_ids: set[int] = set()
+        for module in pipeline.unet.modules():
+            if isinstance(module, MambaSpatioTemporalAdapter):
+                for p in module.parameters(recurse=True):
+                    if p.requires_grad:
+                        mamba_param_ids.add(id(p))
+        if mamba_learning_rate is not None and mamba_param_ids:
+            base_params = [p for p in trainable_params if id(p) not in mamba_param_ids]
+            mamba_params = [p for p in trainable_params if id(p) in mamba_param_ids]
+            return torch.optim.AdamW(
+                [
+                    {"params": base_params, "lr": stage_lr, "group_name": "base"},
+                    {"params": mamba_params, "lr": mamba_learning_rate, "group_name": "mamba"},
+                ],
+                lr=stage_lr,
+                weight_decay=weight_decay,
+            )
+        return torch.optim.AdamW(
+            [{"params": trainable_params, "lr": stage_lr, "group_name": "base"}],
+            lr=stage_lr,
+            weight_decay=weight_decay,
+        )
+
+    def _optimizer_dryrun_for_candidate(tag: str, device_map: dict[str, int]) -> bool:
+        _ = device_map
+        logger.info("Optimizer dry-run for contiguous candidate %s", tag)
+        optimizer = None
+        try:
+            optimizer = _build_optimizer_for_dryrun()
+            optimizer.zero_grad(set_to_none=True)
+            pipeline.unet.zero_grad(set_to_none=True)
+            batch = _get_preflight_batch()
+            loss_pf, _ = compute_batch_loss(batch)
+            if _use_scaler():
+                scaler.scale(loss_pf).backward()
+                scaler.step(optimizer)
+                scaler.update()
+            else:
+                loss_pf.backward()
+                optimizer.step()
+            optimizer.zero_grad(set_to_none=True)
+            pipeline.unet.zero_grad(set_to_none=True)
+            logger.info("Optimizer dry-run OK for candidate %s", tag)
+            return True
+        except Exception as err:
+            if _is_oom_error(err):
+                logger.warning("Optimizer dry-run OOM for candidate %s", tag)
+                return False
+            raise
+        finally:
+            if optimizer is not None:
+                opt_ref = optimizer
+                optimizer = None
+                cleanup_cuda(f"optimizer_dryrun:{tag}", opt_ref)
+
+    def _apply_sharding(strategy_override: str | None = None) -> None:
+        effective_strategy = (strategy_override or shard_strategy).strip().lower()
+        maybe_shard_unet(
+            pipeline=pipeline,
+            shard_unet_across_gpus=True,
+            per_gpu_max_mem_gib=per_gpu_max_mem_gib,
+            manual_device_map=unet_device_map,
+            shard_strategy=effective_strategy,
+            preflight_runner=_preflight_runner if effective_strategy in {"contiguous_search", "contiguous"} else None,
+            candidate_validator=_optimizer_dryrun_for_candidate
+            if effective_strategy in {"contiguous_search", "contiguous"}
+            else None,
+        )
+        pipeline.unet.train()
+        if hasattr(pipeline.unet, "hf_device_map"):
+            logger.info("UNet device_map updated: %s", pipeline.unet.hf_device_map)
+        log_param_bytes_by_device(pipeline.unet)
+
+    def _apply_unsharded_unet() -> None:
+        try:
+            pipeline.unet.to(device)
+        except Exception as err:
+            logger.warning("Failed to move UNet to %s after reload: %s", device, err)
+            raise
+        pipeline.unet.train()
+        log_param_bytes_by_device(pipeline.unet)
+
+    def _run_stage_preflight() -> bool:
+        effective_mode = shard_mode
+        if shard_mode == "auto" and unet_device_map is not None:
+            logger.info("unet_device_map provided; auto mode will start with sharding.")
+            effective_mode = "on"
+
+        def _estimate_optimizer_state_mib_by_device() -> dict[int, float]:
+            bytes_by_dev: dict[int, int] = defaultdict(int)
+            for p in pipeline.unet.parameters():
+                if p.requires_grad and p.device.type == "cuda":
+                    bytes_by_dev[p.device.index] += p.numel() * p.element_size()
+            # AdamW keeps exp_avg and exp_avg_sq on device.
+            return {idx: (2.0 * total) / float(1024**2) for idx, total in bytes_by_dev.items()}
+
+        def _headroom_low(stats: dict[int, float], *, threshold: float = 0.92) -> tuple[bool, list[int]]:
+            if device.type != "cuda" or not stats:
+                return False, []
+            opt_mib_by_dev = _estimate_optimizer_state_mib_by_device()
+            low = []
+            for dev_idx, peak_mib in stats.items():
+                total_mib = torch.cuda.get_device_properties(dev_idx).total_memory / float(1024**2)
+                est_opt_mib = opt_mib_by_dev.get(dev_idx, 0.0)
+                projected = peak_mib + est_opt_mib
+                if projected >= total_mib * threshold:
+                    low.append(dev_idx)
+            return bool(low), low
+
+        def _try_contiguous_fallback(context: str) -> bool:
+            if shard_strategy in {"contiguous_search", "contiguous"}:
+                return False
+            if device.type != "cuda" or torch.cuda.device_count() < 2:
+                return False
+            logger.info("Sharded preflight OOM (%s); trying contiguous_search.", context)
+            _reset_preflight_batch()
+            if device.type == "cuda":
+                torch.cuda.empty_cache()
+            _apply_sharding(strategy_override="contiguous_search")
+            try:
+                _run_preflight_with_mamba_fallback(
+                    "sharded_contiguous",
+                    post_reload=lambda: _apply_sharding(strategy_override="contiguous_search"),
+                )
+            except RuntimeError as err:
+                if _is_oom_error(err):
+                    logger.info("contiguous_search preflight OOM; no viable device_map.")
+                    return False
+                raise
+            _reset_preflight_batch()
+            return True
+
+        if effective_mode == "off":
+            return False
+
+        if effective_mode == "on":
+            _apply_sharding()
+            try:
+                stats = _run_preflight_with_mamba_fallback("sharded", post_reload=_apply_sharding)
+            except RuntimeError as err:
+                if _is_oom_error(err):
+                    if _try_contiguous_fallback("sharded"):
+                        return True
+                    raise RuntimeError(
+                        "Preflight OOM after sharding. Reduce resolution/frames/precision."
+                    ) from err
+                raise
+            needs_rebalance, low_devices = _headroom_low(stats)
+            if needs_rebalance and shard_strategy in {"two_stage_split", "manual_split", "fallback"}:
+                logger.info(
+                    "Sharded preflight headroom low on %s; switching sharding strategy to balance_params.",
+                    ",".join(f"cuda:{idx}" for idx in low_devices),
+                )
+                _reset_preflight_batch()
+                if device.type == "cuda":
+                    torch.cuda.empty_cache()
+                _apply_sharding(strategy_override="balance_params")
+                try:
+                    _run_preflight_with_mamba_fallback(
+                        "sharded_rebalanced",
+                        post_reload=lambda: _apply_sharding(strategy_override="balance_params"),
+                    )
+                except RuntimeError as err2:
+                    if _is_oom_error(err2):
+                        if _try_contiguous_fallback("sharded_rebalanced"):
+                            return True
+                        raise RuntimeError(
+                            "Preflight OOM even after sharding. Reduce resolution/frames/precision."
+                        ) from err2
+                    raise
+            _reset_preflight_batch()
+            return True
+
+        try:
+            stats = _run_preflight_with_mamba_fallback("single_gpu", post_reload=_apply_unsharded_unet)
+            logger.info("preflight single gpu ok")
+            _reset_preflight_batch()
+            if device.type == "cuda" and torch.cuda.device_count() >= 2 and stats:
+                device_index = 0 if device.index is None else device.index
+                total_mib = torch.cuda.get_device_properties(device_index).total_memory / float(1024**2)
+                peak_mib = max(stats.values())
+                est_opt_mib = _estimate_optimizer_state_mib_by_device().get(device_index, 0.0)
+                projected = peak_mib + est_opt_mib
+                if projected >= total_mib * 0.92:
+                    logger.info(
+                        "Preflight headroom low (peak=%.1f MiB + est_opt=%.1f MiB >= %.0f%% of %.1f MiB); enabling sharding.",
+                        peak_mib,
+                        est_opt_mib,
+                        92.0,
+                        total_mib,
+                    )
+                    if device.type == "cuda":
+                        torch.cuda.empty_cache()
+                    _apply_sharding()
+                    try:
+                        _run_preflight_with_mamba_fallback("sharded", post_reload=_apply_sharding)
+                    except RuntimeError as err2:
+                        if _is_oom_error(err2):
+                            if _try_contiguous_fallback("sharded"):
+                                return True
+                            raise RuntimeError(
+                                "Preflight OOM even after sharding. Reduce resolution/frames/precision."
+                            ) from err2
+                        raise
+                    _reset_preflight_batch()
+                    return True
+            return False
+        except RuntimeError as err:
+            if not _is_oom_error(err):
+                raise
+            logger.info("OOM -> enable sharding")
+            _reset_preflight_batch()
+            if device.type == "cuda":
+                torch.cuda.empty_cache()
+            _apply_sharding()
+            try:
+                stats = _run_preflight_with_mamba_fallback("sharded", post_reload=_apply_sharding)
+            except RuntimeError as err2:
+                if _is_oom_error(err2):
+                    if _try_contiguous_fallback("sharded"):
+                        return True
+                    raise RuntimeError(
+                        "Preflight OOM even after sharding. Reduce resolution/frames/precision."
+                    ) from err2
+                raise
+            needs_rebalance, low_devices = _headroom_low(stats)
+            if needs_rebalance and shard_strategy in {"two_stage_split", "manual_split", "fallback"}:
+                logger.info(
+                    "Sharded preflight headroom low on %s; switching sharding strategy to balance_params.",
+                    ",".join(f"cuda:{idx}" for idx in low_devices),
+                )
+                _reset_preflight_batch()
+                if device.type == "cuda":
+                    torch.cuda.empty_cache()
+                _apply_sharding(strategy_override="balance_params")
+                try:
+                    _run_preflight_with_mamba_fallback(
+                        "sharded_rebalanced",
+                        post_reload=lambda: _apply_sharding(strategy_override="balance_params"),
+                    )
+                except RuntimeError as err3:
+                    if _is_oom_error(err3):
+                        if _try_contiguous_fallback("sharded_rebalanced"):
+                            return True
+                        raise RuntimeError(
+                            "Preflight OOM even after sharding. Reduce resolution/frames/precision."
+                        ) from err3
+                    raise
+            _reset_preflight_batch()
+            return True
+
+    # チェックポイント読込 (UNetのみ)。preflight は resume 後の状態で実行する。
+    ckpt_latest_path = os.path.join(save_dir, "train_state_latest.pt")
+    start_epoch = 1
+    global_step = 0
+    pending_scheduler_state = None
+    resume_candidate = resume_from
+    did_resume = False
+    resume_same_stage = False
+    ckpt_sharded = False
+    resume_ds_state_dir = None
+    ckpt_optimizer_state = None
+    ckpt_scheduler_state = None
+    ckpt_scaler_state = None
+
+    if resume_candidate is None and os.path.exists(ckpt_latest_path):
+        resume_candidate = ckpt_latest_path
+        logger.info("Auto-resuming from %s", resume_candidate)
+    if ds_enabled and resume_candidate is None and ds_state_dir and os.path.isdir(ds_state_dir):
+        resume_ds_state_dir = ds_state_dir
+    if resume_candidate:
+        ckpt = None
+        try:
+            if os.path.isdir(resume_candidate):
+                if ds_enabled:
+                    resume_ds_state_dir = resume_candidate
+                else:
+                    raise ValueError(f"resume_from expects a .pt file, got directory: {resume_candidate}")
+            else:
+                ckpt = torch.load(resume_candidate, map_location="cpu")
+            if ckpt is not None:
+                model_state = ckpt.get("model", None)
+                if model_state:
+                    try:
+                        pipeline.unet.load_state_dict(model_state, strict=False)
+                    except Exception as err:
+                        logger.warning("Failed to load UNet state from checkpoint: %s", err)
+                global_step = int(ckpt.get("global_step", 0))
+                ckpt_epoch = int(ckpt.get("epoch", 0))
+                ckpt_stage_idx = ckpt.get("stage_idx", None)
+                ckpt_stage_name = ckpt.get("stage_name", None)
+                ckpt_sharded = bool(ckpt.get("unet_sharded", False))
+                if ds_enabled:
+                    resume_ds_state_dir = (
+                        resume_ds_state_dir
+                        or ckpt.get("deepspeed_state_dir", None)
+                        or ds_state_dir
+                    )
+                ckpt_mamba_fast = ckpt.get("effective_mamba_use_fast_path", None)
+                ckpt_mamba_autotune = ckpt.get("effective_mamba_autotune_warmup", None)
+                if ckpt_mamba_fast is not None or ckpt_mamba_autotune is not None:
+                    effective_mamba_use_fast_path = bool(
+                        ckpt_mamba_fast if ckpt_mamba_fast is not None else effective_mamba_use_fast_path
+                    )
+                    effective_mamba_autotune_warmup = bool(
+                        ckpt_mamba_autotune
+                        if ckpt_mamba_autotune is not None
+                        else effective_mamba_autotune_warmup
+                    )
+                    _set_mamba_env(effective_mamba_use_fast_path, effective_mamba_autotune_warmup)
+                    updated = _apply_mamba_flags_inplace("resume")
+                    logger.info(
+                        "Resumed mamba effective flags from checkpoint (updated_modules=%d).",
+                        updated,
+                    )
+                if ckpt_stage_idx is not None:
+                    try:
+                        ckpt_stage_idx = int(ckpt_stage_idx)
+                    except Exception:
+                        ckpt_stage_idx = None
+                resume_same_stage = ckpt_stage_idx == stage_idx
+                if resume_same_stage:
+                    start_epoch = ckpt_epoch + 1
+                    if not ds_enabled:
+                        ckpt_optimizer_state = ckpt.get("optimizer", None)
+                        ckpt_scheduler_state = ckpt.get("scheduler", None)
+                        ckpt_scaler_state = ckpt.get("scaler", None)
+                else:
+                    start_epoch = 1
+                    logger.info(
+                        "Checkpoint stage differs (ckpt_stage=%s name=%s); loading UNet only for stage %d.",
+                        ckpt_stage_idx,
+                        ckpt_stage_name,
+                        stage_idx,
+                    )
+                did_resume = True
+                logger.info(
+                    "Resumed from %s (epoch=%d, global_step=%d, stage=%s)",
+                    resume_candidate,
+                    ckpt_epoch,
+                    global_step,
+                    ckpt_stage_idx,
+                )
+            elif resume_ds_state_dir:
+                did_resume = True
+        except Exception as err:
+            logger.warning("Failed to resume from %s: %s. Starting fresh.", resume_candidate, err)
+            did_resume = False
+        finally:
+            if ckpt is not None:
+                ckpt_ref = ckpt
+                ckpt = None
+                cleanup_cuda("after_ckpt_extract", ckpt_ref)
+    if ds_enabled and resume_ds_state_dir and not os.path.isdir(resume_ds_state_dir):
+        logger.warning("DeepSpeed resume state dir not found: %s", resume_ds_state_dir)
+        resume_ds_state_dir = None
+
+    shard_applied = _run_stage_preflight()
 
     # 学習対象パラメータのみ最適化
     trainable_params = [p for p in pipeline.unet.parameters() if p.requires_grad]
@@ -445,16 +1295,16 @@ def _train_main(
         mamba_params = [p for p in trainable_params if id(p) in mamba_param_ids]
         optimizer = torch.optim.AdamW(
             [
-                {"params": base_params, "lr": learning_rate},
-                {"params": mamba_params, "lr": float(mamba_learning_rate)},
+                {"params": base_params, "lr": stage_lr, "group_name": "base"},
+                {"params": mamba_params, "lr": float(mamba_learning_rate), "group_name": "mamba"},
             ],
-            lr=learning_rate,
+            lr=stage_lr,
             weight_decay=weight_decay,
         )
         logger.info(
             "Optimizer param groups: base=%d (lr=%.2e), mamba=%d (lr=%.2e)",
             len(base_params),
-            learning_rate,
+            stage_lr,
             len(mamba_params),
             float(mamba_learning_rate),
         )
@@ -462,28 +1312,144 @@ def _train_main(
         if mamba_learning_rate is not None and not mamba_param_ids:
             logger.warning(
                 "mamba_learning_rate set but no Mamba blocks found in UNet; using single learning_rate=%.2e.",
-                learning_rate,
+                stage_lr,
             )
-        optimizer = torch.optim.AdamW(trainable_params, lr=learning_rate, weight_decay=weight_decay)
+        optimizer = torch.optim.AdamW(
+            [{"params": trainable_params, "lr": stage_lr, "group_name": "base"}],
+            lr=stage_lr,
+            weight_decay=weight_decay,
+        )
     optimizer.zero_grad(set_to_none=True)
     lr_scheduler = None
     if sched_key == "exponential":
         lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=scheduler_gamma)
 
-    # チェックポイントの保存/読込
-    ckpt_latest_path = os.path.join(save_dir, "train_state_latest.pt")
-    start_epoch = 1
-    global_step = 0
-    pending_scheduler_state = None
+    if ds_enabled and accelerator is not None:
+        if lr_scheduler is not None:
+            pipeline.unet, optimizer, lr_scheduler = accelerator.prepare(
+                pipeline.unet, optimizer, lr_scheduler
+            )
+        else:
+            pipeline.unet, optimizer = accelerator.prepare(pipeline.unet, optimizer)
+        pipeline.unet.train()
+        trainable_params = [p for p in pipeline.unet.parameters() if p.requires_grad]
+        if debug_deepspeed_param_scan:
+            if hasattr(torch.autograd.graph, "_get_grad_fn_or_grad_acc"):
+                bad_params: list[tuple[str, str]] = []
+                for name, param in pipeline.unet.named_parameters():
+                    if not param.requires_grad:
+                        continue
+                    try:
+                        node = torch.autograd.graph._get_grad_fn_or_grad_acc(param)
+                        if node is None:
+                            bad_params.append((name, "grad_fn_or_acc=None"))
+                    except Exception as err:
+                        is_inf = (
+                            str(param.is_inference())
+                            if hasattr(param, "is_inference")
+                            else "no is_inference()"
+                        )
+                        bad_params.append((name, f"err={err} inference={is_inf}"))
+                if bad_params:
+                    logger.warning(
+                        "DeepSpeed debug: %d params failed _get_grad_fn_or_grad_acc (first 10): %s",
+                        len(bad_params),
+                        bad_params[:10],
+                    )
+                else:
+                    logger.info("DeepSpeed debug: all trainable params passed _get_grad_fn_or_grad_acc.")
+            else:
+                logger.warning("DeepSpeed debug: torch.autograd.graph._get_grad_fn_or_grad_acc unavailable.")
+    if not ds_enabled:
+        sharding_changed = bool(ckpt_sharded) != bool(shard_applied)
+        should_restore_state = did_resume and resume_same_stage and not sharding_changed
+        if should_restore_state:
+            if ckpt_optimizer_state is not None:
+                optimizer.load_state_dict(ckpt_optimizer_state)
+            pending_scheduler_state = ckpt_scheduler_state
+            if _use_scaler() and ckpt_scaler_state is not None:
+                scaler.load_state_dict(ckpt_scaler_state)
+        else:
+            pending_scheduler_state = None
+            if did_resume and resume_same_stage and sharding_changed:
+                logger.info(
+                    "Sharding state changed (ckpt_sharded=%s -> stage_sharded=%s); resetting optimizer/scheduler/scaler.",
+                    ckpt_sharded,
+                    shard_applied,
+                )
+    else:
+        pending_scheduler_state = None
+        if resume_same_stage and resume_ds_state_dir:
+            try:
+                accelerator.load_state(resume_ds_state_dir)
+                logger.info("Restored DeepSpeed state from %s", resume_ds_state_dir)
+            except Exception as err:
+                logger.warning("Failed to restore DeepSpeed state: %s", err)
 
+    def _apply_stage_lrs() -> None:
+        base_lr = float(stage_lr)
+        mamba_lr = float(mamba_learning_rate) if mamba_learning_rate is not None else None
+        for group in optimizer.param_groups:
+            group_name = str(group.get("group_name", "base"))
+            if group_name == "mamba" and mamba_lr is not None:
+                group["lr"] = mamba_lr
+            else:
+                group["lr"] = base_lr
+
+    def _sync_scheduler_base_lrs() -> None:
+        if lr_scheduler is None:
+            return
+        try:
+            lr_scheduler.base_lrs = [group["lr"] for group in optimizer.param_groups]
+        except Exception:
+            pass
+
+    # チェックポイントの保存
     def _save_full_checkpoint(tag: str, epoch_value: int, *, update_latest: bool = True) -> None:
+        if ds_enabled and accelerator is not None:
+            ds_dir = ds_state_dir if update_latest else os.path.join(save_dir, f"deepspeed_state_{tag}")
+            model_state = None
+            if is_main_process:
+                try:
+                    model_state = accelerator.get_state_dict(pipeline.unet)
+                except Exception as err:
+                    logger.warning("Failed to gather UNet state for checkpoint: %s", err)
+            state = {
+                "epoch": int(epoch_value),
+                "global_step": int(global_step),
+                "stage_idx": int(stage_idx),
+                "stage_name": str(stage_name),
+                "unet_sharded": bool(shard_applied),
+                "effective_mamba_use_fast_path": bool(effective_mamba_use_fast_path),
+                "effective_mamba_autotune_warmup": bool(effective_mamba_autotune_warmup),
+                "deepspeed_state_dir": ds_dir,
+                "model": model_state,
+            }
+            path = os.path.join(save_dir, f"train_state_{tag}.pt")
+            try:
+                if is_main_process:
+                    torch.save(state, path)
+                    if update_latest:
+                        torch.save(state, ckpt_latest_path)
+                accelerator.wait_for_everyone()
+                accelerator.save_state(ds_dir)
+                accelerator.wait_for_everyone()
+                logger.info("Saved DeepSpeed checkpoint (%s)", ds_dir)
+            except Exception as err:
+                logger.warning("Failed to save DeepSpeed checkpoint %s: %s", ds_dir, err)
+            return
         state = {
             "epoch": int(epoch_value),
             "global_step": int(global_step),
+            "stage_idx": int(stage_idx),
+            "stage_name": str(stage_name),
+            "unet_sharded": bool(shard_applied),
+            "effective_mamba_use_fast_path": bool(effective_mamba_use_fast_path),
+            "effective_mamba_autotune_warmup": bool(effective_mamba_autotune_warmup),
             "model": pipeline.unet.state_dict(),
             "optimizer": optimizer.state_dict(),
             "scheduler": lr_scheduler.state_dict() if lr_scheduler is not None else None,
-            "scaler": scaler.state_dict() if scaler.is_enabled() else None,
+            "scaler": scaler.state_dict() if _use_scaler() else None,
         }
         path = os.path.join(save_dir, f"train_state_{tag}.pt")
         try:
@@ -494,38 +1460,11 @@ def _train_main(
         except Exception as err:
             logger.warning("Failed to save checkpoint %s: %s", path, err)
 
-    # 自動/明示リジューム
-    resume_candidate = resume_from
-    did_resume = False
-    if resume_candidate is None and os.path.exists(ckpt_latest_path):
-        resume_candidate = ckpt_latest_path
-        logger.info("Auto-resuming from %s", resume_candidate)
-    if resume_candidate:
-        try:
-            ckpt = torch.load(resume_candidate, map_location=device)
-            pipeline.unet.load_state_dict(ckpt.get("model", {}))
-            optimizer.load_state_dict(ckpt.get("optimizer", {}))
-            pending_scheduler_state = ckpt.get("scheduler", None)
-            if scaler.is_enabled() and ckpt.get("scaler", None) is not None:
-                scaler.load_state_dict(ckpt["scaler"])
-            global_step = int(ckpt.get("global_step", 0))
-            start_epoch = int(ckpt.get("epoch", 0)) + 1
-            if lr_scheduler is not None and pending_scheduler_state is not None:
-                lr_scheduler.load_state_dict(pending_scheduler_state)
-                pending_scheduler_state = None
-            did_resume = True
-            logger.info(
-                "Resumed from %s (epoch=%d, global_step=%d)",
-                resume_candidate,
-                start_epoch - 1,
-                global_step,
-            )
-        except Exception as err:
-            logger.warning("Failed to resume from %s: %s. Starting fresh.", resume_candidate, err)
-            did_resume = False
+    _apply_stage_lrs()
+    _sync_scheduler_base_lrs()
 
-    train_log_header = ["step", "epoch", "video", "timestep", "loss_noise_mse"]
-    val_log_header = ["step", "epoch", "video", "timestep", "loss_noise_mse"]
+    train_log_header = ["step", "epoch", "stage", "video", "timestep", "loss_noise_mse"]
+    val_log_header = ["step", "epoch", "stage", "video", "timestep", "loss_noise_mse"]
     train_metric_keys = ["timestep", "loss_noise_mse"]
     val_metric_keys = ["timestep", "loss_noise_mse"]
 
@@ -537,17 +1476,19 @@ def _train_main(
         value = metrics.get(key)
         if value is None:
             return ""
+        if key == "timestep":
+            return str(int(value.detach().long().cpu().item()))
         return f"{float(value.detach().float().cpu().item()):.6f}"
 
     # 簡易 CSV ログ (ステップごとの損失を記録)
     run_tag = datetime.now().strftime("%Y%m%d_%H%M%S")
-    csv_path, train_log_exists = _select_log_path(
+    csv_path, train_log_exists = select_log_path(
         save_dir,
         "train_log",
         run_tag,
         reuse_existing=did_resume,
     )
-    val_csv_path, val_log_exists = _select_log_path(
+    val_csv_path, val_log_exists = select_log_path(
         save_dir,
         "val_log",
         run_tag,
@@ -555,26 +1496,27 @@ def _train_main(
     )
     trimmed_train = 0
     trimmed_val = 0
-    if train_log_exists and did_resume:
-        trimmed_train = _trim_train_log(csv_path, start_epoch, train_log_header)
-    else:
-        _init_csv_log(csv_path, train_log_header)
-    if val_log_exists and did_resume:
-        trimmed_val = _trim_val_log(val_csv_path, start_epoch, val_log_header)
-    else:
-        _init_csv_log(val_csv_path, val_log_header)
-    if did_resume and (trimmed_train or trimmed_val):
-        logger.info(
-            "Trimmed log rows for epochs >= %d (train=%d, val=%d).",
-            start_epoch,
-            trimmed_train,
-            trimmed_val,
-        )
+    if is_main_process:
+        if train_log_exists and did_resume and resume_same_stage:
+            trimmed_train = trim_train_log(csv_path, start_epoch, train_log_header)
+        else:
+            init_csv_log(csv_path, train_log_header)
+        if val_log_exists and did_resume and resume_same_stage:
+            trimmed_val = trim_val_log(val_csv_path, start_epoch, val_log_header)
+        else:
+            init_csv_log(val_csv_path, val_log_header)
+        if did_resume and resume_same_stage and (trimmed_train or trimmed_val):
+            logger.info(
+                "Trimmed log rows for epochs >= %d (train=%d, val=%d).",
+                start_epoch,
+                trimmed_train,
+                trimmed_val,
+            )
     logger.info("Log files for this run: train=%s val=%s", csv_path, val_csv_path)
 
     # (オプション) TensorBoard ログ
     writer_tb = None
-    if tensorboard_log_dir:
+    if tensorboard_log_dir and is_main_process:
         if SummaryWriter is None:
             logger.warning(
                 "tensorboard package not available. Install it with `pip install tensorboard` to enable TensorBoard logging."
@@ -588,7 +1530,11 @@ def _train_main(
     all_video_paths = sorted(glob.glob(train_glob))
     if not all_video_paths:
         raise FileNotFoundError(f"No training videos found for pattern: {train_glob}")
-    split_map: dict[str, list[str]] = {key: [] for key in ("train", "val", "test")}
+    valid_keys = ("train", "val", "test")
+    split_key = (dataset_split_group or "train").strip().lower()
+    if split_key not in valid_keys:
+        raise ValueError(f"dataset_split_group must be one of {valid_keys}, got '{dataset_split_group}'.")
+    split_map: dict[str, list[str]] = {key: [] for key in valid_keys}
     split_map["train"] = list(all_video_paths)
     if dataset_split_ratios:
         ratios = [float(value) for value in dataset_split_ratios]
@@ -599,11 +1545,6 @@ def _train_main(
         ratio_sum = sum(ratios)
         if ratio_sum <= 0:
             raise ValueError("dataset_split_ratios must sum to a positive value.")
-        split_key = (dataset_split_group or "train").strip().lower()
-        valid_keys = ("train", "val", "test")
-        if split_key not in valid_keys:
-            raise ValueError(f"dataset_split_group must be one of {valid_keys}, got '{dataset_split_group}'.")
-
         shuffled = list(all_video_paths)
         random.Random(dataset_split_seed).shuffle(shuffled)
         total_videos = len(shuffled)
@@ -660,137 +1601,90 @@ def _train_main(
                 extra,
             )
     video_paths = split_map[split_key]
+    train_batches = None
+    last_batch = None
 
-    def compute_batch_loss(batch: Any) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
-        """Forward UNet once against a mini-batch and return loss + per-component metrics."""
-        with torch.autocast(device_type=device.type, dtype=torch_dtype, enabled=use_amp):
-            H, W = batch.cond.shape[2], batch.cond.shape[3]
-            with torch.no_grad():
-                image_embeddings = pipeline._encode_image(
-                    batch.cond[0:1], device=device, num_videos_per_prompt=1, do_classifier_free_guidance=False
-                )
-            frames_cond = pipeline.image_processor.preprocess(batch.cond, height=H, width=W)
-            if noise_aug_strength > 0.0:
-                noise = torch.randn_like(frames_cond)
-                frames_cond = frames_cond + noise_aug_strength * noise
+    cleanup_tag = (
+        f"stage{stage_idx}->stage{stage_idx + 1}" if stage_idx < 3 else f"stage{stage_idx}->end"
+    )
 
-            vae_device = resolved_vae_decode_device
-            if next(pipeline.vae.parameters()).device != vae_device:
-                pipeline.vae.to(vae_device)
-            frames_cond_vae = frames_cond.to(vae_device)
+    def _cleanup_stage_resources(tag: str) -> None:
+        nonlocal pipeline
+        nonlocal optimizer
+        nonlocal lr_scheduler
+        nonlocal writer_tb
+        nonlocal trainable_params
+        nonlocal video_paths
+        nonlocal train_batches
+        nonlocal last_batch
+        nonlocal split_map
+        nonlocal all_video_paths
+        nonlocal preflight_batch
+        nonlocal pending_scheduler_state
+        nonlocal ckpt_optimizer_state
+        nonlocal ckpt_scheduler_state
+        nonlocal ckpt_scaler_state
+        unet_ref = None
+        try:
+            unet_ref = pipeline.unet
+        except Exception:
+            pass
+        pipeline_ref = pipeline
+        optimizer_ref = optimizer
+        lr_scheduler_ref = lr_scheduler
+        writer_ref = writer_tb
+        trainable_ref = trainable_params
+        video_paths_ref = video_paths
+        train_batches_ref = train_batches
+        last_batch_ref = last_batch
+        split_map_ref = split_map
+        all_video_paths_ref = all_video_paths
+        preflight_ref = preflight_batch
+        pending_sched_ref = pending_scheduler_state
+        ckpt_opt_ref = ckpt_optimizer_state
+        ckpt_sched_ref = ckpt_scheduler_state
+        ckpt_scaler_ref = ckpt_scaler_state
 
-            latent_list = []
-            with torch.no_grad():
-                for i_f in range(0, frames_cond.shape[0], max(1, vae_encode_chunk_size)):
-                    latent_list.append(
-                        pipeline.vae.encode(
-                            frames_cond_vae[i_f : i_f + max(1, vae_encode_chunk_size)]
-                        ).latent_dist.mode()
-                    )
-            frame_latents = torch.cat(latent_list, dim=0).unsqueeze(0)
-            frame_latents = frame_latents.to(image_embeddings.dtype).to(device)
+        pipeline = None
+        optimizer = None
+        lr_scheduler = None
+        writer_tb = None
+        trainable_params = None
+        video_paths = None
+        train_batches = None
+        last_batch = None
+        split_map = None
+        all_video_paths = None
+        preflight_batch = None
+        pending_scheduler_state = None
+        ckpt_optimizer_state = None
+        ckpt_scheduler_state = None
+        ckpt_scaler_state = None
 
-            with torch.no_grad():
-                frames_mask = pipeline.mask_processor.preprocess(batch.mask, height=H, width=W)
-                frames_mask = torch.nn.functional.interpolate(frames_mask, scale_factor=1 / pipeline.vae_scale_factor).unsqueeze(0)
-            mask_latents = frames_mask.to(image_embeddings.dtype)
-
-            fps_ = fps_condition - 1
-            add_time_ids = torch.tensor([[fps_, motion_bucket_id, noise_aug_strength]], dtype=image_embeddings.dtype, device=device)
-
-            frames_tgt = pipeline.image_processor.preprocess(batch.target, height=H, width=W)
-            tgt_lat_list = []
-            with torch.no_grad():
-                for i_f in range(0, frames_tgt.shape[0], max(1, vae_encode_chunk_size)):
-                    tgt_lat_list.append(
-                        pipeline.vae.encode(
-                            frames_tgt[i_f : i_f + max(1, vae_encode_chunk_size)].to(vae_device)
-                        ).latent_dist.mode()
-                    )
-            x0 = torch.cat(tgt_lat_list, dim=0).unsqueeze(0).to(image_embeddings.dtype)
-            x0 = x0.to(device)
-            x0 = x0 * pipeline.vae.config.scaling_factor
-
-            t = torch.randint(0, noise_scheduler.config.num_train_timesteps, (1,), device=device, dtype=torch.long)
-            eps = torch.randn_like(x0)
-            x_t = noise_scheduler.add_noise(x0, eps, t)
-
-            latent_model_input = torch.cat([x_t, frame_latents, mask_latents], dim=2)
-            noise_pred = pipeline.unet(
-                latent_model_input,
-                t,
-                encoder_hidden_states=image_embeddings,
-                added_time_ids=add_time_ids,
-                return_dict=False,
-            )[0]
-
-            if getattr(noise_scheduler.config, "prediction_type", "epsilon") == "v_prediction":
-                target = noise_scheduler.get_velocity(x0, eps, t)
-            else:
-                target = eps
-            noise_loss = F.mse_loss(noise_pred, target)
-            return noise_loss, {"timestep": t, "loss_noise_mse": noise_loss}
-
-    def _run_preflight_max_crop() -> None:
-        """Try the worst-case crop (max_h/max_w) once to catch OOM before training."""
-        if max_h is None or max_w is None:
-            return
-        if not video_paths:
-            raise ValueError("No videos available for preflight crop check.")
-
-        test_h, test_w = int(max_h), int(max_w)
-        sample_video = video_paths[0]
-        logger.info(
-            "Preflight: checking max crop %dx%d on %s",
-            test_h,
-            test_w,
-            os.path.basename(sample_video),
+        cleanup_cuda(
+            tag,
+            pipeline_ref,
+            unet_ref,
+            optimizer_ref,
+            lr_scheduler_ref,
+            writer_ref,
+            trainable_ref,
+            video_paths_ref,
+            train_batches_ref,
+            last_batch_ref,
+            split_map_ref,
+            all_video_paths_ref,
+            preflight_ref,
+            pending_sched_ref,
+            ckpt_opt_ref,
+            ckpt_sched_ref,
+            ckpt_scaler_ref,
         )
-        try:
-            batches_pf = prepare_batches(
-                sample_video,
-                frames_chunk=frames_chunk,
-                overlap=overlap,
-                device=device,
-                dtype=torch_dtype if precision_key != "fp32" else torch.float32,
-                crop_multiple=crop_multiple,
-                crop_min_size=(test_h, test_w),
-                crop_max_size=(test_h, test_w),
-                use_prev_target_overlap=True,
-                overlap_teacher_prob=overlap_teacher_prob,
-                overlap_noise_std=overlap_noise_std,
-            )
-            pre_batch = next(iter(batches_pf))
-        except StopIteration:
-            raise ValueError("Preflight crop check failed: no frames yielded from the sample video.")
-        except Exception as err:
-            raise RuntimeError(f"Preflight crop check failed while preparing batch: {err}") from err
-
-        # Run a forward+backward pass to approximate training-time memory usage
-        try:
-            if device.type == "cuda":
-                torch.cuda.empty_cache()
-            optimizer.zero_grad(set_to_none=True)
-            loss_pf, _ = compute_batch_loss(pre_batch)
-            if scaler.is_enabled():
-                scaler.scale(loss_pf).backward()
-                scaler.unscale_(optimizer)
-            else:
-                loss_pf.backward()
-            optimizer.zero_grad(set_to_none=True)
-            if device.type == "cuda":
-                torch.cuda.empty_cache()
-            logger.info("Preflight max-crop succeeded (loss=%.6f). Starting training.", float(loss_pf.detach().item()))
-        except RuntimeError as err:
-            msg = str(err).lower()
-            if "out of memory" in msg or "cuda error" in msg:
-                raise RuntimeError(
-                    f"Preflight max-crop {test_h}x{test_w} failed (OOM). Reduce max_h/max_w or increase tile_num."
-                ) from err
-            raise
 
     def run_validation(split_name: str, epoch_idx: int) -> float | None:
         """Run a full forward pass over the requested split and log average loss."""
+        if ds_enabled and not is_main_process:
+            return None
         val_key = (split_name or "").strip().lower()
         if not val_key:
             return None
@@ -817,6 +1711,7 @@ def _train_main(
         pipeline.unet.eval()
         total_loss = 0.0
         total_batches = 0
+        val_local = 0
         try:
             with torch.no_grad():
                 with open(val_csv_path, "a", encoding="utf-8", newline="") as val_f:
@@ -833,6 +1728,7 @@ def _train_main(
                             crop_multiple=crop_multiple,
                             crop_min_size=crop_min_size,
                             crop_max_size=crop_max_size,
+                            use_prev_target_overlap=use_prev_target_overlap,
                             overlap_teacher_prob=overlap_teacher_prob,
                             overlap_noise_std=overlap_noise_std,
                         )
@@ -843,8 +1739,14 @@ def _train_main(
                             batch_loss_val = float(loss_raw.detach().item())
                             total_loss += batch_loss_val
                             total_batches += 1
+                            val_local += 1
                             writer.writerow(
-                                [batch_i, epoch_idx, f"{val_key}/{os.path.basename(video_path)}"]
+                                [
+                                    global_step + val_local,
+                                    epoch_idx,
+                                    stage_name,
+                                    f"{val_key}/{os.path.basename(video_path)}",
+                                ]
                                 + [_format_metric(metrics, key) for key in val_metric_keys]
                             )
         finally:
@@ -872,10 +1774,9 @@ def _train_main(
         logger_obj=logger,
     )
     try:
-        _run_preflight_max_crop()
         accum_counter = 0
-        # 学習エポック数の決定: 目標avg_lossが与えられた場合は max_epochs を上限にループ
-        planned_epochs_total = max_epochs if (target_avg_loss is not None) else epochs
+        # stage_epochs を上限にし、target_avg_loss は早期終了のみに使用
+        planned_epochs_total = stage_epochs
         if sched_key in {"cosine", "cosine_with_warmup"} and lr_scheduler is None:
             t_max = scheduler_t_max if scheduler_t_max > 0 else planned_epochs_total
             t_max = max(int(t_max), 1)
@@ -913,34 +1814,41 @@ def _train_main(
                         initial_factor = max(1.0 / float(warmup_steps), eta_ratio)
                         for group, lr in zip(optimizer.param_groups, base_lrs):
                             group["lr"] = lr * initial_factor
-        if lr_scheduler is not None and pending_scheduler_state is not None:
+        if lr_scheduler is not None and pending_scheduler_state is not None and resume_same_stage:
             try:
                 lr_scheduler.load_state_dict(pending_scheduler_state)
                 logger.info("Restored scheduler state from checkpoint.")
             except Exception as err:
                 logger.warning("Failed to restore scheduler state: %s", err)
             pending_scheduler_state = None
+            _apply_stage_lrs()
+            _sync_scheduler_base_lrs()
         if start_epoch > planned_epochs_total:
             logger.info(
                 "Checkpoint epoch (%d) >= planned total epochs (%d). Nothing to do.",
                 start_epoch - 1,
                 planned_epochs_total,
             )
-            return
+            _cleanup_stage_resources(cleanup_tag)
+            return shard_applied
         current_epoch = start_epoch - 1
+        logged_loss_meta = False
         for epoch in range(start_epoch, planned_epochs_total + 1):
             current_epoch = epoch
             # エポックごとに動画順をシャッフル
             random.shuffle(video_paths)
+            epoch_video_paths = video_paths
+            if ds_enabled and accelerator is not None:
+                epoch_video_paths = video_paths[accelerator.process_index :: accelerator.num_processes]
             epoch_loss = 0.0
             epoch_batches = 0
-            printer.start_epoch(epoch_idx=epoch, epochs_total=planned_epochs_total, videos_total=len(video_paths))
+            printer.start_epoch(epoch_idx=epoch, epochs_total=planned_epochs_total, videos_total=len(epoch_video_paths))
 
-            for video_idx, video_path in enumerate(video_paths, start=1):
+            for video_idx, video_path in enumerate(epoch_video_paths, start=1):
                 if stop_event.is_set():
                     raise KeyboardInterrupt
                 # 動画を時間方向にチャンク分割し、GPU 上に順次ロード
-                batches = prepare_batches(
+                train_batches = prepare_batches(
                     video_path,
                     frames_chunk=frames_chunk,
                     overlap=overlap,
@@ -949,26 +1857,16 @@ def _train_main(
                     crop_multiple=crop_multiple,
                     crop_min_size=crop_min_size,
                     crop_max_size=crop_max_size,
+                    use_prev_target_overlap=use_prev_target_overlap,
                     overlap_teacher_prob=overlap_teacher_prob,
                     overlap_noise_std=overlap_noise_std,
                 )
-                crop_info = getattr(batches, "crop_region_info", None)
-                if crop_info:
-                    logger.info(
-                        "Video %s crop origin=(%d,%d) size=%dx%d (source=%dx%d)",
-                        os.path.basename(video_path),
-                        crop_info["top"],
-                        crop_info["left"],
-                        crop_info["height"],
-                        crop_info["width"],
-                        crop_info["source_height"],
-                        crop_info["source_width"],
-                    )
-                printer.start_video(video_idx=video_idx, batches_total=len(batches))
+                printer.start_video(video_idx=video_idx, batches_total=len(train_batches))
 
-                for batch_i, batch in enumerate(batches, start=1):
+                for batch_i, batch in enumerate(train_batches, start=1):
                     if stop_event.is_set():
                         raise KeyboardInterrupt
+                    last_batch = batch
 
                     if device.type == "cuda":
                         torch.cuda.reset_peak_memory_stats(device)
@@ -978,48 +1876,91 @@ def _train_main(
                             level=logging.DEBUG,
                         )
 
+                    is_last_batch_epoch = (video_idx == len(epoch_video_paths)) and (batch_i == len(train_batches))
                     # ===== ランダムtの通常学習: 1回のUNet前向きでノイズ予測MSE =====
-                    loss_raw, metrics = compute_batch_loss(batch)
-                    if not torch.isfinite(loss_raw):
-                        bad_value = loss_raw.detach().float().item()
-                        logger.warning(
-                            "Non-finite loss (%.4f) detected at epoch %d video %s batch %d. Skipping update.",
-                            bad_value,
-                            epoch,
-                            os.path.basename(video_path),
-                            batch_i,
-                        )
-                        optimizer.zero_grad(set_to_none=True)
-                        if scaler.is_enabled():
-                            scaler.update()
-                        accum_counter = 0
-                        continue
-
-                    is_last_batch_epoch = (video_idx == len(video_paths)) and (batch_i == len(batches))
-                    accum_counter += 1
-                    accum_scale = grad_accum_steps
-                    if is_last_batch_epoch and accum_counter < grad_accum_steps:
-                        accum_scale = accum_counter
-                    loss = loss_raw / float(accum_scale)
-
-                    # 6) backward + optimizer step
-                    if scaler.is_enabled():
-                        scaler.scale(loss).backward()
+                    if ds_enabled and accelerator is not None:
+                        skip_update = False
+                        if is_last_batch_epoch:
+                            accelerator.gradient_state.end_of_dataloader = True
+                        with accelerator.accumulate(pipeline.unet):
+                            loss_raw, metrics = compute_batch_loss(batch)
+                            if not torch.isfinite(loss_raw):
+                                bad_value = loss_raw.detach().float().item()
+                                logger.warning(
+                                    "Non-finite loss (%.4f) detected at epoch %d video %s batch %d. Skipping update.",
+                                    bad_value,
+                                    epoch,
+                                    os.path.basename(video_path),
+                                    batch_i,
+                                )
+                                optimizer.zero_grad(set_to_none=True)
+                                accum_counter = 0
+                                skip_update = True
+                            else:
+                                accum_counter += 1
+                                loss = loss_raw
+                                if debug_deepspeed_graph and not logged_loss_meta:
+                                    logger.warning(
+                                        "DeepSpeed debug: grad_enabled=%s inference_mode=%s loss.requires_grad=%s loss.grad_fn=%s",
+                                        torch.is_grad_enabled(),
+                                        torch.is_inference_mode_enabled(),
+                                        loss.requires_grad,
+                                        type(loss.grad_fn).__name__ if loss.grad_fn is not None else None,
+                                    )
+                                    logged_loss_meta = True
+                                accelerator.backward(loss)
+                                if accelerator.sync_gradients:
+                                    if max_grad_norm > 0:
+                                        accelerator.clip_grad_norm_(
+                                            pipeline.unet.parameters(), max_grad_norm
+                                        )
+                                    optimizer.step()
+                                    optimizer.zero_grad(set_to_none=True)
+                                    accum_counter = 0
+                        if is_last_batch_epoch:
+                            accelerator.gradient_state.end_of_dataloader = False
+                        if skip_update:
+                            continue
                     else:
-                        loss.backward()
+                        loss_raw, metrics = compute_batch_loss(batch)
+                        if not torch.isfinite(loss_raw):
+                            bad_value = loss_raw.detach().float().item()
+                            logger.warning(
+                                "Non-finite loss (%.4f) detected at epoch %d video %s batch %d. Skipping update.",
+                                bad_value,
+                                epoch,
+                                os.path.basename(video_path),
+                                batch_i,
+                            )
+                            optimizer.zero_grad(set_to_none=True)
+                            if _use_scaler():
+                                scaler.update()
+                            accum_counter = 0
+                            continue
+                        accum_counter += 1
+                        accum_scale = grad_accum_steps
+                        if is_last_batch_epoch and accum_counter < grad_accum_steps:
+                            accum_scale = accum_counter
+                        loss = loss_raw / float(accum_scale)
 
-                    should_step = (accum_counter >= grad_accum_steps) or is_last_batch_epoch
-                    if should_step:
-                        if scaler.is_enabled():
-                            scaler.unscale_(optimizer)
-                            torch.nn.utils.clip_grad_norm_(trainable_params, max_grad_norm)
-                            scaler.step(optimizer)
-                            scaler.update()
+                        # 6) backward + optimizer step
+                        if _use_scaler():
+                            scaler.scale(loss).backward()
                         else:
-                            torch.nn.utils.clip_grad_norm_(trainable_params, max_grad_norm)
-                            optimizer.step()
-                        optimizer.zero_grad(set_to_none=True)
-                        accum_counter = 0
+                            loss.backward()
+
+                        should_step = (accum_counter >= grad_accum_steps) or is_last_batch_epoch
+                        if should_step:
+                            if _use_scaler():
+                                scaler.unscale_(optimizer)
+                                torch.nn.utils.clip_grad_norm_(trainable_params, max_grad_norm)
+                                scaler.step(optimizer)
+                                scaler.update()
+                            else:
+                                torch.nn.utils.clip_grad_norm_(trainable_params, max_grad_norm)
+                                optimizer.step()
+                            optimizer.zero_grad(set_to_none=True)
+                            accum_counter = 0
 
                     # ログ・記録 (勾配蓄積の有無に関わらずバッチ単位で記録)
                     global_step += 1
@@ -1033,12 +1974,13 @@ def _train_main(
                         noise_val = metrics.get("loss_noise_mse", loss_raw)
                         writer_tb.add_scalar("loss/noise_mse", noise_val.detach().item(), global_step)
 
-                    with open(csv_path, "a", encoding="utf-8", newline="") as f:
-                        writer = csv.writer(f)
-                        writer.writerow(
-                            [global_step, epoch, os.path.basename(video_path)]
-                            + [_format_metric(metrics, key) for key in train_metric_keys]
-                        )
+                    if is_main_process:
+                        with open(csv_path, "a", encoding="utf-8", newline="") as f:
+                            writer = csv.writer(f)
+                            writer.writerow(
+                                [global_step, epoch, stage_name, os.path.basename(video_path)]
+                                + [_format_metric(metrics, key) for key in train_metric_keys]
+                            )
                     if device.type == "cuda":
                         peak_allocated_mib = torch.cuda.max_memory_allocated(device) / float(1024**2)
                         logger.debug(
@@ -1055,6 +1997,8 @@ def _train_main(
                 run_validation(val_split, epoch)
 
             _save_full_checkpoint("latest", epoch)
+            if epoch % save_interval_epochs == 0:
+                _save_full_checkpoint(f"epoch{epoch:06d}", epoch, update_latest=False)
             if lr_scheduler is not None:
                 lr_scheduler.step()
                 current_lr = optimizer.param_groups[0]["lr"]
@@ -1079,15 +2023,27 @@ def _train_main(
             logger.error("Interrupted. Failed to save checkpoint: %s", e)
         if writer_tb:
             writer_tb.close()
-        return
+        _cleanup_stage_resources(cleanup_tag)
+        return shard_applied
 
     final_path = os.path.join(save_dir, "unet_final.pt")
-    torch.save(pipeline.unet.state_dict(), final_path)
+    if ds_enabled and accelerator is not None:
+        if is_main_process:
+            try:
+                torch.save(accelerator.get_state_dict(pipeline.unet), final_path)
+            except Exception as err:
+                logger.warning("Failed to save final UNet weights: %s", err)
+        accelerator.wait_for_everyone()
+    else:
+        torch.save(pipeline.unet.state_dict(), final_path)
     _save_full_checkpoint("final", current_epoch)
-    logger.info("Training complete. Final UNet weights stored at %s", final_path)
+    if is_main_process:
+        logger.info("Training complete. Final UNet weights stored at %s", final_path)
 
     if writer_tb:
         writer_tb.close()
+    _cleanup_stage_resources(cleanup_tag)
+    return shard_applied
 
 
 def main(config: str | None = None, config_dir: str = "train_config", **overrides: Any) -> None:
@@ -1096,40 +2052,181 @@ def main(config: str | None = None, config_dir: str = "train_config", **override
     config_identifier = config or os.environ.get("STEREOCRAFT_TRAIN_CONFIG")
     config_values: dict[str, Any] = {}
     if config_identifier:
-        config_values.update(_load_config_dict(config_identifier, config_dir))
+        config_path, payload = load_json_config(config_identifier, config_dir)
+        config_values.update(payload)
+        logger.info("Loaded training config from %s", config_path)
     config_values.update(overrides)
+    ds_cfg = config_values.get("deepspeed") or {}
+    ds_enabled = bool(ds_cfg.get("enabled", False))
+    local_rank = str(os.environ.get("LOCAL_RANK", "")).strip()
+    is_main_process = local_rank in {"", "0"}
+
+    banned_keys = {
+        "frames_chunk",
+        "min_h",
+        "min_w",
+        "max_h",
+        "max_w",
+        "crop_multiple",
+        "shard_unet_across_gpus",
+    }
+    banned_present = sorted(banned_keys.intersection(config_values.keys()))
+    if banned_present:
+        raise ValueError(
+            "SVD staged training is always-on; remove these keys: " + ", ".join(banned_present)
+        )
+
+    stage_epochs_raw = config_values.get("stage_epochs")
+    stage_lrs_raw = config_values.get("stage_learning_rates")
+    if stage_epochs_raw is None or stage_lrs_raw is None:
+        raise ValueError("stage_epochs and stage_learning_rates are required and must have length 3.")
+    if not isinstance(stage_epochs_raw, (list, tuple)) or not isinstance(stage_lrs_raw, (list, tuple)):
+        raise ValueError("stage_epochs and stage_learning_rates must be list/tuple values of length 3.")
+    if len(stage_epochs_raw) != 3 or len(stage_lrs_raw) != 3:
+        raise ValueError("stage_epochs and stage_learning_rates must contain exactly 3 values.")
+    stage_epochs = [int(value) for value in stage_epochs_raw]
+    stage_lrs = [float(value) for value in stage_lrs_raw]
+    if any(value < 1 for value in stage_epochs):
+        raise ValueError("stage_epochs entries must be >= 1.")
+    if any(value <= 0 for value in stage_lrs):
+        raise ValueError("stage_learning_rates entries must be > 0.")
+
+    fixed_stage_keys = {"stage_name", "stage_h", "stage_w", "stage_lr", "stage_idx"}
+    fixed_stage_present = sorted(fixed_stage_keys.intersection(config_values.keys()))
+    if fixed_stage_present:
+        raise ValueError(
+            "SVD staged training is always-on; remove these keys: " + ", ".join(fixed_stage_present)
+        )
+
+    base_config = dict(config_values)
+    base_config.pop("stage_epochs", None)
+    base_config.pop("stage_learning_rates", None)
+    if ds_enabled:
+        if str(base_config.get("unet_shard_mode", "off")).strip().lower() != "off":
+            logger.info("DeepSpeed enabled; forcing unet_shard_mode=off.")
+        base_config["unet_shard_mode"] = "off"
+        base_config.pop("unet_device_map", None)
 
     signature = inspect.signature(_train_main)
     allowed_params = set(signature.parameters.keys())
-    unexpected_keys = set(config_values) - allowed_params
+    unexpected_keys = set(base_config) - allowed_params
     if unexpected_keys:
         unexpected_list = ", ".join(sorted(unexpected_keys))
         raise ValueError(f"Unknown training parameters: {unexpected_list}")
 
+    stage_fields = {"stage_name", "stage_h", "stage_w", "stage_epochs", "stage_lr", "stage_idx"}
     missing = [
         name
         for name, parameter in signature.parameters.items()
-        if parameter.default is inspect._empty and name not in config_values
+        if parameter.default is inspect._empty and name not in base_config and name not in stage_fields
     ]
     if missing:
         missing_list = ", ".join(sorted(missing))
         raise ValueError(f"Missing required training parameters: {missing_list}")
 
-    save_dir = str(config_values.get("save_dir", "")).strip()
-    resolved_save_dir = _resolve_run_save_dir(save_dir)
+    save_dir = str(base_config.get("save_dir", "")).strip()
+    resolved_save_dir = resolve_run_save_dir(save_dir)
     if resolved_save_dir:
         config_values["save_dir"] = resolved_save_dir
+        base_config["save_dir"] = resolved_save_dir
         if resolved_save_dir != save_dir:
             logger.info("Resolved save_dir to per-run folder: %s", resolved_save_dir)
         save_dir = resolved_save_dir
-    resume_candidate = config_values.get("resume_from")
+    resume_candidate = base_config.get("resume_from")
     if resume_candidate is None and save_dir:
         ckpt_latest_path = os.path.join(save_dir, "train_state_latest.pt")
         if os.path.exists(ckpt_latest_path):
             resume_candidate = ckpt_latest_path
-    _write_run_config_snapshot(save_dir, config_values, resume_candidate)
+    if is_main_process:
+        write_run_config_snapshot(save_dir, config_values, resume_candidate, logger=logger)
 
-    _train_main(**config_values)
+    resume_stage_idx = None
+    resume_epoch = None
+    resume_sharded = False
+    resume_meta_path = None
+    if resume_candidate and os.path.exists(resume_candidate):
+        if os.path.isdir(resume_candidate):
+            meta_guess = os.path.join(save_dir, "train_state_latest.pt")
+            if os.path.exists(meta_guess):
+                resume_meta_path = meta_guess
+        else:
+            resume_meta_path = resume_candidate
+    if resume_meta_path:
+        try:
+            ckpt = torch.load(resume_meta_path, map_location="cpu")
+            resume_stage_idx = ckpt.get("stage_idx", None)
+            resume_epoch = ckpt.get("epoch", None)
+            resume_sharded = bool(ckpt.get("unet_sharded", False))
+            if resume_stage_idx is not None:
+                resume_stage_idx = int(resume_stage_idx)
+            if resume_epoch is not None:
+                resume_epoch = int(resume_epoch)
+        except Exception as err:
+            logger.warning("Failed to read stage info from %s: %s", resume_meta_path, err)
+
+    start_stage_idx = 1
+    if resume_stage_idx is not None and 1 <= resume_stage_idx <= 3:
+        stage_epoch_limit = stage_epochs[resume_stage_idx - 1]
+        if resume_epoch is not None and resume_epoch >= stage_epoch_limit:
+            start_stage_idx = resume_stage_idx + 1
+        else:
+            start_stage_idx = resume_stage_idx
+        logger.info(
+            "Resume checkpoint stage=%d epoch=%s -> starting at stage %d/3.",
+            resume_stage_idx,
+            resume_epoch,
+            start_stage_idx,
+        )
+
+    if start_stage_idx > 3:
+        logger.info("All stages already completed; nothing to do.")
+        return
+
+    base_shard_mode = str(base_config.get("unet_shard_mode", "off")).strip().lower()
+    force_sharding = base_shard_mode == "on" or resume_sharded
+
+    stages = [
+        ("256x384", 256, 384),
+        ("320x576", 320, 576),
+        ("576x1024", 576, 1024),
+    ]
+    for stage_idx, (stage_name, stage_h, stage_w) in enumerate(stages, start=1):
+        if stage_idx < start_stage_idx:
+            logger.info("Skipping Stage %d/3 (%s): already completed.", stage_idx, stage_name)
+            continue
+        stage_epochs_value = stage_epochs[stage_idx - 1]
+        stage_lr_value = stage_lrs[stage_idx - 1]
+        logger.info(
+            "Stage %d/3: %s %dx%d lr=%.2e epochs=%d",
+            stage_idx,
+            stage_name,
+            stage_h,
+            stage_w,
+            stage_lr_value,
+            stage_epochs_value,
+        )
+        stage_kwargs = dict(base_config)
+        stage_shard_mode = base_shard_mode
+        if base_shard_mode == "auto" and force_sharding:
+            stage_shard_mode = "on"
+        stage_kwargs.update(
+            {
+                "stage_name": stage_name,
+                "stage_h": stage_h,
+                "stage_w": stage_w,
+                "stage_epochs": stage_epochs_value,
+                "stage_lr": stage_lr_value,
+                "stage_idx": stage_idx,
+                "unet_shard_mode": stage_shard_mode,
+            }
+        )
+        if stage_idx == start_stage_idx:
+            stage_kwargs["resume_from"] = resume_candidate
+        else:
+            stage_kwargs["resume_from"] = None
+        used_sharding = _train_main(**stage_kwargs)
+        if base_shard_mode == "auto" and used_sharding:
+            force_sharding = True
 
 
 if __name__ == "__main__":

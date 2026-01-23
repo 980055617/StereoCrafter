@@ -1,3 +1,9 @@
+# =============================================
+# File: /workspace/stereocraft/scripts/visualize_pose3d_annotations.py
+# ---------------------------------------------
+# 目的: 3Dポーズアノテーション可視化
+# =============================================
+
 import json
 import os
 from dataclasses import dataclass

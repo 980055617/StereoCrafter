@@ -1,12 +1,67 @@
+# =============================================
+# File: /workspace/stereocraft/blocks/mamba_diffusers_adapter.py
+# ---------------------------------------------
+# 目的: Diffusers UNet向けMambaアダプタ
+# =============================================
+
 from __future__ import annotations
-from typing import Optional, Dict, Any
+
+from typing import Any, Dict, Optional
 
 import os
 import torch
 import torch.nn as nn
 
 from .mamba_spatiotemporal import MambaSpatioTemporalModel
+from .mamba_temporal import TemporalMamba
 from .mamba_utils import FiLMConditioner
+
+
+class BiMambaSelfAttention(nn.Module):
+    """Bidirectional Mamba self-attention replacement."""
+
+    def __init__(
+        self,
+        dim: int,
+        *,
+        d_state: int = 256,
+        headdim: int = 64,
+        expand: int = 2,
+        chunk_size: int = 1024,
+        use_mem_eff_path: bool = True,
+    ) -> None:
+        super().__init__()
+        self.fwd = TemporalMamba(
+            d_model=dim,
+            d_state=d_state,
+            headdim=headdim,
+            expand=expand,
+            chunk_size=chunk_size,
+            use_mem_eff_path=use_mem_eff_path,
+        )
+        self.bwd = TemporalMamba(
+            d_model=dim,
+            d_state=d_state,
+            headdim=headdim,
+            expand=expand,
+            chunk_size=chunk_size,
+            use_mem_eff_path=use_mem_eff_path,
+        )
+
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        encoder_hidden_states: Optional[torch.Tensor] = None,
+        attention_mask: Optional[torch.Tensor] = None,
+        **kwargs: Dict[str, Any],
+    ) -> torch.Tensor:
+        # Keep signature compatibility; Mamba ignores encoder_hidden_states/attention_mask.
+        _ = encoder_hidden_states, attention_mask, kwargs
+        y_f = self.fwd(hidden_states)
+        x_rev = torch.flip(hidden_states, dims=[1]).contiguous()
+        y_rev = self.bwd(x_rev)
+        y_b = torch.flip(y_rev, dims=[1]).contiguous()
+        return 0.5 * (y_f + y_b)
 
 
 class MambaSpatioTemporalAdapter(nn.Module):
@@ -54,6 +109,11 @@ class MambaSpatioTemporalAdapter(nn.Module):
             keep_spatial_mixer=keep_spatial_mixer,
             spatial_chunk_size=spatial_chunk_size,
         )
+        if cross_attention_dim is not None:
+            self.inner.cond = FiLMConditioner(
+                ctx_dim=cross_attention_dim,
+                d_model=self.inner.d_model,
+            )
         # one-time debug print guard
         self._debug_printed = False
 
@@ -79,13 +139,6 @@ class MambaSpatioTemporalAdapter(nn.Module):
         enc = encoder_hidden_states
         if enc is not None and enc.dim() >= 2:
             enc = enc[::t]  # (B, 1, Cctx) or (B, Cctx)
-            # 必要なら FiLM を遅延初期化（cross_attention_dim を実行時に取得）
-            if getattr(self.inner, "cond", None) is None:
-                cctx = enc.shape[-1]
-                self.inner.cond = FiLMConditioner(ctx_dim=cctx, d_model=self.inner.d_model)
-                # inner の他パラメータに合わせてデバイス/精度を合わせる
-                ref = next(self.inner.parameters())
-                self.inner.cond.to(device=ref.device, dtype=ref.dtype)
 
         # Diffusers 側から渡ってくる追加引数
         timestep = kwargs.get("timestep", None)
@@ -252,4 +305,115 @@ def replace_unet_spatiotemporal_transformer_with_mamba(
     _maybe_swap(unet)
     if log_enabled:
         print(f"[MambaAdapter][replace] total_replaced={replaced}")
+    return replaced
+
+
+def replace_unet_spatiotemporal_self_attn_with_mamba(
+    unet: nn.Module,
+    *,
+    d_state: int = 256,
+    expand: int = 2,
+    chunk_size: int = 1024,
+    use_mem_eff_path: bool = True,
+) -> int:
+    """
+    Replace only the self-attn (attn1) inside TransformerSpatioTemporalModel blocks with Mamba.
+
+    Cross-attn (attn2) stays intact.
+    """
+    replaced = 0
+
+    def _env_bool(name: str) -> Optional[bool]:
+        v = os.getenv(name)
+        if v is None:
+            return None
+        v = v.strip().lower()
+        if v in ("1", "true", "yes", "on"):
+            return True
+        if v in ("0", "false", "no", "off"):
+            return False
+        return None
+
+    def _env_int(name: str) -> Optional[int]:
+        v = os.getenv(name)
+        try:
+            return int(v) if v is not None and v != "" else None
+        except Exception:
+            return None
+
+    env_mem_eff = _env_bool("MAMBA_MEM_EFF")
+    if env_mem_eff is None:
+        env_mem_eff = _env_bool("MAMBA_USE_MEM_EFF_PATH")
+    if env_mem_eff is not None:
+        use_mem_eff_path = bool(env_mem_eff)
+
+    env_chunk = _env_int("MAMBA_SELF_ATTN_CHUNK")
+    if env_chunk is not None and env_chunk > 0:
+        chunk_size = env_chunk
+
+    log_enabled = os.getenv("MAMBA_ADAPTER_LOG", "0") == "1" or os.getenv("MAMBA_DEBUG", "0") == "1"
+
+    def _swap_attn1(block: nn.Module, prefix: str) -> bool:
+        nonlocal replaced
+        attn1 = getattr(block, "attn1", None)
+        if attn1 is None:
+            return False
+
+        dim = getattr(attn1, "query_dim", None)
+        if dim is None:
+            norm = getattr(block, "norm1", None)
+            if norm is not None and hasattr(norm, "normalized_shape"):
+                shape = norm.normalized_shape
+                dim = int(shape[0]) if isinstance(shape, (list, tuple)) else int(shape)
+        if dim is None:
+            return False
+
+        adapter = BiMambaSelfAttention(
+            dim,
+            d_state=d_state,
+            headdim=getattr(attn1, "dim_head", 64),
+            expand=expand,
+            chunk_size=chunk_size,
+            use_mem_eff_path=use_mem_eff_path,
+        )
+        try:
+            ref_param = next(attn1.parameters())
+            adapter = adapter.to(device=ref_param.device, dtype=ref_param.dtype)
+        except StopIteration:
+            pass
+
+        setattr(block, "attn1", adapter)
+        replaced += 1
+        if log_enabled:
+            dev = getattr(ref_param, "device", None) if "ref_param" in locals() else None
+            dtype = getattr(ref_param, "dtype", None) if "ref_param" in locals() else None
+            print(
+                "[MambaAdapter][self-attn] at="
+                f"{prefix}.attn1 dim={dim} device={dev} dtype={dtype} "
+                f"d_state={d_state} expand={expand} chunk={chunk_size} mem_eff={use_mem_eff_path}"
+            )
+        return True
+
+    def _maybe_swap(parent: nn.Module, prefix: str = "") -> None:
+        for name, child in list(parent.named_children()):
+            full_name = f"{prefix}{name}" if prefix else name
+            if child.__class__.__name__ == "TransformerSpatioTemporalModel":
+                replaced_in_block = 0
+                for i, block in enumerate(getattr(child, "transformer_blocks", [])):
+                    if _swap_attn1(block, f"{full_name}.transformer_blocks.{i}"):
+                        replaced_in_block += 1
+                for i, _block in enumerate(getattr(child, "temporal_transformer_blocks", [])):
+                    if log_enabled:
+                        print(
+                            "[MambaAdapter][self-attn][skip] "
+                            f"{full_name}.temporal_transformer_blocks.{i}.attn1"
+                        )
+                if replaced_in_block:
+                    setattr(child, "_mamba_self_attn", True)
+            else:
+                _maybe_swap(child, prefix=f"{full_name}.")
+
+    _maybe_swap(unet)
+    if log_enabled:
+        print(f"[MambaAdapter][self-attn] total_replaced={replaced}")
     return replaced

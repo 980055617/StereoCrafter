@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""
-count_all_frame.py
-Count the total number of frames for every video file inside a folder.
+# =============================================
+# File: /workspace/stereocraft/scripts/count_all_frame.py
+# ---------------------------------------------
+# 目的: 動画フレーム数の集計
+# =============================================
 
-Usage:
-    python count_all_frame.py /path/to/folder --recursive
-"""
+"""Count total frames for videos in a folder."""
 
 from __future__ import annotations
 

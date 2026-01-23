@@ -1,3 +1,9 @@
+# =============================================
+# File: /workspace/stereocraft/scripts/extract_unet_from_train_state.py
+# ---------------------------------------------
+# 目的: train_stateからUNet抽出
+# =============================================
+
 import argparse
 import os
 import sys

@@ -1,14 +1,10 @@
-"""Lightweight logging and memory/time utilities for experiments.
+# =============================================
+# File: /workspace/stereocraft/utils/logging_utils.py
+# ---------------------------------------------
+# 目的: ログとVRAM計測ユーティリティ
+# =============================================
 
-含まれるもの:
-- ensure_dir: 出力ディレクトリの作成
-- get_gpu_memory_mb/tensor_mem_mb: CUDA/テンソルのメモリ量を MB 単位で取得
-- format_seconds: 秒を H:MM:SS 表記に整形
-- TrainCSVLogger/EventCSVLogger: CSV ベースの簡易ロガー
-- StepTimer/MemoryTracer: ステップ時間とメモリの測定ユーティリティ
-
-学習ループに最小限のロギングを足したいときに便利なユーティリティ群です。
-"""
+"""Logging and memory/time utilities."""
 
 import csv
 import logging

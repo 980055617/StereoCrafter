@@ -1,17 +1,11 @@
 #!/usr/bin/env python3
-"""
-Scan subfolders of `video_data` and report missing numeric IDs in each folder.
+# =============================================
+# File: /workspace/stereocraft/scripts/check_missing_ids.py
+# ---------------------------------------------
+# 目的: video_data内の欠番検出
+# =============================================
 
-Rules:
-- Look for files named like "<number>_*.mp4" (number = digits).
-- For each subfolder directly under video_data/, collect all such numbers.
-- Determine the min/max ID in that folder and list missing IDs between them.
-- Print ranges for readability (e.g., 0101-0105, 0110).
-
-Usage:
-    python scripts/check_missing_ids.py
-    python scripts/check_missing_ids.py --root video_data --ext mp4
-"""
+"""Scan subfolders and report missing numeric IDs."""
 
 from __future__ import annotations
 

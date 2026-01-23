@@ -1,5 +1,10 @@
+# =============================================
+# File: /workspace/stereocraft/scripts/replace_top_right_tile.py
+# ---------------------------------------------
+# 目的: 2x2タイルの右上置換
+# =============================================
+
 import os
-from typing import Optional
 
 import cv2
 import numpy as np
@@ -23,31 +28,14 @@ def replace_top_right(
     resize_interpolation: str = "area",
     trim_to_min_frames: bool = True,
 ) -> None:
-    """Replace the top-right tile of a 2x2 tiled video with frames from a right-view video.
-
-    Assumptions
-    - `input_2x2_video` is a 2x2 tiled RGB video. Top-left/Bottom-left/Bottom-right tiles are valid,
-      and top-right will be overwritten.
-    - `right_video` is a single-view RGB video containing the true right frames.
-    - Both videos share (ideally) the same number of frames and fps. If frame counts differ and
-      `trim_to_min_frames=True`, the output length is the minimum of the two.
-
-    Args:
-        input_2x2_video: Path to the source tiled video.
-        right_video: Path to the right-view video to insert into the top-right tile.
-        output_video: Path to write the resulting 2x2 tiled video (e.g., .mp4).
-        resize_interpolation: Interpolation to use when resizing right-view to tile size. One of
-            {"area", "linear", "cubic", "nearest"}. Default: "area".
-        trim_to_min_frames: If True, trims to min(T_source, T_right). If False and lengths mismatch,
-            raises an error.
-    """
+    """Replace the top-right tile of a 2x2 video with right-view frames."""
     if not os.path.exists(input_2x2_video):
         raise FileNotFoundError(f"input_2x2_video not found: {input_2x2_video}")
     if not os.path.exists(right_video):
         raise FileNotFoundError(f"right_video not found: {right_video}")
 
     fps_src, frames_src = _read_video(input_2x2_video)
-    fps_right, frames_right = _read_video(right_video)
+    _, frames_right = _read_video(right_video)
 
     T_src, H, W, C = frames_src.shape
     if C != 3:

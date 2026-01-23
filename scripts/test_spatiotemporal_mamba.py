@@ -1,32 +1,26 @@
 # -*- coding: utf-8 -*-
-# 使い方:
-#   PYTHONPATH=. python tests/test_mamba_spatiotemporal.py
-# または pytest でもOK
-#
-# このファイルでチェックしていること（網羅）
-# - 形状の整合性と勾配伝搬: forward/backward が (B,C,T,H,W) を保ち、NaN/Inf を出さない
-# - 戻り値の形式: return_dict=True/False の両対応（辞書/タプル）
-# - image_only_indicator: (B,), (B,1), (B,T) の各形状、極端値(0/1) で空間/時間パスが通ること
-# - 条件埋め込み/時間埋め込み: encoder_hidden_states 形状バリエーション、timestep のブロードキャスト
-# - AMP/半精度（CUDA）: autocast(fp16/bfloat16) で動作（勾配含む）
-# - 長時系列 + チャンク: 大きい T を chunk_size で安定実行
-# - メモリ効率パス切替: use_mem_eff_path の ON/OFF どちらも正しく動作
-#   - 非メモリ効率パス（CUDA の causal_conv1d カーネル）では以下が必要:
-#     (1) L もしくは B_eff*L が 8 の倍数, (2) conv_dim=d_ssm+2*ngroups*d_state が 8 の倍数
-#     （テストでは conv_dim と B_eff*T の両方が 8 の倍数になる形状/ハイパラで検証）
-# - モード一貫性: model.train()/eval() の切替でも API と数値の有限性が維持
-# - パフォーマンス簡易確認（CUDA）: 小スケールでの平均実行時間を参考表示（合否には使わない）
+# =============================================
+# File: /workspace/stereocraft/scripts/test_spatiotemporal_mamba.py
+# ---------------------------------------------
+# 目的: 時空間Mambaの動作テスト
+# =============================================
+
+# Usage: PYTHONPATH=. python scripts/test_spatiotemporal_mamba.py
+# Checks forward/backward, indicator shapes, AMP, and chunking paths.
 import warnings
+import sys
+import time
+
+import torch
+
 warnings.filterwarnings(
     "ignore",
     category=FutureWarning,
     message=r".*torch.library.impl_abstract.*register_fake.*",
 )
-import torch
-import sys
-import time
 
 from blocks.mamba_spatiotemporal import MambaSpatioTemporalModel
+
 
 def _device_dtype():
     use_cuda = torch.cuda.is_available()

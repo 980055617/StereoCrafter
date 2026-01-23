@@ -1,35 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-Visualize and compare UNet module structures and parameter counts.
+# =============================================
+# File: /workspace/stereocraft/scripts/visualize_unet_compare.py
+# ---------------------------------------------
+# 目的: UNet構造と差分の可視化
+# =============================================
 
-This script loads:
-  - Base (original) UNet from --base_dir (expects subfolder "unet")
-  - Adapted (modified) UNet from --adapted_dir (e.g., checkpoints/.../unet_diffusers)
-
-It then builds a hierarchical module tree for each, aggregates parameter counts
-per module (self and total including children), and outputs:
-  - Text trees for base, adapted, and a merged diff
-  - CSV with per-module parameter diffs
-
-Optional pretty console output uses 'rich' (if installed). The script works
-without it by falling back to ASCII trees.
-
-Usage example:
-  python scripts/visualize_unet_compare.py \
-    --base_dir ./weights/StereoCrafter \
-    --adapted_dir ./checkpoints/mamba-unet-overfit/unet_diffusers \
-    --output_dir ./reports/unet_compare \
-    --max_depth 3
-
-Notes:
-  - No forward pass is performed; visualization is static based on module tree
-    and parameter tensors, making it memory-safe.
-  - If your adapted UNet directory lacks config.json, pass --base_dir_for_config
-    so we can reconstruct the UNet before loading the adapted state dict.
-  - diff_tree.txt is pruned to include only changed/added/removed nodes and
-    their necessary ancestors (ancestors are marked as [context]).
-"""
+"""Visualize UNet module trees and parameter diffs."""
 from __future__ import annotations
 
 import argparse

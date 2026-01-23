@@ -1,12 +1,10 @@
-"""Precision/AMP utilities.
+# =============================================
+# File: /workspace/stereocraft/utils/training_precision.py
+# ---------------------------------------------
+# 目的: 精度/AMP設定の解決
+# =============================================
 
-"fp16" / "bf16" / "fp32" の指定を、学習スクリプトでそのまま使える形
-(torch.dtype / autocast の enabled / GradScaler) に変換します。
-
-注意:
-- GradScaler は fp16 のときのみ有効 (bf16/fp32 では無効)。
-- autocast は CUDA かつ (fp16/bf16) の時に有効。
-"""
+"""Precision/AMP helpers for training."""
 
 from typing import Tuple
 
@@ -19,18 +17,7 @@ class PrecisionConfigError(ValueError):
 
 
 def resolve_precision(precision: str, device: torch.device) -> Tuple[torch.dtype, bool, torch.amp.GradScaler]:
-    """Map precision keyword to dtype/autocast usage and create a GradScaler.
-
-    Args:
-        precision: "fp16" | "bf16" | "fp32"。
-        device: 使用デバイス (autocast の可否判定に使用)。
-
-    Returns:
-        (torch_dtype, use_amp, scaler):
-            - torch_dtype: 使用する dtype。
-            - use_amp: autocast を有効化するか。
-            - scaler: fp16 のとき有効な GradScaler (それ以外は無効)。
-    """
+    """Map precision keyword to dtype/autocast/scaler."""
     precision_key = (precision or "").lower()
     dtype_mapping = {
         "fp16": torch.float16,

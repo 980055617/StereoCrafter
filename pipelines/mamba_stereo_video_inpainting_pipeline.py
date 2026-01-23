@@ -16,7 +16,7 @@ from diffusers.pipelines.pipeline_utils import DiffusionPipeline
 
 # Replace UNet's spatiotemporal transformer blocks with Mamba-backed adapter
 from blocks.mamba_diffusers_adapter import (
-    replace_unet_spatiotemporal_transformer_with_mamba,
+    replace_unet_spatiotemporal_self_attn_with_mamba,
 )
 
 
@@ -93,10 +93,10 @@ class MambaStableVideoDiffusionInpaintingPipeline(DiffusionPipeline):
     ):
         super().__init__()
 
-        # Swap UNet internal TransformerSpatioTemporalModel with Mamba adapter
+        # Swap only self-attn (attn1) inside TransformerSpatioTemporalModel with Mamba.
         try:
-            replaced = replace_unet_spatiotemporal_transformer_with_mamba(unet)
-            logger.info(f"Replaced {replaced} TransformerSpatioTemporalModel blocks with Mamba adapter")
+            replaced = replace_unet_spatiotemporal_self_attn_with_mamba(unet)
+            logger.info(f"Replaced {replaced} self-attn blocks with Mamba adapter")
         except Exception as e:
             logger.warning(f"Mamba adapter replacement failed; using original UNet. Error: {e}")
 

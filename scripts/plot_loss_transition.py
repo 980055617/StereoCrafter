@@ -1,33 +1,21 @@
 #!/usr/bin/env python3
-"""
-Aggregate train/val/test log CSVs and visualize average loss transitions.
+# =============================================
+# File: /workspace/stereocraft/scripts/plot_loss_transition.py
+# ---------------------------------------------
+# 目的: 学習ログの損失推移プロット
+# =============================================
 
-Typical usage (folder mode):
-    python scripts/plot_loss_transition.py \
-        --log-dir weights/MambaCrafter_20251223_174104
-
-Explicit file usage is still supported:
-    python scripts/plot_loss_transition.py \
-        --train-log weights/Test/train_log_20251210_095055.csv \
-        --val-log weights/Test/val_log_20251223_172946.csv \
-        --output weights/Test/loss_transition.png
-
-Folder mode expects exactly one train_log*.csv and at most one val_log*.csv or
-test_log*.csv in the directory. It writes loss.png next to those logs.
-
-Each log is trimmed independently in epoch mode: if the last epoch has fewer
-rows than the previous epoch, it is considered incomplete and is dropped.
-"""
+"""Plot train/val/test loss curves from CSV logs."""
 
 from __future__ import annotations
 
 import argparse
 import csv
 import os
-import sys
 from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List, Sequence, Tuple
+
 
 def _select_backend_env() -> None:
     # If DISPLAY is set but unusable (no Xauthority), drop it to avoid X errors.
@@ -46,7 +34,6 @@ def _select_backend_env() -> None:
 
 _select_backend_env()
 
-import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 
@@ -340,19 +327,6 @@ def plot_curves(
         print(f"Saved plot to: {output}")
 
     plt.close(fig)
-
-
-def display_available() -> bool:
-    backend = plt.get_backend().lower()
-    if "agg" in backend:
-        return False
-
-    # Presence of a display environment variable is enough for most cases.
-    if os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"):
-        return True
-    if sys.platform.startswith("win") or sys.platform == "darwin":
-        return True
-    return False
 
 
 def extract_run_tag(path: Path | None) -> str | None:

@@ -1,20 +1,10 @@
-"""Compare generated SBS outputs against ground-truth right-eye videos.
+# =============================================
+# File: /workspace/stereocraft/scripts/evaluate_generated_vs_right.py
+# ---------------------------------------------
+# 目的: 生成右目とGT右目の評価
+# =============================================
 
-計算するもの（任意でオン/オフ可）:
-- PSNR (フルフレーム)
-- SSIM (フルフレーム)
-- LPIPS (フルフレーム)           ※要: pip install lpips
-- tOF  (フロー差分)              ※要: OpenCVの光学フロー
-- FVD  (Fréchet Video Distance)  ※cd-fvd を使用（推奨: i3d）
-
-想定入力:
-- 生成動画: 左+生成右を横に並べた mp4（SBS）
-- GT動画 : video_data/right_eye/<id>.mp4 （同じ stem の右目動画）
-
-メモリ対策:
-- チャンクごとに読み出し、誤差を逐次加算 (frames_chunk, overlap で調整)
-- FVDは「一時フォルダに右目動画を切り出して保存」→ cd-fvd に投げる
-"""
+"""Evaluate SBS outputs vs GT right-eye videos (PSNR/SSIM/optional LPIPS/tOF/FVD)."""
 
 import csv
 import glob
