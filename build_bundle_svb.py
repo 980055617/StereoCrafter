@@ -35,6 +35,33 @@ TYPE_ANIMAL = 2
 ROT_Q = (0, 0, 0, 32767)
 COCO_LHIP = 11
 COCO_RHIP = 12
+ANIMER_SMAL_26_SKELETON = [
+    (0, 24),
+    (1, 24),
+    (2, 24),
+    (3, 14),
+    (4, 15),
+    (5, 16),
+    (6, 17),
+    (7, 18),
+    (8, 12),
+    (9, 13),
+    (10, 7),
+    (11, 7),
+    (12, 18),
+    (13, 18),
+    (14, 8),
+    (15, 9),
+    (16, 10),
+    (17, 11),
+    (18, 24),
+    (19, 25),
+    (20, 0),
+    (21, 1),
+    (22, 24),
+    (23, 24),
+    (25, 7),
+]
 
 
 @dataclass
@@ -49,6 +76,7 @@ class VideoMeta:
 class TrackState:
     anchor_z: Optional[float] = None
     joints_rel: Optional[np.ndarray] = None
+    joints_abs: Optional[np.ndarray] = None
     kp_count: int = 0
 
 
@@ -64,9 +92,55 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--fovx_deg", type=float, default=70.0)
     parser.add_argument("--sample_k", type=int, default=7)
     parser.add_argument("--conf_th", type=float, default=0.4)
+    parser.add_argument("--depth_gate_range", type=float, default=1e9)
+    parser.add_argument("--depth_gate_iqr", type=float, default=0.06)
+    parser.add_argument("--depth_gate_mad", type=float, default=0.05)
+    parser.add_argument("--depth_gate_min_valid", type=int, default=9)
+    parser.add_argument("--depth_gate_jump", type=float, default=1e9)
+    parser.add_argument("--depth_gate_conf_margin", type=float, default=0.0)
+    parser.add_argument("--depth_gate_prev_band", type=float, default=0.03)
+    parser.add_argument("--depth_gate_prev_min_valid", type=int, default=9)
+    parser.add_argument("--depth_gate_prev_min_frac", type=float, default=0.4)
+    parser.add_argument("--depth_gate_use_anchor_fallback", type=int, choices=[0, 1], default=1)
     parser.add_argument("--ema_alpha", type=float, default=0.8)
     parser.add_argument("--quant_pos_scale", type=float, default=0.002)
     parser.add_argument("--quant_joint_scale", type=float, default=0.002)
+    parser.add_argument(
+        "--joints_source",
+        choices=["auto", "depth_from_2d", "pose_keypoints3d"],
+        default="auto",
+        help=(
+            "auto uses pose.keypoints3d when present, otherwise falls back to 2D keypoints + depth. "
+            "pose_keypoints3d treats pose-engine 3D as skeleton shape and uses depth only for anchor placement."
+        ),
+    )
+    parser.add_argument(
+        "--metrabs_joint_scale",
+        type=float,
+        default=0.001,
+        help="Scale applied to MeTRAbs/metrabs_camera joints before bundling. Default converts mm to m.",
+    )
+    parser.add_argument(
+        "--animer_joint_scale",
+        type=float,
+        default=1.0,
+        help="Scale applied to AniMer/animer_smal joints before bundling.",
+    )
+    parser.add_argument(
+        "--pose_keypoints3d_flip_y",
+        type=int,
+        choices=[0, 1],
+        default=1,
+        help=(
+            "Flip pose.keypoints3d Y before writing bundle joints. This normalizes "
+            "pose-engine output to bundle camera axes x_right_y_up_z_forward."
+        ),
+    )
+    parser.add_argument(
+        "--joints_space",
+        choices=["camera_xyz_root_relative", "camera_xyz_absolute"],
+        default="camera_xyz_root_relative",
+    )
     parser.add_argument("--frame_compress", choices=["none", "zlib", "lz4"], default="lz4")
     parser.add_argument("--anchor_from", choices=["mask", "bbox"], default="mask")
     parser.add_argument("--fps", type=float, default=None, help="Manual fallback if video probing fails.")
@@ -84,6 +158,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--debug_meta_first_frames", type=int, default=3)
     parser.add_argument("--debug_meta_max_objects", type=int, default=10)
     parser.add_argument("--debug_meta_decode_after", type=int, choices=[0, 1], default=0)
+    parser.add_argument("--debug_frame", type=int, default=-1, help="Emit detailed joints debug for this frame index.")
+    parser.add_argument(
+        "--dump_manifest",
+        type=str,
+        default="",
+        help="Optional path to dump raw manifest.json for verification.",
+    )
     return parser.parse_args()
 
 
@@ -436,7 +517,7 @@ def normalize_conf(value: Any) -> float:
 def is_object_dict(value: Any) -> bool:
     if not isinstance(value, dict):
         return False
-    keys = {"bbox", "box", "keypoints", "segmentation", "mask", "bbox_xyxy", "xyxy"}
+    keys = {"bbox", "box", "keypoints", "segmentation", "mask", "bbox_xyxy", "xyxy", "sam2", "pose"}
     return any(key in value for key in keys)
 
 
@@ -643,6 +724,39 @@ def parse_category_specs(data: Any) -> Dict[int, Dict[str, Any]]:
     specs: Dict[int, Dict[str, Any]] = {}
     if isinstance(data, dict):
         categories = data.get("categories")
+        if isinstance(categories, dict):
+            name_to_id = {"other": TYPE_OTHER, "person": TYPE_PERSON, "human": TYPE_PERSON, "animal": TYPE_ANIMAL}
+            for name_key, cat in categories.items():
+                if not isinstance(cat, dict):
+                    continue
+                name = str(cat.get("name") or name_key)
+                cat_id_int = int(cat.get("id", name_to_id.get(name.lower(), name_to_id.get(str(name_key).lower(), TYPE_OTHER))))
+                kp_names = cat.get("keypoints")
+                if isinstance(kp_names, list):
+                    kp_names = [str(kp) for kp in kp_names]
+                else:
+                    kp_names = []
+                kp_count = len(kp_names)
+                edges = normalize_skeleton_edges(cat.get("skeleton"), kp_count)
+                root_indices = infer_root_indices(kp_names, kp_count)
+                if cat_id_int == TYPE_ANIMAL and kp_count == 26:
+                    if not edges:
+                        edges = ANIMER_SMAL_26_SKELETON
+                    if all(name.startswith("animer_joint_") for name in kp_names):
+                        root_indices = []
+                anchor_indices = infer_anchor_indices(cat_id_int, kp_names, kp_count)
+                specs[cat_id_int] = {
+                    "id": cat_id_int,
+                    "name": "person" if cat_id_int == TYPE_PERSON else ("animal" if cat_id_int == TYPE_ANIMAL else name),
+                    "kp_names": kp_names,
+                    "kp_count": kp_count,
+                    "skeleton_edges": edges,
+                    "root_indices": root_indices,
+                    "anchor_indices": anchor_indices,
+                    "engine": cat.get("engine"),
+                    "keypoint_format": cat.get("keypoint_format"),
+                    "coordinate_system": cat.get("coordinate_system"),
+                }
         if isinstance(categories, list):
             for cat in categories:
                 if not isinstance(cat, dict):
@@ -663,6 +777,11 @@ def parse_category_specs(data: Any) -> Dict[int, Dict[str, Any]]:
                 kp_count = len(kp_names)
                 edges = normalize_skeleton_edges(cat.get("skeleton"), kp_count)
                 root_indices = infer_root_indices(kp_names, kp_count)
+                if cat_id_int == TYPE_ANIMAL and kp_count == 26:
+                    if not edges:
+                        edges = ANIMER_SMAL_26_SKELETON
+                    if all(name.startswith("animer_joint_") for name in kp_names):
+                        root_indices = []
                 anchor_indices = infer_anchor_indices(cat_id_int, kp_names, kp_count)
                 specs[cat_id_int] = {
                     "id": cat_id_int,
@@ -736,6 +855,23 @@ def extract_objects(frame_entry: Any) -> List[Dict[str, Any]]:
 
 
 def parse_bbox(obj: Dict[str, Any]) -> Optional[Tuple[float, float, float, float]]:
+    sam2 = obj.get("sam2")
+    if isinstance(sam2, dict):
+        bbox = sam2.get("bbox")
+        if isinstance(bbox, (list, tuple)) and len(bbox) >= 4:
+            return float(bbox[0]), float(bbox[1]), float(bbox[2]), float(bbox[3])
+        bounds = sam2.get("bounds")
+        if (
+            isinstance(bounds, (list, tuple))
+            and len(bounds) >= 2
+            and isinstance(bounds[0], (list, tuple))
+            and isinstance(bounds[1], (list, tuple))
+            and len(bounds[0]) >= 2
+            and len(bounds[1]) >= 2
+        ):
+            x0, y0 = float(bounds[0][0]), float(bounds[0][1])
+            x1, y1 = float(bounds[1][0]), float(bounds[1][1])
+            return x0, y0, x1 - x0, y1 - y0
     if "bbox" in obj:
         bbox = obj["bbox"]
         if isinstance(bbox, dict):
@@ -766,6 +902,9 @@ def parse_bbox(obj: Dict[str, Any]) -> Optional[Tuple[float, float, float, float
 def parse_keypoints(
     obj: Dict[str, Any], expected_kp_count: int
 ) -> Tuple[Optional[List[Tuple[float, float, float]]], List[int], int]:
+    nested_pose = obj.get("pose")
+    if isinstance(nested_pose, dict) and "keypoints2d" in nested_pose:
+        obj = {**obj, "keypoints": nested_pose.get("keypoints2d")}
     for key in ["keypoints", "pose", "joints", "kpts"]:
         if key not in obj:
             continue
@@ -827,6 +966,49 @@ def parse_keypoints(
             vis_list = vis_list[:expected]
         return points, vis_list, given_count
     return None, [], 0
+
+
+def parse_pose_keypoints3d(
+    obj: Dict[str, Any], expected_kp_count: int
+) -> Tuple[Optional[np.ndarray], np.ndarray, Optional[str], Optional[str], Optional[str]]:
+    pose = obj.get("pose")
+    if not isinstance(pose, dict):
+        return None, np.zeros((0,), dtype=bool), None, None, None
+    raw_points = pose.get("keypoints3d")
+    if not isinstance(raw_points, (list, tuple)) or not raw_points:
+        return None, np.zeros((0,), dtype=bool), None, None, None
+
+    points: List[List[float]] = []
+    valid: List[bool] = []
+    for point in raw_points:
+        if not isinstance(point, (list, tuple)) or len(point) < 3:
+            points.append([0.0, 0.0, 0.0])
+            valid.append(False)
+            continue
+        xyz = [float(point[0]), float(point[1]), float(point[2])]
+        conf = float(point[3]) if len(point) >= 4 else 1.0
+        finite = all(math.isfinite(v) for v in xyz)
+        points.append(xyz if finite else [0.0, 0.0, 0.0])
+        valid.append(finite and normalize_conf(conf) > 0.0)
+
+    expected = max(0, int(expected_kp_count))
+    if expected > len(points):
+        for _ in range(expected - len(points)):
+            points.append([0.0, 0.0, 0.0])
+            valid.append(False)
+    elif expected and expected < len(points):
+        points = points[:expected]
+        valid = valid[:expected]
+
+    arr = np.asarray(points, dtype=np.float32)
+    valid_arr = np.asarray(valid, dtype=bool)
+    return (
+        arr,
+        valid_arr,
+        str(pose.get("coordinateSystem") or ""),
+        str(pose.get("engine") or ""),
+        str(pose.get("keypointFormat") or ""),
+    )
 
 
 def compute_anchor_from_keypoints(
@@ -1169,6 +1351,7 @@ def sample_depth_median(
     crop_y0: int,
     crop_w: int,
     crop_h: int,
+    stats_out: Optional[Dict[str, float]] = None,
 ) -> Optional[float]:
     if depth_frame is None:
         return None
@@ -1197,8 +1380,145 @@ def sample_depth_median(
     flat = window.reshape(-1)
     mask = np.isfinite(flat) & (flat > 0)
     if not np.any(mask):
+        if stats_out is not None:
+            stats_out["valid_count"] = 0.0
         return None
-    return float(np.median(flat[mask]))
+    values = flat[mask]
+    median = float(np.median(values))
+    p10 = float(np.percentile(values, 10))
+    p25 = float(np.percentile(values, 25))
+    p75 = float(np.percentile(values, 75))
+    p90 = float(np.percentile(values, 90))
+    iqr = p75 - p25
+    mad = float(np.median(np.abs(values - median)))
+    if stats_out is not None:
+        stats_out["valid_count"] = float(values.size)
+        stats_out["median"] = median
+        stats_out["p10"] = p10
+        stats_out["p25"] = p25
+        stats_out["p75"] = p75
+        stats_out["p90"] = p90
+        stats_out["iqr"] = iqr
+        stats_out["mad"] = mad
+    return median
+
+
+def sample_depth_robust(
+    depth_frame: np.ndarray,
+    u_eye: float,
+    v_eye: float,
+    sample_k: int,
+    meta_w: int,
+    meta_h: int,
+    eye_w: int,
+    eye_h: int,
+    crop_x0: int,
+    crop_y0: int,
+    crop_w: int,
+    crop_h: int,
+    min_valid: int,
+    prev_band: float,
+    prev_min_valid: int,
+    prev_min_frac: float,
+    tau_iqr: float,
+    tau_range: float,
+    tau_mad: float,
+    tau_jump: float,
+    conf_n: float,
+    conf_th: float,
+    conf_margin: float,
+    prev_z: Optional[float],
+) -> Tuple[Optional[float], Dict[str, float], Optional[str]]:
+    stats: Dict[str, float] = {}
+    z = sample_depth_median(
+        depth_frame,
+        u_eye,
+        v_eye,
+        sample_k,
+        meta_w,
+        meta_h,
+        eye_w,
+        eye_h,
+        crop_x0,
+        crop_y0,
+        crop_w,
+        crop_h,
+        stats_out=stats,
+    )
+    if z is None:
+        return None, stats, "no_valid_depth"
+    valid_count = int(round(stats.get("valid_count", 0.0)))
+    if valid_count < max(1, int(min_valid)):
+        return None, stats, "gate_min_valid"
+    stats["filtered_count"] = 0.0
+    stats["filtered_frac"] = 0.0
+    if prev_z is not None and math.isfinite(prev_z) and prev_z > 0.0 and float(prev_band) > 0.0:
+        # Reuse sampled patch values by re-running median sampler would be costly; sample once here.
+        # Pull values again from depth patch for band filtering.
+        # This keeps behavior deterministic with current coordinate mapping.
+        values_stats: Dict[str, float] = {}
+        _ = sample_depth_median(
+            depth_frame,
+            u_eye,
+            v_eye,
+            sample_k,
+            meta_w,
+            meta_h,
+            eye_w,
+            eye_h,
+            crop_x0,
+            crop_y0,
+            crop_w,
+            crop_h,
+            stats_out=values_stats,
+        )
+        if "valid_count" in values_stats and values_stats["valid_count"] > 0:
+            # Need actual values for filtering; reconstruct from patch directly.
+            meta_uv = eye_to_meta_point(u_eye, v_eye, crop_x0, crop_y0, crop_w, crop_h, eye_w, eye_h)
+            if meta_uv is not None:
+                u_meta, v_meta = meta_uv
+                h, w = depth_frame.shape
+                x = int(round(u_meta * w / float(meta_w)))
+                y = int(round(v_meta * h / float(meta_h)))
+                x = max(0, min(w - 1, x))
+                y = max(0, min(h - 1, y))
+                k = max(1, int(sample_k))
+                half = k // 2
+                x0 = max(0, x - half)
+                x1 = min(w, x + half + 1)
+                y0 = max(0, y - half)
+                y1 = min(h, y + half + 1)
+                window = depth_frame[y0:y1, x0:x1]
+                vals = window.reshape(-1)
+                vals = vals[np.isfinite(vals) & (vals > 0)]
+                filtered = vals[np.abs(vals - float(prev_z)) <= float(prev_band)]
+                stats["filtered_count"] = float(filtered.size)
+                filt_frac = float(filtered.size) / float(valid_count) if valid_count > 0 else 0.0
+                stats["filtered_frac"] = filt_frac
+                if (
+                    filtered.size >= max(1, int(prev_min_valid))
+                    and filt_frac >= max(0.0, float(prev_min_frac))
+                ):
+                    return float(np.median(filtered)), stats, "prev_band"
+    iqr = stats.get("iqr", 0.0)
+    depth_range = stats.get("p90", z) - stats.get("p10", z)
+    iqr_bad = float(tau_iqr) > 0.0 and iqr > float(tau_iqr)
+    mad_bad = float(tau_mad) > 0.0 and stats.get("mad", 0.0) > float(tau_mad)
+    if iqr_bad and mad_bad:
+        return None, stats, "gate_iqr_mad"
+    # Legacy gate: keep as fallback and require both wide spread and high MAD.
+    if float(tau_range) > 0.0 and float(tau_mad) > 0.0:
+        if depth_range > float(tau_range) and mad_bad:
+            return None, stats, "gate_range_and_mad"
+    if (
+        prev_z is not None
+        and math.isfinite(prev_z)
+        and prev_z > 0.0
+        and abs(z - prev_z) > float(tau_jump)
+        and conf_n < (float(conf_th) + float(conf_margin))
+    ):
+        return None, stats, "gate_jump_low_conf"
+    return z, stats, None
 
 
 def smooth_value(prev: Optional[float], value: Optional[float], alpha: float) -> float:
@@ -1238,6 +1558,232 @@ def compute_root(joints3d: np.ndarray, valid: np.ndarray, root_indices: Sequence
     return np.zeros(3, dtype=np.float32)
 
 
+def camera_xyz_from_uv_depth(
+    u: float,
+    v: float,
+    z: float,
+    w_eye: int,
+    height: int,
+    fovx_deg: float,
+) -> np.ndarray:
+    if z <= 0.0 or w_eye <= 0 or height <= 0:
+        return np.zeros(3, dtype=np.float32)
+    fovx_rad = math.radians(fovx_deg)
+    fx = 1.0 / math.tan(fovx_rad / 2.0)
+    fy = fx * (float(w_eye) / float(height))
+    x_ndc = (float(u) / float(w_eye) - 0.5) * 2.0
+    y_ndc = (0.5 - float(v) / float(height)) * 2.0
+    return np.asarray([x_ndc * z / fx, y_ndc * z / fy, z], dtype=np.float32)
+
+
+def pose_joint_scale(args: argparse.Namespace, coordinate_system: Optional[str], engine: Optional[str]) -> float:
+    text = f"{coordinate_system or ''} {engine or ''}".lower()
+    if "metrabs" in text:
+        return float(args.metrabs_joint_scale)
+    if "animer" in text or "smal" in text:
+        return float(args.animer_joint_scale)
+    return 1.0
+
+
+def compute_pose_keypoints3d_for_bundle(
+    source_joints3d: np.ndarray,
+    source_valid: np.ndarray,
+    root_indices: Sequence[int],
+    anchor_xyz: np.ndarray,
+    joints_space: str,
+    joint_scale: float,
+    flip_y: bool,
+    prev_joints_rel: Optional[np.ndarray],
+    ema_alpha: float,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    joints = source_joints3d.astype(np.float32).copy() * float(joint_scale)
+    if flip_y:
+        joints[:, 1] *= -1.0
+    valid = source_valid.astype(bool).copy()
+    valid &= np.all(np.isfinite(joints), axis=1)
+    root = compute_root(joints, valid, root_indices)
+    joints_rel_raw = joints - root.reshape(1, 3)
+
+    if prev_joints_rel is not None and prev_joints_rel.shape == joints_rel_raw.shape:
+        for idx in range(joints_rel_raw.shape[0]):
+            if not valid[idx]:
+                joints_rel_raw[idx] = prev_joints_rel[idx]
+        joints_rel = float(ema_alpha) * prev_joints_rel + (1.0 - float(ema_alpha)) * joints_rel_raw
+    else:
+        joints_rel = joints_rel_raw
+
+    if joints_space == "camera_xyz_absolute":
+        joints_out = joints_rel + anchor_xyz.reshape(1, 3)
+    else:
+        joints_out = joints_rel
+    return joints_out.astype(np.float32), joints_rel.astype(np.float32), valid, root.astype(np.float32)
+
+
+def _compute_joints3d_and_root(
+    keypoints: List[Tuple[float, float, float]],
+    depth_frame: np.ndarray,
+    w_eye: int,
+    height: int,
+    fovx_deg: float,
+    sample_k: int,
+    conf_th: float,
+    meta_w: int,
+    meta_h: int,
+    crop_x0: int,
+    crop_y0: int,
+    crop_w: int,
+    crop_h: int,
+    root_indices: Sequence[int],
+    prev_joints_abs: Optional[np.ndarray],
+    depth_gate_min_valid: int,
+    depth_gate_prev_band: float,
+    depth_gate_prev_min_valid: int,
+    depth_gate_prev_min_frac: float,
+    depth_gate_use_anchor_fallback: bool,
+    anchor_z_fallback: Optional[float],
+    depth_gate_iqr: float,
+    depth_gate_range: float,
+    depth_gate_mad: float,
+    depth_gate_jump: float,
+    depth_gate_conf_margin: float,
+    debug_depth: bool,
+    frame_idx: int,
+    track_id: int,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    kp_count = len(keypoints)
+    joints3d = np.zeros((kp_count, 3), dtype=np.float32)
+    valid = np.zeros(kp_count, dtype=bool)
+    fovx_rad = math.radians(fovx_deg)
+    fx = 1.0 / math.tan(fovx_rad / 2.0)
+    fy = fx * (float(w_eye) / float(height))
+
+    for idx, (u, v, conf) in enumerate(keypoints):
+        conf_n = normalize_conf(conf)
+        if conf_n < conf_th:
+            continue
+        prev_z = None
+        if (
+            prev_joints_abs is not None
+            and idx < prev_joints_abs.shape[0]
+            and prev_joints_abs.shape[1] >= 3
+            and math.isfinite(float(prev_joints_abs[idx, 2]))
+            and float(prev_joints_abs[idx, 2]) > 0.0
+        ):
+            prev_z = float(prev_joints_abs[idx, 2])
+
+        z_new, depth_stats, depth_reason = sample_depth_robust(
+            depth_frame,
+            u,
+            v,
+            sample_k,
+            meta_w,
+            meta_h,
+            w_eye,
+            height,
+            crop_x0,
+            crop_y0,
+            crop_w,
+            crop_h,
+            min_valid=depth_gate_min_valid,
+            prev_band=depth_gate_prev_band,
+            prev_min_valid=depth_gate_prev_min_valid,
+            prev_min_frac=depth_gate_prev_min_frac,
+            tau_iqr=depth_gate_iqr,
+            tau_range=depth_gate_range,
+            tau_mad=depth_gate_mad,
+            tau_jump=depth_gate_jump,
+            conf_n=conf_n,
+            conf_th=conf_th,
+            conf_margin=depth_gate_conf_margin,
+            prev_z=prev_z,
+        )
+        used_prev = False
+        used_anchor = False
+        if z_new is None:
+            if prev_z is not None:
+                z = prev_z
+                used_prev = True
+            elif (
+                depth_gate_use_anchor_fallback
+                and anchor_z_fallback is not None
+                and math.isfinite(anchor_z_fallback)
+                and anchor_z_fallback > 0.0
+            ):
+                z = float(anchor_z_fallback)
+                used_anchor = True
+            else:
+                z = 0.0
+        else:
+            z = z_new
+        if z <= 0.0:
+            joints3d[idx] = (0.0, 0.0, 0.0)
+            if debug_depth:
+                print(
+                    "[depth_debug] "
+                    f"frame={frame_idx} trackId={track_id} kp={idx} "
+                    f"u={u:.2f} v={v:.2f} conf={conf_n:.3f} "
+                    f"valid_count={int(round(depth_stats.get('valid_count', 0.0)))} "
+                    f"median={_fmt_float(depth_stats.get('median'))} "
+                    f"p10={_fmt_float(depth_stats.get('p10'))} p25={_fmt_float(depth_stats.get('p25'))} "
+                    f"p75={_fmt_float(depth_stats.get('p75'))} p90={_fmt_float(depth_stats.get('p90'))} "
+                    f"iqr={_fmt_float(depth_stats.get('iqr'))} "
+                    f"band={depth_gate_prev_band:.4f} filtN={int(round(depth_stats.get('filtered_count', 0.0)))} "
+                    f"filtFrac={depth_stats.get('filtered_frac', 0.0):.2f} "
+                    f"mad={_fmt_float(depth_stats.get('mad'))} z_new={_fmt_float(z_new)} "
+                    f"z_used={_fmt_float(z)} prev_z={_fmt_float(prev_z)} "
+                    f"z_new_reason={depth_reason or 'none'} "
+                    f"z_used_reason={'use_anchor_z' if used_anchor else ('use_prev_z' if used_prev else 'use_zero')}"
+                )
+            continue
+        x_ndc = (u / float(w_eye) - 0.5) * 2.0
+        y_ndc = (0.5 - v / float(height)) * 2.0
+        X = x_ndc * z / fx
+        Y = y_ndc * z / fy
+        joints3d[idx] = (X, Y, z)
+        valid[idx] = True
+        if debug_depth:
+            used_reason = "use_anchor_z" if used_anchor else ("use_prev_z" if used_prev else "use_z_new")
+            print(
+                "[depth_debug] "
+                f"frame={frame_idx} trackId={track_id} kp={idx} "
+                f"u={u:.2f} v={v:.2f} conf={conf_n:.3f} "
+                f"valid_count={int(round(depth_stats.get('valid_count', 0.0)))} "
+                f"median={_fmt_float(depth_stats.get('median'))} "
+                f"p10={_fmt_float(depth_stats.get('p10'))} p25={_fmt_float(depth_stats.get('p25'))} "
+                f"p75={_fmt_float(depth_stats.get('p75'))} p90={_fmt_float(depth_stats.get('p90'))} "
+                f"iqr={_fmt_float(depth_stats.get('iqr'))} "
+                f"band={depth_gate_prev_band:.4f} filtN={int(round(depth_stats.get('filtered_count', 0.0)))} "
+                f"filtFrac={depth_stats.get('filtered_frac', 0.0):.2f} "
+                f"mad={_fmt_float(depth_stats.get('mad'))} z_new={_fmt_float(z_new)} "
+                f"z_used={_fmt_float(z)} prev_z={_fmt_float(prev_z)} "
+                f"z_new_reason={depth_reason or 'ok'} z_used_reason={used_reason}"
+            )
+
+    root = compute_root(joints3d, valid, root_indices)
+    return joints3d, valid, root
+
+
+def invert_camera_xyz_to_uv(
+    joints_xyz: np.ndarray, w_eye: int, height: int, fovx_deg: float
+) -> Tuple[np.ndarray, np.ndarray]:
+    fovx_rad = math.radians(fovx_deg)
+    fx = 1.0 / math.tan(fovx_rad / 2.0)
+    fy = fx * (float(w_eye) / float(height))
+    uv = np.zeros((joints_xyz.shape[0], 2), dtype=np.float32)
+    valid = np.zeros(joints_xyz.shape[0], dtype=bool)
+    for idx in range(joints_xyz.shape[0]):
+        X, Y, z = float(joints_xyz[idx, 0]), float(joints_xyz[idx, 1]), float(joints_xyz[idx, 2])
+        if not (math.isfinite(X) and math.isfinite(Y) and math.isfinite(z)) or z <= 0.0:
+            continue
+        x_ndc = X * fx / z
+        y_ndc = Y * fy / z
+        u = (x_ndc * 0.5 + 0.5) * float(w_eye)
+        v = (0.5 - y_ndc * 0.5) * float(height)
+        uv[idx] = (u, v)
+        valid[idx] = True
+    return uv, valid
+
+
 def compute_joints_rel(
     keypoints: List[Tuple[float, float, float]],
     depth_frame: np.ndarray,
@@ -1255,44 +1801,56 @@ def compute_joints_rel(
     crop_w: int,
     crop_h: int,
     root_indices: Sequence[int],
-) -> np.ndarray:
+    prev_joints_abs: Optional[np.ndarray],
+    depth_gate_min_valid: int,
+    depth_gate_prev_band: float,
+    depth_gate_prev_min_valid: int,
+    depth_gate_prev_min_frac: float,
+    depth_gate_use_anchor_fallback: bool,
+    anchor_z_fallback: Optional[float],
+    depth_gate_iqr: float,
+    depth_gate_range: float,
+    depth_gate_mad: float,
+    depth_gate_jump: float,
+    depth_gate_conf_margin: float,
+    debug_depth: bool,
+    frame_idx: int,
+    track_id: int,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     kp_count = len(keypoints)
-    joints3d = np.zeros((kp_count, 3), dtype=np.float32)
-    valid = np.zeros(kp_count, dtype=bool)
     if prev_joints_rel is not None and prev_joints_rel.shape[0] != kp_count:
         prev_joints_rel = None
-    fovx_rad = math.radians(fovx_deg)
-    fx = 1.0 / math.tan(fovx_rad / 2.0)
-    fy = fx * (float(w_eye) / float(height))
-
-    for idx, (u, v, conf) in enumerate(keypoints):
-        conf_n = normalize_conf(conf)
-        if conf_n < conf_th:
-            continue
-        z = sample_depth_median(
-            depth_frame,
-            u,
-            v,
-            sample_k,
-            meta_w,
-            meta_h,
-            w_eye,
-            height,
-            crop_x0,
-            crop_y0,
-            crop_w,
-            crop_h,
-        )
-        if z is None:
-            continue
-        x_ndc = (u / float(w_eye) - 0.5) * 2.0
-        y_ndc = (0.5 - v / float(height)) * 2.0
-        X = x_ndc * z / fx
-        Y = y_ndc * z / fy
-        joints3d[idx] = (X, Y, z)
-        valid[idx] = True
-
-    root = compute_root(joints3d, valid, root_indices)
+    joints3d, valid, root = _compute_joints3d_and_root(
+        keypoints=keypoints,
+        depth_frame=depth_frame,
+        w_eye=w_eye,
+        height=height,
+        fovx_deg=fovx_deg,
+        sample_k=sample_k,
+        conf_th=conf_th,
+        meta_w=meta_w,
+        meta_h=meta_h,
+        crop_x0=crop_x0,
+        crop_y0=crop_y0,
+        crop_w=crop_w,
+        crop_h=crop_h,
+        root_indices=root_indices,
+        prev_joints_abs=prev_joints_abs,
+        depth_gate_min_valid=depth_gate_min_valid,
+        depth_gate_prev_band=depth_gate_prev_band,
+        depth_gate_prev_min_valid=depth_gate_prev_min_valid,
+        depth_gate_prev_min_frac=depth_gate_prev_min_frac,
+        depth_gate_use_anchor_fallback=depth_gate_use_anchor_fallback,
+        anchor_z_fallback=anchor_z_fallback,
+        depth_gate_iqr=depth_gate_iqr,
+        depth_gate_range=depth_gate_range,
+        depth_gate_mad=depth_gate_mad,
+        depth_gate_jump=depth_gate_jump,
+        depth_gate_conf_margin=depth_gate_conf_margin,
+        debug_depth=debug_depth,
+        frame_idx=frame_idx,
+        track_id=track_id,
+    )
     joints_rel_raw = joints3d - root
 
     if prev_joints_rel is not None:
@@ -1303,7 +1861,7 @@ def compute_joints_rel(
     else:
         joints_rel = joints_rel_raw
 
-    return joints_rel
+    return joints_rel, joints3d, valid, root
 
 
 def choose_compression(name: str) -> Tuple[int, Any, str]:
@@ -1871,6 +2429,20 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                             u_eye, v_eye = clamp_point(u_eye, v_eye, w_eye, height)
                             adjusted.append((u_eye, v_eye, conf))
                         keypoints = adjusted
+                    source_joints3d, source_joints_valid, source_coord_system, source_engine, source_keypoint_format = (
+                        parse_pose_keypoints3d(raw_obj, expected_kp)
+                    )
+                    use_pose_keypoints3d = (
+                        source_joints3d is not None
+                        and expected_kp > 0
+                        and args.joints_source in ("auto", "pose_keypoints3d")
+                    )
+                    if args.joints_source == "pose_keypoints3d" and expected_kp > 0 and not use_pose_keypoints3d:
+                        ann_id = raw_obj.get("id", raw_obj.get("trackId", raw_obj.get("track_id", "unknown")))
+                        print(
+                            f"Warning: frame {frame_idx} object {ann_id} requested pose_keypoints3d "
+                            "but pose.keypoints3d is missing; falling back to 2D keypoints + depth."
+                        )
                     raw_track_id = None
                     for key in ["track_id", "trackId", "track", "instance_id", "instanceId", "object_id", "id"]:
                         if key in raw_obj:
@@ -1894,6 +2466,11 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                             "anchor_indices": cat_spec.get("anchor_indices", []),
                             "has_skeleton": has_skeleton,
                             "segmentation": segmentation,
+                            "source_joints3d": source_joints3d if use_pose_keypoints3d else None,
+                            "source_joints_valid": source_joints_valid if use_pose_keypoints3d else None,
+                            "source_coord_system": source_coord_system,
+                            "source_engine": source_engine,
+                            "source_keypoint_format": source_keypoint_format,
                         }
                     )
 
@@ -1969,6 +2546,7 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
 
                     anchor_z_q = quantize_int16(anchor_z, args.quant_pos_scale)
                     anchor_scale_q = 65535
+                    debug_depth = int(args.debug_frame) == frame_idx
 
                     keypoints = obj["keypoints"]
                     kp_vis = obj.get("kp_vis") or []
@@ -1976,6 +2554,7 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                     has_skeleton = bool(obj.get("has_skeleton", False))
                     flags = 1 if has_skeleton else 0
                     joints_rel_q_local = None
+                    encoded_skeleton = False
 
                     payload.extend(struct.pack("<I", track_id))
                     payload.extend(struct.pack("<B", category_id))
@@ -1994,37 +2573,217 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                     payload.extend(struct.pack("<H", anchor_scale_q))
                     payload.extend(struct.pack("<hhhh", *ROT_Q))
 
-                    if has_skeleton and keypoints is not None:
+                    if has_skeleton and obj.get("source_joints3d") is not None:
+                        source_joints3d = obj["source_joints3d"]
+                        source_valid = obj.get("source_joints_valid")
+                        if source_valid is None:
+                            source_valid = np.ones((int(source_joints3d.shape[0]),), dtype=bool)
+                        joint_scale = pose_joint_scale(
+                            args,
+                            obj.get("source_coord_system"),
+                            obj.get("source_engine"),
+                        )
+                        anchor_xyz = camera_xyz_from_uv_depth(
+                            anchor_u,
+                            anchor_v,
+                            anchor_z,
+                            w_eye,
+                            height,
+                            args.fovx_deg,
+                        )
                         if state.kp_count != kp_expected:
                             state.joints_rel = None
+                            state.joints_abs = None
                             state.kp_count = kp_expected
-                        prev_joints_rel = state.joints_rel
-                        joints_rel = compute_joints_rel(
-                            keypoints=keypoints,
-                            depth_frame=depth_frame,
-                            w_eye=w_eye,
-                            height=height,
-                            fovx_deg=args.fovx_deg,
-                            sample_k=args.sample_k,
-                            conf_th=args.conf_th,
-                            ema_alpha=args.ema_alpha,
-                            prev_joints_rel=prev_joints_rel,
-                            meta_w=meta_w,
-                            meta_h=meta_h,
-                            crop_x0=crop_x0,
-                            crop_y0=crop_y0,
-                            crop_w=crop_w,
-                            crop_h=crop_h,
+                        joints_out, joints_rel, joints_valid, root_raw = compute_pose_keypoints3d_for_bundle(
+                            source_joints3d=source_joints3d,
+                            source_valid=source_valid,
                             root_indices=obj.get("root_indices", []),
+                            anchor_xyz=anchor_xyz,
+                            joints_space=args.joints_space,
+                            joint_scale=joint_scale,
+                            flip_y=bool(args.pose_keypoints3d_flip_y),
+                            prev_joints_rel=state.joints_rel,
+                            ema_alpha=args.ema_alpha if args.joints_space == "camera_xyz_root_relative" else 0.0,
                         )
                         state.joints_rel = joints_rel
-                        joints_rel_q = quantize_array_int16(joints_rel, args.quant_joint_scale)
+                        state.joints_abs = joints_rel + anchor_xyz.reshape(1, 3)
+                        if len(kp_vis) != kp_expected:
+                            kp_vis = (kp_vis + [0] * kp_expected)[:kp_expected]
+                        for kp_idx in range(min(kp_expected, int(joints_valid.shape[0]))):
+                            if not bool(joints_valid[kp_idx]):
+                                kp_vis[kp_idx] = 0
+                        joints_rel_q = quantize_array_int16(joints_out, args.quant_joint_scale)
                         joints_rel_q_local = joints_rel_q
                         payload.extend(
                             struct.pack("<" + "h" * (kp_expected * 3), *joints_rel_q.reshape(-1).tolist())
                         )
+                        payload.extend(struct.pack("<" + "B" * kp_expected, *kp_vis))
+                        encoded_skeleton = True
+                        if debug_depth:
+                            print(
+                                f"[pose3d_source_debug] frame={frame_idx} trackId={track_id} "
+                                f"source={obj.get('source_engine')}/{obj.get('source_coord_system')} "
+                                f"joint_scale={joint_scale:.6f} anchor_xyz=({anchor_xyz[0]:.4f},{anchor_xyz[1]:.4f},{anchor_xyz[2]:.4f}) "
+                                f"root=({root_raw[0]:.4f},{root_raw[1]:.4f},{root_raw[2]:.4f}) "
+                                f"valid={int(np.count_nonzero(joints_valid))}/{kp_expected} "
+                                f"joints_space={args.joints_space} "
+                                f"pose_keypoints3d_flip_y={int(args.pose_keypoints3d_flip_y)}"
+                            )
+
+                    if has_skeleton and keypoints is not None and not encoded_skeleton:
+                        root_subtracted = args.joints_space == "camera_xyz_root_relative"
+                        joints_smoothing = "none"
+                        if state.kp_count != kp_expected:
+                            state.joints_rel = None
+                            state.joints_abs = None
+                            state.kp_count = kp_expected
+                        prev_joints_abs = state.joints_abs
+
+                        if root_subtracted:
+                            prev_joints_rel = state.joints_rel
+                            joints_out, joints3d_raw, joints3d_valid, root_raw = compute_joints_rel(
+                                keypoints=keypoints,
+                                depth_frame=depth_frame,
+                                w_eye=w_eye,
+                                height=height,
+                                fovx_deg=args.fovx_deg,
+                                sample_k=args.sample_k,
+                                conf_th=args.conf_th,
+                                ema_alpha=args.ema_alpha,
+                                prev_joints_rel=prev_joints_rel,
+                                meta_w=meta_w,
+                                meta_h=meta_h,
+                                crop_x0=crop_x0,
+                                crop_y0=crop_y0,
+                                crop_w=crop_w,
+                                crop_h=crop_h,
+                                root_indices=obj.get("root_indices", []),
+                                prev_joints_abs=prev_joints_abs,
+                                depth_gate_min_valid=args.depth_gate_min_valid,
+                                depth_gate_prev_band=args.depth_gate_prev_band,
+                                depth_gate_prev_min_valid=args.depth_gate_prev_min_valid,
+                                depth_gate_prev_min_frac=args.depth_gate_prev_min_frac,
+                                depth_gate_use_anchor_fallback=bool(args.depth_gate_use_anchor_fallback),
+                                anchor_z_fallback=anchor_z,
+                                depth_gate_iqr=args.depth_gate_iqr,
+                                depth_gate_range=args.depth_gate_range,
+                                depth_gate_mad=args.depth_gate_mad,
+                                depth_gate_jump=args.depth_gate_jump,
+                                depth_gate_conf_margin=args.depth_gate_conf_margin,
+                                debug_depth=debug_depth,
+                                frame_idx=frame_idx,
+                                track_id=track_id,
+                            )
+                            state.joints_rel = joints_out
+                            state.joints_abs = joints3d_raw
+                            joints_smoothing = f"ema_alpha={args.ema_alpha}"
+                        else:
+                            joints3d_raw, joints3d_valid, root_raw = _compute_joints3d_and_root(
+                                keypoints=keypoints,
+                                depth_frame=depth_frame,
+                                w_eye=w_eye,
+                                height=height,
+                                fovx_deg=args.fovx_deg,
+                                sample_k=args.sample_k,
+                                conf_th=args.conf_th,
+                                meta_w=meta_w,
+                                meta_h=meta_h,
+                                crop_x0=crop_x0,
+                                crop_y0=crop_y0,
+                                crop_w=crop_w,
+                                crop_h=crop_h,
+                                root_indices=obj.get("root_indices", []),
+                                prev_joints_abs=prev_joints_abs,
+                                depth_gate_min_valid=args.depth_gate_min_valid,
+                                depth_gate_prev_band=args.depth_gate_prev_band,
+                                depth_gate_prev_min_valid=args.depth_gate_prev_min_valid,
+                                depth_gate_prev_min_frac=args.depth_gate_prev_min_frac,
+                                depth_gate_use_anchor_fallback=bool(args.depth_gate_use_anchor_fallback),
+                                anchor_z_fallback=anchor_z,
+                                depth_gate_iqr=args.depth_gate_iqr,
+                                depth_gate_range=args.depth_gate_range,
+                                depth_gate_mad=args.depth_gate_mad,
+                                depth_gate_jump=args.depth_gate_jump,
+                                depth_gate_conf_margin=args.depth_gate_conf_margin,
+                                debug_depth=debug_depth,
+                                frame_idx=frame_idx,
+                                track_id=track_id,
+                            )
+                            joints_out = joints3d_raw
+                            state.joints_rel = None
+                            state.joints_abs = joints3d_raw
+
+                        if debug_depth:
+                            joints_cam = joints_out
+                            joints_mask = np.all(np.isfinite(joints_cam), axis=1)
+                            kp_uv = np.array([(float(u), float(v)) for u, v, _ in keypoints], dtype=np.float32)
+                            debug_kp_count = kp_expected
+                            if kp_uv.shape[0] != debug_kp_count:
+                                debug_kp_count = int(kp_uv.shape[0])
+                            kp_mask = np.array(
+                                [
+                                    idx < len(kp_vis) and kp_vis[idx] > 0 and math.isfinite(float(kp_uv[idx, 0])) and math.isfinite(float(kp_uv[idx, 1]))
+                                    for idx in range(debug_kp_count)
+                                ],
+                                dtype=bool,
+                            )
+                            if joints_mask.shape[0] != debug_kp_count:
+                                joints_mask = joints_mask[:debug_kp_count]
+                                joints3d_valid = joints3d_valid[:debug_kp_count]
+                            joints_abs = joints_cam + root_raw.reshape(1, 3) if root_subtracted else joints_cam
+                            uv_inv, uv_inv_valid = invert_camera_xyz_to_uv(joints_abs, w_eye, height, args.fovx_deg)
+                            inv_mask = kp_mask & joints3d_valid & uv_inv_valid
+
+                            def mm(arr: np.ndarray, mask: np.ndarray, col: int) -> Tuple[Optional[float], Optional[float]]:
+                                if arr.size == 0 or mask.size == 0 or not np.any(mask):
+                                    return None, None
+                                vals = arr[mask, col]
+                                if vals.size == 0:
+                                    return None, None
+                                return float(np.min(vals)), float(np.max(vals))
+
+                            u_min, u_max = mm(kp_uv, kp_mask, 0)
+                            v_min, v_max = mm(kp_uv, kp_mask, 1)
+                            jx_min, jx_max = mm(joints_cam, joints_mask, 0)
+                            jy_min, jy_max = mm(joints_cam, joints_mask, 1)
+                            jz_min, jz_max = mm(joints_cam, joints_mask, 2)
+                            ui_min, ui_max = mm(uv_inv, inv_mask, 0)
+                            vi_min, vi_max = mm(uv_inv, inv_mask, 1)
+                            err_mean = None
+                            err_max = None
+                            if np.any(inv_mask):
+                                delta = uv_inv[inv_mask] - kp_uv[inv_mask]
+                                err = np.sqrt(np.sum(delta * delta, axis=1))
+                                if err.size > 0:
+                                    err_mean = float(np.mean(err))
+                                    err_max = float(np.max(err))
+                            print(
+                                f"[joints_debug] frame={frame_idx} trackId={track_id} kpCount={debug_kp_count} "
+                                f"joints_space={args.joints_space} root_subtracted={1 if root_subtracted else 0} "
+                                f"anchor=({anchor_u:.3f},{anchor_v:.3f}) bbox=({bbox_w:.3f},{bbox_h:.3f}) "
+                                f"uv[min,max]=({_fmt_float(u_min)},{_fmt_float(u_max)})x({_fmt_float(v_min)},{_fmt_float(v_max)}) "
+                                f"jointsCam[min,max]=x({_fmt_float(jx_min)},{_fmt_float(jx_max)}) "
+                                f"y({_fmt_float(jy_min)},{_fmt_float(jy_max)}) z({_fmt_float(jz_min)},{_fmt_float(jz_max)}) "
+                                f"uv_inv[min,max]=({_fmt_float(ui_min)},{_fmt_float(ui_max)})x({_fmt_float(vi_min)},{_fmt_float(vi_max)}) "
+                                f"uv_err[mean,max]=({_fmt_float(err_mean)},{_fmt_float(err_max)}) nInv={int(np.count_nonzero(inv_mask))} "
+                                f"smoothing={joints_smoothing}"
+                            )
                         if len(kp_vis) != kp_expected:
                             kp_vis = (kp_vis + [0] * kp_expected)[:kp_expected]
+                        valid_n = min(kp_expected, int(joints_out.shape[0]))
+                        for kp_idx in range(valid_n):
+                            if (
+                                float(joints_out[kp_idx, 0]) == 0.0
+                                and float(joints_out[kp_idx, 1]) == 0.0
+                                and float(joints_out[kp_idx, 2]) == 0.0
+                            ):
+                                kp_vis[kp_idx] = 0
+                        joints_rel_q = quantize_array_int16(joints_out, args.quant_joint_scale)
+                        joints_rel_q_local = joints_rel_q
+                        payload.extend(
+                            struct.pack("<" + "h" * (kp_expected * 3), *joints_rel_q.reshape(-1).tolist())
+                        )
                         payload.extend(struct.pack("<" + "B" * kp_expected, *kp_vis))
                     if debug_detail and debug_objects is not None:
                         vis_count = 0
@@ -2116,6 +2875,16 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
             if args.debug_meta_decode_after:
                 verify_meta_bin(meta_path, debug_first_frames)
 
+        joints_smoothing_manifest = (
+            f"ema_alpha={args.ema_alpha}"
+            if args.joints_space == "camera_xyz_root_relative"
+            else "none"
+        )
+        fovx_rad = math.radians(args.fovx_deg)
+        fx_norm = 1.0 / math.tan(fovx_rad / 2.0)
+        fy_norm = fx_norm * (float(w_eye) / float(height))
+        cx = float(w_eye) * 0.5
+        cy = float(height) * 0.5
         manifest = {
             "width": width,
             "height": height,
@@ -2135,6 +2904,24 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
             "fovx_deg": args.fovx_deg,
             "quant_pos_scale": args.quant_pos_scale,
             "quant_joint_scale": args.quant_joint_scale,
+            "joints_space": args.joints_space,
+            "joints_source": args.joints_source,
+            "pose_keypoints3d_policy": {
+                "enabled": args.joints_source in ("auto", "pose_keypoints3d"),
+                "meaning": "pose.keypoints3d is treated as skeleton shape; depth is used for object anchor placement.",
+                "metrabs_joint_scale": args.metrabs_joint_scale,
+                "animer_joint_scale": args.animer_joint_scale,
+                "flip_y": bool(args.pose_keypoints3d_flip_y),
+                "output_axes": "x_right_y_up_z_forward",
+            },
+            "camera_axes": "x_right_y_up_z_forward",
+            "uv_origin": "top_left",
+            "joints_quant_scale": args.quant_joint_scale,
+            "smoothing": joints_smoothing_manifest,
+            "fx_norm": fx_norm,
+            "fy_norm": fy_norm,
+            "cx": cx,
+            "cy": cy,
             "frame_compress": compress_name,
             "video_transcode": transcode_info,
             "generated_at": datetime.utcnow().isoformat() + "Z",
@@ -2145,6 +2932,21 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                 "metadata_json": os.path.basename(args.metadata_json),
             },
         }
+        print(
+            "[manifest_verify] "
+            f"joints_space={manifest['joints_space']} "
+            f"fx_norm={manifest['fx_norm']:.6f} fy_norm={manifest['fy_norm']:.6f} "
+            f"eye=({manifest['eye_w']},{manifest['eye_h']}) "
+            f"joints_quant_scale={manifest['joints_quant_scale']}"
+        )
+        if args.dump_manifest:
+            dump_path = os.path.abspath(args.dump_manifest)
+            dump_dir = os.path.dirname(dump_path)
+            if dump_dir:
+                os.makedirs(dump_dir, exist_ok=True)
+            with open(dump_path, "w", encoding="utf-8") as dump_f:
+                json.dump(manifest, dump_f, indent=2)
+                dump_f.write("\n")
 
         with zipfile.ZipFile(args.out_bundle, "w", compression=zipfile.ZIP_DEFLATED) as zf:
             zf.write(video_mp4_path, arcname="video.mp4", compress_type=zipfile.ZIP_STORED)

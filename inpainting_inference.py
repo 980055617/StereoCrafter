@@ -23,12 +23,47 @@ from utils.inpainting import read_and_prepare_video, spatial_tiled_process, writ
 from utils.config_utils import load_json_config
 from utils.model_io import resolve_unet_state_path
 from utils.training_pipeline import enable_vae_memory_helpers
+from utils.diffusers_mamba_time_patch import apply_mamba_time_patch
+from blocks.mamba_diffusers_adapter import materialize_mamba_time_embed_proj_from_state_dict
 
 warnings.filterwarnings(
     "ignore",
     category=FutureWarning,
     message=r".*torch.library.impl_abstract.*register_fake.*",
 )
+
+apply_mamba_time_patch()
+
+
+def _scheduler_debug_info(scheduler: Any) -> dict[str, Any]:
+    cfg = getattr(scheduler, "config", None)
+    return {
+        "class": scheduler.__class__.__name__,
+        "prediction_type": getattr(cfg, "prediction_type", None),
+        "num_train_timesteps": getattr(cfg, "num_train_timesteps", None),
+        "beta_schedule": getattr(cfg, "beta_schedule", None),
+        "rescale_betas_zero_snr": getattr(cfg, "rescale_betas_zero_snr", None),
+        "timestep_spacing": getattr(cfg, "timestep_spacing", None),
+        "steps_offset": getattr(cfg, "steps_offset", None),
+    }
+
+
+def _center_crop_frames(frames: torch.Tensor, crop_h: int, crop_w: int) -> torch.Tensor:
+    """Center-crop [T,C,H,W] frames to match training fixed-crop behavior."""
+    if crop_h <= 0 or crop_w <= 0:
+        raise ValueError("target_height/target_width must be positive.")
+    if frames.dim() != 4:
+        raise ValueError(f"Expected 4D tensor [T,C,H,W], got shape={tuple(frames.shape)}")
+    h = int(frames.shape[2])
+    w = int(frames.shape[3])
+    if crop_h > h or crop_w > w:
+        raise ValueError(
+            f"Requested crop {crop_h}x{crop_w} exceeds source {h}x{w}. "
+            "Use a smaller target size."
+        )
+    top = (h - crop_h) // 2
+    left = (w - crop_w) // 2
+    return frames[:, :, top : top + crop_h, left : left + crop_w]
 
 
 def main(
@@ -46,8 +81,16 @@ def main(
     use_mamba: bool = False,
     unet_state_path: str | None = None,
     noise_seed: int | None = None,
+    min_guidance_scale: float = 1.0,
+    max_guidance_scale: float = 1.0,
+    target_height: int | None = None,
+    target_width: int | None = None,
+    use_ddpm_scheduler: bool = False,
+    overlap_prev_weight: float = 1.0,
+    timestep_spacing: str | None = None,
 ):
     prec = (precision or "fp16").lower()
+    overlap_prev_weight = float(overlap_prev_weight)
     torch_dtype = torch.float16 if prec == "fp16" else (torch.bfloat16 if prec == "bf16" else torch.float32)
 
     image_encoder = CLIPVisionModelWithProjection.from_pretrained(
@@ -97,9 +140,24 @@ def main(
         torch_dtype=torch_dtype,
     )
     enable_vae_memory_helpers(pipeline)
-    # Align inference scheduler with training (DDPM-based forward process).
-    if getattr(pipeline, "scheduler", None) is not None:
+    print(f"[sched][inference][before] {_scheduler_debug_info(pipeline.scheduler)}")
+    # Keep origin behavior (Euler) by default; optionally force DDPM for ablation.
+    if use_ddpm_scheduler and getattr(pipeline, "scheduler", None) is not None:
         pipeline.scheduler = DDPMScheduler.from_config(pipeline.scheduler.config)
+    if timestep_spacing is not None and str(timestep_spacing).strip():
+        spacing = str(timestep_spacing).strip().lower()
+        pipeline.scheduler = pipeline.scheduler.__class__.from_config(
+            pipeline.scheduler.config,
+            timestep_spacing=spacing,
+        )
+    print(f"[sched][inference][after] {_scheduler_debug_info(pipeline.scheduler)}")
+    try:
+        pipeline.scheduler.set_timesteps(int(num_inference_steps), device="cpu")
+        ts = pipeline.scheduler.timesteps
+        ts_head = ts[: min(8, len(ts))].detach().cpu().tolist() if isinstance(ts, torch.Tensor) else list(ts[:8])
+        print(f"[sched][inference][timesteps_head] {ts_head}")
+    except Exception as err:
+        print(f"[sched][inference][timesteps_head] unavailable: {err}")
 
     # Optionally load a fine‑tuned UNet state_dict (.pt) produced by training
     unet_state_path = resolve_unet_state_path(unet_state_path)
@@ -122,6 +180,11 @@ def main(
                 state_dict = raw_state
         if state_dict is None:
             state_dict = raw_state
+
+        # Materialize lazy Mamba time projection modules so their keys are loadable.
+        created = materialize_mamba_time_embed_proj_from_state_dict(pipeline.unet, state_dict)
+        if created > 0:
+            print(f"Materialized Mamba time_embed_proj modules before load: {created}")
 
         # safer to load on fp32 then cast down if needed
         try:
@@ -155,6 +218,14 @@ def main(
     video_name = input_video_path.split("/")[-1].replace(".mp4", "").replace("_splatting_results", "") + "_inpainting_results"
 
     fps, frames_left, frames_warped, frames_mask = read_and_prepare_video(input_video_path)
+    if target_height is not None and target_width is not None:
+        h = int(target_height)
+        w = int(target_width)
+        if h > 0 and w > 0:
+            # Match training fixed crop: center crop instead of resize.
+            frames_left = _center_crop_frames(frames_left, h, w)
+            frames_warped = _center_crop_frames(frames_warped, h, w)
+            frames_mask = _center_crop_frames(frames_mask, h, w)
     num_frames = frames_warped.shape[0]
 
     results = []
@@ -177,7 +248,14 @@ def main(
         if generated is not None:
 
             try:
-                input_frames_i[:cur_overlap] = generated[-cur_overlap:]
+                prev = generated[-cur_overlap:]
+                if overlap_prev_weight >= 1.0:
+                    input_frames_i[:cur_overlap] = prev
+                elif overlap_prev_weight <= 0.0:
+                    pass
+                else:
+                    alpha = float(overlap_prev_weight)
+                    input_frames_i[:cur_overlap] = alpha * prev + (1.0 - alpha) * input_frames_i[:cur_overlap]
             except Exception as e:
                 print(e)
                 print(
@@ -190,9 +268,9 @@ def main(
             pipeline,
             tile_num,
             spatial_n_compress=8,
-            min_guidance_scale=1.01,
-            max_guidance_scale=1.01,
-            decode_chunk_size=8,
+            min_guidance_scale=float(min_guidance_scale),
+            max_guidance_scale=float(max_guidance_scale),
+            decode_chunk_size=decode_chunk_size,
             fps=7,
             motion_bucket_id=127,
             noise_aug_strength=0.0,

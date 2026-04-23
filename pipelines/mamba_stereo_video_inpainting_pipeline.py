@@ -1,4 +1,6 @@
+import csv
 import inspect
+import os
 from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional, Union
 
@@ -29,6 +31,32 @@ def _append_dims(x, target_dims):
     if dims_to_append < 0:
         raise ValueError(f"input has {x.ndim} dims but target_dims is {target_dims}, which is less")
     return x[(...,) + (None,) * dims_to_append]
+
+
+def _denoise_tensor_stats(prefix: str, tensor: torch.Tensor) -> Dict[str, float]:
+    with torch.no_grad():
+        data = tensor.detach().float()
+        finite = torch.isfinite(data)
+        if not bool(finite.all().item()):
+            data = torch.where(finite, data, torch.zeros_like(data))
+        return {
+            f"{prefix}_mean": float(data.mean().item()),
+            f"{prefix}_std": float(data.std(unbiased=False).item()),
+            f"{prefix}_rms": float(data.pow(2).mean().sqrt().item()),
+            f"{prefix}_abs_mean": float(data.abs().mean().item()),
+            f"{prefix}_max_abs": float(data.abs().amax().item()),
+            f"{prefix}_finite_frac": float(finite.float().mean().item()),
+        }
+
+
+def _env_int(name: str, default: int = 0) -> int:
+    value = os.getenv(name)
+    if value is None or not str(value).strip():
+        return default
+    try:
+        return int(value)
+    except Exception:
+        return default
 
 
 def tensor2vid(video: torch.Tensor, processor, output_type="np"):
@@ -361,8 +389,8 @@ class MambaStableVideoDiffusionInpaintingPipeline(DiffusionPipeline):
     @property
     def do_classifier_free_guidance(self):
         if isinstance(self.guidance_scale, (int, float)):
-            return self.guidance_scale
-        return self.guidance_scale.max() > 1
+            return float(self.guidance_scale) > 1.0
+        return bool((self.guidance_scale.max() > 1).item())
 
     @property
     def num_timesteps(self):
@@ -389,6 +417,8 @@ class MambaStableVideoDiffusionInpaintingPipeline(DiffusionPipeline):
         output_type: Optional[str] = "pil",
         callback_on_step_end: Optional[Callable[[int, int, Dict], None]] = None,
         callback_on_step_end_tensor_inputs: List[str] = ["latents"],
+        denoise_diag_callback: Optional[Callable[[Dict[str, float]], None]] = None,
+        denoise_diag_interval: int = 0,
         return_dict: bool = True,
         grad_enabled: bool = False,
     ):
@@ -575,8 +605,45 @@ class MambaStableVideoDiffusionInpaintingPipeline(DiffusionPipeline):
             # 8. Denoising loop
             num_warmup_steps = len(timesteps) - num_inference_steps * self.scheduler.order
             self._num_timesteps = len(timesteps)
+            denoise_diag_every = int(max(0, denoise_diag_interval or 0))
+            if denoise_diag_every <= 0:
+                denoise_diag_every = int(max(0, _env_int("DENOISE_DIAG_INTERVAL", 0)))
+
+            diag_callback = denoise_diag_callback
+            env_diag_path = os.getenv("DENOISE_DIAG_PATH", "").strip()
+            if diag_callback is None and denoise_diag_every > 0 and env_diag_path:
+                if not hasattr(self, "_denoise_diag_call_id"):
+                    self._denoise_diag_call_id = 0
+                call_id = int(getattr(self, "_denoise_diag_call_id", 0))
+                setattr(self, "_denoise_diag_call_id", call_id + 1)
+                if os.path.dirname(env_diag_path):
+                    os.makedirs(os.path.dirname(env_diag_path), exist_ok=True)
+                write_header = not os.path.exists(env_diag_path) or os.path.getsize(env_diag_path) == 0
+                diag_header = ["call_id", "step_index", "num_steps", "timestep"]
+                for prefix in ("latent_before", "noise_pred", "latent_after", "step_delta"):
+                    for stat in ("mean", "std", "rms", "abs_mean", "max_abs", "finite_frac"):
+                        diag_header.append(f"{prefix}_{stat}")
+                if write_header:
+                    with open(env_diag_path, "w", encoding="utf-8", newline="") as f:
+                        csv.writer(f).writerow(diag_header)
+
+                def _env_denoise_diag_callback(payload: Dict[str, float]) -> None:
+                    row = [
+                        str(call_id),
+                        str(int(payload.get("step_index", -1))),
+                        str(int(payload.get("num_steps", 0))),
+                        f"{payload.get('timestep', 0.0):.8e}",
+                    ]
+                    for prefix in ("latent_before", "noise_pred", "latent_after", "step_delta"):
+                        for stat in ("mean", "std", "rms", "abs_mean", "max_abs", "finite_frac"):
+                            row.append(f"{payload.get(f'{prefix}_{stat}', 0.0):.8e}")
+                    with open(env_diag_path, "a", encoding="utf-8", newline="") as f:
+                        csv.writer(f).writerow(row)
+
+                diag_callback = _env_denoise_diag_callback
             with self.progress_bar(total=num_inference_steps) as progress_bar:
                 for i, t in enumerate(timesteps):
+                    latents_before_step = latents_
                     # expand the latents if we are doing classifier free guidance
                     latent_model_input = torch.cat([latents_] * 2) if self.do_classifier_free_guidance else latents_
                     latent_model_input = self.scheduler.scale_model_input(latent_model_input, t)
@@ -601,6 +668,22 @@ class MambaStableVideoDiffusionInpaintingPipeline(DiffusionPipeline):
 
                     # compute the previous noisy sample x_t -> x_t-1
                     latents_ = self.scheduler.step(noise_pred, t, latents_).prev_sample
+
+                    if diag_callback is not None and denoise_diag_every > 0:
+                        if i == 0 or (i + 1) % denoise_diag_every == 0 or i == len(timesteps) - 1:
+                            step_delta = latents_ - latents_before_step
+                            payload: Dict[str, float] = {
+                                "step_index": float(i),
+                                "num_steps": float(len(timesteps)),
+                                "timestep": float(t.detach().float().cpu().item())
+                                if isinstance(t, torch.Tensor)
+                                else float(t),
+                            }
+                            payload.update(_denoise_tensor_stats("latent_before", latents_before_step))
+                            payload.update(_denoise_tensor_stats("noise_pred", noise_pred))
+                            payload.update(_denoise_tensor_stats("latent_after", latents_))
+                            payload.update(_denoise_tensor_stats("step_delta", step_delta))
+                            diag_callback(payload)
 
                     if callback_on_step_end is not None:
                         callback_kwargs = {}

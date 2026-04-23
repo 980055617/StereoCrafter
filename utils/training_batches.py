@@ -115,6 +115,9 @@ class _BatchIterable(Iterable[TrainBatch]):
         dtype: torch.dtype,
         crop_multiple: int = 128,
         crop_region: Optional[Tuple[int, int, int, int]] = None,
+        crop_min_size: Optional[Tuple[int, int]] = None,
+        crop_max_size: Optional[Tuple[int, int]] = None,
+        random_crop: bool = False,
         use_prev_target_overlap: bool = False,
         overlap_teacher_prob: float = 1.0,
         overlap_noise_std: float = 0.0,
@@ -129,6 +132,9 @@ class _BatchIterable(Iterable[TrainBatch]):
         self._dtype = dtype
         self._crop_region = crop_region
         self._crop_multiple = max(1, crop_multiple)
+        self._crop_min_size = crop_min_size
+        self._crop_max_size = crop_max_size
+        self._random_crop = bool(random_crop)
         self._use_prev_target_overlap = use_prev_target_overlap
         self._overlap_teacher_prob = max(0.0, min(1.0, overlap_teacher_prob))
         self._overlap_noise_std = max(0.0, float(overlap_noise_std))
@@ -144,8 +150,22 @@ class _BatchIterable(Iterable[TrainBatch]):
         for start, end in self._ranges:
             cond_cpu, mask_cpu, target_cpu = self._video_stream.load_chunk(start, end)
 
-            if self._crop_region is not None:
-                cond_cpu, mask_cpu, target_cpu = self._apply_fixed_crop(cond_cpu, mask_cpu, target_cpu)
+            crop_region = self._crop_region
+            if self._crop_min_size is not None and self._crop_max_size is not None:
+                if self._random_crop:
+                    height = cond_cpu.shape[2]
+                    width = cond_cpu.shape[3]
+                    crop_h = self._align_dim(self._crop_min_size[0], height)
+                    crop_w = self._align_dim(self._crop_min_size[1], width)
+                    max_top = max(height - crop_h, 0)
+                    max_left = max(width - crop_w, 0)
+                    top = random.randint(0, max_top) if max_top > 0 else 0
+                    left = random.randint(0, max_left) if max_left > 0 else 0
+                    crop_region = (top, left, crop_h, crop_w)
+            if crop_region is not None:
+                cond_cpu, mask_cpu, target_cpu = self._apply_fixed_crop(
+                    cond_cpu, mask_cpu, target_cpu, crop_region
+                )
 
             # 直前チャンクの出力（教師フレーム）でオーバーラップ領域を置き換え、推論時の条件付けに近づける
             actual_overlap = max(0, (prev_end or 0) - start) if prev_end is not None else 0
@@ -212,8 +232,9 @@ class _BatchIterable(Iterable[TrainBatch]):
         cond: torch.Tensor,
         mask: torch.Tensor,
         target: torch.Tensor,
+        crop_region: Tuple[int, int, int, int],
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        top, left, crop_h, crop_w = self._crop_region  # type: ignore[misc]
+        top, left, crop_h, crop_w = crop_region
         height = cond.shape[2]
         width = cond.shape[3]
 
@@ -242,6 +263,7 @@ def prepare_batches(
     crop_multiple: int = 128,
     crop_min_size: Optional[Tuple[int, int]] = None,
     crop_max_size: Optional[Tuple[int, int]] = None,
+    random_crop: bool = False,
     use_prev_target_overlap: bool = True,
     overlap_teacher_prob: float = 1.0,
     overlap_noise_std: float = 0.0,
@@ -256,6 +278,7 @@ def prepare_batches(
         dtype: テンソル化時の dtype。
         crop_multiple: クロップ縦横を揃える倍数。VAE のスケールに合わせて 128 などを推奨。
         crop_min_size/crop_max_size: 固定クロップサイズ (H, W)。両方指定し、同一サイズにすること。
+        random_crop: True のとき、各チャンクでランダムクロップを適用。
         use_prev_target_overlap: True のとき、オーバーラップ領域の条件フレームを前チャンクのターゲットで置換し、推論時の条件付けを模倣。
 
     Returns:
@@ -282,14 +305,15 @@ def prepare_batches(
             raise ValueError(
                 "Variable crop sizes are no longer supported; set crop_min_size == crop_max_size."
             )
-        height, width = video_stream.spatial_hw
-        crop_h = _align_dim(int(crop_min_size[0]), height)
-        crop_w = _align_dim(int(crop_min_size[1]), width)
-        max_top = max(height - crop_h, 0)
-        max_left = max(width - crop_w, 0)
-        top = max_top // 2
-        left = max_left // 2
-        crop_region = (top, left, crop_h, crop_w)
+        if not random_crop:
+            height, width = video_stream.spatial_hw
+            crop_h = _align_dim(int(crop_min_size[0]), height)
+            crop_w = _align_dim(int(crop_min_size[1]), width)
+            max_top = max(height - crop_h, 0)
+            max_left = max(width - crop_w, 0)
+            top = max_top // 2
+            left = max_left // 2
+            crop_region = (top, left, crop_h, crop_w)
 
     return _BatchIterable(
         video_stream=video_stream,
@@ -299,7 +323,19 @@ def prepare_batches(
         dtype=dtype,
         crop_multiple=crop_multiple,
         crop_region=crop_region,
+        crop_min_size=crop_min_size,
+        crop_max_size=crop_max_size,
+        random_crop=random_crop,
         use_prev_target_overlap=use_prev_target_overlap,
         overlap_teacher_prob=overlap_teacher_prob,
         overlap_noise_std=overlap_noise_std,
     )
+
+
+def estimate_num_chunks(video_path: str, frames_chunk: int, overlap: int) -> int:
+    """Estimate chunk count for a video without loading frames to GPU."""
+    reader = VideoReader(video_path, ctx=cpu(0))
+    num_frames = len(reader)
+    if num_frames == 0:
+        return 0
+    return sum(1 for _ in chunk_frame_ranges(num_frames, frames_chunk, overlap))

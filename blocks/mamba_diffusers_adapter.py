@@ -47,12 +47,16 @@ class BiMambaSelfAttention(nn.Module):
             chunk_size=chunk_size,
             use_mem_eff_path=use_mem_eff_path,
         )
+        self.supports_time_emb = True
+        self._time_embed_dim = None
+        self.time_embed_proj = None
 
     def forward(
         self,
         hidden_states: torch.Tensor,
         encoder_hidden_states: Optional[torch.Tensor] = None,
         attention_mask: Optional[torch.Tensor] = None,
+        time_emb: Optional[torch.Tensor] = None,
         **kwargs: Dict[str, Any],
     ) -> torch.Tensor:
         # Keep signature compatibility; Mamba ignores encoder_hidden_states/attention_mask.
@@ -61,7 +65,26 @@ class BiMambaSelfAttention(nn.Module):
         x_rev = torch.flip(hidden_states, dims=[1]).contiguous()
         y_rev = self.bwd(x_rev)
         y_b = torch.flip(y_rev, dims=[1]).contiguous()
-        return 0.5 * (y_f + y_b)
+        y = 0.5 * (y_f + y_b)
+
+        if time_emb is not None:
+            if self.time_embed_proj is None:
+                time_dim = int(time_emb.shape[-1])
+                self._time_embed_dim = time_dim
+                self.time_embed_proj = nn.Linear(time_dim, 2 * y.shape[-1], bias=True)
+                nn.init.zeros_(self.time_embed_proj.weight)
+                nn.init.zeros_(self.time_embed_proj.bias)
+                self.time_embed_proj.to(device=y.device, dtype=y.dtype)
+            elif self._time_embed_dim is not None and int(time_emb.shape[-1]) != self._time_embed_dim:
+                raise ValueError(
+                    f"time_emb dim changed: expected {self._time_embed_dim}, got {int(time_emb.shape[-1])}"
+                )
+
+            film = self.time_embed_proj(time_emb).to(dtype=y.dtype, device=y.device)
+            gamma, beta = film.chunk(2, dim=-1)
+            y = y * (1 + gamma.unsqueeze(1)) + beta.unsqueeze(1)
+
+        return y
 
 
 class MambaSpatioTemporalAdapter(nn.Module):
@@ -417,3 +440,56 @@ def replace_unet_spatiotemporal_self_attn_with_mamba(
     if log_enabled:
         print(f"[MambaAdapter][self-attn] total_replaced={replaced}")
     return replaced
+
+
+def _resolve_module_by_path(root: nn.Module, path: str) -> Optional[nn.Module]:
+    cur: object = root
+    for token in path.split("."):
+        if token.isdigit():
+            idx = int(token)
+            if isinstance(cur, (nn.ModuleList, list, tuple)) and 0 <= idx < len(cur):
+                cur = cur[idx]
+            else:
+                return None
+        else:
+            if not hasattr(cur, token):
+                return None
+            cur = getattr(cur, token)
+    return cur if isinstance(cur, nn.Module) else None
+
+
+def materialize_mamba_time_embed_proj_from_state_dict(unet: nn.Module, state_dict: Dict[str, torch.Tensor]) -> int:
+    """Instantiate lazy `attn1.time_embed_proj` modules so checkpoint keys can load.
+
+    BiMambaSelfAttention creates `time_embed_proj` lazily on first forward, which
+    causes checkpoint keys to be treated as `unexpected` at load time. This helper
+    creates those linear layers from state_dict shapes before `load_state_dict`.
+    """
+    created = 0
+    suffix = ".time_embed_proj.weight"
+    for key, weight in state_dict.items():
+        if not key.endswith(suffix):
+            continue
+        if not isinstance(weight, torch.Tensor) or weight.ndim != 2:
+            continue
+        module_path = key[: -len(suffix)]
+        module = _resolve_module_by_path(unet, module_path)
+        if module is None:
+            continue
+        if not hasattr(module, "time_embed_proj"):
+            continue
+        if getattr(module, "time_embed_proj", None) is not None:
+            continue
+        in_dim = int(weight.shape[1])
+        out_dim = int(weight.shape[0])
+        proj = nn.Linear(in_dim, out_dim, bias=True)
+        try:
+            ref = next(module.parameters())
+            proj = proj.to(device=ref.device, dtype=ref.dtype)
+        except StopIteration:
+            pass
+        module.time_embed_proj = proj
+        if hasattr(module, "_time_embed_dim"):
+            module._time_embed_dim = in_dim
+        created += 1
+    return created

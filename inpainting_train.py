@@ -7,6 +7,7 @@ import logging
 import math
 import os
 import random
+import time
 import warnings
 from collections import defaultdict
 from datetime import datetime
@@ -19,6 +20,47 @@ warnings.filterwarnings(
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _normalize_stage_overrides(raw: Any) -> dict[int, dict[str, Any]]:
+    if raw is None:
+        return {}
+    if isinstance(raw, (list, tuple)):
+        if len(raw) != 3:
+            raise ValueError("stage_overrides as a list must contain exactly 3 entries.")
+        items = enumerate(raw, start=1)
+    elif isinstance(raw, dict):
+        items = raw.items()
+    else:
+        raise ValueError("stage_overrides must be a dict keyed by stage number, or a 3-entry list.")
+
+    normalized: dict[int, dict[str, Any]] = {}
+    for key, value in items:
+        if value in (None, {}):
+            continue
+        try:
+            stage_idx = int(key)
+        except (TypeError, ValueError) as err:
+            raise ValueError(f"stage_overrides key must be 1, 2, or 3; got {key!r}") from err
+        if stage_idx < 1 or stage_idx > 3:
+            raise ValueError(f"stage_overrides key must be 1, 2, or 3; got {stage_idx}")
+        if not isinstance(value, dict):
+            raise ValueError(f"stage_overrides[{stage_idx}] must be an object.")
+        normalized[stage_idx] = dict(value)
+    return normalized
+
+
+def _merge_stage_config(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
+    merged = dict(base)
+    for key, value in override.items():
+        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+            nested = dict(merged[key])
+            nested.update(value)
+            merged[key] = nested
+        else:
+            merged[key] = value
+    return merged
+
 
 import torch
 import torch.nn.functional as F
@@ -141,9 +183,10 @@ def cleanup_cuda(tag: str, *objs: Any) -> None:
 
 from fire import Fire
 
-from blocks.mamba_diffusers_adapter import MambaSpatioTemporalAdapter
+from blocks.mamba_diffusers_adapter import BiMambaSelfAttention, MambaSpatioTemporalAdapter
+from blocks.mamba_diffusers_adapter import materialize_mamba_time_embed_proj_from_state_dict
 from utils.config_utils import load_json_config
-from utils.training_batches import prepare_batches
+from utils.training_batches import prepare_batches, estimate_num_chunks
 from utils.training_env import get_compute_device, set_global_seed, setup_interrupt_handler
 from utils.training_log_utils import (
     init_csv_log,
@@ -162,12 +205,18 @@ from utils.training_pipeline import (
 )
 from utils.training_precision import resolve_precision
 from utils.logging_utils import TrainingProgressPrinter, ensure_logging_configured, log_vram_usage
-from diffusers.schedulers import DDPMScheduler
+from diffusers.schedulers import DDPMScheduler, EulerDiscreteScheduler
+from utils.diffusers_mamba_time_patch import apply_mamba_time_patch
 
 try:
     from torch.utils.tensorboard import SummaryWriter  # type: ignore
 except ImportError:  # pragma: no cover - optional dependency
     SummaryWriter = None
+
+_CACHED_DS_ACCELERATOR = None
+_CACHED_DS_ACCELERATOR_CFG: dict[str, Any] = {}
+
+apply_mamba_time_patch()
 
 
 def _train_main(
@@ -182,6 +231,7 @@ def _train_main(
     stage_epochs: int,
     stage_lr: float,
     stage_idx: int,
+    frames_chunk: int = 14,
     overlap: int = 3,
     use_prev_target_overlap: bool = True,
     fps_condition: int = 7,
@@ -191,6 +241,7 @@ def _train_main(
     target_avg_loss: Union[float, None] = 1e-4,
     mamba_learning_rate: float | None = None,
     weight_decay: float = 0.0,
+    optimizer_foreach: bool = False,
     max_grad_norm: float = 1.0,
     precision: str = "fp16",
     enable_gradient_checkpointing: bool = True,
@@ -214,6 +265,8 @@ def _train_main(
     num_warmup_steps: int = 0,
     grad_accum_steps: int = 1,
     deepspeed: dict[str, Any] | None = None,
+    deepspeed_plugin_key: str | None = None,
+    deepspeed_plugin_configs: dict[str, dict[str, Any]] | None = None,
     dataset_split_ratios: Sequence[float] | None = None,
     dataset_split_group: str = "train",
     dataset_split_seed: int = 42,
@@ -223,6 +276,7 @@ def _train_main(
     resume_from: str | None = None,
     overlap_teacher_prob: float = 1.0,
     overlap_noise_std: float = 0.0,
+    random_crop_per_chunk: bool = False,
     vae_decode_device: str | None = None,
     mamba_use_fast_path: bool = True,
     mamba_autotune_warmup: bool = True,
@@ -230,6 +284,11 @@ def _train_main(
     mamba_fallback_mode: str = "inplace_or_reload",
     debug_deepspeed_graph: bool = False,
     debug_deepspeed_param_scan: bool = False,
+    mamba_diag_interval: int = 10,
+    denoise_diag_interval: int = 0,
+    diffusion_scheduler_type: str = "ddpm",
+    euler_train_num_steps: int = 20,
+    preflight_only: bool = False,
 ) -> bool:
     """Fine-tune the stereo inpainting pipeline.
 
@@ -270,12 +329,29 @@ def _train_main(
 
     precision_key = (precision or "").lower()
     mixed_precision = "bf16" if precision_key == "bf16" else ("fp16" if precision_key == "fp16" else "no")
+    local_rank = str(os.environ.get("LOCAL_RANK", "")).strip()
+    is_local_main = local_rank in {"", "0"}
+
+    def _atomic_write_json(path: str, payload: dict[str, Any]) -> None:
+        tmp_path = f"{path}.tmp.{os.getpid()}"
+        with open(tmp_path, "w", encoding="utf-8") as fp:
+            json.dump(payload, fp, indent=2, sort_keys=True, ensure_ascii=True, default=str)
+        os.replace(tmp_path, path)
+
+    def _wait_for_file(path: str, timeout_s: float = 120.0) -> None:
+        deadline = time.time() + timeout_s
+        while time.time() < deadline:
+            if os.path.exists(path) and os.path.getsize(path) > 0:
+                return
+            time.sleep(0.1)
+        raise RuntimeError(f"Timed out waiting for DeepSpeed config: {path}")
 
     def _write_deepspeed_config(
         cfg: dict[str, Any],
         *,
         grad_steps: int,
         precision_mode: str,
+        filename: str = "ds_config.json",
     ) -> str:
         zero_stage = int(cfg.get("zero_stage", 3))
         ignore_unused = bool(cfg.get("ignore_unused_parameters", zero_stage >= 2))
@@ -288,6 +364,10 @@ def _train_main(
             "contiguous_gradients": True,
             "overlap_comm": True,
         }
+        if cfg.get("reduce_bucket_size", None) is not None:
+            zero_opt["reduce_bucket_size"] = int(cfg["reduce_bucket_size"])
+        if cfg.get("allgather_bucket_size", None) is not None:
+            zero_opt["allgather_bucket_size"] = int(cfg["allgather_bucket_size"])
         if zero_stage >= 2 and ignore_unused:
             zero_opt["ignore_unused_parameters"] = True
         if offload_opt not in {"none", "cpu"}:
@@ -317,12 +397,17 @@ def _train_main(
         else:
             ds_cfg["bf16"] = {"enabled": False}
             ds_cfg["fp16"] = {"enabled": False}
-        path = os.path.join(save_dir, "ds_config.json")
-        with open(path, "w", encoding="utf-8") as fp:
-            json.dump(ds_cfg, fp, indent=2, sort_keys=True, ensure_ascii=True, default=str)
+        path = os.path.join(save_dir, filename)
+        _atomic_write_json(path, ds_cfg)
         return path
 
     def _ensure_deepspeed_batch_config(ds_path: str, cfg: dict[str, Any]) -> str:
+        if not is_local_main:
+            _wait_for_file(ds_path)
+            patched_path = os.path.join(save_dir, "ds_config_autofix.json")
+            if os.path.exists(patched_path) and os.path.getsize(patched_path) > 0:
+                return patched_path
+            return ds_path
         try:
             with open(ds_path, "r", encoding="utf-8") as fp:
                 ds_loaded = json.load(fp)
@@ -346,8 +431,7 @@ def _train_main(
             ds_loaded["train_micro_batch_size_per_gpu"] = int(train_micro)
             detail = f"train_micro_batch_size_per_gpu={ds_loaded['train_micro_batch_size_per_gpu']}"
         patched_path = os.path.join(save_dir, "ds_config_autofix.json")
-        with open(patched_path, "w", encoding="utf-8") as fp:
-            json.dump(ds_loaded, fp, indent=2, sort_keys=True, ensure_ascii=True, default=str)
+        _atomic_write_json(patched_path, ds_loaded)
         logger.warning(
             "DeepSpeed config missing train batch size; wrote %s (%s).",
             patched_path,
@@ -371,27 +455,83 @@ def _train_main(
             grad_accum_steps = ds_grad_steps
         ds_config_path = str(ds_cfg.get("deepspeed_config_path", "") or "").strip()
         if not ds_config_path:
-            ds_config_path = _write_deepspeed_config(
-                ds_cfg, grad_steps=grad_accum_steps, precision_mode=precision_key
-            )
+            if is_local_main:
+                ds_config_path = _write_deepspeed_config(
+                    ds_cfg, grad_steps=grad_accum_steps, precision_mode=precision_key
+                )
+            else:
+                ds_config_path = os.path.join(save_dir, "ds_config.json")
+                _wait_for_file(ds_config_path)
         ds_config_path = _ensure_deepspeed_batch_config(ds_config_path, ds_cfg)
         try:
             from accelerate import Accelerator
             from accelerate.utils import DeepSpeedPlugin
         except Exception as err:  # pragma: no cover - optional dependency
             raise RuntimeError("DeepSpeed enabled but accelerate is not available.") from err
-        ds_plugin = DeepSpeedPlugin(
-            zero_stage=int(ds_cfg.get("zero_stage", 3)),
-            offload_optimizer_device=str(ds_cfg.get("offload_optimizer_device", "cpu")).strip().lower(),
-            offload_param_device=str(ds_cfg.get("offload_param_device", "none")).strip().lower(),
-            gradient_accumulation_steps=int(grad_accum_steps),
-            hf_ds_config=ds_config_path or None,
-        )
-        accelerator = Accelerator(
-            mixed_precision=mixed_precision,
-            deepspeed_plugin=ds_plugin,
-            gradient_accumulation_steps=int(grad_accum_steps),
-        )
+        global _CACHED_DS_ACCELERATOR, _CACHED_DS_ACCELERATOR_CFG
+        plugin_key = str(deepspeed_plugin_key or "default")
+        if _CACHED_DS_ACCELERATOR is None:
+            plugin_configs = deepspeed_plugin_configs or {plugin_key: ds_cfg}
+            ds_plugins: dict[str, Any] = {}
+            for raw_key, raw_plugin_cfg in plugin_configs.items():
+                key = str(raw_key)
+                plugin_cfg = dict(raw_plugin_cfg or {})
+                plugin_grad_steps = int(plugin_cfg.get("gradient_accumulation_steps", grad_accum_steps))
+                plugin_path = str(plugin_cfg.get("deepspeed_config_path", "") or "").strip()
+                if not plugin_path:
+                    safe_key = "".join(ch if ch.isalnum() or ch in {"_", "-"} else "_" for ch in key)
+                    filename = "ds_config.json" if safe_key == "default" else f"ds_config_{safe_key}.json"
+                    if is_local_main:
+                        plugin_path = _write_deepspeed_config(
+                            plugin_cfg,
+                            grad_steps=plugin_grad_steps,
+                            precision_mode=precision_key,
+                            filename=filename,
+                        )
+                    else:
+                        plugin_path = os.path.join(save_dir, filename)
+                        _wait_for_file(plugin_path)
+                plugin_path = _ensure_deepspeed_batch_config(plugin_path, plugin_cfg)
+                ds_plugins[key] = DeepSpeedPlugin(
+                    zero_stage=int(plugin_cfg.get("zero_stage", 3)),
+                    offload_optimizer_device=str(plugin_cfg.get("offload_optimizer_device", "cpu")).strip().lower(),
+                    offload_param_device=str(plugin_cfg.get("offload_param_device", "none")).strip().lower(),
+                    gradient_accumulation_steps=plugin_grad_steps,
+                    hf_ds_config=plugin_path or None,
+                )
+            accelerator = Accelerator(
+                mixed_precision=mixed_precision,
+                deepspeed_plugins=ds_plugins,
+                gradient_accumulation_steps=int(grad_accum_steps),
+            )
+            if plugin_key in ds_plugins:
+                accelerator.state.select_deepspeed_plugin(plugin_key)
+            _CACHED_DS_ACCELERATOR = accelerator
+            _CACHED_DS_ACCELERATOR_CFG = {
+                "mixed_precision": mixed_precision,
+                "grad_accum_steps": int(grad_accum_steps),
+                "plugin_keys": sorted(ds_plugins.keys()),
+            }
+        else:
+            accelerator = _CACHED_DS_ACCELERATOR
+            cached = _CACHED_DS_ACCELERATOR_CFG
+            if cached.get("mixed_precision") != mixed_precision or cached.get("grad_accum_steps") != int(
+                grad_accum_steps
+            ):
+                logger.warning(
+                    "Reusing cached DeepSpeed Accelerator with mixed_precision=%s grad_accum_steps=%s "
+                    "(current: %s/%s).",
+                    cached.get("mixed_precision"),
+                    cached.get("grad_accum_steps"),
+                    mixed_precision,
+                    grad_accum_steps,
+                )
+            cached_keys = set(cached.get("plugin_keys", []))
+            if plugin_key not in cached_keys:
+                raise RuntimeError(
+                    f"DeepSpeed plugin key {plugin_key!r} was not initialized. Known keys: {sorted(cached_keys)}"
+                )
+            accelerator.state.select_deepspeed_plugin(plugin_key)
         device = accelerator.device
         is_main_process = accelerator.is_main_process
         ds_state_dir = os.path.join(save_dir, "deepspeed_state_latest")
@@ -451,7 +591,9 @@ def _train_main(
     if shard_mode == "off" and unet_device_map is not None:
         logger.warning("unet_device_map is ignored because unet_shard_mode=off.")
 
-    frames_chunk = 14
+    frames_chunk = int(frames_chunk)
+    if frames_chunk < 1:
+        raise ValueError("frames_chunk must be >= 1")
     crop_multiple = 64
     crop_size = (stage_h, stage_w)
     crop_min_size = crop_size
@@ -600,13 +742,66 @@ def _train_main(
         index = 0 if value.index is None else value.index
         return f"cuda:{index}"
 
-    # 学習用ノイズスケジューラ（推論側の scheduler 設定に合わせて構築）
-    noise_scheduler = DDPMScheduler.from_config(pipeline.scheduler.config)
-    pred_type = getattr(pipeline.scheduler.config, "prediction_type", None)
-    if pred_type is not None and noise_scheduler.config.prediction_type != pred_type:
-        noise_scheduler.register_to_config(prediction_type=pred_type)
+    diffusion_scheduler_key = (diffusion_scheduler_type or "ddpm").strip().lower()
+    if diffusion_scheduler_key not in {"ddpm", "euler"}:
+        raise ValueError("diffusion_scheduler_type must be one of: ddpm, euler")
+    if int(euler_train_num_steps) < 2:
+        raise ValueError("euler_train_num_steps must be >= 2")
 
-    def compute_batch_loss(batch: Any) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
+    # 学習用ノイズスケジューラ。DDPM は従来互換、Euler は origin 推論と同じ
+    # continuous/Karras sigma 座標に合わせる。
+    if diffusion_scheduler_key == "euler":
+        noise_scheduler = EulerDiscreteScheduler.from_config(pipeline.scheduler.config)
+        noise_scheduler.set_timesteps(int(euler_train_num_steps), device=device)
+    else:
+        noise_scheduler = DDPMScheduler.from_config(pipeline.scheduler.config)
+        pred_type = getattr(pipeline.scheduler.config, "prediction_type", None)
+        if pred_type is not None and noise_scheduler.config.prediction_type != pred_type:
+            noise_scheduler.register_to_config(prediction_type=pred_type)
+    def _sched_cfg_dict(sched: Any) -> dict[str, Any]:
+        cfg = getattr(sched, "config", None)
+        return {
+            "class": sched.__class__.__name__,
+            "prediction_type": getattr(cfg, "prediction_type", None),
+            "num_train_timesteps": getattr(cfg, "num_train_timesteps", None),
+            "beta_schedule": getattr(cfg, "beta_schedule", None),
+            "rescale_betas_zero_snr": getattr(cfg, "rescale_betas_zero_snr", None),
+            "timestep_spacing": getattr(cfg, "timestep_spacing", None),
+            "steps_offset": getattr(cfg, "steps_offset", None),
+            "timestep_type": getattr(cfg, "timestep_type", None),
+            "use_karras_sigmas": getattr(cfg, "use_karras_sigmas", None),
+            "sigma_min": getattr(cfg, "sigma_min", None),
+            "sigma_max": getattr(cfg, "sigma_max", None),
+        }
+    logger.info("[sched][train][pipeline] %s", _sched_cfg_dict(pipeline.scheduler))
+    logger.info("[sched][train][noise_scheduler] %s", _sched_cfg_dict(noise_scheduler))
+    if diffusion_scheduler_key == "euler":
+        logger.info(
+            "[sched][train][euler] num_steps=%d timesteps_head=%s sigmas_head=%s init_noise_sigma=%s",
+            int(euler_train_num_steps),
+            noise_scheduler.timesteps[: min(8, len(noise_scheduler.timesteps))].detach().cpu().tolist(),
+            noise_scheduler.sigmas[: min(8, len(noise_scheduler.sigmas))].detach().cpu().tolist(),
+            getattr(noise_scheduler, "init_noise_sigma", None),
+        )
+
+    def _tensor_diag(metrics: dict[str, torch.Tensor], prefix: str, tensor: torch.Tensor) -> None:
+        with torch.no_grad():
+            data = tensor.detach().float()
+            finite = torch.isfinite(data)
+            if not bool(finite.all().item()):
+                data = torch.where(finite, data, torch.zeros_like(data))
+            metrics[f"{prefix}_mean"] = data.mean().detach()
+            metrics[f"{prefix}_std"] = data.std(unbiased=False).detach()
+            metrics[f"{prefix}_rms"] = data.pow(2).mean().sqrt().detach()
+            metrics[f"{prefix}_abs_mean"] = data.abs().mean().detach()
+            metrics[f"{prefix}_max_abs"] = data.abs().amax().detach()
+            metrics[f"{prefix}_finite_frac"] = finite.float().mean().detach()
+
+    def compute_batch_loss(
+        batch: Any,
+        *,
+        collect_denoise_diag: bool = False,
+    ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
         """Forward UNet once against a mini-batch and return loss + per-component metrics."""
         unet_in_device = _resolve_unet_input_device()
 
@@ -681,18 +876,45 @@ def _train_main(
             x0 = _to_unet_entry(x0)
             x0 = x0 * pipeline.vae.config.scaling_factor
 
-            t = torch.randint(
-                0,
-                noise_scheduler.config.num_train_timesteps,
-                (1,),
-                device=unet_in_device,
-                dtype=torch.long,
-            )
-            t = _to_unet_entry(t)
             eps = torch.randn_like(x0)
-            x_t = noise_scheduler.add_noise(x0, eps, t)
-            x_t = x_t.to(dtype=frame_latents.dtype)
-            x_t = _to_unet_entry(x_t)
+            sigma_value = None
+            if diffusion_scheduler_key == "euler":
+                step_idx = torch.randint(
+                    0,
+                    len(noise_scheduler.timesteps),
+                    (1,),
+                    device=unet_in_device,
+                    dtype=torch.long,
+                )
+                t = noise_scheduler.timesteps.to(device=unet_in_device, dtype=torch.float32)[step_idx]
+                sigma_value = noise_scheduler.sigmas.to(device=unet_in_device, dtype=x0.dtype)[step_idx]
+                sigma = sigma_value.flatten()
+                while len(sigma.shape) < len(x0.shape):
+                    sigma = sigma.unsqueeze(-1)
+                sigma_denom = (sigma.pow(2) + 1.0).sqrt()
+                x_t_raw = x0 + eps * sigma
+                x_t = (x_t_raw / sigma_denom).to(dtype=frame_latents.dtype)
+                x_t = _to_unet_entry(x_t)
+                if getattr(noise_scheduler.config, "prediction_type", "epsilon") == "v_prediction":
+                    target = (eps - sigma * x0) / sigma_denom
+                else:
+                    target = eps
+            else:
+                t = torch.randint(
+                    0,
+                    noise_scheduler.config.num_train_timesteps,
+                    (1,),
+                    device=unet_in_device,
+                    dtype=torch.long,
+                )
+                t = _to_unet_entry(t)
+                x_t = noise_scheduler.add_noise(x0, eps, t)
+                x_t = x_t.to(dtype=frame_latents.dtype)
+                x_t = _to_unet_entry(x_t)
+                if getattr(noise_scheduler.config, "prediction_type", "epsilon") == "v_prediction":
+                    target = noise_scheduler.get_velocity(x0, eps, t)
+                else:
+                    target = eps
 
             image_embeddings = image_embeddings.to(device=unet_in_device, dtype=image_embeddings.dtype)
             image_embeddings = _to_unet_entry(image_embeddings)
@@ -720,16 +942,31 @@ def _train_main(
                 return_dict=False,
             )[0]
 
-            if getattr(noise_scheduler.config, "prediction_type", "epsilon") == "v_prediction":
-                target = noise_scheduler.get_velocity(x0, eps, t)
-            else:
-                target = eps
             noise_loss = F.mse_loss(noise_pred, target)
             metrics = {"timestep": t.detach(), "loss_noise_mse": noise_loss.detach()}
+            if sigma_value is not None:
+                metrics["sigma"] = sigma_value.detach().float()
+            if collect_denoise_diag:
+                _tensor_diag(metrics, "x0", x0)
+                _tensor_diag(metrics, "eps", eps)
+                _tensor_diag(metrics, "x_t", x_t)
+                _tensor_diag(metrics, "target", target)
+                _tensor_diag(metrics, "noise_pred", noise_pred)
+                pred_err = noise_pred.detach() - target.detach()
+                _tensor_diag(metrics, "pred_err", pred_err)
+                with torch.no_grad():
+                    metrics["pred_target_cos"] = F.cosine_similarity(
+                        noise_pred.detach().float().flatten(),
+                        target.detach().float().flatten(),
+                        dim=0,
+                    ).detach()
             return noise_loss, metrics
     preflight_batch: Any | None = None
+    preflight_crop_hw: tuple[int, int] | None = None
+    chunk_count_cache: dict[str, int] = {}
 
     def _make_preflight_batch() -> Any:
+        nonlocal preflight_crop_hw
         sample_videos = sorted(glob.glob(train_glob))
         if not sample_videos:
             raise FileNotFoundError(f"No training videos found for pattern: {train_glob}")
@@ -750,11 +987,14 @@ def _train_main(
                 crop_multiple=crop_multiple,
                 crop_min_size=(stage_h, stage_w),
                 crop_max_size=(stage_h, stage_w),
+                random_crop=random_crop_per_chunk,
                 use_prev_target_overlap=use_prev_target_overlap,
                 overlap_teacher_prob=overlap_teacher_prob,
                 overlap_noise_std=overlap_noise_std,
             )
-            return next(iter(batches_pf))
+            batch_pf = next(iter(batches_pf))
+            preflight_crop_hw = (int(batch_pf.cond.shape[2]), int(batch_pf.cond.shape[3]))
+            return batch_pf
         except StopIteration:
             raise ValueError("Preflight failed: no frames yielded from the sample video.")
         except Exception as err:
@@ -769,6 +1009,30 @@ def _train_main(
     def _reset_preflight_batch() -> None:
         nonlocal preflight_batch
         preflight_batch = None
+
+    def _get_chunk_count(path: str) -> int:
+        cached = chunk_count_cache.get(path)
+        if cached is not None:
+            return cached
+        count = estimate_num_chunks(path, frames_chunk=frames_chunk, overlap=overlap)
+        chunk_count_cache[path] = count
+        return count
+
+    def _assign_videos_balanced(paths: list[str], num_processes: int) -> tuple[list[list[str]], list[int]]:
+        # If videos are fewer than processes, repeat to avoid empty ranks.
+        if len(paths) < num_processes:
+            repeat = math.ceil(num_processes / max(1, len(paths)))
+            paths = (paths * repeat)[: num_processes]
+        items = [(path, _get_chunk_count(path)) for path in paths]
+        random.shuffle(items)
+        items.sort(key=lambda x: x[1], reverse=True)
+        buckets: list[list[str]] = [[] for _ in range(num_processes)]
+        totals = [0 for _ in range(num_processes)]
+        for path, count in items:
+            idx = min(range(num_processes), key=lambda i: totals[i])
+            buckets[idx].append(path)
+            totals[idx] += count
+        return buckets, totals
 
     def _is_oom_error(err: BaseException) -> bool:
         if isinstance(err, torch.cuda.OutOfMemoryError):
@@ -817,6 +1081,7 @@ def _train_main(
             raise
         if unet_state is not None:
             try:
+                materialize_mamba_time_embed_proj_from_state_dict(pipeline.unet, unet_state)
                 missing, unexpected = pipeline.unet.load_state_dict(unet_state, strict=False)
                 if missing or unexpected:
                     logger.warning(
@@ -901,6 +1166,12 @@ def _train_main(
                 return _preflight_runner(f"{tag}_mamba_reload")
             raise
 
+    def _zero_unet_grad() -> None:
+        try:
+            pipeline.unet.zero_grad(set_to_none=True)
+        except TypeError:
+            pipeline.unet.zero_grad()
+
     def _preflight_runner(tag: str) -> dict[int, float]:
         _ = tag
         batch = _get_preflight_batch()
@@ -909,13 +1180,13 @@ def _train_main(
             torch.cuda.empty_cache()
             for idx in range(torch.cuda.device_count()):
                 torch.cuda.reset_peak_memory_stats(idx)
-        pipeline.unet.zero_grad(set_to_none=True)
+        _zero_unet_grad()
         loss_pf, _ = compute_batch_loss(batch)
         if _use_scaler():
             scaler.scale(loss_pf).backward()
         else:
             loss_pf.backward()
-        pipeline.unet.zero_grad(set_to_none=True)
+        _zero_unet_grad()
         if device.type == "cuda":
             for idx in range(torch.cuda.device_count()):
                 stats[idx] = torch.cuda.max_memory_allocated(idx) / float(1024**2)
@@ -925,7 +1196,7 @@ def _train_main(
         trainable_params = [p for p in pipeline.unet.parameters() if p.requires_grad]
         mamba_param_ids: set[int] = set()
         for module in pipeline.unet.modules():
-            if isinstance(module, MambaSpatioTemporalAdapter):
+            if isinstance(module, (MambaSpatioTemporalAdapter, BiMambaSelfAttention)):
                 for p in module.parameters(recurse=True):
                     if p.requires_grad:
                         mamba_param_ids.add(id(p))
@@ -939,11 +1210,13 @@ def _train_main(
                 ],
                 lr=stage_lr,
                 weight_decay=weight_decay,
+                foreach=optimizer_foreach,
             )
         return torch.optim.AdamW(
             [{"params": trainable_params, "lr": stage_lr, "group_name": "base"}],
             lr=stage_lr,
             weight_decay=weight_decay,
+            foreach=optimizer_foreach,
         )
 
     def _optimizer_dryrun_for_candidate(tag: str, device_map: dict[str, int]) -> bool:
@@ -953,7 +1226,7 @@ def _train_main(
         try:
             optimizer = _build_optimizer_for_dryrun()
             optimizer.zero_grad(set_to_none=True)
-            pipeline.unet.zero_grad(set_to_none=True)
+            _zero_unet_grad()
             batch = _get_preflight_batch()
             loss_pf, _ = compute_batch_loss(batch)
             if _use_scaler():
@@ -964,7 +1237,7 @@ def _train_main(
                 loss_pf.backward()
                 optimizer.step()
             optimizer.zero_grad(set_to_none=True)
-            pipeline.unet.zero_grad(set_to_none=True)
+            _zero_unet_grad()
             logger.info("Optimizer dry-run OK for candidate %s", tag)
             return True
         except Exception as err:
@@ -1207,6 +1480,12 @@ def _train_main(
                 model_state = ckpt.get("model", None)
                 if model_state:
                     try:
+                        materialized = materialize_mamba_time_embed_proj_from_state_dict(pipeline.unet, model_state)
+                        if materialized > 0:
+                            logger.info(
+                                "Materialized Mamba time_embed_proj modules before resume load: %d",
+                                materialized,
+                            )
                         pipeline.unet.load_state_dict(model_state, strict=False)
                     except Exception as err:
                         logger.warning("Failed to load UNet state from checkpoint: %s", err)
@@ -1281,12 +1560,52 @@ def _train_main(
         resume_ds_state_dir = None
 
     shard_applied = _run_stage_preflight()
+    if preflight_crop_hw is not None:
+        if crop_min_size != preflight_crop_hw or crop_max_size != preflight_crop_hw:
+            logger.info(
+                "Aligning training crop size to preflight crop size: %s -> %s",
+                crop_min_size,
+                preflight_crop_hw,
+            )
+        crop_min_size = preflight_crop_hw
+        crop_max_size = preflight_crop_hw
+
+    def _materialize_lazy_time_embed_proj_with_preflight() -> int:
+        def _count_materialized_modules() -> tuple[int, int]:
+            total = 0
+            materialized = 0
+            for module in pipeline.unet.modules():
+                if isinstance(module, BiMambaSelfAttention):
+                    total += 1
+                    if isinstance(getattr(module, "time_embed_proj", None), torch.nn.Linear):
+                        materialized += 1
+            return materialized, total
+
+        before = 0
+        after = 0
+        before, total = _count_materialized_modules()
+        if total > 0 and before == total:
+            return 0
+        try:
+            batch = _get_preflight_batch()
+            with torch.no_grad():
+                _ = compute_batch_loss(batch)
+        except Exception as err:
+            logger.warning("Failed to pre-materialize time_embed_proj via preflight: %s", err)
+            return 0
+        after, _ = _count_materialized_modules()
+        created = max(after - before, 0)
+        if created > 0:
+            logger.info("Pre-materialized lazy time_embed_proj modules before optimizer init: %d", created)
+        return created
+
+    _materialize_lazy_time_embed_proj_with_preflight()
 
     # 学習対象パラメータのみ最適化
     trainable_params = [p for p in pipeline.unet.parameters() if p.requires_grad]
     mamba_param_ids: set[int] = set()
     for module in pipeline.unet.modules():
-        if isinstance(module, MambaSpatioTemporalAdapter):
+        if isinstance(module, (MambaSpatioTemporalAdapter, BiMambaSelfAttention)):
             for p in module.parameters(recurse=True):
                 if p.requires_grad:
                     mamba_param_ids.add(id(p))
@@ -1300,6 +1619,7 @@ def _train_main(
             ],
             lr=stage_lr,
             weight_decay=weight_decay,
+            foreach=optimizer_foreach,
         )
         logger.info(
             "Optimizer param groups: base=%d (lr=%.2e), mamba=%d (lr=%.2e)",
@@ -1318,6 +1638,7 @@ def _train_main(
             [{"params": trainable_params, "lr": stage_lr, "group_name": "base"}],
             lr=stage_lr,
             weight_decay=weight_decay,
+            foreach=optimizer_foreach,
         )
     optimizer.zero_grad(set_to_none=True)
     lr_scheduler = None
@@ -1325,6 +1646,28 @@ def _train_main(
         lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=scheduler_gamma)
 
     if ds_enabled and accelerator is not None:
+        id2name = {id(p): n for n, p in pipeline.unet.named_parameters()}
+        opt_param_ids = {
+            id(param)
+            for group in optimizer.param_groups
+            for param in group.get("params", [])
+        }
+        bad = []
+        for gi, group in enumerate(optimizer.param_groups):
+            for param in group["params"]:
+                if not param.requires_grad:
+                    bad.append(
+                        (
+                            gi,
+                            id2name.get(id(param), "<not_in_unet>"),
+                            tuple(param.shape),
+                            str(param.dtype),
+                            str(param.device),
+                        )
+                    )
+        print(f"[OPT CHECK] frozen_in_optimizer={len(bad)}", flush=True)
+        for row in bad[:50]:
+            print("[FROZEN OPT]", row, flush=True)
         if lr_scheduler is not None:
             pipeline.unet, optimizer, lr_scheduler = accelerator.prepare(
                 pipeline.unet, optimizer, lr_scheduler
@@ -1358,6 +1701,45 @@ def _train_main(
                     )
                 else:
                     logger.info("DeepSpeed debug: all trainable params passed _get_grad_fn_or_grad_acc.")
+        if hasattr(torch.autograd.graph, "_get_grad_fn_or_grad_acc"):
+            if not getattr(torch.autograd.graph, "_stereocraft_grad_fn_wrapped", False):
+                orig = torch.autograd.graph._get_grad_fn_or_grad_acc
+
+                def wrapped(param: torch.Tensor):
+                    try:
+                        return orig(param)
+                    except Exception as err:
+                        name = id2name.get(id(param), "<unknown>")
+                        is_inference = (
+                            str(param.is_inference())
+                            if hasattr(param, "is_inference")
+                            else "no is_inference()"
+                        )
+                        print(
+                            "[GRAD_FN FAIL]",
+                            name,
+                            "requires_grad=",
+                            param.requires_grad,
+                            "shape=",
+                            tuple(param.shape),
+                            "dtype=",
+                            param.dtype,
+                            "device=",
+                            param.device,
+                            "in_optimizer=",
+                            id(param) in opt_param_ids,
+                            "inference=",
+                            is_inference,
+                            "grad_enabled=",
+                            torch.is_grad_enabled(),
+                            "err=",
+                            repr(err),
+                            flush=True,
+                        )
+                        raise
+
+                torch.autograd.graph._get_grad_fn_or_grad_acc = wrapped
+                torch.autograd.graph._stereocraft_grad_fn_wrapped = True
             else:
                 logger.warning("DeepSpeed debug: torch.autograd.graph._get_grad_fn_or_grad_acc unavailable.")
     if not ds_enabled:
@@ -1477,26 +1859,33 @@ def _train_main(
         if value is None:
             return ""
         if key == "timestep":
-            return str(int(value.detach().long().cpu().item()))
+            detached = value.detach().cpu()
+            if torch.is_floating_point(detached):
+                return f"{float(detached.float().item()):.8g}"
+            return str(int(detached.long().item()))
         return f"{float(value.detach().float().cpu().item()):.6f}"
 
     # 簡易 CSV ログ (ステップごとの損失を記録)
     run_tag = datetime.now().strftime("%Y%m%d_%H%M%S")
+    rank_log_suffix = ""
+    if ds_enabled and accelerator is not None:
+        rank_log_suffix = f"_rank{int(accelerator.process_index)}"
     csv_path, train_log_exists = select_log_path(
         save_dir,
-        "train_log",
+        f"train_log{rank_log_suffix}",
         run_tag,
         reuse_existing=did_resume,
     )
     val_csv_path, val_log_exists = select_log_path(
         save_dir,
-        "val_log",
+        f"val_log{rank_log_suffix}",
         run_tag,
         reuse_existing=did_resume,
     )
     trimmed_train = 0
     trimmed_val = 0
-    if is_main_process:
+    manage_local_logs = bool(rank_log_suffix) or is_main_process
+    if manage_local_logs:
         if train_log_exists and did_resume and resume_same_stage:
             trimmed_train = trim_train_log(csv_path, start_epoch, train_log_header)
         else:
@@ -1507,12 +1896,387 @@ def _train_main(
             init_csv_log(val_csv_path, val_log_header)
         if did_resume and resume_same_stage and (trimmed_train or trimmed_val):
             logger.info(
-                "Trimmed log rows for epochs >= %d (train=%d, val=%d).",
+                "Trimmed log rows for epochs >= %d (train=%d, val=%d) for local rank log.",
                 start_epoch,
                 trimmed_train,
                 trimmed_val,
             )
     logger.info("Log files for this run: train=%s val=%s", csv_path, val_csv_path)
+    diag_interval = int(max(0, mamba_diag_interval))
+    mamba_diag_header = [
+        "step",
+        "epoch",
+        "stage",
+        "video",
+        "batch",
+        "module",
+        "did_step",
+        "module_grad_norm",
+        "module_param_norm",
+        "time_grad_norm",
+        "time_param_norm_pre",
+        "time_param_norm_post",
+        "time_param_norm_delta_ratio_step",
+        "time_param_norm_delta_ratio_interlog",
+        "time_param_norm_delta_ratio",
+        "time_weight_abs_mean",
+        "time_weight_nonzero_frac",
+        "time_bias_abs_mean",
+    ]
+    mamba_diag_csv_path = ""
+    if diag_interval > 0:
+        mamba_diag_csv_path, mamba_diag_exists = select_log_path(
+            save_dir,
+            f"mamba_diag{rank_log_suffix}",
+            run_tag,
+            reuse_existing=did_resume,
+        )
+        if not mamba_diag_exists:
+            init_csv_log(mamba_diag_csv_path, mamba_diag_header)
+        logger.info("Mamba diagnostics enabled: interval=%d, file=%s", diag_interval, mamba_diag_csv_path)
+
+    denoise_diag_every = int(max(0, denoise_diag_interval))
+    denoise_diag_header = [
+        "step",
+        "epoch",
+        "stage",
+        "video",
+        "batch",
+        "timestep",
+        "sigma",
+        "loss_noise_mse",
+        "pred_target_cos",
+    ]
+    for _prefix in ("x0", "eps", "x_t", "target", "noise_pred", "pred_err"):
+        for _stat in ("mean", "std", "rms", "abs_mean", "max_abs", "finite_frac"):
+            denoise_diag_header.append(f"{_prefix}_{_stat}")
+    denoise_diag_csv_path = ""
+    if denoise_diag_every > 0:
+        denoise_diag_csv_path, denoise_diag_exists = select_log_path(
+            save_dir,
+            f"denoise_diag{rank_log_suffix}",
+            run_tag,
+            reuse_existing=did_resume,
+        )
+        if not denoise_diag_exists:
+            init_csv_log(denoise_diag_csv_path, denoise_diag_header)
+        logger.info(
+            "Denoise diagnostics enabled: interval=%d, file=%s",
+            denoise_diag_every,
+            denoise_diag_csv_path,
+        )
+
+    def _get_unwrapped_unet() -> torch.nn.Module:
+        if accelerator is not None:
+            try:
+                return accelerator.unwrap_model(pipeline.unet)
+            except Exception:
+                pass
+        return pipeline.unet
+
+    def _iter_mamba_modules() -> list[tuple[str, BiMambaSelfAttention]]:
+        model = _get_unwrapped_unet()
+        out: list[tuple[str, BiMambaSelfAttention]] = []
+        for name, module in model.named_modules():
+            if isinstance(module, BiMambaSelfAttention):
+                out.append((name, module))
+        return out
+
+    def _norm2(value: float) -> str:
+        return f"{value:.8e}"
+
+    def _compute_param_norm(module: torch.nn.Module) -> float:
+        sq = 0.0
+        for param in module.parameters(recurse=True):
+            data = param.detach()
+            sq += float(data.float().pow(2).sum().item())
+        return math.sqrt(max(sq, 0.0))
+
+    def _compute_grad_norm(module: torch.nn.Module) -> float:
+        sq = 0.0
+        for param in module.parameters(recurse=True):
+            grad = param.grad
+            if grad is None:
+                continue
+            sq += float(grad.detach().float().pow(2).sum().item())
+        return math.sqrt(max(sq, 0.0))
+
+    def _safe_row_write(path: str, row: list[str]) -> None:
+        if not path:
+            return
+        with open(path, "a", encoding="utf-8", newline="") as f:
+            csv.writer(f).writerow(row)
+
+    def _metric_float(metrics: dict[str, torch.Tensor], key: str) -> str:
+        value = metrics.get(key)
+        if value is None:
+            return ""
+        return f"{float(value.detach().float().cpu().item()):.8e}"
+
+    def _log_denoise_diag(
+        *,
+        step_value: int,
+        epoch_value: int,
+        video_name_value: str,
+        batch_value: int,
+        metrics: dict[str, torch.Tensor],
+    ) -> None:
+        if denoise_diag_every <= 0 or not denoise_diag_csv_path:
+            return
+        if step_value % denoise_diag_every != 0:
+            return
+        row = [
+            str(step_value),
+            str(epoch_value),
+            stage_name,
+            video_name_value,
+            str(batch_value),
+            _metric_float(metrics, "timestep") if "timestep" in metrics else "",
+            _metric_float(metrics, "sigma"),
+            _metric_float(metrics, "loss_noise_mse"),
+            _metric_float(metrics, "pred_target_cos"),
+        ]
+        for prefix in ("x0", "eps", "x_t", "target", "noise_pred", "pred_err"):
+            for stat in ("mean", "std", "rms", "abs_mean", "max_abs", "finite_frac"):
+                row.append(_metric_float(metrics, f"{prefix}_{stat}"))
+        _safe_row_write(denoise_diag_csv_path, row)
+
+    # Keep previous logged weights to detect delayed updates (e.g. wrapped optimizers).
+    _last_logged_time_weight_cpu: dict[str, torch.Tensor] = {}
+    _audit_add_group_unsupported_logged = False
+    _audit_add_group_disabled = False
+
+    def _collect_mamba_diag_snapshot() -> dict[str, dict[str, Any]]:
+        snapshot: dict[str, dict[str, Any]] = {}
+        for name, module in _iter_mamba_modules():
+            entry: dict[str, Any] = {
+                "module_grad_norm": _compute_grad_norm(module),
+                "module_param_norm": _compute_param_norm(module),
+                "time_grad_norm": 0.0,
+                "time_param_norm_pre": 0.0,
+                "time_weight_pre_cpu": None,
+                "time_weight_abs_mean": 0.0,
+                "time_weight_nonzero_frac": 0.0,
+                "time_bias_abs_mean": 0.0,
+            }
+            proj = getattr(module, "time_embed_proj", None)
+            if isinstance(proj, torch.nn.Linear):
+                if proj.weight.grad is not None:
+                    entry["time_grad_norm"] = float(proj.weight.grad.detach().float().norm().item())
+                weight = proj.weight.detach().float()
+                entry["time_param_norm_pre"] = float(weight.norm().item())
+                entry["time_weight_pre_cpu"] = weight.cpu().clone()
+                entry["time_weight_abs_mean"] = float(weight.abs().mean().item())
+                entry["time_weight_nonzero_frac"] = float((weight != 0).float().mean().item())
+                if proj.bias is not None:
+                    entry["time_bias_abs_mean"] = float(proj.bias.detach().float().abs().mean().item())
+            snapshot[name] = entry
+        return snapshot
+
+    def _unwrap_optimizer_for_groups(opt: Any) -> Any:
+        cur = opt
+        seen: set[int] = set()
+        while cur is not None and id(cur) not in seen:
+            seen.add(id(cur))
+            if hasattr(cur, "param_groups"):
+                return cur
+            next_opt = None
+            for attr in ("optimizer", "optim", "_optimizer"):
+                if hasattr(cur, attr):
+                    next_opt = getattr(cur, attr)
+                    break
+            cur = next_opt
+        return None
+
+    def _audit_and_fix_time_proj_optimizer_registration(tag: str) -> tuple[int, int]:
+        nonlocal _audit_add_group_unsupported_logged, _audit_add_group_disabled
+        if not diag_interval:
+            return 0, 0
+        if _audit_add_group_disabled:
+            return 0, 0
+        try:
+            opt_ref = _unwrap_optimizer_for_groups(optimizer)
+        except Exception:
+            opt_ref = None
+        if opt_ref is None:
+            return 0, 0
+
+        param_ids = {
+            id(param)
+            for group in opt_ref.param_groups
+            for param in group.get("params", [])
+            if isinstance(param, torch.nn.Parameter)
+        }
+        mamba_group = None
+        fallback_group = opt_ref.param_groups[0] if opt_ref.param_groups else None
+        for group in opt_ref.param_groups:
+            if str(group.get("group_name", "")).strip().lower() == "mamba":
+                mamba_group = group
+                break
+            if str(group.get("group_name", "")).strip().lower() == "base" and fallback_group is None:
+                fallback_group = group
+        template_group = mamba_group or fallback_group
+        if template_group is None:
+            return 0, 0
+        add_param_group_fn = getattr(opt_ref, "add_param_group", None)
+        can_add_param_group = callable(add_param_group_fn)
+        if not can_add_param_group:
+            if not _audit_add_group_unsupported_logged:
+                logger.info(
+                    "Skipping dynamic optimizer param-group patch (%s): optimizer type %s does not support add_param_group.",
+                    tag,
+                    type(opt_ref).__name__,
+                )
+                _audit_add_group_unsupported_logged = True
+            return 0, 0
+
+        total_missing = 0
+        total_added = 0
+        copied_keys = [
+            "lr",
+            "betas",
+            "eps",
+            "weight_decay",
+            "amsgrad",
+            "foreach",
+            "maximize",
+            "capturable",
+            "differentiable",
+            "fused",
+        ]
+        for module_name, module in _iter_mamba_modules():
+            proj = getattr(module, "time_embed_proj", None)
+            if not isinstance(proj, torch.nn.Linear):
+                continue
+            missing_params: list[torch.nn.Parameter] = []
+            for param in (proj.weight, proj.bias):
+                if param is None or not isinstance(param, torch.nn.Parameter) or not param.requires_grad:
+                    continue
+                if id(param) not in param_ids:
+                    missing_params.append(param)
+            if not missing_params:
+                continue
+            total_missing += len(missing_params)
+            group_payload: dict[str, Any] = {"params": missing_params, "group_name": "mamba_late_time_proj"}
+            for key in copied_keys:
+                if key in template_group:
+                    group_payload[key] = template_group[key]
+            try:
+                add_param_group_fn(group_payload)
+                total_added += len(missing_params)
+                for param in missing_params:
+                    param_ids.add(id(param))
+                logger.warning(
+                    "Added %d missing time_embed_proj params to optimizer (%s): module=%s",
+                    len(missing_params),
+                    tag,
+                    module_name,
+                )
+            except Exception as err:
+                err_msg = str(err)
+                # DeepSpeed wrappers can expose callable add_param_group but fail internally.
+                if isinstance(err, AttributeError) or "add_param_group" in err_msg:
+                    _audit_add_group_disabled = True
+                    if not _audit_add_group_unsupported_logged:
+                        logger.info(
+                            "Disabling dynamic optimizer param-group patch (%s): optimizer type %s is not add_param_group-compatible (%s).",
+                            tag,
+                            type(opt_ref).__name__,
+                            err_msg,
+                        )
+                        _audit_add_group_unsupported_logged = True
+                    return total_missing, total_added
+                logger.warning(
+                    "Failed to add %d missing time_embed_proj params (%s): module=%s err=%s",
+                    len(missing_params),
+                    tag,
+                    module_name,
+                    err,
+                )
+        return total_missing, total_added
+
+    def _log_mamba_diag(
+        *,
+        step_value: int,
+        epoch_value: int,
+        video_name_value: str,
+        batch_value: int,
+        did_step: bool,
+        pre_snapshot: dict[str, dict[str, float]],
+    ) -> None:
+        if diag_interval <= 0 or not mamba_diag_csv_path:
+            return
+        if step_value % diag_interval != 0:
+            return
+        if not pre_snapshot:
+            return
+        _audit_and_fix_time_proj_optimizer_registration(f"diag_step_{step_value}")
+        post_time_norms: dict[str, float] = {}
+        post_time_weights: dict[str, torch.Tensor] = {}
+        if did_step:
+            for name, module in _iter_mamba_modules():
+                proj = getattr(module, "time_embed_proj", None)
+                if isinstance(proj, torch.nn.Linear):
+                    post_weight = proj.weight.detach().float().cpu()
+                    post_time_weights[name] = post_weight
+                    post_time_norms[name] = float(post_weight.norm().item())
+        for name, entry in pre_snapshot.items():
+            pre_norm = float(entry.get("time_param_norm_pre", 0.0))
+            post_norm = float(post_time_norms.get(name, pre_norm))
+            delta_ratio_step = 0.0
+            if did_step:
+                pre_weight_cpu = entry.get("time_weight_pre_cpu")
+                post_weight_cpu = post_time_weights.get(name)
+                if isinstance(pre_weight_cpu, torch.Tensor) and isinstance(post_weight_cpu, torch.Tensor):
+                    if pre_weight_cpu.shape == post_weight_cpu.shape:
+                        diff_norm = float((post_weight_cpu - pre_weight_cpu).norm().item())
+                        delta_ratio_step = diff_norm / max(pre_norm, 1e-12)
+
+            delta_ratio_interlog = 0.0
+            prev_weight_cpu = _last_logged_time_weight_cpu.get(name)
+            cur_weight_cpu = post_time_weights.get(name)
+            if cur_weight_cpu is None:
+                cur_weight_cpu = entry.get("time_weight_pre_cpu")
+            if did_step and isinstance(prev_weight_cpu, torch.Tensor) and isinstance(cur_weight_cpu, torch.Tensor):
+                if prev_weight_cpu.shape == cur_weight_cpu.shape:
+                    prev_norm = float(prev_weight_cpu.norm().item())
+                    inter_diff_norm = float((cur_weight_cpu - prev_weight_cpu).norm().item())
+                    delta_ratio_interlog = inter_diff_norm / max(prev_norm, 1e-12)
+
+            delta_ratio = max(delta_ratio_step, delta_ratio_interlog)
+            row = [
+                str(step_value),
+                str(epoch_value),
+                stage_name,
+                video_name_value,
+                str(batch_value),
+                name,
+                "1" if did_step else "0",
+                _norm2(float(entry.get("module_grad_norm", 0.0))),
+                _norm2(float(entry.get("module_param_norm", 0.0))),
+                _norm2(float(entry.get("time_grad_norm", 0.0))),
+                _norm2(pre_norm),
+                _norm2(post_norm),
+                _norm2(delta_ratio_step),
+                _norm2(delta_ratio_interlog),
+                _norm2(delta_ratio),
+                _norm2(float(entry.get("time_weight_abs_mean", 0.0))),
+                _norm2(float(entry.get("time_weight_nonzero_frac", 0.0))),
+                _norm2(float(entry.get("time_bias_abs_mean", 0.0))),
+            ]
+            _safe_row_write(mamba_diag_csv_path, row)
+            if isinstance(cur_weight_cpu, torch.Tensor):
+                _last_logged_time_weight_cpu[name] = cur_weight_cpu.clone()
+
+    missing_optimizer_params, added_optimizer_params = _audit_and_fix_time_proj_optimizer_registration(
+        "post_optimizer_init"
+    )
+    if missing_optimizer_params > 0:
+        logger.info(
+            "time_embed_proj optimizer audit: missing=%d added=%d",
+            missing_optimizer_params,
+            added_optimizer_params,
+        )
 
     # (オプション) TensorBoard ログ
     writer_tb = None
@@ -1680,33 +2444,78 @@ def _train_main(
             ckpt_sched_ref,
             ckpt_scaler_ref,
         )
+        if ds_enabled and accelerator is not None:
+            try:
+                accelerator.free_memory(pipeline_ref, optimizer_ref, lr_scheduler_ref)
+            except Exception:
+                pass
+
+    if preflight_only:
+        logger.info(
+            "Preflight-only completed for Stage %d/3 (%s); skipping epoch training.",
+            stage_idx,
+            stage_name,
+        )
+        if ds_enabled and accelerator is not None:
+            accelerator.wait_for_everyone()
+        _cleanup_stage_resources(f"preflight_stage{stage_idx}")
+        return shard_applied
 
     def run_validation(split_name: str, epoch_idx: int) -> float | None:
         """Run a full forward pass over the requested split and log average loss."""
-        if ds_enabled and not is_main_process:
-            return None
         val_key = (split_name or "").strip().lower()
         if not val_key:
             return None
         if val_key not in split_map:
             logger.warning("Unknown val split '%s'; skipping validation.", split_name)
             return None
-        val_video_paths = split_map[val_key]
-        if not val_video_paths:
+        val_video_paths_all = split_map[val_key]
+        if not val_video_paths_all:
             logger.warning("No videos available for val split '%s'; skipping.", val_key)
             return None
         max_videos = max_val_videos if (max_val_videos or 0) > 0 else None
-        total_assigned = len(val_video_paths)
+        total_assigned = len(val_video_paths_all)
         if max_videos is not None and max_videos < total_assigned:
-            val_video_paths = val_video_paths[:max_videos]
+            val_video_paths_all = val_video_paths_all[:max_videos]
+
+        val_video_paths_local = val_video_paths_all
+        dist_enabled = (
+            ds_enabled
+            and accelerator is not None
+            and torch.distributed.is_available()
+            and torch.distributed.is_initialized()
+        )
+        if dist_enabled:
+            buckets, totals = _assign_videos_balanced(val_video_paths_all, accelerator.num_processes)
+            val_video_paths_local = buckets[accelerator.process_index]
+            if is_main_process:
+                totals_str = ", ".join(str(total) for total in totals)
+                if max_videos is not None and max_videos < total_assigned:
+                    logger.info(
+                        "Validating split '%s' on %d/%d videos (limited by max_val_videos).",
+                        val_key,
+                        len(val_video_paths_all),
+                        total_assigned,
+                    )
+                else:
+                    logger.info("Validating split '%s' on %d videos.", val_key, total_assigned)
+                logger.info("Validation chunk assignment across ranks: %s", totals_str)
             logger.info(
-                "Validating split '%s' on %d/%d videos (limited by max_val_videos).",
+                "Rank %s validating split '%s' on %d videos.",
+                accelerator.process_index,
                 val_key,
-                len(val_video_paths),
-                total_assigned,
+                len(val_video_paths_local),
             )
         else:
-            logger.info("Validating split '%s' on %d videos.", val_key, total_assigned)
+            if max_videos is not None and max_videos < total_assigned:
+                logger.info(
+                    "Validating split '%s' on %d/%d videos (limited by max_val_videos).",
+                    val_key,
+                    len(val_video_paths_all),
+                    total_assigned,
+                )
+            else:
+                logger.info("Validating split '%s' on %d videos.", val_key, total_assigned)
         was_training = pipeline.unet.training
         pipeline.unet.eval()
         total_loss = 0.0
@@ -1714,9 +2523,13 @@ def _train_main(
         val_local = 0
         try:
             with torch.no_grad():
-                with open(val_csv_path, "a", encoding="utf-8", newline="") as val_f:
+                writer = None
+                val_f = None
+                if val_csv_path:
+                    val_f = open(val_csv_path, "a", encoding="utf-8", newline="")
                     writer = csv.writer(val_f)
-                    for video_idx, video_path in enumerate(val_video_paths, start=1):
+                try:
+                    for video_idx, video_path in enumerate(val_video_paths_local, start=1):
                         if stop_event.is_set():
                             raise KeyboardInterrupt
                         batches = prepare_batches(
@@ -1728,6 +2541,7 @@ def _train_main(
                             crop_multiple=crop_multiple,
                             crop_min_size=crop_min_size,
                             crop_max_size=crop_max_size,
+                            random_crop=random_crop_per_chunk,
                             use_prev_target_overlap=use_prev_target_overlap,
                             overlap_teacher_prob=overlap_teacher_prob,
                             overlap_noise_std=overlap_noise_std,
@@ -1740,31 +2554,42 @@ def _train_main(
                             total_loss += batch_loss_val
                             total_batches += 1
                             val_local += 1
-                            writer.writerow(
-                                [
-                                    global_step + val_local,
-                                    epoch_idx,
-                                    stage_name,
-                                    f"{val_key}/{os.path.basename(video_path)}",
-                                ]
-                                + [_format_metric(metrics, key) for key in val_metric_keys]
-                            )
+                            if writer is not None:
+                                writer.writerow(
+                                    [
+                                        global_step + val_local,
+                                        epoch_idx,
+                                        stage_name,
+                                        f"{val_key}/{os.path.basename(video_path)}",
+                                    ]
+                                    + [_format_metric(metrics, key) for key in val_metric_keys]
+                                )
+                finally:
+                    if val_f is not None:
+                        val_f.close()
         finally:
             if was_training:
                 pipeline.unet.train()
+        if dist_enabled:
+            stats = torch.tensor([total_loss, float(total_batches)], device=device, dtype=torch.float64)
+            torch.distributed.all_reduce(stats, op=torch.distributed.ReduceOp.SUM)
+            total_loss = float(stats[0].item())
+            total_batches = int(round(float(stats[1].item())))
         if total_batches == 0:
-            logger.warning("Validation split '%s' produced zero batches.", val_key)
+            if (not dist_enabled) or is_main_process:
+                logger.warning("Validation split '%s' produced zero batches.", val_key)
             return None
         avg_loss = total_loss / total_batches
-        logger.info(
-            "Val split '%s' epoch %d: avg_loss=%.6f over %d batches.",
-            val_key,
-            epoch_idx,
-            avg_loss,
-            total_batches,
-        )
-        if writer_tb:
-            writer_tb.add_scalar(f"loss/{val_key}_avg", avg_loss, epoch_idx)
+        if (not dist_enabled) or is_main_process:
+            logger.info(
+                "Val split '%s' epoch %d: avg_loss=%.6f over %d batches.",
+                val_key,
+                epoch_idx,
+                avg_loss,
+                total_batches,
+            )
+            if writer_tb:
+                writer_tb.add_scalar(f"loss/{val_key}_avg", avg_loss, epoch_idx)
         return avg_loss
 
     printer = TrainingProgressPrinter(
@@ -1773,6 +2598,23 @@ def _train_main(
         enable_mem=True,
         logger_obj=logger,
     )
+    def _dist_min(value: int) -> int:
+        if not (ds_enabled and accelerator is not None):
+            return value
+        if not torch.distributed.is_available() or not torch.distributed.is_initialized():
+            return value
+        tensor = torch.tensor([value], device=device, dtype=torch.int64)
+        torch.distributed.all_reduce(tensor, op=torch.distributed.ReduceOp.MIN)
+        return int(tensor.item())
+    def _dist_max(value: int) -> int:
+        if not (ds_enabled and accelerator is not None):
+            return value
+        if not torch.distributed.is_available() or not torch.distributed.is_initialized():
+            return value
+        tensor = torch.tensor([value], device=device, dtype=torch.int64)
+        torch.distributed.all_reduce(tensor, op=torch.distributed.ReduceOp.MAX)
+        return int(tensor.item())
+
     try:
         accum_counter = 0
         # stage_epochs を上限にし、target_avg_loss は早期終了のみに使用
@@ -1839,7 +2681,15 @@ def _train_main(
             random.shuffle(video_paths)
             epoch_video_paths = video_paths
             if ds_enabled and accelerator is not None:
-                epoch_video_paths = video_paths[accelerator.process_index :: accelerator.num_processes]
+                buckets, totals = _assign_videos_balanced(video_paths, accelerator.num_processes)
+                epoch_video_paths = buckets[accelerator.process_index]
+                if accelerator.is_main_process:
+                    totals_str = ", ".join(str(total) for total in totals)
+                    logger.info("Balanced chunk assignment across ranks: %s", totals_str)
+                shared_video_count = _dist_max(len(epoch_video_paths))
+                if epoch_video_paths and len(epoch_video_paths) < shared_video_count:
+                    pad = shared_video_count - len(epoch_video_paths)
+                    epoch_video_paths = epoch_video_paths + [epoch_video_paths[-1]] * pad
             epoch_loss = 0.0
             epoch_batches = 0
             printer.start_epoch(epoch_idx=epoch, epochs_total=planned_epochs_total, videos_total=len(epoch_video_paths))
@@ -1847,6 +2697,14 @@ def _train_main(
             for video_idx, video_path in enumerate(epoch_video_paths, start=1):
                 if stop_event.is_set():
                     raise KeyboardInterrupt
+                rank_label = os.environ.get("LOCAL_RANK", "0")
+                logger.info(
+                    "Rank %s video %d/%d: %s",
+                    rank_label,
+                    video_idx,
+                    len(epoch_video_paths),
+                    os.path.basename(video_path),
+                )
                 # 動画を時間方向にチャンク分割し、GPU 上に順次ロード
                 train_batches = prepare_batches(
                     video_path,
@@ -1857,16 +2715,27 @@ def _train_main(
                     crop_multiple=crop_multiple,
                     crop_min_size=crop_min_size,
                     crop_max_size=crop_max_size,
+                    random_crop=random_crop_per_chunk,
                     use_prev_target_overlap=use_prev_target_overlap,
                     overlap_teacher_prob=overlap_teacher_prob,
                     overlap_noise_std=overlap_noise_std,
                 )
-                printer.start_video(video_idx=video_idx, batches_total=len(train_batches))
+                local_batch_count = len(train_batches)
+                shared_batch_limit = _dist_max(local_batch_count)
+                printer.start_video(video_idx=video_idx, batches_total=shared_batch_limit)
+                batch_iter = iter(train_batches)
 
-                for batch_i, batch in enumerate(train_batches, start=1):
+                for batch_i in range(1, shared_batch_limit + 1):
                     if stop_event.is_set():
                         raise KeyboardInterrupt
-                    last_batch = batch
+                    try:
+                        batch = next(batch_iter)
+                    except StopIteration:
+                        if last_batch is None:
+                            last_batch = _get_preflight_batch()
+                        batch = last_batch
+                    else:
+                        last_batch = batch
 
                     if device.type == "cuda":
                         torch.cuda.reset_peak_memory_stats(device)
@@ -1881,10 +2750,28 @@ def _train_main(
                     if ds_enabled and accelerator is not None:
                         skip_update = False
                         if is_last_batch_epoch:
-                            accelerator.gradient_state.end_of_dataloader = True
+                            try:
+                                accelerator.gradient_state.end_of_dataloader = True
+                            except AttributeError:
+                                grad_state = accelerator.gradient_state
+                                active_dl = getattr(grad_state, "active_dataloader", None)
+                                if active_dl is not None and hasattr(active_dl, "end_of_dataloader"):
+                                    active_dl.end_of_dataloader = True
                         with accelerator.accumulate(pipeline.unet):
-                            loss_raw, metrics = compute_batch_loss(batch)
-                            if not torch.isfinite(loss_raw):
+                            step_value_for_diag = global_step + 1
+                            loss_raw, metrics = compute_batch_loss(
+                                batch,
+                                collect_denoise_diag=(
+                                    denoise_diag_every > 0
+                                    and step_value_for_diag % denoise_diag_every == 0
+                                ),
+                            )
+                            non_finite = (~torch.isfinite(loss_raw)).to(torch.int32)
+                            if torch.distributed.is_available() and torch.distributed.is_initialized():
+                                torch.distributed.all_reduce(
+                                    non_finite, op=torch.distributed.ReduceOp.MAX
+                                )
+                            if non_finite.item() == 1:
                                 bad_value = loss_raw.detach().float().item()
                                 logger.warning(
                                     "Non-finite loss (%.4f) detected at epoch %d video %s batch %d. Skipping update.",
@@ -1893,6 +2780,8 @@ def _train_main(
                                     os.path.basename(video_path),
                                     batch_i,
                                 )
+                                loss = loss_raw * 0.0
+                                accelerator.backward(loss)
                                 optimizer.zero_grad(set_to_none=True)
                                 accum_counter = 0
                                 skip_update = True
@@ -1909,20 +2798,56 @@ def _train_main(
                                     )
                                     logged_loss_meta = True
                                 accelerator.backward(loss)
+                                step_value = global_step + 1
+                                pre_diag_snapshot = (
+                                    _collect_mamba_diag_snapshot()
+                                    if (diag_interval > 0 and step_value % diag_interval == 0)
+                                    else {}
+                                )
                                 if accelerator.sync_gradients:
                                     if max_grad_norm > 0:
                                         accelerator.clip_grad_norm_(
                                             pipeline.unet.parameters(), max_grad_norm
                                         )
                                     optimizer.step()
+                                    _log_mamba_diag(
+                                        step_value=step_value,
+                                        epoch_value=epoch,
+                                        video_name_value=os.path.basename(video_path),
+                                        batch_value=batch_i,
+                                        did_step=True,
+                                        pre_snapshot=pre_diag_snapshot,
+                                    )
                                     optimizer.zero_grad(set_to_none=True)
                                     accum_counter = 0
+                                else:
+                                    _log_mamba_diag(
+                                        step_value=step_value,
+                                        epoch_value=epoch,
+                                        video_name_value=os.path.basename(video_path),
+                                        batch_value=batch_i,
+                                        did_step=False,
+                                        pre_snapshot=pre_diag_snapshot,
+                                    )
                         if is_last_batch_epoch:
-                            accelerator.gradient_state.end_of_dataloader = False
+                            try:
+                                accelerator.gradient_state.end_of_dataloader = False
+                            except AttributeError:
+                                grad_state = accelerator.gradient_state
+                                active_dl = getattr(grad_state, "active_dataloader", None)
+                                if active_dl is not None and hasattr(active_dl, "end_of_dataloader"):
+                                    active_dl.end_of_dataloader = False
                         if skip_update:
                             continue
                     else:
-                        loss_raw, metrics = compute_batch_loss(batch)
+                        step_value_for_diag = global_step + 1
+                        loss_raw, metrics = compute_batch_loss(
+                            batch,
+                            collect_denoise_diag=(
+                                denoise_diag_every > 0
+                                and step_value_for_diag % denoise_diag_every == 0
+                            ),
+                        )
                         if not torch.isfinite(loss_raw):
                             bad_value = loss_raw.detach().float().item()
                             logger.warning(
@@ -1949,6 +2874,13 @@ def _train_main(
                         else:
                             loss.backward()
 
+                        step_value = global_step + 1
+                        pre_diag_snapshot = (
+                            _collect_mamba_diag_snapshot()
+                            if (diag_interval > 0 and step_value % diag_interval == 0)
+                            else {}
+                        )
+
                         should_step = (accum_counter >= grad_accum_steps) or is_last_batch_epoch
                         if should_step:
                             if _use_scaler():
@@ -1959,8 +2891,25 @@ def _train_main(
                             else:
                                 torch.nn.utils.clip_grad_norm_(trainable_params, max_grad_norm)
                                 optimizer.step()
+                            _log_mamba_diag(
+                                step_value=step_value,
+                                epoch_value=epoch,
+                                video_name_value=os.path.basename(video_path),
+                                batch_value=batch_i,
+                                did_step=True,
+                                pre_snapshot=pre_diag_snapshot,
+                            )
                             optimizer.zero_grad(set_to_none=True)
                             accum_counter = 0
+                        else:
+                            _log_mamba_diag(
+                                step_value=step_value,
+                                epoch_value=epoch,
+                                video_name_value=os.path.basename(video_path),
+                                batch_value=batch_i,
+                                did_step=False,
+                                pre_snapshot=pre_diag_snapshot,
+                            )
 
                     # ログ・記録 (勾配蓄積の有無に関わらずバッチ単位で記録)
                     global_step += 1
@@ -1974,7 +2923,15 @@ def _train_main(
                         noise_val = metrics.get("loss_noise_mse", loss_raw)
                         writer_tb.add_scalar("loss/noise_mse", noise_val.detach().item(), global_step)
 
-                    if is_main_process:
+                    _log_denoise_diag(
+                        step_value=global_step,
+                        epoch_value=epoch,
+                        video_name_value=os.path.basename(video_path),
+                        batch_value=batch_i,
+                        metrics=metrics,
+                    )
+
+                    if csv_path:
                         with open(csv_path, "a", encoding="utf-8", newline="") as f:
                             writer = csv.writer(f)
                             writer.writerow(
@@ -1995,6 +2952,8 @@ def _train_main(
             printer.finish_epoch(avg_loss=avg_epoch_loss, epoch_batches=epoch_batches)
             if val_split and (epoch % val_interval_epochs == 0):
                 run_validation(val_split, epoch)
+            if ds_enabled and accelerator is not None:
+                accelerator.wait_for_everyone()
 
             _save_full_checkpoint("latest", epoch)
             if epoch % save_interval_epochs == 0:
@@ -2004,7 +2963,14 @@ def _train_main(
                 current_lr = optimizer.param_groups[0]["lr"]
                 logger.info("Scheduler step completed. Current learning rate: %.6e", current_lr)
             # 目標avg_loss に到達したら早期終了
-            if (target_avg_loss is not None) and (avg_epoch_loss <= float(target_avg_loss)):
+            stop_early = (
+                (target_avg_loss is not None) and (avg_epoch_loss <= float(target_avg_loss))
+            )
+            if ds_enabled and accelerator is not None and torch.distributed.is_initialized():
+                flag = torch.tensor([1 if stop_early else 0], device=device)
+                torch.distributed.all_reduce(flag, op=torch.distributed.ReduceOp.MAX)
+                stop_early = flag.item() == 1
+            if stop_early:
                 logger.info(
                     "Target avg_loss %.6f reached at epoch %d. Stopping early.",
                     target_avg_loss,
@@ -2062,7 +3028,6 @@ def main(config: str | None = None, config_dir: str = "train_config", **override
     is_main_process = local_rank in {"", "0"}
 
     banned_keys = {
-        "frames_chunk",
         "min_h",
         "min_w",
         "max_h",
@@ -2098,9 +3063,17 @@ def main(config: str | None = None, config_dir: str = "train_config", **override
             "SVD staged training is always-on; remove these keys: " + ", ".join(fixed_stage_present)
         )
 
+    max_stage_idx = int(config_values.get("max_stage_idx", 3))
+    if max_stage_idx < 1 or max_stage_idx > 3:
+        raise ValueError("max_stage_idx must be between 1 and 3.")
+
     base_config = dict(config_values)
     base_config.pop("stage_epochs", None)
     base_config.pop("stage_learning_rates", None)
+    base_config.pop("max_stage_idx", None)
+    stage_overrides = _normalize_stage_overrides(base_config.pop("stage_overrides", None))
+    preflight_all_stages_before_train = bool(base_config.pop("preflight_all_stages_before_train", False))
+    preflight_exit_after_all_stages = bool(base_config.pop("preflight_exit_after_all_stages", False))
     if ds_enabled:
         if str(base_config.get("unet_shard_mode", "off")).strip().lower() != "off":
             logger.info("DeepSpeed enabled; forcing unet_shard_mode=off.")
@@ -2109,10 +3082,35 @@ def main(config: str | None = None, config_dir: str = "train_config", **override
 
     signature = inspect.signature(_train_main)
     allowed_params = set(signature.parameters.keys())
+    # ignore deepspeed/torchrun local rank injection
+    base_config.pop("local_rank", None)
     unexpected_keys = set(base_config) - allowed_params
     if unexpected_keys:
         unexpected_list = ", ".join(sorted(unexpected_keys))
         raise ValueError(f"Unknown training parameters: {unexpected_list}")
+    protected_stage_override_keys = {
+        "stage_name",
+        "stage_h",
+        "stage_w",
+        "stage_epochs",
+        "stage_lr",
+        "stage_idx",
+        "resume_from",
+        "save_dir",
+        "preflight_only",
+        "deepspeed_plugin_key",
+        "deepspeed_plugin_configs",
+        "local_rank",
+    }
+    for override_stage_idx, override_values in stage_overrides.items():
+        override_unexpected = set(override_values) - allowed_params
+        if override_unexpected:
+            unexpected_list = ", ".join(sorted(override_unexpected))
+            raise ValueError(f"Unknown training parameters in stage_overrides[{override_stage_idx}]: {unexpected_list}")
+        override_protected = protected_stage_override_keys.intersection(override_values)
+        if override_protected:
+            protected_list = ", ".join(sorted(override_protected))
+            raise ValueError(f"Do not set internal parameters in stage_overrides[{override_stage_idx}]: {protected_list}")
 
     stage_fields = {"stage_name", "stage_h", "stage_w", "stage_epochs", "stage_lr", "stage_idx"}
     missing = [
@@ -2125,14 +3123,26 @@ def main(config: str | None = None, config_dir: str = "train_config", **override
         raise ValueError(f"Missing required training parameters: {missing_list}")
 
     save_dir = str(base_config.get("save_dir", "")).strip()
-    resolved_save_dir = resolve_run_save_dir(save_dir)
-    if resolved_save_dir:
-        config_values["save_dir"] = resolved_save_dir
-        base_config["save_dir"] = resolved_save_dir
-        if resolved_save_dir != save_dir:
-            logger.info("Resolved save_dir to per-run folder: %s", resolved_save_dir)
-        save_dir = resolved_save_dir
     resume_candidate = base_config.get("resume_from")
+    resume_path_str = str(resume_candidate).strip() if resume_candidate is not None else ""
+    resume_path_exists = bool(resume_path_str) and os.path.exists(resume_path_str)
+    if resume_path_exists:
+        resume_source_dir = (
+            resume_path_str if os.path.isdir(resume_path_str) else os.path.dirname(resume_path_str)
+        )
+        if resume_source_dir:
+            save_dir = resume_source_dir
+            config_values["save_dir"] = save_dir
+            base_config["save_dir"] = save_dir
+            logger.info("Resume detected; using existing save_dir: %s", save_dir)
+    else:
+        resolved_save_dir = resolve_run_save_dir(save_dir)
+        if resolved_save_dir:
+            config_values["save_dir"] = resolved_save_dir
+            base_config["save_dir"] = resolved_save_dir
+            if resolved_save_dir != save_dir:
+                logger.info("Resolved save_dir to per-run folder: %s", resolved_save_dir)
+            save_dir = resolved_save_dir
     if resume_candidate is None and save_dir:
         ckpt_latest_path = os.path.join(save_dir, "train_state_latest.pt")
         if os.path.exists(ckpt_latest_path):
@@ -2190,7 +3200,69 @@ def main(config: str | None = None, config_dir: str = "train_config", **override
         ("320x576", 320, 576),
         ("576x1024", 576, 1024),
     ]
+    deepspeed_plugin_configs: dict[str, dict[str, Any]] = {}
+    if ds_enabled:
+        for ds_stage_idx in range(1, max_stage_idx + 1):
+            ds_stage_kwargs = _merge_stage_config(base_config, stage_overrides.get(ds_stage_idx, {}))
+            ds_stage_cfg = ds_stage_kwargs.get("deepspeed") or {}
+            if bool(ds_stage_cfg.get("enabled", False)):
+                deepspeed_plugin_configs[f"stage{ds_stage_idx}"] = dict(ds_stage_cfg)
+    if preflight_all_stages_before_train and resume_candidate is None:
+        logger.info(
+            "Running preflight-only pass for stages 1..%d before starting a new training run.",
+            max_stage_idx,
+        )
+        preflight_force_sharding = force_sharding
+        for stage_idx, (stage_name, stage_h, stage_w) in enumerate(stages, start=1):
+            if stage_idx > max_stage_idx:
+                break
+            stage_epochs_value = stage_epochs[stage_idx - 1]
+            stage_lr_value = stage_lrs[stage_idx - 1]
+            logger.info(
+                "Preflight Stage %d/3: %s %dx%d lr=%.2e epochs=%d",
+                stage_idx,
+                stage_name,
+                stage_h,
+                stage_w,
+                stage_lr_value,
+                stage_epochs_value,
+            )
+            stage_kwargs = _merge_stage_config(base_config, stage_overrides.get(stage_idx, {}))
+            stage_shard_mode = base_shard_mode
+            if base_shard_mode == "auto" and preflight_force_sharding:
+                stage_shard_mode = "on"
+            stage_kwargs.update(
+                {
+                    "stage_name": stage_name,
+                    "stage_h": stage_h,
+                    "stage_w": stage_w,
+                    "stage_epochs": stage_epochs_value,
+                    "stage_lr": stage_lr_value,
+                    "stage_idx": stage_idx,
+                    "unet_shard_mode": stage_shard_mode,
+                    "resume_from": None,
+                    "preflight_only": True,
+                    "deepspeed_plugin_key": f"stage{stage_idx}" if deepspeed_plugin_configs else None,
+                    "deepspeed_plugin_configs": deepspeed_plugin_configs or None,
+                }
+            )
+            used_sharding = _train_main(**stage_kwargs)
+            if base_shard_mode == "auto" and used_sharding:
+                preflight_force_sharding = True
+        logger.info("Preflight-only pass completed; starting training run.")
+        if preflight_exit_after_all_stages:
+            logger.info("preflight_exit_after_all_stages=true; exiting before training.")
+            return
+    elif preflight_all_stages_before_train:
+        logger.info(
+            "Skipping preflight_all_stages_before_train because resume_candidate is set: %s",
+            resume_candidate,
+        )
+
     for stage_idx, (stage_name, stage_h, stage_w) in enumerate(stages, start=1):
+        if stage_idx > max_stage_idx:
+            logger.info("Stopping after stage %d/3 due to max_stage_idx=%d.", stage_idx - 1, max_stage_idx)
+            break
         if stage_idx < start_stage_idx:
             logger.info("Skipping Stage %d/3 (%s): already completed.", stage_idx, stage_name)
             continue
@@ -2205,7 +3277,7 @@ def main(config: str | None = None, config_dir: str = "train_config", **override
             stage_lr_value,
             stage_epochs_value,
         )
-        stage_kwargs = dict(base_config)
+        stage_kwargs = _merge_stage_config(base_config, stage_overrides.get(stage_idx, {}))
         stage_shard_mode = base_shard_mode
         if base_shard_mode == "auto" and force_sharding:
             stage_shard_mode = "on"
@@ -2218,6 +3290,8 @@ def main(config: str | None = None, config_dir: str = "train_config", **override
                 "stage_lr": stage_lr_value,
                 "stage_idx": stage_idx,
                 "unet_shard_mode": stage_shard_mode,
+                "deepspeed_plugin_key": f"stage{stage_idx}" if deepspeed_plugin_configs else None,
+                "deepspeed_plugin_configs": deepspeed_plugin_configs or None,
             }
         )
         if stage_idx == start_stage_idx:

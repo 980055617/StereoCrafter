@@ -1,0 +1,82 @@
+// inpainting_inference.py 用の推論設定リファレンスです。
+//
+// このファイルは説明用なので、通常の JSON ではなく JSONC として作っています。
+// 現在の設定ローダーは Python の json.load() を使うため、このファイルを
+// そのまま推論コマンドに渡さないでください。
+// 実行したい場合は、必要な項目を通常の .json にコピーしてコメントを消してください。
+{
+  // ベースモデルのパス。
+  // pre_trained_path は image_encoder/vae/scheduler などを含む SVD 系モデルの場所です。
+  "pre_trained_path": "weights/stable-video-diffusion-img2vid-xt-1-1/",
+
+  // UNet の初期読み込み元。通常は StereoCrafter の diffusers 形式 UNet を指定します。
+  // 実際には unet_path/unet_diffusers が読まれます。
+  "unet_path": "weights/StereoCrafter/",
+
+  // 入力動画。通常は depth splatting 等で作った 2x2 / splatting 結果動画を指定します。
+  "input_video_path": "video_data/splatting/0160_splatting_results.mp4",
+
+  // 出力先。side-by-side と anaglyph の mp4 が保存されます。
+  "save_dir": "weights/MambaCrafter_YYYYMMDD_HHMMSS/",
+
+  // 一度に処理するフレーム数。
+  // 大きいほど時間方向の文脈は増えますが、VRAM 使用量も増えます。
+  "frames_chunk": 14,
+
+  // chunk 間で重ねるフレーム数。
+  // 生成済みの直前フレームを次 chunk の先頭に混ぜ、つなぎ目を安定させます。
+  "overlap": 3,
+
+  // 空間方向の tiled 推論数。
+  // 1 はタイルなし、2 以上は分割処理で VRAM を抑える用途です。
+  "tile_num": 2,
+
+  // denoise step 数。大きいほど重くなりますが、品質が安定する場合があります。
+  "num_inference_steps": 8,
+
+  // 推論精度。"fp16", "bf16", "fp32" のいずれか。
+  "precision": "bf16",
+
+  // VAE decode 時の chunk サイズ。
+  // 小さいほど VRAM を抑えやすく、大きいほど速くなる場合があります。
+  "decode_chunk_size": 2,
+
+  // 学習済み UNet の checkpoint。
+  // .pt ファイル、または resolve_unet_state_path が解決できるディレクトリを指定します。
+  // null の場合は unet_path から読んだ UNet のまま推論します。
+  "unet_state_path": "weights/MambaCrafter_YYYYMMDD_HHMMSS/train_state_latest.pt",
+
+  // 乱数 seed。null の場合は固定しません。
+  // 同じ入力・同じ設定で再現性を上げたい場合に指定します。
+  "noise_seed": 1234,
+
+  // classifier-free guidance のスケール。
+  // このコードでは spatial_tiled_process に min/max として渡されます。
+  "min_guidance_scale": 1.0,
+  "max_guidance_scale": 1.0,
+
+  // 入力フレームを指定サイズへ中央 crop します。
+  // 両方 null の場合は crop しません。
+  // 片方だけ指定しても crop は実行されません。
+  "target_height": null,
+  "target_width": null,
+
+  // scheduler の切り替え。
+  // false の場合は pipeline のデフォルト scheduler を使います。
+  // true の場合は DDPMScheduler に差し替えます。
+  "use_ddpm_scheduler": false,
+
+  // scheduler の timestep spacing。
+  // 例: "leading", "trailing", "linspace"。
+  // null または "" の場合は scheduler のデフォルトを使います。
+  "timestep_spacing": null,
+
+  // overlap 部分に前 chunk の生成結果をどれだけ混ぜるか。
+  // 1.0 は完全に前 chunk の生成結果を使う、0.0 は使わない、中間値は線形ブレンドです。
+  "overlap_prev_weight": 1.0,
+
+  // 現在の inpainting_inference.py では引数として受け取りますが、
+  // 実装上は主に checkpoint 読み込みで Mamba module が materialize されます。
+  // 通常は false のままで問題ありません。
+  "use_mamba": false
+}

@@ -1,0 +1,174 @@
+// inpainting_train.py 用の学習設定リファレンスです。
+//
+// このファイルは説明用なので、通常の JSON ではなく JSONC として作っています。
+// 現在の設定ローダーは Python の json.load() を使うため、このファイルを
+// そのまま学習コマンドに渡さないでください。
+// 実行したい場合は、必要な項目を通常の .json にコピーしてコメントを消してください。
+//
+// 段階的な学習は常に有効です。以下の stage 内部キーは設定しないでください:
+// stage_name, stage_h, stage_w, stage_lr, stage_idx.
+// また、main() 側で拒否される古いサイズ/チャンク系キーも設定しないでください:
+// min_h, min_w, max_h, max_w, crop_multiple, shard_unet_across_gpus.
+{
+  // ベースモデルのパス。
+  "pre_trained_path": "weights/stable-video-diffusion-img2vid-xt-1-1/",
+  "unet_path": "weights/StereoCrafter/",
+
+  // 学習動画の入力。glob パターンを指定できます。例:
+  // "video_data/train/*.mp4"
+  "train_glob": "video_data/train/*.mp4",
+
+  // チェックポイント、ログ、設定のスナップショット、最終 UNet の保存先。
+  // 既存チェックポイントから再開する場合、保存先はそのチェックポイントのディレクトリに切り替わります。
+  "save_dir": "weights/",
+
+  // データセット分割。分割しない場合は dataset_split_ratios を null にします。
+  // dataset_split_group で学習に使う分割名を選びます。
+  "dataset_split_ratios": [8, 1, 1],
+  "dataset_split_group": "train",
+  "dataset_split_seed": 7,
+
+  // 検証に使う分割名。検証しない場合は null または ""。
+  "val_split": "val",
+  "val_interval_epochs": 2,
+  "max_val_videos": null,
+
+  // 1回のUNet forwardで扱うフレーム数。小さくするとstage3のVRAMを下げられますが、
+  // chunk数が増えるため学習は遅くなります。
+  "frames_chunk": 14,
+
+  // 3段階の固定解像度 stage:
+  // stage 1: 256x384, stage 2: 320x576, stage 3: 576x1024.
+  // 配列の各要素が各 stage に対応します。
+  "stage_epochs": [10, 80, 3],
+  "stage_learning_rates": [1e-5, 1e-5, 1e-6],
+
+  // どの stage まで実行するか。1, 2, 3 のいずれか。
+  "max_stage_idx": 2,
+
+  // 新規学習時だけ、本学習前に stage 1 から max_stage_idx まで preflight-only で回します。
+  // resume_from が null で、既存 checkpoint からの自動再開も発生しない場合だけ有効です。
+  // stage2/stage3 のような重い解像度で OOM しないか先に確認したい場合に使います。
+  "preflight_all_stages_before_train": false,
+
+  // preflight_all_stages_before_train が完了した時点で学習に入らず終了します。
+  // none/none の DeepSpeed 設定で最大 stage が通るかだけ確認したい場合に true にします。
+  // 本学習を始めるときは false に戻してください。
+  "preflight_exit_after_all_stages": false,
+
+  // 指定すると、Mamba パラメータだけこの LR を使います。
+  // Mamba 以外は stage_learning_rates の現在 stage の値を使います。
+  "mamba_learning_rate": 5e-5,
+
+  // .pt チェックポイントまたは DeepSpeed state ディレクトリから再開します。
+  // null の場合、save_dir/train_state_latest.pt が存在すれば自動再開します。
+  "resume_from": null,
+
+  // 学習精度。"fp16", "bf16", "fp32" のいずれか。
+  "precision": "bf16",
+  "keep_unet_fp32": false,
+
+  // 最適化設定。
+  "weight_decay": 0.0,
+  // AdamW の foreach 実装を使うか。false は少し遅い可能性がありますが、
+  // optimizer step 時の一時 VRAM 使用量を抑えやすいです。
+  "optimizer_foreach": false,
+  "max_grad_norm": 1.0,
+  "grad_accum_steps": 1,
+
+  // 早期終了。null の場合は stage_epochs まで学習します。
+  "target_avg_loss": null,
+
+  // learning rate scheduler。
+  // "none", "cosine", "cosine_with_warmup", "exponential" のいずれか。
+  // cosine/cosine_with_warmup は batch ごとではなく epoch ごとに step します。
+  "scheduler_type": "cosine_with_warmup",
+  "scheduler_t_max": 1000,
+  "scheduler_eta_min": 1e-6,
+  "num_warmup_steps": 2,
+  "scheduler_gamma": 0.95,
+
+  // DeepSpeed 設定。enabled=true の場合は通常通り accelerate/torchrun 等で実行します。
+  // offload_* は GPU メモリ使用量を減らせますが、CPU-GPU 間転送で遅くなる場合があります。
+  // stage1/2 を比較的速く回したい場合は optimizer=cpu, param=none にして、
+  // 重い stage3 だけ下の stage_overrides で cpu/cpu + 小さい frames_chunk に切り替えるのが現実的です。
+  "deepspeed": {
+    "enabled": true,
+    "zero_stage": 2,
+    "offload_optimizer_device": "cpu",
+    "offload_param_device": "none",
+    // DeepSpeed の勾配通信 bucket サイズ。小さくすると少し遅くなる可能性がありますが、
+    // backward 時の一時 VRAM 確保を抑えられます。
+    "reduce_bucket_size": 50000000,
+    "allgather_bucket_size": 50000000,
+    "gradient_accumulation_steps": 1,
+    "deepspeed_config_path": null,
+    "ignore_unused_parameters": true,
+    "train_micro_batch_size_per_gpu": 1
+  },
+
+  // stage ごとの上書き。ここで指定したキーだけ、その stage で base 設定を上書きします。
+  // 例: stage3 だけ VRAM を下げるために CPU offload と frames_chunk=4 にする。
+  // stage_name, stage_h, stage_w, stage_epochs, stage_lr, stage_idx, resume_from,
+  // save_dir, preflight_only は内部キーなので指定しないでください。
+  "stage_overrides": {
+    "3": {
+      "frames_chunk": 4,
+      "overlap": 1,
+      "deepspeed": {
+        "offload_optimizer_device": "cpu",
+        "offload_param_device": "cpu"
+      }
+    }
+  },
+
+  // DeepSpeed を使わない場合の UNet 分割設定。
+  // DeepSpeed 有効時はコード側で unet_shard_mode が "off" に強制されます。
+  // unet_shard_mode は "off", "on", "auto" のいずれか。
+  "unet_shard_mode": "auto",
+  "unet_shard_strategy": "frontload_gpu1",
+  "per_gpu_max_mem_gib": [20, 20],
+  "unet_device_map": null,
+
+  // 動画を時間方向に分割したときの重なり領域の設定。
+  "overlap": 3,
+  "use_prev_target_overlap": true,
+  "overlap_teacher_prob": 0.3,
+  "overlap_noise_std": 0.01,
+
+  // SVD の条件入力。
+  "fps_condition": 7,
+  "motion_bucket_id": 127,
+  "noise_aug_strength": 0.0,
+
+  // 学習ターゲット作成時に使う diffusion/noise scheduler。
+  // "ddpm" は DDPMScheduler、"euler" は EulerDiscreteScheduler を使います。
+  "diffusion_scheduler_type": "euler",
+  "euler_train_num_steps": 20,
+
+  // メモリ・速度関連の設定。
+  "enable_gradient_checkpointing": true,
+  "checkpoint_use_reentrant": true,
+  "vae_encode_chunk_size": 1,
+  "vae_decode_device": null,
+  "attn": "auto",
+  "ff_chunk_size": 64,
+  "ff_chunk_dim": 1,
+  "random_crop_per_chunk": false,
+
+  // Mamba の実行・fallback 関連設定。
+  "mamba_use_fast_path": true,
+  "mamba_autotune_warmup": true,
+  "mamba_auto_fallback": true,
+  "mamba_fallback_mode": "inplace_or_reload",
+
+  // ログ・診断設定。
+  "seed": 42,
+  "log_interval": 10,
+  "tensorboard_log_dir": null,
+  "save_interval_epochs": 100,
+  "mamba_diag_interval": 10,
+  "denoise_diag_interval": 0,
+  "debug_deepspeed_graph": false,
+  "debug_deepspeed_param_scan": false
+}
