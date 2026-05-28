@@ -280,6 +280,7 @@ def _train_main(
     vae_decode_device: str | None = None,
     mamba_use_fast_path: bool = True,
     mamba_autotune_warmup: bool = True,
+    resume_mamba_runtime_flags: bool = True,
     mamba_auto_fallback: bool = True,
     mamba_fallback_mode: str = "inplace_or_reload",
     debug_deepspeed_graph: bool = False,
@@ -1502,7 +1503,7 @@ def _train_main(
                     )
                 ckpt_mamba_fast = ckpt.get("effective_mamba_use_fast_path", None)
                 ckpt_mamba_autotune = ckpt.get("effective_mamba_autotune_warmup", None)
-                if ckpt_mamba_fast is not None or ckpt_mamba_autotune is not None:
+                if resume_mamba_runtime_flags and (ckpt_mamba_fast is not None or ckpt_mamba_autotune is not None):
                     effective_mamba_use_fast_path = bool(
                         ckpt_mamba_fast if ckpt_mamba_fast is not None else effective_mamba_use_fast_path
                     )
@@ -1516,6 +1517,13 @@ def _train_main(
                     logger.info(
                         "Resumed mamba effective flags from checkpoint (updated_modules=%d).",
                         updated,
+                    )
+                elif ckpt_mamba_fast is not None or ckpt_mamba_autotune is not None:
+                    logger.info(
+                        "Ignoring checkpoint mamba runtime flags; using config values "
+                        "(use_fast_path=%s autotune_warmup=%s).",
+                        effective_mamba_use_fast_path,
+                        effective_mamba_autotune_warmup,
                     )
                 if ckpt_stage_idx is not None:
                     try:
