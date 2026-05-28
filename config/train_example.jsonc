@@ -63,6 +63,14 @@
   // .pt チェックポイントまたは DeepSpeed state ディレクトリから再開します。
   // null の場合、save_dir/train_state_latest.pt が存在すれば自動再開します。
   "resume_from": null,
+  // true の場合は resume_from と同じ保存先へ続きます。
+  // false の場合は既存 checkpoint から読み、現在の save_dir に新しい run を作ります。
+  "resume_into_source_dir": true,
+
+  // 任意: target を外部教師動画の右目フレームに差し替えます。
+  // SBS の場合は右半分を target として読みます。origin-output distillation 用。
+  "target_override_video_path": null,
+  "target_override_is_sbs": true,
 
   // 学習精度。"fp16", "bf16", "fp32" のいずれか。
   "precision": "bf16",
@@ -145,6 +153,11 @@
   // "ddpm" は DDPMScheduler、"euler" は EulerDiscreteScheduler を使います。
   "diffusion_scheduler_type": "euler",
   "euler_train_num_steps": 20,
+  // low_sigma は推論終盤の小さい sigma を多めに学習します。
+  // train_log で低 sigma の loss だけ高い場合に使います。
+  "euler_timestep_sampling": "uniform",
+  "euler_low_sigma_prob": 0.0,
+  "euler_low_sigma_fraction": 0.35,
 
   // メモリ・速度関連の設定。
   "enable_gradient_checkpointing": true,
@@ -169,6 +182,11 @@
   "save_interval_epochs": 100,
   "mamba_diag_interval": 10,
   "denoise_diag_interval": 0,
+  // 学習中の予測x0をVAE decodeしてtarget画像と比較する診断。
+  // Euler学習用です。重いので、必要な実験だけ interval を有効にしてください。
+  "image_diag_interval": 0,
+  "image_diag_max_frames": 2,
+  "image_diag_decode_chunk_size": 1,
   "debug_deepspeed_graph": false,
   "debug_deepspeed_param_scan": false
 }

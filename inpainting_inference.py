@@ -153,6 +153,24 @@ def main(
         except TypeError:
             raw_state = torch.load(unet_state_path, map_location="cpu")
 
+        ckpt_stage_name = raw_state.get("stage_name") if isinstance(raw_state, dict) else None
+        ckpt_stage_idx = raw_state.get("stage_idx") if isinstance(raw_state, dict) else None
+        if ckpt_stage_name is not None or ckpt_stage_idx is not None:
+            print(f"Checkpoint metadata: stage_idx={ckpt_stage_idx} stage_name={ckpt_stage_name}")
+            if (
+                isinstance(ckpt_stage_name, str)
+                and "x" in ckpt_stage_name
+                and target_height is not None
+                and target_width is not None
+            ):
+                expected_stage = f"{int(target_height)}x{int(target_width)}"
+                if ckpt_stage_name != expected_stage:
+                    print(
+                        "[warn] Checkpoint stage resolution does not match inference crop: "
+                        f"checkpoint={ckpt_stage_name}, inference={expected_stage}. "
+                        "Use a checkpoint from the same stage or change target_height/target_width."
+                    )
+
         # unwrap training checkpoints that contain optimizer/scheduler, etc.
         state_dict = None
         if isinstance(raw_state, dict):

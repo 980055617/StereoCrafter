@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from typing import Iterable, Iterator, List, Optional, Tuple
 
 import torch
+import torch.nn.functional as F
 from decord import VideoReader, cpu
 
 logger = logging.getLogger(__name__)
@@ -100,6 +101,39 @@ class _StreamingVideo:
         return frames_warped, frames_mask, frames_right
 
 
+class _StreamingRightVideo:
+    """Stream a right-eye teacher video, optionally stored as side-by-side frames."""
+
+    def __init__(self, video_path: str, is_sbs: bool = True) -> None:
+        self._reader = VideoReader(video_path, ctx=cpu(0))
+        self._video_path = video_path
+        self._is_sbs = bool(is_sbs)
+        if len(self._reader) == 0:
+            raise ValueError(f"No frames found in target override video: {video_path}")
+
+    @property
+    def frame_count(self) -> int:
+        return len(self._reader)
+
+    def load_chunk(self, start: int, end: int) -> torch.Tensor:
+        if start < 0 or end <= start:
+            raise ValueError(f"Invalid target override chunk range: {start}:{end}")
+        if end > self.frame_count:
+            raise ValueError(
+                f"Target override video is shorter than the source video: requested frame {end}, "
+                f"but {self._video_path} has {self.frame_count} frames."
+            )
+        indices = list(range(start, end))
+        batch = self._reader.get_batch(indices).asnumpy()
+        frames = torch.from_numpy(batch).permute(0, 3, 1, 2).float() / 255.0
+        if self._is_sbs:
+            width = frames.shape[3]
+            if width < 2:
+                raise ValueError(f"Target override SBS video has invalid width: {self._video_path}")
+            frames = frames[:, :, :, width // 2 :]
+        return frames
+
+
 class _BatchIterable(Iterable[TrainBatch]):
     """Lazy iterable that moves chunked frames to GPU on-the-fly.
 
@@ -121,6 +155,7 @@ class _BatchIterable(Iterable[TrainBatch]):
         use_prev_target_overlap: bool = False,
         overlap_teacher_prob: float = 1.0,
         overlap_noise_std: float = 0.0,
+        target_override_stream: Optional[_StreamingRightVideo] = None,
     ) -> None:
         self._video_stream = video_stream
         self._source_hw = video_stream.spatial_hw
@@ -138,6 +173,7 @@ class _BatchIterable(Iterable[TrainBatch]):
         self._use_prev_target_overlap = use_prev_target_overlap
         self._overlap_teacher_prob = max(0.0, min(1.0, overlap_teacher_prob))
         self._overlap_noise_std = max(0.0, float(overlap_noise_std))
+        self._target_override_stream = target_override_stream
 
     def __len__(self) -> int:  # for progress bars
         return len(self._ranges)
@@ -149,6 +185,9 @@ class _BatchIterable(Iterable[TrainBatch]):
         debug_logged = False
         for start, end in self._ranges:
             cond_cpu, mask_cpu, target_cpu = self._video_stream.load_chunk(start, end)
+            if self._target_override_stream is not None:
+                override_cpu = self._target_override_stream.load_chunk(start, end)
+                target_cpu = self._match_spatial_hw(override_cpu, target_cpu.shape[2], target_cpu.shape[3])
 
             crop_region = self._crop_region
             if self._crop_min_size is not None and self._crop_max_size is not None:
@@ -253,6 +292,18 @@ class _BatchIterable(Iterable[TrainBatch]):
         target = target[:, :, slice_h, slice_w]
         return cond, mask, target
 
+    def _match_spatial_hw(self, frames: torch.Tensor, target_h: int, target_w: int) -> torch.Tensor:
+        """Center-crop when possible, then resize only if dimensions still differ."""
+        height = frames.shape[2]
+        width = frames.shape[3]
+        if height >= target_h and width >= target_w:
+            top = max((height - target_h) // 2, 0)
+            left = max((width - target_w) // 2, 0)
+            frames = frames[:, :, top : top + target_h, left : left + target_w]
+        if frames.shape[2] != target_h or frames.shape[3] != target_w:
+            frames = F.interpolate(frames, size=(target_h, target_w), mode="bilinear", align_corners=False)
+        return frames.clamp(0.0, 1.0)
+
 
 def prepare_batches(
     video_path: str,
@@ -267,6 +318,8 @@ def prepare_batches(
     use_prev_target_overlap: bool = True,
     overlap_teacher_prob: float = 1.0,
     overlap_noise_std: float = 0.0,
+    target_override_video_path: Optional[str] = None,
+    target_override_is_sbs: bool = True,
 ) -> Iterable[TrainBatch]:
     """Load a stereo tiled video and yield `TrainBatch` lazily per chunk.
 
@@ -280,11 +333,25 @@ def prepare_batches(
         crop_min_size/crop_max_size: 固定クロップサイズ (H, W)。両方指定し、同一サイズにすること。
         random_crop: True のとき、各チャンクでランダムクロップを適用。
         use_prev_target_overlap: True のとき、オーバーラップ領域の条件フレームを前チャンクのターゲットで置換し、推論時の条件付けを模倣。
+        target_override_video_path: 指定時、target をこの動画の右目フレームに差し替える。
+        target_override_is_sbs: True のとき、差し替え動画を left|right の SBS として右半分を読む。
 
     Returns:
         Iterable[TrainBatch]: イテラブル（len() は利用可能）。各反復で GPU にコピーされたチャンクを返す。
     """
     video_stream = _StreamingVideo(video_path)
+    target_override_stream: Optional[_StreamingRightVideo] = None
+    if target_override_video_path:
+        target_override_stream = _StreamingRightVideo(
+            target_override_video_path,
+            is_sbs=target_override_is_sbs,
+        )
+        if target_override_stream.frame_count != video_stream.frame_count:
+            raise ValueError(
+                "Target override video frame count must match the training video "
+                f"({target_override_stream.frame_count} != {video_stream.frame_count}): "
+                f"{target_override_video_path}"
+            )
 
     def _align_dim(desired: int, max_dim: int) -> int:
         desired = max(1, min(desired, max_dim))
@@ -329,6 +396,7 @@ def prepare_batches(
         use_prev_target_overlap=use_prev_target_overlap,
         overlap_teacher_prob=overlap_teacher_prob,
         overlap_noise_std=overlap_noise_std,
+        target_override_stream=target_override_stream,
     )
 
 

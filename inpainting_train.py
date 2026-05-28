@@ -276,6 +276,8 @@ def _train_main(
     resume_from: str | None = None,
     overlap_teacher_prob: float = 1.0,
     overlap_noise_std: float = 0.0,
+    target_override_video_path: str | None = None,
+    target_override_is_sbs: bool = True,
     random_crop_per_chunk: bool = False,
     vae_decode_device: str | None = None,
     mamba_use_fast_path: bool = True,
@@ -287,8 +289,14 @@ def _train_main(
     debug_deepspeed_param_scan: bool = False,
     mamba_diag_interval: int = 10,
     denoise_diag_interval: int = 0,
+    image_diag_interval: int = 0,
+    image_diag_max_frames: int = 2,
+    image_diag_decode_chunk_size: int = 1,
     diffusion_scheduler_type: str = "ddpm",
     euler_train_num_steps: int = 20,
+    euler_timestep_sampling: str = "uniform",
+    euler_low_sigma_prob: float = 0.0,
+    euler_low_sigma_fraction: float = 0.35,
     preflight_only: bool = False,
 ) -> bool:
     """Fine-tune the stereo inpainting pipeline.
@@ -305,6 +313,7 @@ def _train_main(
         precision: "fp16" | "bf16" | "fp32"。
         dataset_split_ratios/dataset_split_group: 任意の分割設定。
         resume_from: 既存チェックポイントの再開。
+        target_override_video_path: 指定時、学習targetを外部教師動画の右目フレームに差し替える。
     """
     ensure_logging_configured()
     logger.info("Starting training run. Saving artifacts to %s", save_dir)
@@ -748,6 +757,11 @@ def _train_main(
         raise ValueError("diffusion_scheduler_type must be one of: ddpm, euler")
     if int(euler_train_num_steps) < 2:
         raise ValueError("euler_train_num_steps must be >= 2")
+    euler_timestep_sampling_key = (euler_timestep_sampling or "uniform").strip().lower()
+    if euler_timestep_sampling_key not in {"uniform", "low_sigma"}:
+        raise ValueError("euler_timestep_sampling must be one of: uniform, low_sigma")
+    euler_low_sigma_prob = min(max(float(euler_low_sigma_prob), 0.0), 1.0)
+    euler_low_sigma_fraction = min(max(float(euler_low_sigma_fraction), 0.0), 1.0)
 
     # 学習用ノイズスケジューラ。DDPM は従来互換、Euler は origin 推論と同じ
     # continuous/Karras sigma 座標に合わせる。
@@ -778,8 +792,12 @@ def _train_main(
     logger.info("[sched][train][noise_scheduler] %s", _sched_cfg_dict(noise_scheduler))
     if diffusion_scheduler_key == "euler":
         logger.info(
-            "[sched][train][euler] num_steps=%d timesteps_head=%s sigmas_head=%s init_noise_sigma=%s",
+            "[sched][train][euler] num_steps=%d timestep_sampling=%s low_sigma_prob=%.3f "
+            "low_sigma_fraction=%.3f timesteps_head=%s sigmas_head=%s init_noise_sigma=%s",
             int(euler_train_num_steps),
+            euler_timestep_sampling_key,
+            euler_low_sigma_prob,
+            euler_low_sigma_fraction,
             noise_scheduler.timesteps[: min(8, len(noise_scheduler.timesteps))].detach().cpu().tolist(),
             noise_scheduler.sigmas[: min(8, len(noise_scheduler.sigmas))].detach().cpu().tolist(),
             getattr(noise_scheduler, "init_noise_sigma", None),
@@ -802,6 +820,7 @@ def _train_main(
         batch: Any,
         *,
         collect_denoise_diag: bool = False,
+        collect_image_diag: bool = False,
     ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
         """Forward UNet once against a mini-batch and return loss + per-component metrics."""
         unet_in_device = _resolve_unet_input_device()
@@ -880,9 +899,19 @@ def _train_main(
             eps = torch.randn_like(x0)
             sigma_value = None
             if diffusion_scheduler_key == "euler":
+                timestep_count = len(noise_scheduler.timesteps)
+                sample_low_sigma = (
+                    euler_timestep_sampling_key == "low_sigma"
+                    and euler_low_sigma_prob > 0.0
+                    and float(torch.rand((), device=unet_in_device).item()) < euler_low_sigma_prob
+                )
+                low_sigma_start = 0
+                if sample_low_sigma:
+                    low_sigma_count = max(1, int(round(timestep_count * euler_low_sigma_fraction)))
+                    low_sigma_start = max(0, timestep_count - low_sigma_count)
                 step_idx = torch.randint(
-                    0,
-                    len(noise_scheduler.timesteps),
+                    low_sigma_start,
+                    timestep_count,
                     (1,),
                     device=unet_in_device,
                     dtype=torch.long,
@@ -947,6 +976,55 @@ def _train_main(
             metrics = {"timestep": t.detach(), "loss_noise_mse": noise_loss.detach()}
             if sigma_value is not None:
                 metrics["sigma"] = sigma_value.detach().float()
+            if collect_image_diag:
+                with torch.no_grad():
+                    x0_pred = None
+                    if diffusion_scheduler_key == "euler":
+                        sigma_for_pred = sigma_value.flatten()
+                        while len(sigma_for_pred.shape) < len(x_t.shape):
+                            sigma_for_pred = sigma_for_pred.unsqueeze(-1)
+                        sigma_denom_for_pred = (sigma_for_pred.pow(2) + 1.0).sqrt()
+                        if getattr(noise_scheduler.config, "prediction_type", "epsilon") == "v_prediction":
+                            x0_pred = (
+                                x_t.float() - sigma_for_pred.float() * noise_pred.detach().float()
+                            ) / sigma_denom_for_pred.float()
+                        else:
+                            x0_pred = (
+                                x_t.float() * sigma_denom_for_pred.float()
+                                - sigma_for_pred.float() * noise_pred.detach().float()
+                            )
+                    if x0_pred is not None:
+                        diag_frames = min(int(x0_pred.shape[1]), max(1, int(image_diag_max_frames)))
+                        decoded = pipeline.decode_latents(
+                            x0_pred[:, :diag_frames].to(device=vae_device, dtype=torch_dtype),
+                            num_frames=diag_frames,
+                            decode_chunk_size=max(1, int(image_diag_decode_chunk_size)),
+                        )
+                        decoded = (decoded[0].permute(1, 0, 2, 3) / 2.0 + 0.5).clamp(0.0, 1.0)
+                        target_img = batch.target[:diag_frames].detach().to(
+                            device=decoded.device,
+                            dtype=decoded.dtype,
+                        )
+                        mask_img = batch.mask[:diag_frames].detach().to(
+                            device=decoded.device,
+                            dtype=decoded.dtype,
+                        )
+                        err_img = decoded - target_img
+                        image_mse = err_img.pow(2).mean()
+                        image_l1 = err_img.abs().mean()
+                        metrics["image_diag_mse"] = image_mse.detach()
+                        metrics["image_diag_l1"] = image_l1.detach()
+                        metrics["image_diag_psnr"] = (-10.0 * torch.log10(torch.clamp(image_mse, min=1e-8))).detach()
+                        mask_sum = mask_img.sum() * float(decoded.shape[1])
+                        if float(mask_sum.detach().cpu().item()) > 0.0:
+                            mask_expanded = mask_img.expand_as(decoded)
+                            mask_mse = (err_img.pow(2) * mask_expanded).sum() / mask_sum
+                            mask_l1 = (err_img.abs() * mask_expanded).sum() / mask_sum
+                            metrics["image_diag_mask_mse"] = mask_mse.detach()
+                            metrics["image_diag_mask_l1"] = mask_l1.detach()
+                            metrics["image_diag_mask_psnr"] = (
+                                -10.0 * torch.log10(torch.clamp(mask_mse, min=1e-8))
+                            ).detach()
             if collect_denoise_diag:
                 _tensor_diag(metrics, "x0", x0)
                 _tensor_diag(metrics, "eps", eps)
@@ -992,6 +1070,8 @@ def _train_main(
                 use_prev_target_overlap=use_prev_target_overlap,
                 overlap_teacher_prob=overlap_teacher_prob,
                 overlap_noise_std=overlap_noise_std,
+                target_override_video_path=target_override_video_path,
+                target_override_is_sbs=target_override_is_sbs,
             )
             batch_pf = next(iter(batches_pf))
             preflight_crop_hw = (int(batch_pf.cond.shape[2]), int(batch_pf.cond.shape[3]))
@@ -1974,6 +2054,43 @@ def _train_main(
             denoise_diag_csv_path,
         )
 
+    image_diag_every = int(max(0, image_diag_interval))
+    image_diag_header = [
+        "step",
+        "epoch",
+        "stage",
+        "video",
+        "batch",
+        "timestep",
+        "sigma",
+        "loss_noise_mse",
+        "image_diag_mse",
+        "image_diag_l1",
+        "image_diag_psnr",
+        "image_diag_mask_mse",
+        "image_diag_mask_l1",
+        "image_diag_mask_psnr",
+    ]
+    image_diag_csv_path = ""
+    if image_diag_every > 0:
+        if diffusion_scheduler_key != "euler":
+            logger.warning("image_diag_interval is currently supported for Euler training only; no image rows may be emitted.")
+        image_diag_csv_path, image_diag_exists = select_log_path(
+            save_dir,
+            f"image_diag{rank_log_suffix}",
+            run_tag,
+            reuse_existing=did_resume,
+        )
+        if not image_diag_exists:
+            init_csv_log(image_diag_csv_path, image_diag_header)
+        logger.info(
+            "Image diagnostics enabled: interval=%d, max_frames=%d, decode_chunk_size=%d, file=%s",
+            image_diag_every,
+            int(image_diag_max_frames),
+            int(image_diag_decode_chunk_size),
+            image_diag_csv_path,
+        )
+
     def _get_unwrapped_unet() -> torch.nn.Module:
         if accelerator is not None:
             try:
@@ -2048,6 +2165,36 @@ def _train_main(
             for stat in ("mean", "std", "rms", "abs_mean", "max_abs", "finite_frac"):
                 row.append(_metric_float(metrics, f"{prefix}_{stat}"))
         _safe_row_write(denoise_diag_csv_path, row)
+
+    def _log_image_diag(
+        *,
+        step_value: int,
+        epoch_value: int,
+        video_name_value: str,
+        batch_value: int,
+        metrics: dict[str, torch.Tensor],
+    ) -> None:
+        if image_diag_every <= 0 or not image_diag_csv_path:
+            return
+        if step_value % image_diag_every != 0:
+            return
+        row = [
+            str(step_value),
+            str(epoch_value),
+            stage_name,
+            video_name_value,
+            str(batch_value),
+            _metric_float(metrics, "timestep") if "timestep" in metrics else "",
+            _metric_float(metrics, "sigma"),
+            _metric_float(metrics, "loss_noise_mse"),
+            _metric_float(metrics, "image_diag_mse"),
+            _metric_float(metrics, "image_diag_l1"),
+            _metric_float(metrics, "image_diag_psnr"),
+            _metric_float(metrics, "image_diag_mask_mse"),
+            _metric_float(metrics, "image_diag_mask_l1"),
+            _metric_float(metrics, "image_diag_mask_psnr"),
+        ]
+        _safe_row_write(image_diag_csv_path, row)
 
     # Keep previous logged weights to detect delayed updates (e.g. wrapped optimizers).
     _last_logged_time_weight_cpu: dict[str, torch.Tensor] = {}
@@ -2727,6 +2874,8 @@ def _train_main(
                     use_prev_target_overlap=use_prev_target_overlap,
                     overlap_teacher_prob=overlap_teacher_prob,
                     overlap_noise_std=overlap_noise_std,
+                    target_override_video_path=target_override_video_path,
+                    target_override_is_sbs=target_override_is_sbs,
                 )
                 local_batch_count = len(train_batches)
                 shared_batch_limit = _dist_max(local_batch_count)
@@ -2772,6 +2921,10 @@ def _train_main(
                                 collect_denoise_diag=(
                                     denoise_diag_every > 0
                                     and step_value_for_diag % denoise_diag_every == 0
+                                ),
+                                collect_image_diag=(
+                                    image_diag_every > 0
+                                    and step_value_for_diag % image_diag_every == 0
                                 ),
                             )
                             non_finite = (~torch.isfinite(loss_raw)).to(torch.int32)
@@ -2855,6 +3008,10 @@ def _train_main(
                                 denoise_diag_every > 0
                                 and step_value_for_diag % denoise_diag_every == 0
                             ),
+                            collect_image_diag=(
+                                image_diag_every > 0
+                                and step_value_for_diag % image_diag_every == 0
+                            ),
                         )
                         if not torch.isfinite(loss_raw):
                             bad_value = loss_raw.detach().float().item()
@@ -2930,8 +3087,26 @@ def _train_main(
                     if writer_tb:
                         noise_val = metrics.get("loss_noise_mse", loss_raw)
                         writer_tb.add_scalar("loss/noise_mse", noise_val.detach().item(), global_step)
+                        for image_key in (
+                            "image_diag_mse",
+                            "image_diag_l1",
+                            "image_diag_psnr",
+                            "image_diag_mask_mse",
+                            "image_diag_mask_l1",
+                            "image_diag_mask_psnr",
+                        ):
+                            value = metrics.get(image_key)
+                            if value is not None:
+                                writer_tb.add_scalar(f"image_diag/{image_key}", value.detach().item(), global_step)
 
                     _log_denoise_diag(
+                        step_value=global_step,
+                        epoch_value=epoch,
+                        video_name_value=os.path.basename(video_path),
+                        batch_value=batch_i,
+                        metrics=metrics,
+                    )
+                    _log_image_diag(
                         step_value=global_step,
                         epoch_value=epoch,
                         video_name_value=os.path.basename(video_path),
@@ -3082,6 +3257,7 @@ def main(config: str | None = None, config_dir: str = "train_config", **override
     stage_overrides = _normalize_stage_overrides(base_config.pop("stage_overrides", None))
     preflight_all_stages_before_train = bool(base_config.pop("preflight_all_stages_before_train", False))
     preflight_exit_after_all_stages = bool(base_config.pop("preflight_exit_after_all_stages", False))
+    resume_into_source_dir = bool(base_config.pop("resume_into_source_dir", True))
     if ds_enabled:
         if str(base_config.get("unet_shard_mode", "off")).strip().lower() != "off":
             logger.info("DeepSpeed enabled; forcing unet_shard_mode=off.")
@@ -3134,7 +3310,7 @@ def main(config: str | None = None, config_dir: str = "train_config", **override
     resume_candidate = base_config.get("resume_from")
     resume_path_str = str(resume_candidate).strip() if resume_candidate is not None else ""
     resume_path_exists = bool(resume_path_str) and os.path.exists(resume_path_str)
-    if resume_path_exists:
+    if resume_path_exists and resume_into_source_dir:
         resume_source_dir = (
             resume_path_str if os.path.isdir(resume_path_str) else os.path.dirname(resume_path_str)
         )
