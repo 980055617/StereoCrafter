@@ -8,3 +8,4 @@ test/*
 logs/*
 inpainting_inputs/*
 video_data/*
+DeepSpeed/
