@@ -13,7 +13,6 @@ from diffusers.models.unets.unet_spatio_temporal_condition import (
 from diffusers.models.autoencoders.autoencoder_kl_temporal_decoder import (
     AutoencoderKLTemporalDecoder,
 )
-from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
 
 from pipelines.mamba_stereo_video_inpainting_pipeline import (
     MambaStableVideoDiffusionInpaintingPipeline as _Pipe,
@@ -43,7 +42,6 @@ def _scheduler_debug_info(scheduler: Any) -> dict[str, Any]:
         "num_train_timesteps": getattr(cfg, "num_train_timesteps", None),
         "beta_schedule": getattr(cfg, "beta_schedule", None),
         "rescale_betas_zero_snr": getattr(cfg, "rescale_betas_zero_snr", None),
-        "timestep_spacing": getattr(cfg, "timestep_spacing", None),
         "steps_offset": getattr(cfg, "steps_offset", None),
     }
 
@@ -78,16 +76,13 @@ def main(
     *,
     precision: str = "fp16",
     decode_chunk_size: int = 2,
-    use_mamba: bool = False,
     unet_state_path: str | None = None,
     noise_seed: int | None = None,
     min_guidance_scale: float = 1.0,
     max_guidance_scale: float = 1.0,
     target_height: int | None = None,
     target_width: int | None = None,
-    use_ddpm_scheduler: bool = False,
     overlap_prev_weight: float = 1.0,
-    timestep_spacing: str | None = None,
 ):
     prec = (precision or "fp16").lower()
     overlap_prev_weight = float(overlap_prev_weight)
@@ -140,17 +135,7 @@ def main(
         torch_dtype=torch_dtype,
     )
     enable_vae_memory_helpers(pipeline)
-    print(f"[sched][inference][before] {_scheduler_debug_info(pipeline.scheduler)}")
-    # Keep origin behavior (Euler) by default; optionally force DDPM for ablation.
-    if use_ddpm_scheduler and getattr(pipeline, "scheduler", None) is not None:
-        pipeline.scheduler = DDPMScheduler.from_config(pipeline.scheduler.config)
-    if timestep_spacing is not None and str(timestep_spacing).strip():
-        spacing = str(timestep_spacing).strip().lower()
-        pipeline.scheduler = pipeline.scheduler.__class__.from_config(
-            pipeline.scheduler.config,
-            timestep_spacing=spacing,
-        )
-    print(f"[sched][inference][after] {_scheduler_debug_info(pipeline.scheduler)}")
+    print(f"[sched][inference] {_scheduler_debug_info(pipeline.scheduler)}")
     try:
         pipeline.scheduler.set_timesteps(int(num_inference_steps), device="cpu")
         ts = pipeline.scheduler.timesteps

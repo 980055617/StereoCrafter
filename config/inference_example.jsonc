@@ -61,22 +61,7 @@
   "target_height": null,
   "target_width": null,
 
-  // scheduler の切り替え。
-  // false の場合は pipeline のデフォルト scheduler を使います。
-  // true の場合は DDPMScheduler に差し替えます。
-  "use_ddpm_scheduler": false,
-
-  // scheduler の timestep spacing。
-  // 例: "leading", "trailing", "linspace"。
-  // null または "" の場合は scheduler のデフォルトを使います。
-  "timestep_spacing": null,
-
   // overlap 部分に前 chunk の生成結果をどれだけ混ぜるか。
   // 1.0 は完全に前 chunk の生成結果を使う、0.0 は使わない、中間値は線形ブレンドです。
-  "overlap_prev_weight": 1.0,
-
-  // 現在の inpainting_inference.py では引数として受け取りますが、
-  // 実装上は主に checkpoint 読み込みで Mamba module が materialize されます。
-  // 通常は false のままで問題ありません。
-  "use_mamba": false
+  "overlap_prev_weight": 1.0
 }
