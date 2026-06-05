@@ -183,8 +183,9 @@ def cleanup_cuda(tag: str, *objs: Any) -> None:
 
 from fire import Fire
 
-from blocks.mamba_diffusers_adapter import BiMambaSelfAttention, MambaSpatioTemporalAdapter
+from blocks.mamba_diffusers_adapter import BiMambaSelfAttention, GatedResidualMambaSelfAttention, MambaSpatioTemporalAdapter
 from blocks.mamba_diffusers_adapter import materialize_mamba_time_embed_proj_from_state_dict
+from blocks.mamba_diffusers_adapter import set_gated_mamba_gate
 from utils.config_utils import load_json_config
 from utils.training_batches import prepare_batches, estimate_num_chunks
 from utils.training_env import get_compute_device, set_global_seed, setup_interrupt_handler
@@ -285,6 +286,10 @@ def _train_main(
     resume_mamba_runtime_flags: bool = True,
     mamba_auto_fallback: bool = True,
     mamba_fallback_mode: str = "inplace_or_reload",
+    mamba_gate_schedule: str = "none",
+    mamba_gate_start: float = 0.0,
+    mamba_gate_end: float = 1.0,
+    mamba_gate_log_interval: int = 10,
     debug_deepspeed_graph: bool = False,
     debug_deepspeed_param_scan: bool = False,
     mamba_diag_interval: int = 10,
@@ -618,6 +623,12 @@ def _train_main(
     mamba_fallback_mode = (mamba_fallback_mode or "inplace_or_reload").strip().lower()
     if mamba_fallback_mode not in {"inplace_only", "reload_only", "inplace_or_reload"}:
         raise ValueError("mamba_fallback_mode must be one of: inplace_only, reload_only, inplace_or_reload")
+    mamba_gate_schedule_key = (mamba_gate_schedule or "none").strip().lower()
+    if mamba_gate_schedule_key not in {"none", "linear"}:
+        raise ValueError("mamba_gate_schedule must be one of: none, linear")
+    mamba_gate_start = max(0.0, min(1.0, float(mamba_gate_start)))
+    mamba_gate_end = max(0.0, min(1.0, float(mamba_gate_end)))
+    mamba_gate_log_interval = int(max(0, mamba_gate_log_interval))
     effective_mamba_use_fast_path = bool(mamba_use_fast_path)
     effective_mamba_autotune_warmup = bool(mamba_autotune_warmup)
 
@@ -1892,6 +1903,9 @@ def _train_main(
                 "unet_sharded": bool(shard_applied),
                 "effective_mamba_use_fast_path": bool(effective_mamba_use_fast_path),
                 "effective_mamba_autotune_warmup": bool(effective_mamba_autotune_warmup),
+                "mamba_gate_schedule": mamba_gate_schedule_key,
+                "mamba_gate_start": float(mamba_gate_start),
+                "mamba_gate_end": float(mamba_gate_end),
                 "deepspeed_state_dir": ds_dir,
                 "model": model_state,
             }
@@ -1916,6 +1930,9 @@ def _train_main(
             "unet_sharded": bool(shard_applied),
             "effective_mamba_use_fast_path": bool(effective_mamba_use_fast_path),
             "effective_mamba_autotune_warmup": bool(effective_mamba_autotune_warmup),
+            "mamba_gate_schedule": mamba_gate_schedule_key,
+            "mamba_gate_start": float(mamba_gate_start),
+            "mamba_gate_end": float(mamba_gate_end),
             "model": pipeline.unet.state_dict(),
             "optimizer": optimizer.state_dict(),
             "scheduler": lr_scheduler.state_dict() if lr_scheduler is not None else None,
@@ -2106,6 +2123,63 @@ def _train_main(
             if isinstance(module, BiMambaSelfAttention):
                 out.append((name, module))
         return out
+
+    def _iter_gated_mamba_modules() -> list[tuple[str, GatedResidualMambaSelfAttention]]:
+        model = _get_unwrapped_unet()
+        out: list[tuple[str, GatedResidualMambaSelfAttention]] = []
+        for name, module in model.named_modules():
+            if isinstance(module, GatedResidualMambaSelfAttention):
+                out.append((name, module))
+        return out
+
+    gated_module_count = len(_iter_gated_mamba_modules())
+    if gated_module_count > 0:
+        logger.info(
+            "Gated residual Mamba enabled: modules=%d schedule=%s start=%.3f end=%.3f",
+            gated_module_count,
+            mamba_gate_schedule_key,
+            mamba_gate_start,
+            mamba_gate_end,
+        )
+
+    def _scheduled_mamba_gate(epoch_value: int, batch_value: int, batches_total: int) -> float:
+        if mamba_gate_schedule_key == "none":
+            return mamba_gate_start
+        total_epochs = max(int(planned_epochs_total - start_epoch + 1), 1)
+        epoch_offset = max(int(epoch_value - start_epoch), 0)
+        batch_frac = 0.0
+        if batches_total > 1:
+            batch_frac = max(0.0, min(1.0, float(batch_value - 1) / float(batches_total - 1)))
+        elif batches_total == 1:
+            batch_frac = 1.0
+        progress = (float(epoch_offset) + batch_frac) / float(total_epochs)
+        progress = max(0.0, min(1.0, progress))
+        return mamba_gate_start + (mamba_gate_end - mamba_gate_start) * progress
+
+    def _apply_scheduled_mamba_gate(epoch_value: int, batch_value: int, batches_total: int) -> float:
+        if gated_module_count <= 0:
+            return 1.0
+        gate = _scheduled_mamba_gate(epoch_value, batch_value, batches_total)
+        disable_reference = gate >= 0.999
+        updated = set_gated_mamba_gate(_get_unwrapped_unet(), gate, disable_reference=disable_reference)
+        if (
+            mamba_gate_log_interval > 0
+            and (global_step + 1) % mamba_gate_log_interval == 0
+            and is_local_main
+        ):
+            logger.info(
+                "Mamba gate schedule: step=%d epoch=%d batch=%d/%d gate=%.4f disable_reference=%s updated=%d",
+                global_step + 1,
+                epoch_value,
+                batch_value,
+                batches_total,
+                gate,
+                disable_reference,
+                updated,
+            )
+        if writer_tb:
+            writer_tb.add_scalar("mamba_gate/value", gate, global_step + 1)
+        return gate
 
     def _norm2(value: float) -> str:
         return f"{value:.8e}"
@@ -2904,6 +2978,7 @@ def _train_main(
 
                     is_last_batch_epoch = (video_idx == len(epoch_video_paths)) and (batch_i == len(train_batches))
                     # ===== ランダムtの通常学習: 1回のUNet前向きでノイズ予測MSE =====
+                    current_mamba_gate = _apply_scheduled_mamba_gate(epoch, batch_i, shared_batch_limit)
                     if ds_enabled and accelerator is not None:
                         skip_update = False
                         if is_last_batch_epoch:
@@ -3085,6 +3160,7 @@ def _train_main(
                     printer.step(global_step=global_step, batch_idx=batch_i, loss_value=batch_loss_val)
 
                     if writer_tb:
+                        writer_tb.add_scalar("mamba_gate/current", current_mamba_gate, global_step)
                         noise_val = metrics.get("loss_noise_mse", loss_raw)
                         writer_tb.add_scalar("loss/noise_mse", noise_val.detach().item(), global_step)
                         for image_key in (

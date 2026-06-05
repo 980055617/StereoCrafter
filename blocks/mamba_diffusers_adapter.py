@@ -87,6 +87,75 @@ class BiMambaSelfAttention(nn.Module):
         return y
 
 
+class GatedResidualMambaSelfAttention(BiMambaSelfAttention):
+    """Train with a frozen attention reference while annealing toward Mamba-only."""
+
+    def __init__(
+        self,
+        dim: int,
+        origin_attn: nn.Module,
+        *,
+        d_state: int = 256,
+        headdim: int = 64,
+        expand: int = 2,
+        chunk_size: int = 1024,
+        use_mem_eff_path: bool = True,
+        initial_gate: float = 0.0,
+    ) -> None:
+        super().__init__(
+            dim,
+            d_state=d_state,
+            headdim=headdim,
+            expand=expand,
+            chunk_size=chunk_size,
+            use_mem_eff_path=use_mem_eff_path,
+        )
+        self.origin_attn = origin_attn
+        for param in self.origin_attn.parameters():
+            param.requires_grad_(False)
+        self.origin_attn.eval()
+        self.register_buffer("mamba_gate", torch.tensor(float(initial_gate)), persistent=True)
+        self.reference_disabled = False
+
+    def set_mamba_gate(self, value: float, *, disable_reference: bool = False) -> None:
+        value = max(0.0, min(1.0, float(value)))
+        self.mamba_gate.fill_(value)
+        self.reference_disabled = bool(disable_reference or value >= 1.0)
+
+    def train(self, mode: bool = True):
+        super().train(mode)
+        self.origin_attn.eval()
+        return self
+
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        encoder_hidden_states: Optional[torch.Tensor] = None,
+        attention_mask: Optional[torch.Tensor] = None,
+        time_emb: Optional[torch.Tensor] = None,
+        **kwargs: Dict[str, Any],
+    ) -> torch.Tensor:
+        mamba_y = super().forward(
+            hidden_states,
+            encoder_hidden_states=encoder_hidden_states,
+            attention_mask=attention_mask,
+            time_emb=time_emb,
+            **kwargs,
+        )
+        gate = float(self.mamba_gate.detach().float().item())
+        if self.reference_disabled or gate >= 1.0:
+            return mamba_y
+        ref_y = self.origin_attn(
+            hidden_states,
+            encoder_hidden_states=encoder_hidden_states,
+            attention_mask=attention_mask,
+            **kwargs,
+        )
+        if gate <= 0.0:
+            return ref_y
+        return ref_y + self.mamba_gate.to(dtype=mamba_y.dtype, device=mamba_y.device) * (mamba_y - ref_y)
+
+
 class MambaSpatioTemporalAdapter(nn.Module):
     """
     Diffusers の TransformerSpatioTemporalModel 互換ラッパ。
@@ -374,6 +443,17 @@ def replace_unet_spatiotemporal_self_attn_with_mamba(
     if env_chunk is not None and env_chunk > 0:
         chunk_size = env_chunk
 
+    replacement_mode = os.getenv("MAMBA_SELF_ATTN_REPLACEMENT", "mamba").strip().lower()
+    use_gated_residual = replacement_mode in {"gated", "gated_residual", "residual_gated"}
+    initial_gate = _env_int("MAMBA_SELF_ATTN_INITIAL_GATE")
+    initial_gate_float = 0.0 if initial_gate is None else float(initial_gate)
+    initial_gate_raw = os.getenv("MAMBA_SELF_ATTN_INITIAL_GATE")
+    if initial_gate_raw is not None:
+        try:
+            initial_gate_float = float(initial_gate_raw)
+        except ValueError:
+            initial_gate_float = 0.0
+
     log_enabled = os.getenv("MAMBA_ADAPTER_LOG", "0") == "1" or os.getenv("MAMBA_DEBUG", "0") == "1"
 
     def _swap_attn1(block: nn.Module, prefix: str) -> bool:
@@ -391,14 +471,22 @@ def replace_unet_spatiotemporal_self_attn_with_mamba(
         if dim is None:
             return False
 
-        adapter = BiMambaSelfAttention(
-            dim,
+        adapter_kwargs = dict(
             d_state=d_state,
             headdim=getattr(attn1, "dim_head", 64),
             expand=expand,
             chunk_size=chunk_size,
             use_mem_eff_path=use_mem_eff_path,
         )
+        if use_gated_residual:
+            adapter = GatedResidualMambaSelfAttention(
+                dim,
+                origin_attn=attn1,
+                initial_gate=initial_gate_float,
+                **adapter_kwargs,
+            )
+        else:
+            adapter = BiMambaSelfAttention(dim, **adapter_kwargs)
         try:
             ref_param = next(attn1.parameters())
             adapter = adapter.to(device=ref_param.device, dtype=ref_param.dtype)
@@ -413,7 +501,8 @@ def replace_unet_spatiotemporal_self_attn_with_mamba(
             print(
                 "[MambaAdapter][self-attn] at="
                 f"{prefix}.attn1 dim={dim} device={dev} dtype={dtype} "
-                f"d_state={d_state} expand={expand} chunk={chunk_size} mem_eff={use_mem_eff_path}"
+                f"d_state={d_state} expand={expand} chunk={chunk_size} mem_eff={use_mem_eff_path} "
+                f"mode={'gated_residual' if use_gated_residual else 'mamba'}"
             )
         return True
 
@@ -440,6 +529,16 @@ def replace_unet_spatiotemporal_self_attn_with_mamba(
     if log_enabled:
         print(f"[MambaAdapter][self-attn] total_replaced={replaced}")
     return replaced
+
+
+def set_gated_mamba_gate(root: nn.Module, value: float, *, disable_reference: bool = False) -> int:
+    """Set the gate on all gated residual Mamba attention modules."""
+    updated = 0
+    for module in root.modules():
+        if isinstance(module, GatedResidualMambaSelfAttention):
+            module.set_mamba_gate(value, disable_reference=disable_reference)
+            updated += 1
+    return updated
 
 
 def _resolve_module_by_path(root: nn.Module, path: str) -> Optional[nn.Module]:
