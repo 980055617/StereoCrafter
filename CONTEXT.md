@@ -69,6 +69,25 @@ python depth_splatting_inference.py --input_video_path video_data/left_eye/examp
 - Frames chunk: the number of frames processed together in a temporal chunk.
 - Overlap: frames shared between adjacent temporal chunks to stabilize seams.
 - Stage override: per-stage training config overrides applied by `inpainting_train.py`.
+- Origin reference: the unmodified baseline behavior from files with `origin` in
+  their names. Origin files are comparison baselines and should not be edited.
+- Protected origin weight directories: `weights/StereoCrafter/`,
+  `weights/stable-video-diffusion-img2vid-xt-1-1/`, and
+  `weights/DepthCrafter/`. These are origin/reference assets and should not be
+  deleted, modified, moved, pruned, or otherwise touched.
+- Hard attn1 replacement: replacing `attn1` self-attention directly with Mamba
+  for training and inference.
+- Gated/residual Mamba replacement: training scaffold where frozen origin
+  `attn1` is gradually replaced by Mamba through a gate, while the exported
+  inference checkpoint is Mamba-only.
+- Mamba-only export: checkpoint form used for final inference after training-only
+  origin-reference parameters have been removed.
+- Quality retention: preserving output quality against the origin reference,
+  especially in the generated mask region.
+- Usable right-eye output: generated right-eye video quality that is good enough
+  to serve as a stereo view, even if it is not better than the origin reference.
+- Runtime gain: measured inference speed or memory improvement against the origin
+  reference. Quality-only improvements are not enough to prove the research goal.
 
 ## Working Rules
 
