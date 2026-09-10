@@ -23,6 +23,7 @@ from utils.config_utils import load_json_config
 from utils.model_io import resolve_unet_state_path
 from utils.training_pipeline import enable_vae_memory_helpers
 from utils.diffusers_mamba_time_patch import apply_mamba_time_patch
+from utils.module_timing import install_cuda_module_timer, write_cuda_module_timing
 from blocks.mamba_diffusers_adapter import materialize_mamba_time_embed_proj_from_state_dict
 
 warnings.filterwarnings(
@@ -83,6 +84,11 @@ def main(
     target_height: int | None = None,
     target_width: int | None = None,
     overlap_prev_weight: float = 1.0,
+    expected_partial_unet_state: bool = False,
+    max_profile_chunks: int | None = None,
+    module_profile_json: str | None = None,
+    module_profile_include: str | None = None,
+    mamba_gate_override: float | None = None,
 ):
     prec = (precision or "fp16").lower()
     overlap_prev_weight = float(overlap_prev_weight)
@@ -195,9 +201,16 @@ def main(
         except Exception:
             pass
         missing, unexpected = pipeline.unet.load_state_dict(state_dict, strict=False)
-        if missing:
+        if expected_partial_unet_state and (missing or unexpected):
+            print(
+                "[info] Partial UNet state load: "
+                f"missing={len(missing)} unexpected={len(unexpected)}. "
+                "This is expected for hybrid replacement presets that leave "
+                "some attention modules on the base reference weights."
+            )
+        elif missing:
             print(f"[warn] Missing keys when loading UNet: {len(missing)} (showing first 5): {missing[:5]}")
-        if unexpected:
+        if unexpected and not expected_partial_unet_state:
             print(f"[warn] Unexpected keys when loading UNet: {len(unexpected)} (showing first 5): {unexpected[:5]}")
         # cast back to requested precision to avoid dtype mismatch during matmuls
         try:
@@ -205,11 +218,29 @@ def main(
         except Exception:
             pass
 
+    if mamba_gate_override is not None:
+        from blocks.mamba_diffusers_adapter import set_gated_mamba_gate
+
+        n_updated = set_gated_mamba_gate(pipeline.unet, float(mamba_gate_override))
+        print(f"[info] mamba_gate_override={mamba_gate_override}: updated {n_updated} gated modules")
+
     if hasattr(pipeline, "vae"):
         target_dtype = torch.float16 if prec == "fp16" else (torch.bfloat16 if prec == "bf16" else torch.float32)
         pipeline.vae.to(dtype=target_dtype)
 
     pipeline = pipeline.to("cuda")
+    module_profile_state = None
+    module_profile_handles = []
+    if module_profile_json:
+        module_profile_state, module_profile_handles = install_cuda_module_timer(
+            pipeline.unet,
+            include=module_profile_include,
+            default_include=["*.attn1"],
+        )
+        print(
+            "[profile] module timing enabled: "
+            f"modules={len(module_profile_state['modules'])} output={module_profile_json}"
+        )
     generator = None
     if noise_seed is not None:
         seed_val = int(noise_seed)
@@ -233,6 +264,7 @@ def main(
 
     results = []
     generated = None
+    processed_chunks = 0
     for i in range(0, num_frames, frames_chunk - overlap):
 
         if i + overlap >= frames_warped.shape[0]:
@@ -299,17 +331,22 @@ def main(
         if i != 0:
             generated = generated[cur_overlap:]
         results.append(generated)
+        processed_chunks += 1
+        if max_profile_chunks is not None and processed_chunks >= int(max_profile_chunks):
+            print(f"[profile] stopping after max_profile_chunks={max_profile_chunks}")
+            break
 
     frames_output = torch.cat(results, dim=0).cpu()
+    frames_left_output = frames_left[: frames_output.shape[0]]
 
 
-    frames_sbs = torch.cat([frames_left, frames_output], dim=3)
+    frames_sbs = torch.cat([frames_left_output, frames_output], dim=3)
     frames_sbs_path = os.path.join(save_dir, f"{video_name}_sbs.mp4")
     frames_sbs = (frames_sbs * 255).permute(0, 2, 3, 1).to(dtype=torch.uint8).cpu().numpy()
     write_video_opencv(frames_sbs, fps, frames_sbs_path)
 
 
-    vid_left = (frames_left * 255).permute(0, 2, 3, 1).to(dtype=torch.uint8).cpu().numpy()
+    vid_left = (frames_left_output * 255).permute(0, 2, 3, 1).to(dtype=torch.uint8).cpu().numpy()
     vid_right = (frames_output * 255).permute(0, 2, 3, 1).to(dtype=torch.uint8).cpu().numpy()
 
     vid_left[:, :, :, 1] = 0
@@ -319,6 +356,26 @@ def main(
     vid_anaglyph = vid_left + vid_right
     vid_anaglyph_path = os.path.join(save_dir, f"{video_name}_anaglyph.mp4")
     write_video_opencv(vid_anaglyph, fps, vid_anaglyph_path)
+
+    if module_profile_state is not None and module_profile_json:
+        payload = write_cuda_module_timing(
+            module_profile_state,
+            module_profile_json,
+            metadata={
+                "saveDir": save_dir,
+                "unetStatePath": unet_state_path,
+                "maxProfileChunks": max_profile_chunks,
+                "processedChunks": processed_chunks,
+                "framesChunk": frames_chunk,
+                "numInferenceSteps": num_inference_steps,
+            },
+        )
+        for handle in module_profile_handles:
+            handle.remove()
+        print(
+            "[profile] module timing wrote "
+            f"{module_profile_json} totalProfiledMs={payload['totalProfiledMs']:.3f}"
+        )
 
 
 def run(config: str | None = None, config_dir: str = "config", **overrides: Any) -> None:

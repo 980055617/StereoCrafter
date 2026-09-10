@@ -20,6 +20,23 @@ from utils.training_batches import chunk_frame_ranges
 from pipelines.stereo_video_inpainting import StableVideoDiffusionInpaintingPipeline, tensor2vid
 
 
+def cross_fade_frames(prev_tail: torch.Tensor, cur_head: torch.Tensor) -> torch.Tensor:
+    """Linearly cross-fades `prev_tail` (end of the previous chunk's
+    generated output) into `cur_head` (start of the current chunk's,
+    independently generated from the true source) over their shared
+    length. Both chunks were conditioned on the real warped input -- never
+    on each other's output -- so this only smooths the seam; it cannot
+    accumulate error across chunks the way feeding generated frames back in
+    as the next chunk's input does (see the 2026-07-30 fix in
+    docs/agents/model-change-log.md for why that mattered).
+    """
+    ov = prev_tail.shape[0]
+    weight = torch.linspace(
+        1.0 / (ov + 1), ov / (ov + 1), ov, device=cur_head.device, dtype=cur_head.dtype
+    ).view(ov, 1, 1, 1)
+    return (1 - weight) * prev_tail.to(cur_head.device, cur_head.dtype) + weight * cur_head
+
+
 def blend_h(a: torch.Tensor, b: torch.Tensor, overlap_size: int) -> torch.Tensor:
     weight_b = (torch.arange(overlap_size).view(1, 1, 1, -1) / overlap_size).to(
         b.device
@@ -351,7 +368,6 @@ def main(
     step = max(frames_chunk - overlap, 1)
     frame_ranges = list(chunk_frame_ranges(num_frames, frames_chunk, overlap)) if frames_chunk > 0 else [(0, num_frames)]
 
-    generated_prev = None
     stem = Path(input_video_path).stem
     # "_train" が末尾についていれば落とし、数字部分のみの名前にする
     video_name = stem[:-6] if stem.endswith("_train") else stem
@@ -367,26 +383,50 @@ def main(
         (width_sbs, height),
     )
 
+    def _write_sbs(frames_left_chunk: torch.Tensor, generated_chunk: torch.Tensor) -> int:
+        if frames_left_chunk.shape[0] == 0:
+            return 0
+        frames_sbs = torch.cat([frames_left_chunk, generated_chunk], dim=3)
+        frames_sbs_np = (
+            (frames_sbs * 255)
+            .permute(0, 2, 3, 1)
+            .to(dtype=torch.uint8)
+            .cpu()
+            .numpy()
+        )
+        for frame in frames_sbs_np:
+            writer.write(frame[:, :, ::-1])  # RGB -> BGR
+        return frames_sbs_np.shape[0]
+
     written_frames = 0
     prev_end = None
+    # Last `overlap` GENERATED frames not yet written -- held back so they
+    # can be cross-faded with the next chunk's independently-generated
+    # version of the same frames, instead of just keeping this chunk's
+    # guess verbatim. Never fed back in as model input (see
+    # cross_fade_frames' docstring) -- output-side blending only.
+    pending_gen = None
 
     for start, end in frame_ranges:
         if end - start <= 0:
             continue
         frames_left, frames_warped, frames_mask = _load_chunk(start, end)
 
-        input_frames_i = frames_warped.clone()
-        mask_frames_i = frames_mask
-
-        overlap_count = max(0, (prev_end - start) if prev_end is not None else 0)
-        if generated_prev is not None and overlap_count > 0 and start > 0:
-            ov = min(overlap_count, generated_prev.shape[0], input_frames_i.shape[0])
-            if ov > 0:
-                input_frames_i[:ov] = generated_prev[-ov:]
-
+        # Always condition on the true depth-warped input for this chunk.
+        # Previously this overwrote the first `overlap` frames with the
+        # previous chunk's generated output, intending a seamless
+        # transition; instead each chunk's small generation loss (VAE
+        # round-trip + diffusion) compounded into the next chunk's input,
+        # and the next chunk's into the one after that, and so on across
+        # every chunk in the video. For a long single-shot video with a
+        # moving camera (large, constantly-changing disocclusion regions)
+        # this accumulated into severe blur/ghosting by the end; a static
+        # camera (small, nearly-identical disocclusion regions every frame)
+        # barely showed it since there was little for the recycled seed to
+        # drift from. See the 2026-07-30 change-log entry.
         video_latents = spatial_tiled_process(
-            input_frames_i,
-            mask_frames_i,
+            frames_warped,
+            frames_mask,
             pipeline,
             tile_num,
             spatial_n_compress=8,
@@ -418,23 +458,39 @@ def main(
             )
         generated = torch.stack(video_frames)
 
-        trim = 0 if start == 0 else min(overlap_count, generated.shape[0], frames_left.shape[0])
-        append_gen = generated if trim == 0 else generated[trim:]
-        append_left = frames_left if trim == 0 else frames_left[trim:]
+        # Frames [start, start + overlap_count) were already generated as
+        # part of the previous chunk. `overlap_count` can exceed the
+        # configured --overlap: chunk_frame_ranges pulls the final chunk's
+        # start back so every chunk is full-length, which can make its
+        # overlap with the second-to-last chunk wider than usual. Only the
+        # most recent `pending_gen.shape[0]` of those frames are still held
+        # back (available to blend); anything older was already written
+        # directly by the previous chunk and must be skipped here, not
+        # rewritten -- rewriting it would duplicate those frames while the
+        # frames actually held in `pending_gen` would never get written.
+        overlap_count = max(0, (prev_end - start) if prev_end is not None else 0)
+        if overlap_count > 0:
+            pending_count = pending_gen.shape[0] if pending_gen is not None else 0
+            blend_len = min(overlap_count, pending_count, generated.shape[0])
+            skip_only = min(overlap_count - blend_len, generated.shape[0])
+            if skip_only > 0:
+                generated = generated[skip_only:]
+                frames_left = frames_left[skip_only:]
+            if blend_len > 0:
+                blended = cross_fade_frames(pending_gen[-blend_len:], generated[:blend_len])
+                written_frames += _write_sbs(frames_left[:blend_len], blended)
+                generated = generated[blend_len:]
+                frames_left = frames_left[blend_len:]
 
-        generated_prev = generated
+        is_last_chunk = end >= num_frames
+        hold_back = 0 if is_last_chunk else min(overlap, generated.shape[0])
+        if hold_back > 0:
+            written_frames += _write_sbs(frames_left[:-hold_back], generated[:-hold_back])
+            pending_gen = generated[-hold_back:]
+        else:
+            written_frames += _write_sbs(frames_left, generated)
+            pending_gen = None
 
-        frames_sbs = torch.cat([append_left, append_gen], dim=3)
-        frames_sbs_np = (
-            (frames_sbs * 255)
-            .permute(0, 2, 3, 1)
-            .to(dtype=torch.uint8)
-            .cpu()
-            .numpy()
-        )
-        for frame in frames_sbs_np:
-            writer.write(frame[:, :, ::-1])  # RGB -> BGR
-        written_frames += frames_sbs_np.shape[0]
         prev_end = end
 
     writer.release()
