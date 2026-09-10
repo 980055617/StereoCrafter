@@ -26,6 +26,32 @@ def _load_depth_array(depth_path: str) -> np.ndarray:
     return np.asarray(np.load(depth_path))
 
 
+def _resize_depth_batch(
+    depth_batch: np.ndarray,
+    *,
+    target_height: int,
+    target_width: int,
+) -> np.ndarray:
+    if depth_batch.ndim != 3:
+        raise ValueError(f"Expected depth batch shaped [T,H,W], got {depth_batch.shape}")
+    if target_height <= 0 or target_width <= 0:
+        raise ValueError("Target depth dimensions must be positive")
+    if depth_batch.shape[1:] == (target_height, target_width):
+        return depth_batch
+
+    resized = np.empty(
+        (depth_batch.shape[0], target_height, target_width),
+        dtype=np.float32,
+    )
+    for index, depth in enumerate(depth_batch):
+        resized[index] = cv2.resize(
+            depth,
+            (target_width, target_height),
+            interpolation=cv2.INTER_LINEAR,
+        )
+    return resized
+
+
 def _build_frame_union_masks(
     pose_annotations_path: str,
     target_height: int,
@@ -123,14 +149,25 @@ def reconstruct_2x2(
     cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
 
     h, w = first.shape[:2]
+    depth_height, depth_width = depth_array.shape[1:3]
+    if (depth_height, depth_width) != (h, w):
+        print(
+            f"[INFO] Resizing depth per batch from {depth_width}x{depth_height} "
+            f"to video resolution {w}x{h}."
+        )
     if output_2x2_video is None:
         output_2x2_video = os.path.join(base_dir, f"{base_name}_2x2_video.mp4")
+    output_root, output_ext = os.path.splitext(output_2x2_video)
+    partial_output = f"{output_root}.partial{output_ext or '.mp4'}"
     writer = cv2.VideoWriter(
-        output_2x2_video,
+        partial_output,
         cv2.VideoWriter_fourcc(*"mp4v"),
         fps,
         (w * 2, h * 2),
     )
+    if not writer.isOpened():
+        cap.release()
+        raise RuntimeError(f"Failed to open output video writer: {partial_output}")
 
     stereo_projector = ForwardWarpStereo(occlu_map=True).cuda()
     left_frames = []
@@ -160,6 +197,11 @@ def reconstruct_2x2(
         if len(left_frames) >= batch_size or idx == frame_count or idx == len(depth_array):
             batch_frames = _to_float32_unit_range(np.asarray(left_frames))
             batch_depth = np.asarray(depth_list, dtype=np.float32)
+            batch_depth = _resize_depth_batch(
+                batch_depth,
+                target_height=h,
+                target_width=w,
+            )
 
             left_video = torch.from_numpy(batch_frames).permute(0, 3, 1, 2).float().cuda()
             disp_map = torch.from_numpy(batch_depth).unsqueeze(1).float().cuda()
@@ -210,6 +252,7 @@ def reconstruct_2x2(
             torch.cuda.empty_cache()
     cap.release()
     writer.release()
+    os.replace(partial_output, output_2x2_video)
 
     if not depth_only:
         if pose_3d_output_path is None:

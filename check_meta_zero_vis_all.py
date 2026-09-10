@@ -134,12 +134,22 @@ def inspect_meta(
                 pos += 1
                 pos += 8 + 4 + 2 + 2 + 8
                 if not (flags & 1):
+                    if flags & 2:
+                        if pos + 6 > len(payload):
+                            break
+                        _version, rot_count, beta_count = struct.unpack_from("<HHH", payload, pos)
+                        pos += 6 + int(rot_count) * 9 * 4 + int(beta_count) * 4 + 3 * 4
                     continue
                 kp_count = int(kp_counts.get(cat_id, 0))
                 joints = struct.unpack_from("<" + "h" * (kp_count * 3), payload, pos)
                 pos += kp_count * 3 * 2
                 vis = struct.unpack_from("<" + "B" * kp_count, payload, pos)
                 pos += kp_count
+                if flags & 2:
+                    if pos + 6 > len(payload):
+                        break
+                    _version, rot_count, beta_count = struct.unpack_from("<HHH", payload, pos)
+                    pos += 6 + int(rot_count) * 9 * 4 + int(beta_count) * 4 + 3 * 4
                 if track_id_filter >= 0 and track_id != track_id_filter:
                     continue
                 for ji in range(kp_count):

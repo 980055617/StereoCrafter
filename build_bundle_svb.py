@@ -31,6 +31,15 @@ VERSION = 2
 TYPE_OTHER = 0
 TYPE_PERSON = 1
 TYPE_ANIMAL = 2
+FLAG_SKELETON = 1 << 0
+FLAG_SMPL = 1 << 1
+FLAG_SMAL = 1 << 2
+SMPL_BLOCK_VERSION = 1
+SMPL_ROTATION_COUNT = 24
+SMPL_BETA_COUNT = 10
+SMAL_BLOCK_VERSION = 1
+SMAL_ROTATION_COUNT = 35
+SMAL_BETA_COUNT = 41
 
 ROT_Q = (0, 0, 0, 32767)
 COCO_LHIP = 11
@@ -78,6 +87,13 @@ class TrackState:
     joints_rel: Optional[np.ndarray] = None
     joints_abs: Optional[np.ndarray] = None
     kp_count: int = 0
+    bbox_area: Optional[float] = None
+    last_good_anchor_u: Optional[float] = None
+    last_good_anchor_v: Optional[float] = None
+    last_good_anchor_z: Optional[float] = None
+    last_good_anchor_source: Optional[str] = None
+    placement_low_streak: int = 0
+    last_seen_frame: Optional[int] = None
 
 
 def parse_args() -> argparse.Namespace:
@@ -91,6 +107,122 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--crop_mode", choices=["topleft"], default="topleft")
     parser.add_argument("--fovx_deg", type=float, default=70.0)
     parser.add_argument("--sample_k", type=int, default=7)
+    parser.add_argument(
+        "--person_anchor_mask_median",
+        type=int,
+        choices=[0, 1],
+        default=0,
+        help=(
+            "Take the person track's anchor_z as the median disparity over the whole "
+            "SAM2 mask instead of a 7x7 window at the pelvis keypoint. Fixes the "
+            "self-occlusion jumps in D-004 (the subject's own forearm crossing the "
+            "anchor point); does not improve how well anchor_z tracks true distance. "
+            "anchor_u/anchor_v are unchanged -- only z. person only: animal never "
+            "reaches this branch (animal_camera_root) and `other` was measured in "
+            "D-005 to give the same value either way."
+        ),
+    )
+    parser.add_argument(
+        "--background_drift_correction",
+        type=int,
+        choices=[0, 1],
+        default=0,
+        help=(
+            "DepthCrafter's raw disparity drifts in absolute scale over a few "
+            "seconds even for pixels whose real depth cannot change (see "
+            "docs/bundle-shared/D-004-anchor-z-accuracy.md and archive/D-005-depth-sampling-window.md -- confirmed on a "
+            "provably-static background patch). This subtracts that drift, "
+            "estimated per shot from a fixed set of never-occluded background "
+            "pixels, from every track's raw sampled disparity before it "
+            "becomes anchor_z. Applies only to the window-sampled depth path "
+            "(not animal_camera_root). Measured to meaningfully improve "
+            "D-004's R^2 metric on FINNAL_HUMAN (person 0.143->0.243, ball "
+            "0.533->0.646) but to make it worse on FINNAL_TRAIN -- the single "
+            "background reference can only correct the additive (b) term of "
+            "disparity=a/Z+b, not the multiplicative (a) term, and that gap "
+            "matters more on some content than others. A peak-occlusion gate "
+            "(--background_drift_max_occlusion_frac) auto-disables it per shot "
+            "on content resembling the failure case, but this is not yet "
+            "validated broadly -- default OFF, opt in per video after "
+            "checking the printed R^2/occlusion diagnostics. 0 restores the "
+            "previous (uncorrected) behavior."
+        ),
+    )
+    parser.add_argument(
+        "--background_drift_min_px",
+        type=int,
+        default=2000,
+        help=(
+            "Minimum background pixel count (frame minus all tracked masks) "
+            "for a frame's background disparity to be trusted directly; frames "
+            "below this hold the nearest earlier trusted value."
+        ),
+    )
+    parser.add_argument(
+        "--background_drift_max_occlusion_frac",
+        type=float,
+        default=0.10,
+        help=(
+            "If tracked objects' actual segmentation masks (not bbox area) "
+            "ever cover more than this fraction of the crop area within a "
+            "shot, background_drift_correction is disabled for that shot (the "
+            "background reference gets unreliable -- see "
+            "docs/bundle-shared/D-004-anchor-z-accuracy.md and archive/D-005-depth-sampling-window.md). Measured: peak "
+            "mask-based occlusion was 5.4%% on FINNAL_HUMAN (correction "
+            "helped) vs 20.2%% on FINNAL_TRAIN (correction hurt); 10%% sits "
+            "between them. This is a correlated proxy, not a proven causal "
+            "threshold."
+        ),
+    )
+    parser.add_argument(
+        "--depth_scale_calibration",
+        type=int,
+        choices=[0, 1],
+        default=0,
+        help=(
+            "Solves a per-shot (a, b) pair for disparity=a/Z+b (Z in meters) "
+            "from two fixed static background patches at assumed real-world "
+            "distances --depth_scale_z_near/--depth_scale_z_far, and adds "
+            "them to manifest.json under depth_scale_calibration so Unity "
+            "can compute 1/(disparity-b) for exact relative placement (see "
+            "docs/bundle-shared/D-004-anchor-z-accuracy.md and archive/D-005-depth-sampling-window.md). Does not change any "
+            "existing anchor_z/z01 value -- purely additive sidecar data. "
+            "Requires --depth_scale_near_box/--depth_scale_far_box (both "
+            "must be genuinely never covered by any tracked object across "
+            "the whole video -- verify with a per-frame bbox overlap check "
+            "before trusting a candidate box). Validated only on "
+            "FINNAL_HUMAN so far (CV of predicted/true distance ratio "
+            "0.086-0.098 against person+ball references) -- the two boxes' "
+            "assumed real-world distances must come from an independent, "
+            "trustworthy source per video; a guessed z_far previously "
+            "produced a physically impossible negative implied distance. "
+            "Default OFF."
+        ),
+    )
+    parser.add_argument(
+        "--depth_scale_near_box",
+        type=str,
+        default=None,
+        help="Near reference patch, crop-space pixels 'x0,y0,x1,y1'. Required if --depth_scale_calibration 1.",
+    )
+    parser.add_argument(
+        "--depth_scale_far_box",
+        type=str,
+        default=None,
+        help="Far reference patch, crop-space pixels 'x0,y0,x1,y1'. Required if --depth_scale_calibration 1.",
+    )
+    parser.add_argument(
+        "--depth_scale_z_near",
+        type=float,
+        default=None,
+        help="Assumed real-world distance (meters) of the near reference patch. Required if --depth_scale_calibration 1.",
+    )
+    parser.add_argument(
+        "--depth_scale_z_far",
+        type=float,
+        default=None,
+        help="Assumed real-world distance (meters) of the far reference patch. Required if --depth_scale_calibration 1.",
+    )
     parser.add_argument("--conf_th", type=float, default=0.4)
     parser.add_argument("--depth_gate_range", type=float, default=1e9)
     parser.add_argument("--depth_gate_iqr", type=float, default=0.06)
@@ -102,8 +234,28 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--depth_gate_prev_min_valid", type=int, default=9)
     parser.add_argument("--depth_gate_prev_min_frac", type=float, default=0.4)
     parser.add_argument("--depth_gate_use_anchor_fallback", type=int, choices=[0, 1], default=1)
+    parser.add_argument("--placement_conf_hold_threshold", type=float, default=0.55)
+    parser.add_argument("--placement_conf_edge_margin_px", type=float, default=4.0)
+    parser.add_argument("--placement_conf_area_shrink_ratio", type=float, default=0.55)
+    parser.add_argument("--placement_conf_anchor_jump_px", type=float, default=64.0)
+    parser.add_argument("--placement_conf_depth_jump", type=float, default=0.08)
     parser.add_argument("--ema_alpha", type=float, default=0.8)
-    parser.add_argument("--quant_pos_scale", type=float, default=0.002)
+    parser.add_argument(
+        "--quant_pos_scale",
+        type=float,
+        default=0.0002,
+        help=(
+            "anchor_z quantization step. For depth-sampled anchors, anchor_z is "
+            "1 - normalized disparity, so the far field is compressed into a narrow "
+            "band; at the old 0.002 step distinct objects in the same frame collapsed "
+            "onto one step and Unity placed them at an identical camera Z (D-008). "
+            "The ceiling on how fine this can go is the animal_camera_root path, "
+            "which writes AniMer's camera-space root Z directly and is NOT bounded by "
+            "1.0: at 0.0002 anchor_z_q covers up to 6.55, roughly 9x the largest value "
+            "seen in an animal bundle. Clips whose anchors are all depth-sampled "
+            "(anchor_z < 1 by construction) can safely use 0.0001."
+        ),
+    )
     parser.add_argument("--quant_joint_scale", type=float, default=0.002)
     parser.add_argument(
         "--joints_source",
@@ -142,6 +294,19 @@ def parse_args() -> argparse.Namespace:
         default="camera_xyz_root_relative",
     )
     parser.add_argument("--frame_compress", choices=["none", "zlib", "lz4"], default="lz4")
+    parser.add_argument(
+        "--shots_json",
+        type=str,
+        default=None,
+        help=(
+            "Optional JSON file: a list of [start, end) frame ranges covering the whole "
+            "video, one per hard camera cut (same convention as "
+            "scripts/run_rose_inpaint_with_shots.py --shots). Default: treat the whole "
+            "video as a single shot. Written to manifest.json 'shots', and used to reset "
+            "per-track EMA/placement-hold state at each shot's first frame so a legitimate "
+            "camera-distance jump at a cut isn't smeared or gated like sensor noise."
+        ),
+    )
     parser.add_argument("--anchor_from", choices=["mask", "bbox"], default="mask")
     parser.add_argument("--fps", type=float, default=None, help="Manual fallback if video probing fails.")
     parser.add_argument("--width", type=int, default=None, help="Manual fallback if video probing fails.")
@@ -485,17 +650,31 @@ def get_video_meta(
 
 
 def load_depth(path: str) -> np.ndarray:
+    depth, _disp_min, _disp_max = load_depth_with_disp_range(path)
+    return depth
+
+
+def load_depth_with_disp_range(
+    path: str,
+) -> Tuple[np.ndarray, Optional[float], Optional[float]]:
+    """Load the (T,H,W) depth array plus the optional pre-normalization
+    (disp_min, disp_max) written by depth_splatting_inference.py. Older depth
+    npz files without those keys yield (None, None).
+    """
     with np.load(path) as data:
         if not data.files:
             raise RuntimeError(f"No arrays found in depth npz: {path}")
-        depth = np.asarray(data[data.files[0]])
+        depth_key = "depth" if "depth" in data.files else data.files[0]
+        depth = np.asarray(data[depth_key])
+        disp_min = float(data["disp_min"]) if "disp_min" in data.files else None
+        disp_max = float(data["disp_max"]) if "disp_max" in data.files else None
     if depth.ndim == 4 and depth.shape[-1] == 1:
         depth = depth[..., 0]
     if depth.ndim == 2:
         depth = depth[np.newaxis, :, :]
     if depth.ndim != 3:
         raise RuntimeError(f"Unsupported depth shape {depth.shape}; expected (T,H,W).")
-    return depth.astype(np.float32)
+    return depth.astype(np.float32), disp_min, disp_max
 
 
 def normalize_conf(value: Any) -> float:
@@ -641,6 +820,26 @@ def normalize_skeleton_edges(raw_edges: Any, kp_count: int) -> List[Tuple[int, i
     return normalized
 
 
+def parse_index_list(value: Any, kp_count: int) -> Optional[List[int]]:
+    if value is None:
+        return None
+    if isinstance(value, str):
+        raw_items = [part.strip() for part in value.split(",") if part.strip()]
+    elif isinstance(value, (list, tuple)):
+        raw_items = list(value)
+    else:
+        return None
+    indices: List[int] = []
+    for item in raw_items:
+        try:
+            idx = int(item)
+        except Exception:
+            continue
+        if 0 <= idx < kp_count:
+            indices.append(idx)
+    return indices or None
+
+
 def infer_root_indices(kp_names: Sequence[str], kp_count: int) -> List[int]:
     if kp_names:
         name_map = {normalize_kp_name(name): idx for idx, name in enumerate(kp_names)}
@@ -739,12 +938,24 @@ def parse_category_specs(data: Any) -> Dict[int, Dict[str, Any]]:
                 kp_count = len(kp_names)
                 edges = normalize_skeleton_edges(cat.get("skeleton"), kp_count)
                 root_indices = infer_root_indices(kp_names, kp_count)
+                explicit_root_indices = parse_index_list(
+                    cat.get("root_joint_indices", cat.get("rootJointIndices")),
+                    kp_count,
+                )
+                if explicit_root_indices is not None:
+                    root_indices = explicit_root_indices
                 if cat_id_int == TYPE_ANIMAL and kp_count == 26:
                     if not edges:
                         edges = ANIMER_SMAL_26_SKELETON
-                    if all(name.startswith("animer_joint_") for name in kp_names):
+                    if explicit_root_indices is None and all(name.startswith("animer_joint_") for name in kp_names):
                         root_indices = []
                 anchor_indices = infer_anchor_indices(cat_id_int, kp_names, kp_count)
+                explicit_anchor_indices = parse_index_list(
+                    cat.get("anchor_joint_indices", cat.get("anchorJointIndices")),
+                    kp_count,
+                )
+                if explicit_anchor_indices is not None:
+                    anchor_indices = explicit_anchor_indices
                 specs[cat_id_int] = {
                     "id": cat_id_int,
                     "name": "person" if cat_id_int == TYPE_PERSON else ("animal" if cat_id_int == TYPE_ANIMAL else name),
@@ -777,12 +988,24 @@ def parse_category_specs(data: Any) -> Dict[int, Dict[str, Any]]:
                 kp_count = len(kp_names)
                 edges = normalize_skeleton_edges(cat.get("skeleton"), kp_count)
                 root_indices = infer_root_indices(kp_names, kp_count)
+                explicit_root_indices = parse_index_list(
+                    cat.get("root_joint_indices", cat.get("rootJointIndices")),
+                    kp_count,
+                )
+                if explicit_root_indices is not None:
+                    root_indices = explicit_root_indices
                 if cat_id_int == TYPE_ANIMAL and kp_count == 26:
                     if not edges:
                         edges = ANIMER_SMAL_26_SKELETON
-                    if all(name.startswith("animer_joint_") for name in kp_names):
+                    if explicit_root_indices is None and all(name.startswith("animer_joint_") for name in kp_names):
                         root_indices = []
                 anchor_indices = infer_anchor_indices(cat_id_int, kp_names, kp_count)
+                explicit_anchor_indices = parse_index_list(
+                    cat.get("anchor_joint_indices", cat.get("anchorJointIndices")),
+                    kp_count,
+                )
+                if explicit_anchor_indices is not None:
+                    anchor_indices = explicit_anchor_indices
                 specs[cat_id_int] = {
                     "id": cat_id_int,
                     "name": name,
@@ -791,6 +1014,9 @@ def parse_category_specs(data: Any) -> Dict[int, Dict[str, Any]]:
                     "skeleton_edges": edges,
                     "root_indices": root_indices,
                     "anchor_indices": anchor_indices,
+                    "engine": cat.get("engine"),
+                    "keypoint_format": cat.get("keypoint_format"),
+                    "coordinate_system": cat.get("coordinate_system"),
                 }
     if not specs:
         specs = default_category_specs()
@@ -968,6 +1194,88 @@ def parse_keypoints(
     return None, [], 0
 
 
+def keypoints_look_like_pixels(
+    keypoints: Optional[List[Tuple[float, float, float]]],
+    kp_vis: Sequence[int],
+    width: int,
+    height: int,
+) -> bool:
+    if keypoints is None:
+        return False
+    visible: List[Tuple[float, float]] = []
+    for idx, (u, v, conf) in enumerate(keypoints):
+        if idx < len(kp_vis) and kp_vis[idx] <= 0:
+            continue
+        if normalize_conf(conf) <= 0:
+            continue
+        if math.isfinite(u) and math.isfinite(v):
+            visible.append((float(u), float(v)))
+    if not visible:
+        return False
+    max_abs = max(max(abs(u), abs(v)) for u, v in visible)
+    if max_abs <= 2.0:
+        return False
+    in_frame = sum(1 for u, v in visible if 0.0 <= u < float(width) and 0.0 <= v < float(height))
+    return in_frame >= max(1, len(visible) // 4)
+
+
+def denormalize_pose_keypoints2d_from_source_box(
+    obj: Dict[str, Any],
+    keypoints: Optional[List[Tuple[float, float, float]]],
+    kp_vis: Sequence[int],
+    width: int,
+    height: int,
+) -> Optional[List[Tuple[float, float, float]]]:
+    if keypoints is None:
+        return None
+    pose = obj.get("pose")
+    if not isinstance(pose, dict):
+        return None
+    source_box = pose.get("sourceBox")
+    if not isinstance(source_box, dict):
+        return None
+    xywh = source_box.get("xywh")
+    if not isinstance(xywh, (list, tuple)) or len(xywh) < 4:
+        return None
+    try:
+        box_x, box_y, box_w, box_h = (float(xywh[0]), float(xywh[1]), float(xywh[2]), float(xywh[3]))
+    except Exception:
+        return None
+    if box_w <= 0.0 or box_h <= 0.0:
+        return None
+
+    visible = []
+    for idx, (u, v, conf) in enumerate(keypoints):
+        if idx < len(kp_vis) and kp_vis[idx] <= 0:
+            continue
+        if normalize_conf(conf) <= 0.0:
+            continue
+        if math.isfinite(u) and math.isfinite(v):
+            visible.append((float(u), float(v)))
+    if not visible:
+        return None
+    if max(max(abs(u), abs(v)) for u, v in visible) > 2.0:
+        return None
+
+    cx = box_x + box_w * 0.5
+    cy = box_y + box_h * 0.5
+    box_size = max(box_w, box_h)
+    converted: List[Tuple[float, float, float]] = []
+    in_frame = 0
+    for u, v, conf in keypoints:
+        if not math.isfinite(u) or not math.isfinite(v):
+            converted.append((0.0, 0.0, 0.0))
+            continue
+        u_px = cx + float(u) * box_size
+        v_px = cy + float(v) * box_size
+        if 0.0 <= u_px < float(width) and 0.0 <= v_px < float(height):
+            in_frame += 1
+        converted.append((u_px, v_px, conf))
+    if in_frame < max(1, len(visible) // 4):
+        return None
+    return converted
+
+
 def parse_pose_keypoints3d(
     obj: Dict[str, Any], expected_kp_count: int
 ) -> Tuple[Optional[np.ndarray], np.ndarray, Optional[str], Optional[str], Optional[str]]:
@@ -1009,6 +1317,103 @@ def parse_pose_keypoints3d(
         str(pose.get("engine") or ""),
         str(pose.get("keypointFormat") or ""),
     )
+
+
+def _smpl_matrix_array(value: Any, expected: int) -> Optional[np.ndarray]:
+    try:
+        arr = np.asarray(value, dtype=np.float32)
+    except Exception:
+        return None
+    if arr.shape == (expected, 3, 3):
+        return arr
+    if arr.size == expected * 9:
+        return arr.reshape(expected, 3, 3)
+    return None
+
+
+def parse_smpl_payload(obj: Dict[str, Any]) -> Optional[Dict[str, np.ndarray]]:
+    pose = obj.get("pose")
+    if not isinstance(pose, dict):
+        return None
+    smpl = pose.get("smpl")
+    if not isinstance(smpl, dict):
+        return None
+    global_orient = _smpl_matrix_array(smpl.get("globalOrient"), 1)
+    body_pose = _smpl_matrix_array(smpl.get("bodyPose"), 23)
+    if global_orient is None or body_pose is None:
+        return None
+    try:
+        betas = np.asarray(smpl.get("betas"), dtype=np.float32).reshape(-1)
+        transl = np.asarray(smpl.get("transl"), dtype=np.float32).reshape(-1)
+    except Exception:
+        return None
+    if betas.size < SMPL_BETA_COUNT or transl.size < 3:
+        return None
+    rotations = np.concatenate([global_orient.reshape(1, 3, 3), body_pose.reshape(23, 3, 3)], axis=0)
+    return {
+        "rotations": rotations.astype(np.float32),
+        "betas": betas[:SMPL_BETA_COUNT].astype(np.float32),
+        "transl": transl[:3].astype(np.float32),
+    }
+
+
+def pack_smpl_payload(smpl_payload: Dict[str, np.ndarray]) -> bytes:
+    rotations = np.asarray(smpl_payload["rotations"], dtype="<f4").reshape(SMPL_ROTATION_COUNT, 3, 3)
+    betas = np.asarray(smpl_payload["betas"], dtype="<f4").reshape(SMPL_BETA_COUNT)
+    transl = np.asarray(smpl_payload["transl"], dtype="<f4").reshape(3)
+    out = bytearray()
+    out.extend(struct.pack("<HHH", SMPL_BLOCK_VERSION, SMPL_ROTATION_COUNT, SMPL_BETA_COUNT))
+    out.extend(rotations.reshape(-1).tobytes())
+    out.extend(betas.tobytes())
+    out.extend(transl.tobytes())
+    return bytes(out)
+
+
+def parse_smal_payload(obj: Dict[str, Any]) -> Optional[Dict[str, np.ndarray]]:
+    pose = obj.get("pose")
+    if not isinstance(pose, dict):
+        return None
+    smal = pose.get("smal")
+    if not isinstance(smal, dict):
+        return None
+    global_orient = _smpl_matrix_array(smal.get("globalOrient"), 1)
+    body_pose = _smpl_matrix_array(smal.get("pose"), SMAL_ROTATION_COUNT - 1)
+    if global_orient is None or body_pose is None:
+        return None
+    try:
+        betas = np.asarray(smal.get("betas"), dtype=np.float32).reshape(-1)
+        transl_source = smal.get(
+            "transl",
+            smal.get("predCamTFull", pose.get("sourcePredCamTFull", [0.0, 0.0, 0.0])),
+        )
+        transl = np.asarray(transl_source, dtype=np.float32).reshape(-1)
+    except Exception:
+        return None
+    if betas.size < SMAL_BETA_COUNT:
+        return None
+    if transl.size < 3:
+        transl = np.zeros((3,), dtype=np.float32)
+    rotations = np.concatenate(
+        [global_orient.reshape(1, 3, 3), body_pose.reshape(SMAL_ROTATION_COUNT - 1, 3, 3)],
+        axis=0,
+    )
+    return {
+        "rotations": rotations.astype(np.float32),
+        "betas": betas[:SMAL_BETA_COUNT].astype(np.float32),
+        "transl": transl[:3].astype(np.float32),
+    }
+
+
+def pack_smal_payload(smal_payload: Dict[str, np.ndarray]) -> bytes:
+    rotations = np.asarray(smal_payload["rotations"], dtype="<f4").reshape(SMAL_ROTATION_COUNT, 3, 3)
+    betas = np.asarray(smal_payload["betas"], dtype="<f4").reshape(SMAL_BETA_COUNT)
+    transl = np.asarray(smal_payload["transl"], dtype="<f4").reshape(3)
+    out = bytearray()
+    out.extend(struct.pack("<HHH", SMAL_BLOCK_VERSION, SMAL_ROTATION_COUNT, SMAL_BETA_COUNT))
+    out.extend(rotations.reshape(-1).tobytes())
+    out.extend(betas.tobytes())
+    out.extend(transl.tobytes())
+    return bytes(out)
 
 
 def compute_anchor_from_keypoints(
@@ -1141,6 +1546,64 @@ def intersect_bbox_with_crop(
     if ix1 <= ix0 or iy1 <= iy0:
         return None
     return ix0, iy0, ix1, iy1
+
+
+def source_image_size(
+    obj: Dict[str, Any], fallback_w: int, fallback_h: int
+) -> Tuple[int, int]:
+    """Return the coordinate canvas used by a SAM2-derived object."""
+    sam2 = obj.get("sam2")
+    segmentation = sam2.get("segmentation") if isinstance(sam2, dict) else None
+    size = segmentation.get("size") if isinstance(segmentation, dict) else None
+    if isinstance(size, (list, tuple)) and len(size) >= 2:
+        try:
+            height = int(size[0])
+            width = int(size[1])
+            if width > 0 and height > 0:
+                return width, height
+        except (TypeError, ValueError):
+            pass
+    return fallback_w, fallback_h
+
+
+def source_canvas_size(
+    source_w: int,
+    source_h: int,
+    video_w: int,
+    w_eye: int,
+    left_eye_origin: str,
+) -> Tuple[int, int]:
+    """Return the left-eye canvas after an optional full-SBS x-origin shift."""
+    if left_eye_origin == "full" and source_w == video_w and video_w == w_eye * 2:
+        return w_eye, source_h
+    return source_w, source_h
+
+
+def source_to_metadata_point(
+    u: float,
+    v: float,
+    source_w: int,
+    source_h: int,
+    meta_w: int,
+    meta_h: int,
+) -> Tuple[float, float]:
+    if source_w <= 0 or source_h <= 0:
+        return u, v
+    return u * float(meta_w) / float(source_w), v * float(meta_h) / float(source_h)
+
+
+def source_to_metadata_bbox(
+    bbox: Tuple[float, float, float, float],
+    source_w: int,
+    source_h: int,
+    meta_w: int,
+    meta_h: int,
+) -> Tuple[float, float, float, float]:
+    x, y, w, h = bbox
+    x_meta, y_meta = source_to_metadata_point(x, y, source_w, source_h, meta_w, meta_h)
+    w_meta = w * float(meta_w) / float(source_w) if source_w > 0 else w
+    h_meta = h * float(meta_h) / float(source_h) if source_h > 0 else h
+    return x_meta, y_meta, w_meta, h_meta
 
 
 def meta_to_eye_point(
@@ -1304,6 +1767,81 @@ def decode_mask(segmentation: Any, height: int, width: int) -> Optional[np.ndarr
     return mask
 
 
+def sample_depth_mask_median(
+    depth_frame: np.ndarray,
+    segmentation: Any,
+    source_w: int,
+    source_h: int,
+    full_meta_w: int,
+    full_meta_h: int,
+    crop_x0: int,
+    crop_y0: int,
+    stats_out: Optional[Dict[str, float]] = None,
+) -> Optional[float]:
+    """Median disparity over the whole SAM2 mask instead of a 7x7 window.
+
+    D-004 (2026-09-09): the person anchor is one point at the pelvis keypoint, so
+    when the subject's own forearm swings across it the 7x7 window jumps between
+    the hip surface and the arm surface -- 0.09 disparity in a single frame, which
+    the EMA then smears into a half-second ramp Unity sees as "the person suddenly
+    got bigger". Taking the median over the segmented body makes the value depend
+    on the whole silhouette instead of which limb happens to cover one pixel.
+
+    This is NOT a fix for D-004 itself: the median tracks true distance no better
+    than the point sample did (measured: corr with bbox height 0.560 -> 0.496). It
+    only removes the false jumps.
+
+    Assumes the mask's source frame is a single eye (source_w == eye width). A
+    side-by-side source would need adjust_left_eye applied per pixel, which is not
+    implemented -- callers must not enable this for such inputs.
+    """
+    if depth_frame is None or segmentation is None:
+        return None
+    if source_w <= 0 or source_h <= 0 or full_meta_w <= 0 or full_meta_h <= 0:
+        return None
+    mask = decode_mask(segmentation, source_h, source_w)
+    if mask is None:
+        return None
+    ys, xs = np.nonzero(mask)
+    if ys.size == 0:
+        return None
+    # depth_frame is already cropped to (crop_h, crop_w); the mask is in source
+    # pixels of the uncropped frame. Go source -> full meta -> crop, and DROP the
+    # pixels outside the crop rather than clipping them -- clipping squeezes the
+    # rows below the eye view onto the bottom edge, which drags background
+    # disparity into the median (the first attempt did exactly that: frame 224's
+    # person read 0.50 instead of 0.66).
+    h, w = depth_frame.shape
+    xi = np.rint(xs * (float(full_meta_w) / float(source_w))).astype(np.int64) - int(crop_x0)
+    yi = np.rint(ys * (float(full_meta_h) / float(source_h))).astype(np.int64) - int(crop_y0)
+    inside = (xi >= 0) & (xi < w) & (yi >= 0) & (yi < h)
+    if not np.any(inside):
+        if stats_out is not None:
+            stats_out["valid_count"] = 0.0
+        return None
+    values = depth_frame[yi[inside], xi[inside]].astype(np.float64)
+    values = values[np.isfinite(values) & (values > 0)]
+    if values.size == 0:
+        if stats_out is not None:
+            stats_out["valid_count"] = 0.0
+        return None
+    median = float(np.median(values))
+    q1, q3 = (float(v) for v in np.percentile(values, [25.0, 75.0]))
+    p10, p90 = (float(v) for v in np.percentile(values, [10.0, 90.0]))
+    if stats_out is not None:
+        stats_out.update(
+            {
+                "valid_count": float(values.size),
+                "median": median,
+                "iqr": q3 - q1,
+                "mad": float(np.median(np.abs(values - median))),
+                "p10": p10,
+                "p90": p90,
+            }
+        )
+    return median
+
+
 def compute_mask_centroid(
     segmentation: Any,
     meta_h: int,
@@ -1336,6 +1874,16 @@ def compute_mask_centroid(
     u = float(xs.mean())
     v = float(ys.mean())
     return u, v
+
+
+def disparity_to_camera_z(disparity: float) -> float:
+    """Flip depth_npz's normalized disparity (0.0=far, 1.0=near) into the
+    bundle's camera-Z convention (larger=farther), matching animal_camera_root
+    (which already flips via project_animal_keypoints_to_camera.py) and
+    camera_xyz_from_uv_depth's projection math. Clamped away from exactly 0.0
+    so a near-1.0 disparity sample can't fail downstream '>0' validity checks.
+    """
+    return max(1.0 - float(disparity), 1e-4)
 
 
 def sample_depth_median(
@@ -1521,6 +2069,314 @@ def sample_depth_robust(
     return z, stats, None
 
 
+def load_shots_for_bundle(path: Optional[str], total_frames: int) -> List[Tuple[int, int]]:
+    """Loads a [start, end) shot-boundary list, or a single whole-video shot if
+    no path is given. Same list-of-pairs JSON convention as
+    scripts/run_rose_inpaint_with_shots.py / scripts/run_background_plate_inpaint.py."""
+    if not path:
+        return [(0, total_frames)]
+    with open(path, "r", encoding="utf-8") as handle:
+        data = json.load(handle)
+    shots = sorted((int(s), int(e)) for s, e in data)
+    if not shots:
+        raise ValueError(f"Empty shot list: {path}")
+    if shots[0][0] != 0 or shots[-1][1] != total_frames:
+        raise ValueError(
+            f"Shots must cover [0, {total_frames}); got [{shots[0][0]}, {shots[-1][1]}) from {path}"
+        )
+    for (_, prev_end), (next_start, _) in zip(shots, shots[1:]):
+        if prev_end != next_start:
+            raise ValueError(f"Gap/overlap between shots at frame {prev_end}/{next_start} in {path}")
+    return shots
+
+
+def _decode_frame_exclude_mask(
+    frame_entry: Any,
+    full_meta_w: int,
+    full_meta_h: int,
+    crop_x0: int,
+    crop_y0: int,
+    crop_w: int,
+    crop_h: int,
+) -> np.ndarray:
+    exclude = np.zeros((crop_h, crop_w), dtype=bool)
+    for raw_obj in extract_objects(frame_entry):
+        raw_sam2 = raw_obj.get("sam2")
+        raw_sam2 = raw_sam2 if isinstance(raw_sam2, dict) else {}
+        segmentation = (
+            raw_obj.get("segmentation")
+            or raw_obj.get("mask")
+            or raw_sam2.get("segmentation")
+            or raw_sam2.get("mask")
+        )
+        if segmentation is None:
+            continue
+        source_w, source_h = source_image_size(raw_obj, full_meta_w, full_meta_h)
+        mask = decode_mask(segmentation, source_h, source_w)
+        if mask is None:
+            continue
+        ys, xs = np.nonzero(mask)
+        if xs.size == 0:
+            continue
+        u = xs.astype(np.float64) * (float(full_meta_w) / float(source_w))
+        v = ys.astype(np.float64) * (float(full_meta_h) / float(source_h))
+        inside = (
+            (u >= float(crop_x0))
+            & (u < float(crop_x0 + crop_w))
+            & (v >= float(crop_y0))
+            & (v < float(crop_y0 + crop_h))
+        )
+        if not np.any(inside):
+            continue
+        ui = np.clip(np.round(u[inside] - crop_x0).astype(np.int64), 0, crop_w - 1)
+        vi = np.clip(np.round(v[inside] - crop_y0).astype(np.int64), 0, crop_h - 1)
+        exclude[vi, ui] = True
+    return exclude
+
+
+def compute_background_disparity_series(
+    depth: np.ndarray,
+    frames: List[Any],
+    full_meta_w: int,
+    full_meta_h: int,
+    crop_x0: int,
+    crop_y0: int,
+    crop_w: int,
+    crop_h: int,
+    min_bg_px: int,
+    shots: List[Tuple[int, int]],
+    max_occlusion_frac: float,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Per-frame median raw disparity of a *fixed-per-shot* set of background
+    pixels: those never covered by any tracked object's mask at any frame
+    within that shot. DepthCrafter's raw output drifts in absolute scale over
+    a few seconds even where the real depth cannot change (verified on a
+    provably-static background patch -- see
+    docs/bundle-shared/D-004-anchor-z-accuracy.md). This series is that drift
+    signal, used by
+    build_background_drift_correction to remove it from tracked objects'
+    sampled disparity.
+
+    Fixing the pixel set per shot (rather than "whatever's left after this
+    frame's mask" each frame) matters: a naive per-frame background sample
+    mixes in genuine scene-depth changes whenever the excluded area's size or
+    position shifts (e.g. a large object sweeping across a frame with real
+    background depth structure -- near grass vs. far treeline -- exposes a
+    different depth mix each frame).
+
+    Returns (background_disparity, shot_safe_mask). shot_safe_mask is a
+    per-frame bool: False for every frame in a shot where some frame's
+    tracked-object occlusion exceeded max_occlusion_frac of the crop area.
+    Measured evidence for this gate (mask-based occlusion, not bbox area):
+    on FINNAL_HUMAN (where the correction measurably improved D-004's R^2
+    metric) peak occlusion never exceeded 5.4%; on FINNAL_TRAIN (where the
+    same correction measurably worsened it) peak occlusion reached 20.2%.
+    This is a correlated proxy, not a proven
+    causal mechanism -- treat it as a safety gate, not a certainty. Frames in
+    an unsafe shot still get a background_disparity value (for visibility in
+    the sidecar) but build_background_drift_correction must zero their
+    correction.
+
+    NaN where a shot's stable set (or, as a per-frame fallback when that set
+    is too small, that frame's own non-excluded pixels) has fewer than
+    min_bg_px pixels; caller fills those from the nearest earlier trusted
+    frame.
+    """
+    n = depth.shape[0]
+    result = np.full(n, np.nan, dtype=np.float64)
+    shot_safe = np.ones(n, dtype=bool)
+    shot_ranges = shots if shots else [(0, n)]
+    min_bg_px = max(1, int(min_bg_px))
+    crop_area = float(crop_w * crop_h)
+    for start, end in shot_ranges:
+        end = min(end, n, len(frames))
+        if start >= end:
+            continue
+        frame_exclude_masks: Dict[int, np.ndarray] = {}
+        union_exclude = np.zeros((crop_h, crop_w), dtype=bool)
+        max_occlusion = 0.0
+        for frame_idx in range(start, end):
+            mask = _decode_frame_exclude_mask(
+                frames[frame_idx], full_meta_w, full_meta_h, crop_x0, crop_y0, crop_w, crop_h
+            )
+            frame_exclude_masks[frame_idx] = mask
+            union_exclude |= mask
+            max_occlusion = max(max_occlusion, np.count_nonzero(mask) / crop_area)
+        is_safe = max_occlusion <= float(max_occlusion_frac)
+        if not is_safe:
+            shot_safe[start:end] = False
+            print(
+                f"Background drift correction: shot [{start},{end}) peak occlusion "
+                f"{100 * max_occlusion:.1f}% > {100 * float(max_occlusion_frac):.1f}% "
+                "threshold -- correction disabled for this shot."
+            )
+        stable_background = ~union_exclude
+        stable_count = int(np.count_nonzero(stable_background))
+        for frame_idx in range(start, end):
+            if stable_count >= min_bg_px:
+                background = depth[frame_idx][stable_background]
+            else:
+                background = depth[frame_idx][~frame_exclude_masks[frame_idx]]
+            valid = background[np.isfinite(background) & (background > 0)]
+            if valid.size >= min_bg_px:
+                result[frame_idx] = float(np.median(valid))
+    return result, shot_safe
+
+
+def build_background_drift_correction(
+    background_disparity: np.ndarray,
+    shot_safe: np.ndarray,
+    shots: List[Tuple[int, int]],
+    num_frames: int,
+) -> np.ndarray:
+    """Turns a per-frame background disparity series into a per-frame
+    correction (raw disparity units) to subtract from tracked objects' sampled
+    disparity. Fills NaN frames (too few background pixels) by holding the
+    nearest earlier trusted value (or the first trusted value, for a leading
+    gap). Baselined per shot -- since a real camera-distance jump at a shot
+    cut is legitimate (existing convention, see EMA/hold reset at
+    shot_start_frames), the correction should only flatten drift *within* a
+    shot, not carry a baseline across cuts.
+
+    Frames where shot_safe is False get zero correction (see
+    compute_background_disparity_series's peak-occlusion gate) -- their
+    background_disparity isn't a trustworthy single-region reference, so no
+    correction is safer than a wrong one.
+    """
+    filled = background_disparity.copy()
+    last_valid: Optional[float] = None
+    for i in range(filled.shape[0]):
+        if np.isfinite(filled[i]):
+            last_valid = float(filled[i])
+        elif last_valid is not None:
+            filled[i] = last_valid
+    first_valid: Optional[float] = None
+    for i in range(filled.shape[0]):
+        if np.isfinite(filled[i]):
+            first_valid = float(filled[i])
+            break
+    if first_valid is not None:
+        for i in range(filled.shape[0]):
+            if np.isfinite(filled[i]):
+                break
+            filled[i] = first_valid
+
+    correction = np.zeros(num_frames, dtype=np.float64)
+    shot_ranges = shots if shots else [(0, num_frames)]
+    for start, end in shot_ranges:
+        end = min(end, num_frames)
+        if start >= end:
+            continue
+        segment = filled[start:end]
+        valid_segment = segment[np.isfinite(segment)]
+        if valid_segment.size == 0:
+            continue
+        baseline = float(np.median(valid_segment))
+        correction[start:end] = segment - baseline
+    correction[~shot_safe[:num_frames]] = 0.0
+    return correction
+
+
+def compute_fixed_box_disparity_series(
+    depth: np.ndarray,
+    box_crop_px: Tuple[int, int, int, int],
+) -> np.ndarray:
+    """Per-frame median raw disparity within a fixed rectangular box, given
+    in crop-space pixels (x0, y0, x1, y1) -- the same coordinate space as
+    tracked objects' bboxX/bboxY in the bundle. `depth` must already be the
+    crop-applied array (post the `depth[:, crop_y0:crop_y0+crop_h,
+    crop_x0:crop_x0+crop_w]` slice in main()), so no further scaling is
+    needed: crop-space and this array's indices are 1:1.
+    """
+    n = depth.shape[0]
+    x0, y0, x1, y1 = box_crop_px
+    x0 = max(0, x0)
+    y0 = max(0, y0)
+    x1 = min(depth.shape[2], x1)
+    y1 = min(depth.shape[1], y1)
+    result = np.full(n, np.nan, dtype=np.float64)
+    if x1 <= x0 or y1 <= y0:
+        return result
+    patch = depth[:, y0:y1, x0:x1].astype(np.float64)
+    valid = np.isfinite(patch)
+    counts = valid.reshape(n, -1).sum(axis=1)
+    medians = np.nanmedian(np.where(valid, patch, np.nan).reshape(n, -1), axis=1)
+    medians[counts == 0] = np.nan
+    result[:] = medians
+    return result
+
+
+def compute_shot_scale_calibration(
+    near_disparity: np.ndarray,
+    far_disparity: np.ndarray,
+    z_near: float,
+    z_far: float,
+    shots: List[Tuple[int, int]],
+    num_frames: int,
+) -> List[Dict[str, Any]]:
+    """Solves one (a, b) pair per shot for disparity = a/Z + b (Z in
+    meters), from the shot-median disparity of two fixed static background
+    patches assumed to sit at real-world distances z_near < z_far. See
+    docs/bundle-shared/D-004-anchor-z-accuracy.md.
+
+    Only b is trustworthy at metric scale: algebraically, with r = z_far /
+    z_near, b = far - (near - far) / (r - 1) depends solely on the ratio r,
+    not on the absolute value of either z_near or z_far. a carries an
+    unknown absolute scale factor from wherever z_near's assumed value came
+    from -- only the ratio 1 / (disparity - b) is meaningful for relative
+    placement (this is what Unity's ResolvePopoutFraction needs), not a by
+    itself.
+
+    Validated on FINNAL_HUMAN against two independent real-distance
+    references (person via keypoints3d bisection, ball via known handball
+    diameter): coefficient of variation of the predicted/true distance
+    ratio came out 0.086-0.098, versus 0.33-0.36 for the shipped
+    background_drift_correction's single-reference drift removal alone. A
+    per-frame time-varying a(t), b(t) fit was also tested and only reached
+    0.089-0.092 -- close enough to this per-shot constant that per-frame
+    isn't worth the extra complexity or the risk of any single frame's
+    patch reading going bad.
+
+    A shot with too few finite background samples gets a=None, b=None
+    entries (not silently dropped), so a missing calibration is visible in
+    the output rather than a gap Unity has to notice on its own.
+    """
+    if not (z_far > z_near > 0):
+        raise ValueError(f"require 0 < z_near < z_far, got z_near={z_near}, z_far={z_far}")
+    denom = 1.0 / z_near - 1.0 / z_far
+    shot_ranges = shots if shots else [(0, num_frames)]
+    results: List[Dict[str, Any]] = []
+    for start, end in shot_ranges:
+        end = min(end, num_frames)
+        if start >= end:
+            continue
+        near_seg = near_disparity[start:end]
+        far_seg = far_disparity[start:end]
+        near_valid = near_seg[np.isfinite(near_seg)]
+        far_valid = far_seg[np.isfinite(far_seg)]
+        entry: Dict[str, Any] = {"shotStart": int(start), "shotEnd": int(end)}
+        if near_valid.size == 0 or far_valid.size == 0:
+            entry.update({"a": None, "b": None})
+            results.append(entry)
+            continue
+        near_med = float(np.median(near_valid))
+        far_med = float(np.median(far_valid))
+        a = (near_med - far_med) / denom
+        b = far_med - a / z_far
+        entry.update(
+            {
+                "a": float(a),
+                "b": float(b),
+                "zNearAssumedM": float(z_near),
+                "zFarAssumedM": float(z_far),
+                "nearDisparityMedian": near_med,
+                "farDisparityMedian": far_med,
+            }
+        )
+        results.append(entry)
+    return results
+
+
 def smooth_value(prev: Optional[float], value: Optional[float], alpha: float) -> float:
     if value is None:
         if prev is None:
@@ -1531,11 +2387,121 @@ def smooth_value(prev: Optional[float], value: Optional[float], alpha: float) ->
     return alpha * prev + (1.0 - alpha) * value
 
 
-def quantize_int16(value: float, scale: float) -> int:
-    if scale <= 0:
-        raise ValueError("Quantization scale must be positive.")
-    q = int(round(value / scale))
-    return max(-32768, min(32767, q))
+def evaluate_placement_observation(
+    *,
+    bbox: Tuple[float, float, float, float],
+    anchor_u: float,
+    anchor_v: float,
+    anchor_z_raw: Optional[float],
+    anchor_source: str,
+    depth_stats: Dict[str, float],
+    state: TrackState,
+    w_eye: int,
+    height: int,
+    args: argparse.Namespace,
+) -> Dict[str, Any]:
+    bbox_x, bbox_y, bbox_w, bbox_h = bbox
+    area = max(0.0, float(bbox_w) * float(bbox_h))
+    reasons: List[str] = []
+    confidence = 1.0
+
+    edge_margin = max(0.0, float(args.placement_conf_edge_margin_px))
+    edge_touch = (
+        bbox_x <= edge_margin
+        or bbox_y <= edge_margin
+        or bbox_x + bbox_w >= float(w_eye) - edge_margin
+        or bbox_y + bbox_h >= float(height) - edge_margin
+    )
+    if edge_touch:
+        confidence -= 0.35
+        reasons.append("bbox_touches_frame_edge")
+        if state.placement_low_streak > 0:
+            confidence -= 0.35
+            reasons.append("continuing_frameout_tail")
+
+    prev_area = state.bbox_area
+    area_ratio: Optional[float] = None
+    if prev_area is not None and prev_area > 0.0:
+        area_ratio = area / prev_area
+        if area_ratio < float(args.placement_conf_area_shrink_ratio):
+            confidence -= 0.25
+            reasons.append("bbox_area_shrunk")
+
+    if anchor_source == "bbox_center_depth":
+        confidence -= 0.20
+        reasons.append("bbox_center_anchor_fallback")
+
+    valid_count = int(round(depth_stats.get("valid_count", 0.0)))
+    if anchor_z_raw is None or not math.isfinite(float(anchor_z_raw)) or float(anchor_z_raw) <= 0.0:
+        confidence -= 0.60
+        reasons.append("no_valid_anchor_depth")
+    elif anchor_source not in ("animal_camera_root", "person_mask_median_depth") and valid_count < max(
+        1, int(args.depth_gate_min_valid)
+    ):
+        confidence -= 0.20
+        reasons.append("low_anchor_depth_valid_count")
+
+    iqr = float(depth_stats.get("iqr", 0.0))
+    mad = float(depth_stats.get("mad", 0.0))
+    if (
+        # person_mask_median_depth spreads over the whole body on purpose, so a wide
+        # iqr/mad is the expected shape, not a straddled edge. This gate exists to
+        # catch a *point* sample sitting on a depth discontinuity (D-004); applying
+        # it to the mask median would hold the anchor on ~1% of frames for a reason
+        # that no longer means anything.
+        anchor_source != "person_mask_median_depth"
+        and float(args.depth_gate_iqr) > 0.0
+        and float(args.depth_gate_mad) > 0.0
+        and iqr > float(args.depth_gate_iqr)
+        and mad > float(args.depth_gate_mad)
+    ):
+        confidence -= 0.25
+        reasons.append("unstable_anchor_depth_patch")
+
+    if (
+        state.last_good_anchor_u is not None
+        and state.last_good_anchor_v is not None
+        and math.isfinite(float(anchor_u))
+        and math.isfinite(float(anchor_v))
+    ):
+        du = float(anchor_u) - float(state.last_good_anchor_u)
+        dv = float(anchor_v) - float(state.last_good_anchor_v)
+        anchor_jump_px = math.sqrt(du * du + dv * dv)
+        if anchor_jump_px > float(args.placement_conf_anchor_jump_px):
+            confidence -= 0.20
+            reasons.append("anchor_uv_jump")
+    else:
+        anchor_jump_px = None
+
+    if (
+        state.last_good_anchor_z is not None
+        and anchor_z_raw is not None
+        and math.isfinite(float(anchor_z_raw))
+        and abs(float(anchor_z_raw) - float(state.last_good_anchor_z)) > float(args.placement_conf_depth_jump)
+    ):
+        confidence -= 0.20
+        reasons.append("anchor_depth_jump")
+
+    confidence = max(0.0, min(1.0, confidence))
+    threshold = float(args.placement_conf_hold_threshold)
+    status = "high" if confidence >= threshold else "low"
+    return {
+        "confidence": confidence,
+        "status": status,
+        "reasons": reasons,
+        "area": area,
+        "areaRatioFromPrevious": area_ratio,
+        "anchorJumpPx": anchor_jump_px,
+        "edgeTouch": edge_touch,
+        "depthStats": {
+            "validCount": valid_count,
+            "median": depth_stats.get("median"),
+            "iqr": depth_stats.get("iqr"),
+            "mad": depth_stats.get("mad"),
+            "p10": depth_stats.get("p10"),
+            "p90": depth_stats.get("p90"),
+        },
+    }
 
 
 def quantize_array_int16(values: np.ndarray, scale: float) -> np.ndarray:
@@ -1661,6 +2627,14 @@ def _compute_joints3d_and_root(
         conf_n = normalize_conf(conf)
         if conf_n < conf_th:
             continue
+        # prev_joints_abs stores this function's own previous-frame output, so
+        # its z is already in the flipped (bundle camera-Z, larger=farther)
+        # domain -- see state.joints_abs assignment at the call site. Keep
+        # prev_z in that domain for the "reuse previous" branch below, but
+        # feed sample_depth_robust's internal prev-frame banding a raw-domain
+        # value (disparity_to_camera_z is its own inverse for non-clamped
+        # inputs) since that gate compares against freshly re-sampled raw
+        # depth_frame values.
         prev_z = None
         if (
             prev_joints_abs is not None
@@ -1670,6 +2644,7 @@ def _compute_joints3d_and_root(
             and float(prev_joints_abs[idx, 2]) > 0.0
         ):
             prev_z = float(prev_joints_abs[idx, 2])
+        prev_z_raw = disparity_to_camera_z(prev_z) if prev_z is not None else None
 
         z_new, depth_stats, depth_reason = sample_depth_robust(
             depth_frame,
@@ -1695,12 +2670,13 @@ def _compute_joints3d_and_root(
             conf_n=conf_n,
             conf_th=conf_th,
             conf_margin=depth_gate_conf_margin,
-            prev_z=prev_z,
+            prev_z=prev_z_raw,
         )
         used_prev = False
         used_anchor = False
         if z_new is None:
             if prev_z is not None:
+                # Already flipped-domain (see comment above); reuse as-is.
                 z = prev_z
                 used_prev = True
             elif (
@@ -1709,12 +2685,16 @@ def _compute_joints3d_and_root(
                 and math.isfinite(anchor_z_fallback)
                 and anchor_z_fallback > 0.0
             ):
+                # anchor_z_fallback is the caller's already-fixed anchor_z;
+                # already flipped-domain, do not flip again.
                 z = float(anchor_z_fallback)
                 used_anchor = True
             else:
                 z = 0.0
         else:
-            z = z_new
+            # z_new is raw depth_frame domain (0.0=far, 1.0=near); flip to
+            # the bundle's camera-Z convention (larger=farther).
+            z = disparity_to_camera_z(z_new)
         if z <= 0.0:
             joints3d[idx] = (0.0, 0.0, 0.0)
             if debug_depth:
@@ -1782,6 +2762,58 @@ def invert_camera_xyz_to_uv(
         uv[idx] = (u, v)
         valid[idx] = True
     return uv, valid
+
+
+def animal_camera_root_anchor(
+    obj: Dict[str, Any],
+    args: argparse.Namespace,
+    w_eye: int,
+    height: int,
+) -> Optional[Tuple[float, float, float, np.ndarray]]:
+    """Return an AniMer camera-space root anchor as (u, v, z, xyz)."""
+    if int(obj.get("category_id", TYPE_OTHER)) != TYPE_ANIMAL:
+        return None
+    coord_system = str(obj.get("source_coord_system") or "").lower()
+    if "camera_xyz_absolute" not in coord_system:
+        return None
+    source_joints3d = obj.get("source_joints3d")
+    if source_joints3d is None:
+        return None
+    try:
+        joints = np.asarray(source_joints3d, dtype=np.float32).copy()
+    except Exception:
+        return None
+    if joints.ndim != 2 or joints.shape[1] < 3:
+        return None
+    joints = joints[:, :3] * pose_joint_scale(
+        args,
+        obj.get("source_coord_system"),
+        obj.get("source_engine"),
+    )
+    if bool(args.pose_keypoints3d_flip_y):
+        joints[:, 1] *= -1.0
+    source_valid = obj.get("source_joints_valid")
+    if source_valid is None:
+        valid = np.ones((joints.shape[0],), dtype=bool)
+    else:
+        valid = np.asarray(source_valid, dtype=bool).reshape(-1)
+        if valid.shape[0] != joints.shape[0]:
+            valid = np.ones((joints.shape[0],), dtype=bool)
+    valid &= np.all(np.isfinite(joints), axis=1)
+    if not np.any(valid):
+        return None
+    root = compute_root(joints, valid, obj.get("root_indices", []))
+    if not np.all(np.isfinite(root)) or float(root[2]) <= 0.0:
+        return None
+    uv, uv_valid = invert_camera_xyz_to_uv(root.reshape(1, 3), w_eye, height, args.fovx_deg)
+    if not bool(uv_valid[0]):
+        return None
+    u, v = float(uv[0, 0]), float(uv[0, 1])
+    if not (math.isfinite(u) and math.isfinite(v)):
+        return None
+    if u < 0.0 or u >= float(w_eye) or v < 0.0 or v >= float(height):
+        return None
+    return u, v, float(root[2]), root.astype(np.float32)
 
 
 def compute_joints_rel(
@@ -1952,12 +2984,14 @@ def log_frame_summary(
         z_raw = _fmt_float(obj.get("anchor_z_raw"))
         z_ema = _fmt_float(obj.get("anchor_z"))
         z_q = obj.get("anchor_z_q")
+        anchor_source = obj.get("anchor_source")
         cat_name = obj.get("category_name") or ""
         base = (
             f"[obj {obj_idx}] tid={obj.get('track_id')} "
             f"cat={obj.get('category_id')}({cat_name}) "
             f"bbox=({bbox_x:.1f},{bbox_y:.1f},{bbox_w:.1f},{bbox_h:.1f}) "
             f"anchor={anchor_str} z_raw={z_raw} z_ema={z_ema} z_q={z_q} "
+            f"anchor_source={anchor_source} "
             f"skeleton={1 if obj.get('has_skeleton') else 0}"
         )
         if obj.get("has_skeleton"):
@@ -2178,10 +3212,20 @@ def verify_meta_bin(path: str, debug_first_frames: int) -> None:
                 pos += 8  # rot
                 if obj_idx == 0:
                     first_track_id = int(track_id)
-                if flags & 1:
+                if flags & FLAG_SKELETON:
                     kp_count = kp_counts.get(int(category_id), 0)
                     pos += kp_count * 3 * 2
                     pos += kp_count
+                if flags & FLAG_SMPL:
+                    if pos + 6 > len(payload):
+                        break
+                    _smpl_version, rot_count, beta_count = struct.unpack_from("<HHH", payload, pos)
+                    pos += 6 + int(rot_count) * 9 * 4 + int(beta_count) * 4 + 3 * 4
+                if flags & FLAG_SMAL:
+                    if pos + 6 > len(payload):
+                        break
+                    _smal_version, rot_count, beta_count = struct.unpack_from("<HHH", payload, pos)
+                    pos += 6 + int(rot_count) * 9 * 4 + int(beta_count) * 4 + 3 * 4
             print(
                 f"[verify] frame {frame_idx} decoded objects={objects_count} "
                 f"first_track_id={first_track_id}"
@@ -2248,7 +3292,7 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
     fps = video_meta.fps
     w_eye = width // 2
 
-    depth = load_depth(args.depth_npz)
+    depth, depth_disp_min, depth_disp_max = load_depth_with_disp_range(args.depth_npz)
     full_meta_h, full_meta_w = depth.shape[1], depth.shape[2]
     with open(args.metadata_json, "r", encoding="utf-8") as handle:
         metadata = json.load(handle)
@@ -2275,6 +3319,9 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
     if num_frames <= 0:
         raise RuntimeError("No frames to process after aligning depth/metadata/video.")
 
+    shots = load_shots_for_bundle(args.shots_json, num_frames)
+    shot_start_frames = {s for s, _ in shots if s > 0}
+
     if t_depth != num_frames or t_meta != num_frames or (t_video is not None and t_video != num_frames):
         print(
             f"Frame alignment: depth={t_depth}, meta={t_meta}, video={t_video or 'unknown'} -> {num_frames}"
@@ -2298,10 +3345,105 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
 
     compress_id, compress_fn, compress_name = choose_compression(args.frame_compress)
 
+    background_disparity_series = np.full(num_frames, np.nan, dtype=np.float64)
+    background_drift_correction = np.zeros(num_frames, dtype=np.float64)
+    if args.background_drift_correction:
+        background_disparity_series, background_shot_safe = compute_background_disparity_series(
+            depth,
+            frames,
+            full_meta_w,
+            full_meta_h,
+            crop_x0,
+            crop_y0,
+            crop_w,
+            crop_h,
+            args.background_drift_min_px,
+            shots,
+            args.background_drift_max_occlusion_frac,
+        )
+        background_drift_correction = build_background_drift_correction(
+            background_disparity_series, background_shot_safe, shots, num_frames
+        )
+        print(
+            "Background drift correction: "
+            f"disparity median={np.nanmedian(background_disparity_series):.4f} "
+            f"stdev={np.nanstd(background_disparity_series):.4f} "
+            f"correction range=[{background_drift_correction.min():.4f}, "
+            f"{background_drift_correction.max():.4f}]"
+        )
+
+    depth_scale_calibration: Optional[Dict[str, Any]] = None
+    if args.depth_scale_calibration:
+        if not (
+            args.depth_scale_near_box
+            and args.depth_scale_far_box
+            and args.depth_scale_z_near is not None
+            and args.depth_scale_z_far is not None
+        ):
+            raise ValueError(
+                "--depth_scale_calibration 1 requires --depth_scale_near_box, "
+                "--depth_scale_far_box, --depth_scale_z_near and --depth_scale_z_far."
+            )
+
+        def _parse_box(s: str) -> Tuple[int, int, int, int]:
+            parts = [int(v.strip()) for v in s.split(",")]
+            if len(parts) != 4:
+                raise ValueError(f"expected 'x0,y0,x1,y1', got {s!r}")
+            return parts[0], parts[1], parts[2], parts[3]
+
+        near_box = _parse_box(args.depth_scale_near_box)
+        far_box = _parse_box(args.depth_scale_far_box)
+        near_series = compute_fixed_box_disparity_series(depth, near_box)
+        far_series = compute_fixed_box_disparity_series(depth, far_box)
+        shot_calibrations = compute_shot_scale_calibration(
+            near_series,
+            far_series,
+            args.depth_scale_z_near,
+            args.depth_scale_z_far,
+            shots,
+            num_frames,
+        )
+        depth_scale_calibration = {
+            "schema": "master_project.depth_scale_calibration.v1",
+            "meaning": (
+                "Per-shot affine-disparity calibration solving disparity = "
+                "a/Z + b (Z in meters) from two fixed static background "
+                "reference patches at assumed real-world distances "
+                "zNearAssumedM < zFarAssumedM. See "
+                "docs/bundle-shared/D-004-anchor-z-accuracy.md. Only b is "
+                "trustworthy at "
+                "metric scale -- it depends solely on the ratio "
+                "zFarAssumedM/zNearAssumedM, not on either patch's absolute "
+                "distance. a carries an unknown absolute scale factor; only "
+                "the ratio 1/(disparity - b) is meaningful for relative "
+                "placement (matches Unity's ResolvePopoutFraction use), not "
+                "a by itself. Apply BEFORE any popout/placement transform, "
+                "not inside it. A shot entry with a=null/b=null means too "
+                "few finite background samples were available in that shot "
+                "-- do not substitute a neighboring shot's values."
+            ),
+            "near_box_crop_px": list(near_box),
+            "far_box_crop_px": list(far_box),
+            "shots": shot_calibrations,
+        }
+        for entry in shot_calibrations:
+            if entry.get("a") is None:
+                print(
+                    f"Depth scale calibration: shot [{entry['shotStart']},"
+                    f"{entry['shotEnd']}) -- insufficient background samples, "
+                    "a/b left null."
+                )
+            else:
+                print(
+                    f"Depth scale calibration: shot [{entry['shotStart']},"
+                    f"{entry['shotEnd']}) a={entry['a']:.4f} b={entry['b']:.4f}"
+                )
+
     track_state: Dict[int, TrackState] = {}
     track_id_map: Dict[Any, int] = {}
     next_track_id = 1
     prev_objects: List[Dict[str, Any]] = []
+    placement_observation_frames: List[Dict[str, Any]] = []
 
     out_dir = os.path.dirname(os.path.abspath(args.out_bundle)) or "."
     os.makedirs(out_dir, exist_ok=True)
@@ -2369,7 +3511,22 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                     if bbox is None:
                         continue
                     x, y, w, h = bbox
+                    source_w, source_h = source_image_size(raw_obj, full_meta_w, full_meta_h)
+                    source_w, source_h = source_canvas_size(
+                        source_w,
+                        source_h,
+                        width,
+                        w_eye,
+                        args.left_eye_origin,
+                    )
                     x = adjust_left_eye(x, w_eye, width, args.left_eye_origin)
+                    x, y, w, h = source_to_metadata_bbox(
+                        (x, y, w, h),
+                        source_w,
+                        source_h,
+                        full_meta_w,
+                        full_meta_h,
+                    )
                     bbox_xyxy = intersect_bbox_with_crop((x, y, w, h), crop_x0, crop_y0, crop_w, crop_h)
                     if bbox_xyxy is None:
                         continue
@@ -2402,6 +3559,28 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                     cat_spec = cat_specs.get(category_id, cat_specs.get(TYPE_OTHER, {}))
                     expected_kp = int(cat_spec.get("kp_count", 0))
                     keypoints, kp_vis, kp_given = parse_keypoints(raw_obj, expected_kp)
+                    if keypoints is not None and not keypoints_look_like_pixels(
+                        keypoints,
+                        kp_vis,
+                        full_meta_w,
+                        full_meta_h,
+                    ):
+                        denorm_keypoints = (
+                            denormalize_pose_keypoints2d_from_source_box(
+                                raw_obj,
+                                keypoints,
+                                kp_vis,
+                                full_meta_w,
+                                full_meta_h,
+                            )
+                            if category_id == TYPE_PERSON
+                            else None
+                        )
+                        if denorm_keypoints is not None:
+                            keypoints = denorm_keypoints
+                        else:
+                            keypoints = None
+                            kp_vis = []
                     if expected_kp > 0 and kp_given != expected_kp:
                         ann_id = raw_obj.get("id", "unknown")
                         print(
@@ -2417,6 +3596,14 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                                     kp_vis[idx] = 0
                                 continue
                             u = adjust_left_eye(u, w_eye, width, args.left_eye_origin)
+                            u, v = source_to_metadata_point(
+                                u,
+                                v,
+                                source_w,
+                                source_h,
+                                full_meta_w,
+                                full_meta_h,
+                            )
                             uv_eye = meta_to_eye_point(
                                 u, v, crop_x0, crop_y0, crop_w, crop_h, w_eye, height
                             )
@@ -2432,6 +3619,8 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                     source_joints3d, source_joints_valid, source_coord_system, source_engine, source_keypoint_format = (
                         parse_pose_keypoints3d(raw_obj, expected_kp)
                     )
+                    smpl_payload = parse_smpl_payload(raw_obj)
+                    smal_payload = parse_smal_payload(raw_obj)
                     use_pose_keypoints3d = (
                         source_joints3d is not None
                         and expected_kp > 0
@@ -2449,16 +3638,26 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                             raw_track_id = raw_obj[key]
                             break
                     track_id, next_track_id = normalize_track_id(raw_track_id, track_id_map, next_track_id)
-                    segmentation = raw_obj.get("segmentation") or raw_obj.get("mask")
-                    has_skeleton = expected_kp > 0 and kp_given > 0 and keypoints is not None
-                    if not has_skeleton:
-                        keypoints = None
+                    raw_sam2 = raw_obj.get("sam2")
+                    raw_sam2 = raw_sam2 if isinstance(raw_sam2, dict) else {}
+                    segmentation = (
+                        raw_obj.get("segmentation")
+                        or raw_obj.get("mask")
+                        or raw_sam2.get("segmentation")
+                        or raw_sam2.get("mask")
+                    )
+                    has_pose3d_skeleton = use_pose_keypoints3d and source_joints3d is not None
+                    has_2d_depth_skeleton = expected_kp > 0 and kp_given > 0 and keypoints is not None
+                    has_skeleton = bool(expected_kp > 0 and (has_pose3d_skeleton or has_2d_depth_skeleton))
+                    if keypoints is None:
                         kp_vis = []
                     objects.append(
                         {
                             "track_id": track_id,
                             "category_id": category_id,
                             "bbox": (x, y, w, h),
+                            "source_w": source_w,
+                            "source_h": source_h,
                             "keypoints": keypoints,
                             "kp_vis": kp_vis,
                             "kp_expected": expected_kp,
@@ -2471,6 +3670,8 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                             "source_coord_system": source_coord_system,
                             "source_engine": source_engine,
                             "source_keypoint_format": source_keypoint_format,
+                            "smpl_payload": smpl_payload,
+                            "smal_payload": smal_payload,
                         }
                     )
 
@@ -2480,79 +3681,263 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                 payload = bytearray()
                 payload.extend(struct.pack("<H", len(objects)))
                 depth_frame = depth[frame_idx]
+                frame_placement_observations: List[Dict[str, Any]] = []
 
                 for obj in objects:
                     track_id = int(obj["track_id"])
                     category_id = int(obj["category_id"])
                     bbox_x, bbox_y, bbox_w, bbox_h = obj["bbox"]
 
-                    anchor_uv = None
-                    if category_id in (TYPE_PERSON, TYPE_ANIMAL):
-                        anchor_uv = compute_anchor_from_keypoints(
-                            obj.get("keypoints"),
-                            obj.get("kp_vis") or [],
-                            obj.get("anchor_indices") or [],
-                        )
-                    if anchor_uv is None:
-                        anchor_uv_meta = compute_mask_centroid(
-                            obj["segmentation"],
-                            full_meta_h,
-                            full_meta_w,
-                            crop_x0=crop_x0,
-                            crop_y0=crop_y0,
-                            crop_w=crop_w,
-                            crop_h=crop_h,
-                        )
-                        if anchor_uv_meta is not None:
-                            anchor_u_meta, anchor_v_meta = anchor_uv_meta
-                            anchor_u_meta = adjust_left_eye(
-                                anchor_u_meta, w_eye, width, args.left_eye_origin
+                    anchor_source = "depth_sample"
+                    animal_root_anchor = animal_camera_root_anchor(obj, args, w_eye, height)
+                    anchor_depth_stats: Dict[str, float] = {}
+                    if animal_root_anchor is not None:
+                        anchor_u, anchor_v, anchor_z_raw, _animal_root_xyz = animal_root_anchor
+                        anchor_source = "animal_camera_root"
+                        anchor_depth_stats = {
+                            "valid_count": 1.0,
+                            "median": float(anchor_z_raw),
+                            "iqr": 0.0,
+                            "mad": 0.0,
+                            "p10": float(anchor_z_raw),
+                            "p90": float(anchor_z_raw),
+                        }
+                    else:
+                        anchor_uv = None
+                        anchor_uv_from_mask = False
+                        source_w = int(obj.get("source_w", full_meta_w))
+                        source_h = int(obj.get("source_h", full_meta_h))
+                        if category_id in (TYPE_PERSON, TYPE_ANIMAL):
+                            anchor_uv = compute_anchor_from_keypoints(
+                                obj.get("keypoints"),
+                                obj.get("kp_vis") or [],
+                                obj.get("anchor_indices") or [],
                             )
-                            anchor_uv = meta_to_eye_point(
-                                anchor_u_meta,
-                                anchor_v_meta,
+                        if anchor_uv is None:
+                            anchor_uv_source = compute_mask_centroid(
+                                obj["segmentation"],
+                                source_h,
+                                source_w,
+                            )
+                            if anchor_uv_source is not None:
+                                anchor_uv_from_mask = True
+                                anchor_u_meta, anchor_v_meta = anchor_uv_source
+                                anchor_u_meta = adjust_left_eye(
+                                    anchor_u_meta, w_eye, width, args.left_eye_origin
+                                )
+                                anchor_u_meta, anchor_v_meta = source_to_metadata_point(
+                                    anchor_u_meta,
+                                    anchor_v_meta,
+                                    source_w,
+                                    source_h,
+                                    full_meta_w,
+                                    full_meta_h,
+                                )
+                                anchor_uv = meta_to_eye_point(
+                                    anchor_u_meta,
+                                    anchor_v_meta,
+                                    crop_x0,
+                                    crop_y0,
+                                    crop_w,
+                                    crop_h,
+                                    w_eye,
+                                    height,
+                                )
+                        if anchor_uv is None:
+                            anchor_u = bbox_x + bbox_w * 0.5
+                            anchor_v = bbox_y + bbox_h * 0.5
+                            anchor_source = "bbox_center_depth"
+                        else:
+                            anchor_u, anchor_v = anchor_uv
+                        anchor_u, anchor_v = clamp_point(anchor_u, anchor_v, w_eye, height)
+
+                        if anchor_source != "bbox_center_depth":
+                            # anchor_source describes the uv basis here (mask centroid vs
+                            # keypoint midpoint); z is always window-sampled below. See
+                            # docs/bundle-shared/archive/D-005-depth-sampling-window.md Q2 -- Unity couldn't tell
+                            # from the old single "depth_sample" label whether mask-based
+                            # anchoring was actually in effect for `other` tracks.
+                            anchor_source = (
+                                "mask_centroid_depth_sample" if anchor_uv_from_mask else "keypoint_depth_sample"
+                            )
+                        anchor_z_raw = None
+                        if (
+                            args.person_anchor_mask_median
+                            and category_id == TYPE_PERSON
+                            and obj.get("segmentation") is not None
+                        ):
+                            # D-004: the pelvis point sample flips between the hip and
+                            # the subject's own forearm. The mask median can't, because
+                            # one limb is a small fraction of the silhouette. uv is left
+                            # alone -- only z changes, so the diff against the previous
+                            # build is one quantity.
+                            mask_stats: Dict[str, float] = {}
+                            anchor_z_raw = sample_depth_mask_median(
+                                depth_frame,
+                                obj["segmentation"],
+                                source_w,
+                                source_h,
+                                full_meta_w,
+                                full_meta_h,
+                                crop_x0,
+                                crop_y0,
+                                stats_out=mask_stats,
+                            )
+                            if anchor_z_raw is not None:
+                                anchor_depth_stats = mask_stats
+                                anchor_source = "person_mask_median_depth"
+                        if anchor_z_raw is None:
+                            anchor_z_raw = sample_depth_median(
+                                depth_frame,
+                                anchor_u,
+                                anchor_v,
+                                args.sample_k,
+                                meta_w,
+                                meta_h,
+                                w_eye,
+                                height,
                                 crop_x0,
                                 crop_y0,
                                 crop_w,
                                 crop_h,
-                                w_eye,
-                                height,
+                                stats_out=anchor_depth_stats,
                             )
-                    if anchor_uv is None:
-                        anchor_u = bbox_x + bbox_w * 0.5
-                        anchor_v = bbox_y + bbox_h * 0.5
-                    else:
-                        anchor_u, anchor_v = anchor_uv
-                    anchor_u, anchor_v = clamp_point(anchor_u, anchor_v, w_eye, height)
-
-                    anchor_z_raw = sample_depth_median(
-                        depth_frame,
-                        anchor_u,
-                        anchor_v,
-                        args.sample_k,
-                        meta_w,
-                        meta_h,
-                        w_eye,
-                        height,
-                        crop_x0,
-                        crop_y0,
-                        crop_w,
-                        crop_h,
-                    )
+                        if anchor_z_raw is not None:
+                            # Remove DepthCrafter's few-seconds-scale absolute disparity
+                            # drift before it becomes anchor_z (see
+                            # docs/bundle-shared/D-004-anchor-z-accuracy.md). Not applied to
+                            # animal_camera_root, which doesn't go through this branch.
+                            anchor_z_raw = anchor_z_raw - background_drift_correction[frame_idx]
+                            anchor_z_raw = disparity_to_camera_z(anchor_z_raw)
 
                     state = track_state.setdefault(track_id, TrackState())
-                    anchor_z = smooth_value(state.anchor_z, anchor_z_raw, args.ema_alpha)
-                    state.anchor_z = anchor_z
+                    if state.last_seen_frame is None or state.last_seen_frame != frame_idx - 1:
+                        state.bbox_area = None
+                        state.placement_low_streak = 0
+                    if frame_idx in shot_start_frames:
+                        # A hard cut makes a real camera-distance jump legitimate, not
+                        # sensor noise -- carrying pre-cut EMA/last-good-anchor state
+                        # across it would smear or gate-hold a stale placement into the
+                        # new shot. Treat the shot's first frame as a cold start.
+                        state.bbox_area = None
+                        state.placement_low_streak = 0
+                        state.anchor_z = None
+                        state.last_good_anchor_u = None
+                        state.last_good_anchor_v = None
+                        state.last_good_anchor_z = None
+                        state.last_good_anchor_source = None
+                        state.joints_rel = None
+                        state.joints_abs = None
+                    placement_eval = evaluate_placement_observation(
+                        bbox=(bbox_x, bbox_y, bbox_w, bbox_h),
+                        anchor_u=anchor_u,
+                        anchor_v=anchor_v,
+                        anchor_z_raw=anchor_z_raw,
+                        anchor_source=anchor_source,
+                        depth_stats=anchor_depth_stats,
+                        state=state,
+                        w_eye=w_eye,
+                        height=height,
+                        args=args,
+                    )
+                    raw_anchor_u = float(anchor_u)
+                    raw_anchor_v = float(anchor_v)
+                    raw_anchor_z = float(anchor_z_raw) if anchor_z_raw is not None else None
+                    raw_anchor_source = str(anchor_source)
+                    placement_held = False
+                    hold_source = None
+                    if (
+                        placement_eval["status"] == "low"
+                        and state.last_good_anchor_u is not None
+                        and state.last_good_anchor_v is not None
+                        and state.last_good_anchor_z is not None
+                    ):
+                        anchor_u = float(state.last_good_anchor_u)
+                        anchor_v = float(state.last_good_anchor_v)
+                        anchor_z = float(state.last_good_anchor_z)
+                        anchor_source = "held_previous_high_conf"
+                        placement_held = True
+                        hold_source = state.last_good_anchor_source
+                    else:
+                        if anchor_source == "animal_camera_root":
+                            anchor_z = float(anchor_z_raw) if anchor_z_raw is not None else smooth_value(state.anchor_z, None, args.ema_alpha)
+                        else:
+                            anchor_z = smooth_value(state.anchor_z, anchor_z_raw, args.ema_alpha)
+                        state.anchor_z = anchor_z
+                        if placement_eval["status"] == "high":
+                            state.last_good_anchor_u = float(anchor_u)
+                            state.last_good_anchor_v = float(anchor_v)
+                            state.last_good_anchor_z = float(anchor_z)
+                            state.last_good_anchor_source = str(anchor_source)
+                    state.bbox_area = float(placement_eval["area"])
+                    if placement_eval["status"] == "low":
+                        state.placement_low_streak += 1
+                    else:
+                        state.placement_low_streak = 0
+                    state.last_seen_frame = frame_idx
 
-                    anchor_z_q = quantize_int16(anchor_z, args.quant_pos_scale)
+                    anchor_z_q = int(round(float(anchor_z) / args.quant_pos_scale))
+                    if not -32768 <= anchor_z_q <= 32767:
+                        # Silent clamping would pin every far object to the same
+                        # step -- the exact failure D-008 reported, but worse.
+                        raise SystemExit(
+                            f"anchor_z={anchor_z:.6f} at frame {frame_idx} track {track_id} "
+                            f"needs anchor_z_q={anchor_z_q}, which overflows int16 at "
+                            f"--quant_pos_scale {args.quant_pos_scale}. Re-run with a "
+                            f"larger scale (at least {abs(anchor_z) / 32767:.8f}). "
+                            f"Depth-sampled anchors stay under 1.0; animal_camera_root "
+                            f"anchors are camera-space Z and can be much larger."
+                        )
                     anchor_scale_q = 65535
                     debug_depth = int(args.debug_frame) == frame_idx
+                    frame_placement_observations.append(
+                        {
+                            "trackId": track_id,
+                            "categoryId": category_id,
+                            "category": cat_name_map.get(category_id, f"cat_{category_id}"),
+                            "bbox": [
+                                float(bbox_x),
+                                float(bbox_y),
+                                float(bbox_w),
+                                float(bbox_h),
+                            ],
+                            "rawAnchor": {
+                                "u": raw_anchor_u,
+                                "v": raw_anchor_v,
+                                "z": raw_anchor_z,
+                                "source": raw_anchor_source,
+                            },
+                            "usedAnchor": {
+                                "u": float(anchor_u),
+                                "v": float(anchor_v),
+                                "z": float(anchor_z),
+                                "source": anchor_source,
+                            },
+                            "placementConfidence": float(placement_eval["confidence"]),
+                            "placementStatus": placement_eval["status"],
+                            "placementHeld": placement_held,
+                            "holdSource": hold_source,
+                            "reasons": placement_eval["reasons"],
+                            "areaRatioFromPrevious": placement_eval["areaRatioFromPrevious"],
+                            "anchorJumpPx": placement_eval["anchorJumpPx"],
+                            "edgeTouch": placement_eval["edgeTouch"],
+                            "depthStats": placement_eval["depthStats"],
+                        }
+                    )
 
                     keypoints = obj["keypoints"]
                     kp_vis = obj.get("kp_vis") or []
                     kp_expected = int(obj.get("kp_expected", 0))
                     has_skeleton = bool(obj.get("has_skeleton", False))
-                    flags = 1 if has_skeleton else 0
+                    smpl_payload = obj.get("smpl_payload")
+                    smal_payload = obj.get("smal_payload")
+                    flags = 0
+                    if has_skeleton:
+                        flags |= FLAG_SKELETON
+                    if smpl_payload is not None:
+                        flags |= FLAG_SMPL
+                    if smal_payload is not None:
+                        flags |= FLAG_SMAL
                     joints_rel_q_local = None
                     encoded_skeleton = False
 
@@ -2609,7 +3994,10 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                         state.joints_rel = joints_rel
                         state.joints_abs = joints_rel + anchor_xyz.reshape(1, 3)
                         if len(kp_vis) != kp_expected:
-                            kp_vis = (kp_vis + [0] * kp_expected)[:kp_expected]
+                            kp_vis = [
+                                1 if kp_idx < int(joints_valid.shape[0]) and bool(joints_valid[kp_idx]) else 0
+                                for kp_idx in range(kp_expected)
+                            ]
                         for kp_idx in range(min(kp_expected, int(joints_valid.shape[0]))):
                             if not bool(joints_valid[kp_idx]):
                                 kp_vis[kp_idx] = 0
@@ -2785,6 +4173,10 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                             struct.pack("<" + "h" * (kp_expected * 3), *joints_rel_q.reshape(-1).tolist())
                         )
                         payload.extend(struct.pack("<" + "B" * kp_expected, *kp_vis))
+                    if smpl_payload is not None:
+                        payload.extend(pack_smpl_payload(smpl_payload))
+                    if smal_payload is not None:
+                        payload.extend(pack_smal_payload(smal_payload))
                     if debug_detail and debug_objects is not None:
                         vis_count = 0
                         joints_q_min = None
@@ -2804,6 +4196,7 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                                 "anchor_z_raw": anchor_z_raw,
                                 "anchor_z": anchor_z,
                                 "anchor_z_q": anchor_z_q,
+                                "anchor_source": anchor_source,
                                 "has_skeleton": has_skeleton,
                                 "kp_count": kp_expected,
                                 "vis_count": vis_count,
@@ -2812,6 +4205,17 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                             }
                         )
 
+                bg_disp_raw = background_disparity_series[frame_idx]
+                placement_observation_frames.append(
+                    {
+                        "frameIndex": frame_idx,
+                        "backgroundDisparity": (
+                            float(bg_disp_raw) if np.isfinite(bg_disp_raw) else None
+                        ),
+                        "backgroundDriftCorrection": float(background_drift_correction[frame_idx]),
+                        "objects": frame_placement_observations,
+                    }
+                )
                 compressed = compress_fn(bytes(payload))
                 offset = meta_f.tell()
                 if debug_frame:
@@ -2906,13 +4310,134 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
             "quant_joint_scale": args.quant_joint_scale,
             "joints_space": args.joints_space,
             "joints_source": args.joints_source,
+            "depth_policy": {
+                "schema": "master_project.depth_policy.v1",
+                "convention": "depthcrafter_normalized_disparity",
+                "near_far_direction": "depth_npz values: 0.0=far/back, 1.0=near/front",
+                "disp_min": depth_disp_min,
+                "disp_max": depth_disp_max,
+                "normalization": "global_minmax_pre_clip",
+                "meaning": (
+                    "disp_min/disp_max are the pre-normalization min/max DepthCrafter "
+                    "produced for this clip, before the global min-max normalization "
+                    "that maps depth_npz into [0, 1]. Recover the pre-normalization "
+                    "value with disp_raw = disp_norm * (disp_max - disp_min) + disp_min, "
+                    "then treat 1 / disp_raw as a relative (not metric) depth ordering "
+                    "signal -- DepthCrafter is affine-invariant, so disp_raw ~= a/Z + b "
+                    "for unknown per-clip a, b; disp_min/disp_max do not calibrate a, b. "
+                    "disp_min/disp_max can be null for depth_npz files produced before "
+                    "this field was added."
+                ),
+                "relation_to_anchor_z": (
+                    "meta.bin anchor_z is this same normalized disparity, flipped: "
+                    "anchor_z = max(1 - disp_norm, 1e-4), larger=farther, matching "
+                    "camera_xyz_from_uv_depth. So anchor_z is linear in DISPARITY, not "
+                    "in depth -- the far field is compressed into a narrow band by "
+                    "construction and anchor_z is not metres. Do not apply the "
+                    "disp_min/disp_max recovery formula to anchor_z; DepthCrafter is "
+                    "affine-invariant, so no per-clip a, b are known."
+                ),
+            },
+            "anchor_z_policy": {
+                "schema": "master_project.anchor_z_policy.v1",
+                "definition": "anchor_z = max(1 - depth_npz_normalized_disparity, 1e-4)",
+                "units": (
+                    "Not metres. Linear in DepthCrafter's normalized disparity, so equal "
+                    "anchor_z steps are not equal distance steps and the far field is "
+                    "compressed. Use it as a relative ordering/placement signal only."
+                ),
+                "quant_pos_scale": args.quant_pos_scale,
+                "quant_note": (
+                    "Read quant_pos_scale from this manifest (or the meta.bin header) -- "
+                    "never hardcode it. It was reduced from 0.002 to 0.0001 so that "
+                    "same-frame objects in the far field keep distinct anchor_z steps "
+                    "instead of collapsing onto one. Read it from here per bundle -- a "
+                    "clip whose anchors are all depth-sampled may ship a finer step. "
+                    "See docs/bundle-shared/D-008-anchor-z-quantization.md."
+                ),
+            },
             "pose_keypoints3d_policy": {
                 "enabled": args.joints_source in ("auto", "pose_keypoints3d"),
-                "meaning": "pose.keypoints3d is treated as skeleton shape; depth is used for object anchor placement.",
+                "meaning": "pose.keypoints3d is treated as skeleton shape. Animal camera_xyz_absolute roots are also used as placement anchors; depth sampling remains the fallback anchor source.",
                 "metrabs_joint_scale": args.metrabs_joint_scale,
                 "animer_joint_scale": args.animer_joint_scale,
                 "flip_y": bool(args.pose_keypoints3d_flip_y),
                 "output_axes": "x_right_y_up_z_forward",
+                "animal_camera_root_anchor": True,
+            },
+            "smpl_meta_policy": {
+                "enabled": True,
+                "flag_bit": 1,
+                "block_version": SMPL_BLOCK_VERSION,
+                "layout": "uint16 version, uint16 rotation_count, uint16 beta_count, float32 rotation_matrices[rotation_count][3][3], float32 betas[beta_count], float32 transl[3]",
+                "rotation_count": SMPL_ROTATION_COUNT,
+                "beta_count": SMPL_BETA_COUNT,
+                "parameterization": "rotation_matrix",
+                "rotation_order": ["global_orient", "body_pose_23"],
+            },
+            "smal_meta_policy": {
+                "enabled": True,
+                "flag_bit": 2,
+                "block_version": SMAL_BLOCK_VERSION,
+                "layout": "uint16 version, uint16 rotation_count, uint16 beta_count, float32 rotation_matrices[rotation_count][3][3], float32 betas[beta_count], float32 transl[3]",
+                "rotation_count": SMAL_ROTATION_COUNT,
+                "beta_count": SMAL_BETA_COUNT,
+                "parameterization": "rotation_matrix",
+                "rotation_order": ["global_orient", "pose_34"],
+            },
+            "placement_observation_policy": {
+                "schema": "master_project.placement_observation_policy.v1",
+                "runtime_behavior": (
+                    "meta.bin stores the held/smoothed placement anchor. Low-confidence "
+                    "observations hold the previous high-confidence anchor when available."
+                ),
+                "sidecar": "source/placement_observations.json",
+                "hold_threshold": float(args.placement_conf_hold_threshold),
+                "edge_margin_px": float(args.placement_conf_edge_margin_px),
+                "area_shrink_ratio": float(args.placement_conf_area_shrink_ratio),
+                "anchor_jump_px": float(args.placement_conf_anchor_jump_px),
+                "depth_jump": float(args.placement_conf_depth_jump),
+                "confidence_meaning": "0.0 low confidence, 1.0 high confidence for placement update only.",
+            },
+            "anchor_z_policy": {
+                "schema": "master_project.anchor_z_policy.v1",
+                "person": (
+                    "person_mask_median_depth -- median disparity over the whole SAM2 mask"
+                    if args.person_anchor_mask_median
+                    else "keypoint_depth_sample -- 7x7 window at the pelvis keypoint"
+                ),
+                "animal": "animal_camera_root -- AniMer camera-space root Z. Does not read the depth map at all.",
+                "other": "mask_centroid_depth_sample -- 7x7 window at the SAM2 mask centroid",
+                "person_anchor_mask_median": int(args.person_anchor_mask_median),
+                "meaning": (
+                    "Which quantity anchor_z holds, per category. The three are not "
+                    "interchangeable: the person/other paths are normalized disparity "
+                    "(larger=farther after the flip), the animal path is camera-space Z "
+                    "on AniMer's own scale. See docs/bundle-shared/D-004-anchor-z-accuracy.md."
+                ),
+                "sidecar_field": "rawAnchor.source in source/placement_observations.json is authoritative per frame.",
+            },
+            "shots": [[int(s), int(e)] for s, e in shots],
+            "depth_scale_calibration": depth_scale_calibration,
+            "shot_boundary_policy": {
+                "schema": "master_project.shot_boundary_policy.v1",
+                "meaning": (
+                    "Each [start, end) range in shots is one continuous camera take with "
+                    "no hard cut inside it, in bundle frame indices. Camera distance/size "
+                    "can legitimately differ between shots for the same trackId -- it is "
+                    "not object motion. The bundle build resets per-track EMA smoothing "
+                    "and placement-hold gating at each shot's first frame, so anchor_u/"
+                    "anchor_v/anchor_z and root-relative skeleton joints are a fresh, "
+                    "ungated observation there instead of a blend with the previous shot."
+                ),
+                "unity_guidance": (
+                    "Do not interpolate or spring position/scale across a shot boundary "
+                    "for the same trackId; snap to the new shot's first-frame anchor "
+                    "instead. SMPL/SMAL betas are estimated independently per frame and "
+                    "are not reset or smoothed by shot -- their frame-to-frame noise is a "
+                    "separate, generally-noisy signal unrelated to shot boundaries."
+                ),
+                "single_shot_default": args.shots_json is None,
             },
             "camera_axes": "x_right_y_up_z_forward",
             "uv_origin": "top_left",
@@ -2948,10 +4473,37 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                 json.dump(manifest, dump_f, indent=2)
                 dump_f.write("\n")
 
+        placement_observations = {
+            "schema": "master_project.placement_observations.v1",
+            "policy": manifest["placement_observation_policy"],
+            "frames": placement_observation_frames,
+            "summary": {
+                "numFrames": len(placement_observation_frames),
+                "numObjects": sum(len(frame.get("objects", [])) for frame in placement_observation_frames),
+                "numHeldPlacements": sum(
+                    1
+                    for frame in placement_observation_frames
+                    for obj in frame.get("objects", [])
+                    if obj.get("placementHeld")
+                ),
+                "numLowConfidence": sum(
+                    1
+                    for frame in placement_observation_frames
+                    for obj in frame.get("objects", [])
+                    if obj.get("placementStatus") == "low"
+                ),
+            },
+        }
+
         with zipfile.ZipFile(args.out_bundle, "w", compression=zipfile.ZIP_DEFLATED) as zf:
             zf.write(video_mp4_path, arcname="video.mp4", compress_type=zipfile.ZIP_STORED)
             zf.write(meta_path, arcname="meta.bin", compress_type=zipfile.ZIP_DEFLATED)
             zf.writestr("manifest.json", json.dumps(manifest, indent=2), compress_type=zipfile.ZIP_DEFLATED)
+            zf.writestr(
+                "source/placement_observations.json",
+                json.dumps(placement_observations, indent=2),
+                compress_type=zipfile.ZIP_DEFLATED,
+            )
     finally:
         if os.path.exists(meta_path):
             os.remove(meta_path)

@@ -133,6 +133,11 @@ def inspect(meta_path: str, frame_from: int, frame_to: int, track_id_filter: int
                         )
                 else:
                     pass
+                if flags & 2:
+                    if pos + 6 > len(payload):
+                        break
+                    _version, rot_count, beta_count = struct.unpack_from("<HHH", payload, pos)
+                    pos += 6 + int(rot_count) * 9 * 4 + int(beta_count) * 4 + 3 * 4
         print(f"hits={found}")
 
 
