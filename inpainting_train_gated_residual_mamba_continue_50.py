@@ -16,7 +16,7 @@ from fire import Fire
 DEFAULT_CONFIG = "config/0160_overfit_gated_residual_mamba.json"
 DEFAULT_RESUME_FROM = (
     "weights/Overfit0160GatedResidualMambaContinue50/"
-    "MambaCrafter_20260530_124218/train_state_epoch000111.pt"
+    "MambaCrafter_20260605_161000/train_state_epoch000125.pt"
 )
 DEFAULT_SAVE_DIR = "weights/Overfit0160GatedResidualMambaContinue50/"
 DEFAULT_STAGE_EPOCHS = [50, 150, 152]
@@ -41,6 +41,7 @@ def main(
         "mamba_gate_schedule": "none",
         "mamba_gate_start": 1.0,
         "mamba_gate_end": 1.0,
+        "save_interval_epochs": 5,
         **overrides,
     }
     gated_train_main(config=config, **merged_overrides)

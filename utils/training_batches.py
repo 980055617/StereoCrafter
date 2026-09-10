@@ -32,6 +32,7 @@ class TrainBatch:
     cond: torch.Tensor
     mask: torch.Tensor
     target: torch.Tensor
+    teacher: Optional[torch.Tensor] = None
 
 
 def chunk_frame_ranges(num_frames: int, chunk_size: int, overlap: int) -> Iterator[Tuple[int, int]]:
@@ -156,6 +157,7 @@ class _BatchIterable(Iterable[TrainBatch]):
         overlap_teacher_prob: float = 1.0,
         overlap_noise_std: float = 0.0,
         target_override_stream: Optional[_StreamingRightVideo] = None,
+        teacher_regularization_stream: Optional[_StreamingRightVideo] = None,
     ) -> None:
         self._video_stream = video_stream
         self._source_hw = video_stream.spatial_hw
@@ -174,6 +176,7 @@ class _BatchIterable(Iterable[TrainBatch]):
         self._overlap_teacher_prob = max(0.0, min(1.0, overlap_teacher_prob))
         self._overlap_noise_std = max(0.0, float(overlap_noise_std))
         self._target_override_stream = target_override_stream
+        self._teacher_regularization_stream = teacher_regularization_stream
 
     def __len__(self) -> int:  # for progress bars
         return len(self._ranges)
@@ -188,6 +191,10 @@ class _BatchIterable(Iterable[TrainBatch]):
             if self._target_override_stream is not None:
                 override_cpu = self._target_override_stream.load_chunk(start, end)
                 target_cpu = self._match_spatial_hw(override_cpu, target_cpu.shape[2], target_cpu.shape[3])
+            teacher_cpu = None
+            if self._teacher_regularization_stream is not None:
+                teacher_cpu = self._teacher_regularization_stream.load_chunk(start, end)
+                teacher_cpu = self._match_spatial_hw(teacher_cpu, target_cpu.shape[2], target_cpu.shape[3])
 
             crop_region = self._crop_region
             if self._crop_min_size is not None and self._crop_max_size is not None:
@@ -202,6 +209,10 @@ class _BatchIterable(Iterable[TrainBatch]):
                     left = random.randint(0, max_left) if max_left > 0 else 0
                     crop_region = (top, left, crop_h, crop_w)
             if crop_region is not None:
+                if teacher_cpu is not None:
+                    _, _, teacher_cpu = self._apply_fixed_crop(
+                        cond_cpu, mask_cpu, teacher_cpu, crop_region
+                    )
                 cond_cpu, mask_cpu, target_cpu = self._apply_fixed_crop(
                     cond_cpu, mask_cpu, target_cpu, crop_region
                 )
@@ -235,9 +246,14 @@ class _BatchIterable(Iterable[TrainBatch]):
             cond = cond_cpu.to(device=self._device, dtype=self._dtype, non_blocking=True)
             mask = mask_cpu.to(device=self._device, dtype=self._dtype, non_blocking=True)
             target = target_cpu.to(device=self._device, dtype=self._dtype, non_blocking=True)
+            teacher = (
+                teacher_cpu.to(device=self._device, dtype=self._dtype, non_blocking=True)
+                if teacher_cpu is not None
+                else None
+            )
             prev_target_cpu = target_cpu.detach().clone() if self._use_prev_target_overlap else None
             prev_end = end
-            yield TrainBatch(cond=cond, mask=mask, target=target)
+            yield TrainBatch(cond=cond, mask=mask, target=target, teacher=teacher)
 
     @property
     def crop_region_info(self) -> Optional[dict]:
@@ -320,6 +336,8 @@ def prepare_batches(
     overlap_noise_std: float = 0.0,
     target_override_video_path: Optional[str] = None,
     target_override_is_sbs: bool = True,
+    teacher_regularization_video_path: Optional[str] = None,
+    teacher_regularization_is_sbs: bool = True,
 ) -> Iterable[TrainBatch]:
     """Load a stereo tiled video and yield `TrainBatch` lazily per chunk.
 
@@ -335,6 +353,8 @@ def prepare_batches(
         use_prev_target_overlap: True のとき、オーバーラップ領域の条件フレームを前チャンクのターゲットで置換し、推論時の条件付けを模倣。
         target_override_video_path: 指定時、target をこの動画の右目フレームに差し替える。
         target_override_is_sbs: True のとき、差し替え動画を left|right の SBS として右半分を読む。
+        teacher_regularization_video_path: 指定時、補助正則化用の右目教師動画を読む。
+        teacher_regularization_is_sbs: True のとき、教師動画を left|right の SBS として右半分を読む。
 
     Returns:
         Iterable[TrainBatch]: イテラブル（len() は利用可能）。各反復で GPU にコピーされたチャンクを返す。
@@ -351,6 +371,18 @@ def prepare_batches(
                 "Target override video frame count must match the training video "
                 f"({target_override_stream.frame_count} != {video_stream.frame_count}): "
                 f"{target_override_video_path}"
+            )
+    teacher_regularization_stream: Optional[_StreamingRightVideo] = None
+    if teacher_regularization_video_path:
+        teacher_regularization_stream = _StreamingRightVideo(
+            teacher_regularization_video_path,
+            is_sbs=teacher_regularization_is_sbs,
+        )
+        if teacher_regularization_stream.frame_count != video_stream.frame_count:
+            raise ValueError(
+                "Teacher regularization video frame count must match the training video "
+                f"({teacher_regularization_stream.frame_count} != {video_stream.frame_count}): "
+                f"{teacher_regularization_video_path}"
             )
 
     def _align_dim(desired: int, max_dim: int) -> int:
@@ -397,6 +429,7 @@ def prepare_batches(
         overlap_teacher_prob=overlap_teacher_prob,
         overlap_noise_std=overlap_noise_std,
         target_override_stream=target_override_stream,
+        teacher_regularization_stream=teacher_regularization_stream,
     )
 
 

@@ -11,6 +11,7 @@ import time
 import warnings
 from collections import defaultdict
 from datetime import datetime
+from fnmatch import fnmatchcase
 from typing import Any, Callable, Sequence, Union
 
 warnings.filterwarnings(
@@ -62,6 +63,51 @@ def _merge_stage_config(base: dict[str, Any], override: dict[str, Any]) -> dict[
     return merged
 
 
+def _split_string_list(raw: Sequence[str] | str | None) -> list[str]:
+    if raw is None:
+        return []
+    if isinstance(raw, str):
+        parts = raw.split(",")
+    else:
+        parts = []
+        for item in raw:
+            parts.extend(str(item).split(","))
+    return [part.strip() for part in parts if part and part.strip()]
+
+
+def _filter_resume_state_dict(
+    model_state: dict[str, Any],
+    target_state: dict[str, Any],
+    *,
+    ignore_mismatched_shapes: bool,
+    ignore_key_patterns: Sequence[str] | str | None,
+) -> tuple[dict[str, Any], list[tuple[str, str]]]:
+    patterns = _split_string_list(ignore_key_patterns)
+    filtered: dict[str, Any] = {}
+    skipped: list[tuple[str, str]] = []
+
+    def _matches(key: str, pattern: str) -> bool:
+        if any(ch in pattern for ch in "*?[]"):
+            return fnmatchcase(key, pattern)
+        return pattern in key
+
+    for key, value in model_state.items():
+        if patterns and any(_matches(key, pattern) for pattern in patterns):
+            skipped.append((key, "pattern"))
+            continue
+        target_value = target_state.get(key)
+        if (
+            ignore_mismatched_shapes
+            and isinstance(value, torch.Tensor)
+            and isinstance(target_value, torch.Tensor)
+            and tuple(value.shape) != tuple(target_value.shape)
+        ):
+            skipped.append((key, f"shape {tuple(value.shape)} -> {tuple(target_value.shape)}"))
+            continue
+        filtered[key] = value
+    return filtered, skipped
+
+
 import torch
 import torch.nn.functional as F
 # ---- force reentrant checkpoint (must be BEFORE diffusers imports) ----
@@ -94,7 +140,9 @@ def _patch_modules_holding_checkpoint_symbol() -> None:
 try:
     _ORIG_NRR = _cp._checkpoint_without_reentrant_generator  # type: ignore[attr-defined]
     def _patched_nrr_gen(function, *args, **kwargs):
-        return _cp.checkpoint(function, *args, use_reentrant=True)
+        if _FORCE_REENTRANT_CP:
+            return _cp.checkpoint(function, *args, use_reentrant=True)
+        return _ORIG_NRR(function, *args, **kwargs)
     _cp._checkpoint_without_reentrant_generator = _patched_nrr_gen  # type: ignore[attr-defined]
 except Exception:
     pass
@@ -184,7 +232,9 @@ def cleanup_cuda(tag: str, *objs: Any) -> None:
 from fire import Fire
 
 from blocks.mamba_diffusers_adapter import BiMambaSelfAttention, GatedResidualMambaSelfAttention, MambaSpatioTemporalAdapter
+from blocks.mamba_diffusers_adapter import collect_origin_feature_distill_loss
 from blocks.mamba_diffusers_adapter import materialize_mamba_time_embed_proj_from_state_dict
+from blocks.mamba_diffusers_adapter import set_origin_feature_distill
 from blocks.mamba_diffusers_adapter import set_gated_mamba_gate
 from utils.config_utils import load_json_config
 from utils.training_batches import prepare_batches, estimate_num_chunks
@@ -241,12 +291,19 @@ def _train_main(
     vae_encode_chunk_size: int = 5,
     target_avg_loss: Union[float, None] = 1e-4,
     mamba_learning_rate: float | None = None,
+    mamba_detail_learning_rate: float | None = None,
     weight_decay: float = 0.0,
     optimizer_foreach: bool = False,
     max_grad_norm: float = 1.0,
     precision: str = "fp16",
     enable_gradient_checkpointing: bool = True,
     checkpoint_use_reentrant: bool | None = None,
+    use_ema: bool = False,
+    ema_decay: float | str = 0.999,   # scalar, or comma-separated list to track several shadows at once
+    ema_device: str = "cpu",
+    ema_start_step: int = 0,
+    ema_reset: bool = False,
+    ema_warmup: bool = False,
     attn: str = "auto",
     ff_chunk_size: int = 0,
     ff_chunk_dim: int = 1,
@@ -275,10 +332,14 @@ def _train_main(
     val_interval_epochs: int = 1,
     max_val_videos: int | None = None,
     resume_from: str | None = None,
+    resume_ignore_mismatched_shapes: bool = False,
+    resume_ignore_key_patterns: Sequence[str] | str | None = None,
     overlap_teacher_prob: float = 1.0,
     overlap_noise_std: float = 0.0,
     target_override_video_path: str | None = None,
     target_override_is_sbs: bool = True,
+    teacher_regularization_video_path: str | None = None,
+    teacher_regularization_is_sbs: bool = True,
     random_crop_per_chunk: bool = False,
     vae_decode_device: str | None = None,
     mamba_use_fast_path: bool = True,
@@ -290,6 +351,8 @@ def _train_main(
     mamba_gate_start: float = 0.0,
     mamba_gate_end: float = 1.0,
     mamba_gate_log_interval: int = 10,
+    origin_attn_feature_loss_weight: float = 0.0,
+    diffusion_loss_weight: float = 1.0,
     debug_deepspeed_graph: bool = False,
     debug_deepspeed_param_scan: bool = False,
     mamba_diag_interval: int = 10,
@@ -302,6 +365,17 @@ def _train_main(
     euler_timestep_sampling: str = "uniform",
     euler_low_sigma_prob: float = 0.0,
     euler_low_sigma_fraction: float = 0.35,
+    noise_mask_loss_weight: float = 0.0,
+    x0_latent_loss_weight: float = 0.0,
+    x0_latent_mask_weight: float = 0.0,
+    x0_latent_grad_loss_weight: float = 0.0,
+    x0_latent_grad_mask_weight: float = 0.0,
+    teacher_latent_loss_weight: float = 0.0,
+    teacher_latent_mask_weight: float = 0.0,
+    image_edge_loss_weight: float = 0.0,
+    image_edge_loss_max_frames: int = 1,
+    image_edge_loss_mask_weight: float = 0.0,
+    image_edge_loss_decode_chunk_size: int = 1,
     preflight_only: bool = False,
 ) -> bool:
     """Fine-tune the stereo inpainting pipeline.
@@ -319,6 +393,7 @@ def _train_main(
         dataset_split_ratios/dataset_split_group: 任意の分割設定。
         resume_from: 既存チェックポイントの再開。
         target_override_video_path: 指定時、学習targetを外部教師動画の右目フレームに差し替える。
+        teacher_regularization_video_path: 指定時、target は置換せず補助正則化用教師として読む。
     """
     ensure_logging_configured()
     logger.info("Starting training run. Saving artifacts to %s", save_dir)
@@ -629,6 +704,8 @@ def _train_main(
     mamba_gate_start = max(0.0, min(1.0, float(mamba_gate_start)))
     mamba_gate_end = max(0.0, min(1.0, float(mamba_gate_end)))
     mamba_gate_log_interval = int(max(0, mamba_gate_log_interval))
+    origin_attn_feature_loss_weight = max(0.0, float(origin_attn_feature_loss_weight))
+    diffusion_loss_weight = max(0.0, float(diffusion_loss_weight))
     effective_mamba_use_fast_path = bool(mamba_use_fast_path)
     effective_mamba_autotune_warmup = bool(mamba_autotune_warmup)
 
@@ -691,10 +768,12 @@ def _train_main(
     )
     if updated:
         logger.info("Applied mamba runtime flags to %d modules (initial).", updated)
-    if enable_gradient_checkpointing:
+    if enable_gradient_checkpointing and checkpoint_use_reentrant is True:
         enable_force_reentrant_checkpoint(True)
         _patch_modules_holding_checkpoint_symbol()
         logger.info("Force reentrant checkpointing enabled (use_reentrant=True).")
+    else:
+        enable_force_reentrant_checkpoint(False)
     # 勾配チェックポイントや注意機構の省メモリ化を有効化
     configure_unet_memory_features(
         pipeline=pipeline,
@@ -773,6 +852,27 @@ def _train_main(
         raise ValueError("euler_timestep_sampling must be one of: uniform, low_sigma")
     euler_low_sigma_prob = min(max(float(euler_low_sigma_prob), 0.0), 1.0)
     euler_low_sigma_fraction = min(max(float(euler_low_sigma_fraction), 0.0), 1.0)
+    noise_mask_loss_weight = max(0.0, float(noise_mask_loss_weight))
+    x0_latent_loss_weight = max(0.0, float(x0_latent_loss_weight))
+    x0_latent_mask_weight = max(0.0, float(x0_latent_mask_weight))
+    if x0_latent_loss_weight > 0.0 and diffusion_scheduler_key != "euler":
+        raise ValueError("x0_latent_loss_weight currently requires diffusion_scheduler_type='euler'")
+    x0_latent_grad_loss_weight = max(0.0, float(x0_latent_grad_loss_weight))
+    x0_latent_grad_mask_weight = max(0.0, float(x0_latent_grad_mask_weight))
+    if x0_latent_grad_loss_weight > 0.0 and diffusion_scheduler_key != "euler":
+        raise ValueError("x0_latent_grad_loss_weight currently requires diffusion_scheduler_type='euler'")
+    teacher_latent_loss_weight = max(0.0, float(teacher_latent_loss_weight))
+    teacher_latent_mask_weight = max(0.0, float(teacher_latent_mask_weight))
+    if teacher_latent_loss_weight > 0.0 and diffusion_scheduler_key != "euler":
+        raise ValueError("teacher_latent_loss_weight currently requires diffusion_scheduler_type='euler'")
+    if teacher_latent_loss_weight > 0.0 and not teacher_regularization_video_path:
+        raise ValueError("teacher_latent_loss_weight requires teacher_regularization_video_path")
+    image_edge_loss_weight = max(0.0, float(image_edge_loss_weight))
+    image_edge_loss_max_frames = max(1, int(image_edge_loss_max_frames))
+    image_edge_loss_mask_weight = max(0.0, float(image_edge_loss_mask_weight))
+    image_edge_loss_decode_chunk_size = max(1, int(image_edge_loss_decode_chunk_size))
+    if image_edge_loss_weight > 0.0 and diffusion_scheduler_key != "euler":
+        raise ValueError("image_edge_loss_weight currently requires diffusion_scheduler_type='euler'")
 
     # 学習用ノイズスケジューラ。DDPM は従来互換、Euler は origin 推論と同じ
     # continuous/Karras sigma 座標に合わせる。
@@ -907,6 +1007,25 @@ def _train_main(
             x0 = _to_unet_entry(x0)
             x0 = x0 * pipeline.vae.config.scaling_factor
 
+            teacher_x0 = None
+            batch_teacher = getattr(batch, "teacher", None)
+            if teacher_latent_loss_weight > 0.0:
+                if batch_teacher is None:
+                    raise ValueError("teacher_latent_loss_weight requires batches with teacher frames")
+                frames_teacher = pipeline.image_processor.preprocess(batch_teacher, height=H, width=W)
+                teacher_lat_list = []
+                with torch.no_grad():
+                    for i_f in range(0, frames_teacher.shape[0], max(1, vae_encode_chunk_size)):
+                        teacher_lat_list.append(
+                            pipeline.vae.encode(
+                                frames_teacher[i_f : i_f + max(1, vae_encode_chunk_size)].to(vae_device)
+                            ).latent_dist.mode()
+                        )
+                teacher_x0 = torch.cat(teacher_lat_list, dim=0).unsqueeze(0).to(image_embeddings.dtype)
+                teacher_x0 = teacher_x0.to(device=unet_in_device)
+                teacher_x0 = _to_unet_entry(teacher_x0)
+                teacher_x0 = teacher_x0 * pipeline.vae.config.scaling_factor
+
             eps = torch.randn_like(x0)
             sigma_value = None
             if diffusion_scheduler_key == "euler":
@@ -983,27 +1102,163 @@ def _train_main(
                 return_dict=False,
             )[0]
 
-            noise_loss = F.mse_loss(noise_pred, target)
-            metrics = {"timestep": t.detach(), "loss_noise_mse": noise_loss.detach()}
+            noise_err2 = (noise_pred.float() - target.float()).pow(2)
+            noise_mse = noise_err2.mean()
+            if noise_mask_loss_weight > 0.0:
+                noise_weight = 1.0 + noise_mask_loss_weight * mask_latents.float().clamp(0.0, 1.0)
+                noise_loss = (noise_err2 * noise_weight).sum() / torch.clamp(
+                    noise_weight.sum() * float(noise_err2.shape[2]),
+                    min=1.0,
+                )
+            else:
+                noise_loss = noise_mse
+            total_loss = float(diffusion_loss_weight) * noise_loss
+            metrics = {
+                "timestep": t.detach(),
+                "loss_noise_mse": noise_mse.detach(),
+                "loss_diffusion_weighted": total_loss.detach(),
+            }
+            if noise_mask_loss_weight > 0.0:
+                metrics["loss_noise_weighted_mse"] = noise_loss.detach()
             if sigma_value is not None:
                 metrics["sigma"] = sigma_value.detach().float()
+
+            x0_pred_latent = None
+            if diffusion_scheduler_key == "euler" and (
+                x0_latent_loss_weight > 0.0
+                or x0_latent_grad_loss_weight > 0.0
+                or teacher_latent_loss_weight > 0.0
+                or image_edge_loss_weight > 0.0
+                or collect_image_diag
+            ):
+                sigma_for_pred = sigma_value.flatten()
+                while len(sigma_for_pred.shape) < len(x_t.shape):
+                    sigma_for_pred = sigma_for_pred.unsqueeze(-1)
+                sigma_denom_for_pred = (sigma_for_pred.pow(2) + 1.0).sqrt()
+                if getattr(noise_scheduler.config, "prediction_type", "epsilon") == "v_prediction":
+                    x0_pred_latent = (
+                        x_t.float() - sigma_for_pred.float() * noise_pred.float()
+                    ) / sigma_denom_for_pred.float()
+                else:
+                    x0_pred_latent = (
+                        x_t.float() * sigma_denom_for_pred.float()
+                        - sigma_for_pred.float() * noise_pred.float()
+                    )
+
+            if x0_latent_loss_weight > 0.0 and x0_pred_latent is not None:
+                x0_err2 = (x0_pred_latent - x0.float()).pow(2)
+                if x0_latent_mask_weight > 0.0:
+                    x0_weight = 1.0 + x0_latent_mask_weight * mask_latents.float().clamp(0.0, 1.0)
+                    x0_weighted_sum = (x0_err2 * x0_weight).sum()
+                    x0_weight_den = torch.clamp(x0_weight.sum() * float(x0_err2.shape[2]), min=1.0)
+                    x0_latent_loss = x0_weighted_sum / x0_weight_den
+                else:
+                    x0_latent_loss = x0_err2.mean()
+                total_loss = total_loss + float(x0_latent_loss_weight) * x0_latent_loss
+                metrics["loss_x0_latent_mse"] = x0_latent_loss.detach()
+
+            if x0_latent_grad_loss_weight > 0.0 and x0_pred_latent is not None:
+                pred_dx = x0_pred_latent.float()[..., :, 1:] - x0_pred_latent.float()[..., :, :-1]
+                tgt_dx = x0.float()[..., :, 1:] - x0.float()[..., :, :-1]
+                pred_dy = x0_pred_latent.float()[..., 1:, :] - x0_pred_latent.float()[..., :-1, :]
+                tgt_dy = x0.float()[..., 1:, :] - x0.float()[..., :-1, :]
+                if x0_latent_grad_mask_weight > 0.0:
+                    mask_for_grad = mask_latents.float().clamp(0.0, 1.0)
+                    mask_dx = 0.5 * (mask_for_grad[..., :, 1:] + mask_for_grad[..., :, :-1])
+                    mask_dy = 0.5 * (mask_for_grad[..., 1:, :] + mask_for_grad[..., :-1, :])
+                    weight_dx = 1.0 + x0_latent_grad_mask_weight * mask_dx
+                    weight_dy = 1.0 + x0_latent_grad_mask_weight * mask_dy
+                    grad_loss_x = ((pred_dx - tgt_dx).abs() * weight_dx).sum() / torch.clamp(
+                        weight_dx.sum() * float(pred_dx.shape[2]), min=1.0
+                    )
+                    grad_loss_y = ((pred_dy - tgt_dy).abs() * weight_dy).sum() / torch.clamp(
+                        weight_dy.sum() * float(pred_dy.shape[2]), min=1.0
+                    )
+                    x0_latent_grad_loss = 0.5 * (grad_loss_x + grad_loss_y)
+                else:
+                    x0_latent_grad_loss = 0.5 * (
+                        F.l1_loss(pred_dx, tgt_dx) + F.l1_loss(pred_dy, tgt_dy)
+                    )
+                total_loss = total_loss + float(x0_latent_grad_loss_weight) * x0_latent_grad_loss
+                metrics["loss_x0_latent_grad_l1"] = x0_latent_grad_loss.detach()
+
+            if teacher_latent_loss_weight > 0.0 and x0_pred_latent is not None and teacher_x0 is not None:
+                teacher_err = (x0_pred_latent.float() - teacher_x0.float()).abs()
+                if teacher_latent_mask_weight > 0.0:
+                    teacher_weight = 1.0 + teacher_latent_mask_weight * mask_latents.float().clamp(0.0, 1.0)
+                    teacher_weighted_sum = (teacher_err * teacher_weight).sum()
+                    teacher_weight_den = torch.clamp(
+                        teacher_weight.sum() * float(teacher_err.shape[2]),
+                        min=1.0,
+                    )
+                    teacher_latent_loss = teacher_weighted_sum / teacher_weight_den
+                else:
+                    teacher_latent_loss = teacher_err.mean()
+                total_loss = total_loss + float(teacher_latent_loss_weight) * teacher_latent_loss
+                metrics["loss_teacher_latent_l1"] = teacher_latent_loss.detach()
+
+            if image_edge_loss_weight > 0.0 and x0_pred_latent is not None:
+                edge_frames = min(int(x0_pred_latent.shape[1]), int(image_edge_loss_max_frames))
+                decoded_edge = pipeline.decode_latents(
+                    x0_pred_latent[:, :edge_frames].to(device=vae_device, dtype=torch_dtype),
+                    num_frames=edge_frames,
+                    decode_chunk_size=image_edge_loss_decode_chunk_size,
+                )
+                decoded_edge = (decoded_edge[0].permute(1, 0, 2, 3) / 2.0 + 0.5).clamp(0.0, 1.0)
+                target_edge = batch.target[:edge_frames].detach().to(
+                    device=decoded_edge.device,
+                    dtype=decoded_edge.dtype,
+                )
+
+                def _edge_components(img: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+                    gray = (
+                        0.299 * img[:, 0:1].float()
+                        + 0.587 * img[:, 1:2].float()
+                        + 0.114 * img[:, 2:3].float()
+                    )
+                    grad_x = gray[..., :, 1:] - gray[..., :, :-1]
+                    grad_y = gray[..., 1:, :] - gray[..., :-1, :]
+                    return grad_x, grad_y
+
+                pred_gx, pred_gy = _edge_components(decoded_edge)
+                tgt_gx, tgt_gy = _edge_components(target_edge)
+                if image_edge_loss_mask_weight > 0.0:
+                    mask_edge = batch.mask[:edge_frames].detach().to(
+                        device=decoded_edge.device,
+                        dtype=decoded_edge.dtype,
+                    ).clamp(0.0, 1.0)
+                    mask_gx = 0.5 * (mask_edge[..., :, 1:] + mask_edge[..., :, :-1])
+                    mask_gy = 0.5 * (mask_edge[..., 1:, :] + mask_edge[..., :-1, :])
+                    weight_gx = 1.0 + image_edge_loss_mask_weight * mask_gx
+                    weight_gy = 1.0 + image_edge_loss_mask_weight * mask_gy
+                    edge_loss_x = ((pred_gx - tgt_gx).abs() * weight_gx).sum() / torch.clamp(
+                        weight_gx.sum(), min=1.0
+                    )
+                    edge_loss_y = ((pred_gy - tgt_gy).abs() * weight_gy).sum() / torch.clamp(
+                        weight_gy.sum(), min=1.0
+                    )
+                    image_edge_loss = 0.5 * (edge_loss_x + edge_loss_y)
+                else:
+                    image_edge_loss = 0.5 * (
+                        F.l1_loss(pred_gx, tgt_gx) + F.l1_loss(pred_gy, tgt_gy)
+                    )
+                total_loss = total_loss + float(image_edge_loss_weight) * image_edge_loss
+                metrics["loss_image_edge_l1"] = image_edge_loss.detach()
+
+            if origin_attn_feature_loss_weight > 0.0:
+                feature_loss, feature_count = collect_origin_feature_distill_loss(pipeline.unet)
+                if feature_loss is not None and feature_count > 0:
+                    total_loss = total_loss + float(origin_attn_feature_loss_weight) * feature_loss
+                    metrics["loss_origin_attn_feature_mse"] = feature_loss.detach()
+                    metrics["origin_attn_feature_count"] = torch.tensor(
+                        float(feature_count),
+                        device=feature_loss.device,
+                    )
+            metrics["loss_total"] = total_loss.detach()
+
             if collect_image_diag:
                 with torch.no_grad():
-                    x0_pred = None
-                    if diffusion_scheduler_key == "euler":
-                        sigma_for_pred = sigma_value.flatten()
-                        while len(sigma_for_pred.shape) < len(x_t.shape):
-                            sigma_for_pred = sigma_for_pred.unsqueeze(-1)
-                        sigma_denom_for_pred = (sigma_for_pred.pow(2) + 1.0).sqrt()
-                        if getattr(noise_scheduler.config, "prediction_type", "epsilon") == "v_prediction":
-                            x0_pred = (
-                                x_t.float() - sigma_for_pred.float() * noise_pred.detach().float()
-                            ) / sigma_denom_for_pred.float()
-                        else:
-                            x0_pred = (
-                                x_t.float() * sigma_denom_for_pred.float()
-                                - sigma_for_pred.float() * noise_pred.detach().float()
-                            )
+                    x0_pred = x0_pred_latent.detach() if x0_pred_latent is not None else None
                     if x0_pred is not None:
                         diag_frames = min(int(x0_pred.shape[1]), max(1, int(image_diag_max_frames)))
                         decoded = pipeline.decode_latents(
@@ -1050,7 +1305,7 @@ def _train_main(
                         target.detach().float().flatten(),
                         dim=0,
                     ).detach()
-            return noise_loss, metrics
+            return total_loss, metrics
     preflight_batch: Any | None = None
     preflight_crop_hw: tuple[int, int] | None = None
     chunk_count_cache: dict[str, int] = {}
@@ -1083,6 +1338,8 @@ def _train_main(
                 overlap_noise_std=overlap_noise_std,
                 target_override_video_path=target_override_video_path,
                 target_override_is_sbs=target_override_is_sbs,
+                teacher_regularization_video_path=teacher_regularization_video_path,
+                teacher_regularization_is_sbs=teacher_regularization_is_sbs,
             )
             batch_pf = next(iter(batches_pf))
             preflight_crop_hw = (int(batch_pf.cond.shape[2]), int(batch_pf.cond.shape[3]))
@@ -1195,9 +1452,11 @@ def _train_main(
                 pipeline.image_encoder.to(device)
         except Exception:
             pass
-        if enable_gradient_checkpointing:
+        if enable_gradient_checkpointing and checkpoint_use_reentrant is True:
             enable_force_reentrant_checkpoint(True)
             _patch_modules_holding_checkpoint_symbol()
+        else:
+            enable_force_reentrant_checkpoint(False)
         configure_unet_memory_features(
             pipeline=pipeline,
             enable_gradient_checkpointing=enable_gradient_checkpointing,
@@ -1287,19 +1546,38 @@ def _train_main(
     def _build_optimizer_for_dryrun() -> torch.optim.Optimizer:
         trainable_params = [p for p in pipeline.unet.parameters() if p.requires_grad]
         mamba_param_ids: set[int] = set()
+        detail_param_ids: set[int] = set()
+        detail_name_markers = (".local_detail.",)
         for module in pipeline.unet.modules():
             if isinstance(module, (MambaSpatioTemporalAdapter, BiMambaSelfAttention)):
                 for p in module.parameters(recurse=True):
                     if p.requires_grad:
                         mamba_param_ids.add(id(p))
+        for name, p in pipeline.unet.named_parameters():
+            if p.requires_grad and any(marker in name for marker in detail_name_markers):
+                detail_param_ids.add(id(p))
         if mamba_learning_rate is not None and mamba_param_ids:
             base_params = [p for p in trainable_params if id(p) not in mamba_param_ids]
-            mamba_params = [p for p in trainable_params if id(p) in mamba_param_ids]
+            mamba_params = [
+                p
+                for p in trainable_params
+                if id(p) in mamba_param_ids and id(p) not in detail_param_ids
+            ]
+            param_groups = [
+                {"params": base_params, "lr": stage_lr, "group_name": "base"},
+                {"params": mamba_params, "lr": mamba_learning_rate, "group_name": "mamba"},
+            ]
+            if mamba_detail_learning_rate is not None and detail_param_ids:
+                detail_params = [p for p in trainable_params if id(p) in detail_param_ids]
+                param_groups.append(
+                    {
+                        "params": detail_params,
+                        "lr": float(mamba_detail_learning_rate),
+                        "group_name": "mamba_detail",
+                    }
+                )
             return torch.optim.AdamW(
-                [
-                    {"params": base_params, "lr": stage_lr, "group_name": "base"},
-                    {"params": mamba_params, "lr": mamba_learning_rate, "group_name": "mamba"},
-                ],
+                param_groups,
                 lr=stage_lr,
                 weight_decay=weight_decay,
                 foreach=optimizer_foreach,
@@ -1552,6 +1830,9 @@ def _train_main(
     ckpt_optimizer_state = None
     ckpt_scheduler_state = None
     ckpt_scaler_state = None
+    ckpt_ema_state = None
+    ckpt_ema_num_updates = 0
+    resume_model_state_filtered = False
 
     if resume_candidate is None and os.path.exists(ckpt_latest_path):
         resume_candidate = ckpt_latest_path
@@ -1578,7 +1859,26 @@ def _train_main(
                                 "Materialized Mamba time_embed_proj modules before resume load: %d",
                                 materialized,
                             )
-                        pipeline.unet.load_state_dict(model_state, strict=False)
+                        load_state = model_state
+                        skipped_resume_keys: list[tuple[str, str]] = []
+                        if resume_ignore_mismatched_shapes or resume_ignore_key_patterns:
+                            load_state, skipped_resume_keys = _filter_resume_state_dict(
+                                model_state,
+                                pipeline.unet.state_dict(),
+                                ignore_mismatched_shapes=bool(resume_ignore_mismatched_shapes),
+                                ignore_key_patterns=resume_ignore_key_patterns,
+                            )
+                            if skipped_resume_keys:
+                                resume_model_state_filtered = True
+                                logger.info(
+                                    "Filtered %d resume state keys before UNet load "
+                                    "(ignore_mismatched_shapes=%s, ignore_key_patterns=%s). First skipped: %s",
+                                    len(skipped_resume_keys),
+                                    bool(resume_ignore_mismatched_shapes),
+                                    resume_ignore_key_patterns,
+                                    skipped_resume_keys[:10],
+                                )
+                        pipeline.unet.load_state_dict(load_state, strict=False)
                     except Exception as err:
                         logger.warning("Failed to load UNet state from checkpoint: %s", err)
                 global_step = int(ckpt.get("global_step", 0))
@@ -1587,11 +1887,15 @@ def _train_main(
                 ckpt_stage_name = ckpt.get("stage_name", None)
                 ckpt_sharded = bool(ckpt.get("unet_sharded", False))
                 if ds_enabled:
-                    resume_ds_state_dir = (
-                        resume_ds_state_dir
-                        or ckpt.get("deepspeed_state_dir", None)
-                        or ds_state_dir
-                    )
+                    if resume_model_state_filtered:
+                        resume_ds_state_dir = None
+                        logger.info("Resume model state was filtered; DeepSpeed optimizer state will not be restored.")
+                    else:
+                        resume_ds_state_dir = (
+                            resume_ds_state_dir
+                            or ckpt.get("deepspeed_state_dir", None)
+                            or ds_state_dir
+                        )
                 ckpt_mamba_fast = ckpt.get("effective_mamba_use_fast_path", None)
                 ckpt_mamba_autotune = ckpt.get("effective_mamba_autotune_warmup", None)
                 if resume_mamba_runtime_flags and (ckpt_mamba_fast is not None or ckpt_mamba_autotune is not None):
@@ -1624,10 +1928,22 @@ def _train_main(
                 resume_same_stage = ckpt_stage_idx == stage_idx
                 if resume_same_stage:
                     start_epoch = ckpt_epoch + 1
-                    if not ds_enabled:
+                    # The EMA shadow is a plain tensor dict, independent of the
+                    # optimizer/DeepSpeed engine state, so it must be restored on
+                    # BOTH paths. Keeping it inside the `not ds_enabled` branch
+                    # silently reset the average on every DeepSpeed resume -- and
+                    # DeepSpeed is what this project always runs.
+                    if not resume_model_state_filtered:
+                        ckpt_ema_state = ckpt.get("model_ema", None)
+                        ckpt_ema_num_updates = int(ckpt.get("ema_num_updates", 0) or 0)
+                    if not ds_enabled and not resume_model_state_filtered:
                         ckpt_optimizer_state = ckpt.get("optimizer", None)
                         ckpt_scheduler_state = ckpt.get("scheduler", None)
                         ckpt_scaler_state = ckpt.get("scaler", None)
+                    elif resume_model_state_filtered:
+                        logger.info(
+                            "Resume model state was filtered; optimizer/scheduler/scaler state will not be restored."
+                        )
                 else:
                     start_epoch = 1
                     logger.info(
@@ -1703,29 +2019,51 @@ def _train_main(
     # 学習対象パラメータのみ最適化
     trainable_params = [p for p in pipeline.unet.parameters() if p.requires_grad]
     mamba_param_ids: set[int] = set()
+    detail_param_ids: set[int] = set()
+    detail_name_markers = (".local_detail.",)
     for module in pipeline.unet.modules():
         if isinstance(module, (MambaSpatioTemporalAdapter, BiMambaSelfAttention)):
             for p in module.parameters(recurse=True):
                 if p.requires_grad:
                     mamba_param_ids.add(id(p))
+    for name, p in pipeline.unet.named_parameters():
+        if p.requires_grad and any(marker in name for marker in detail_name_markers):
+            detail_param_ids.add(id(p))
     if mamba_learning_rate is not None and mamba_param_ids:
         base_params = [p for p in trainable_params if id(p) not in mamba_param_ids]
-        mamba_params = [p for p in trainable_params if id(p) in mamba_param_ids]
+        mamba_params = [
+            p
+            for p in trainable_params
+            if id(p) in mamba_param_ids and id(p) not in detail_param_ids
+        ]
+        param_groups = [
+            {"params": base_params, "lr": stage_lr, "group_name": "base"},
+            {"params": mamba_params, "lr": float(mamba_learning_rate), "group_name": "mamba"},
+        ]
+        detail_params: list[torch.nn.Parameter] = []
+        if mamba_detail_learning_rate is not None and detail_param_ids:
+            detail_params = [p for p in trainable_params if id(p) in detail_param_ids]
+            param_groups.append(
+                {
+                    "params": detail_params,
+                    "lr": float(mamba_detail_learning_rate),
+                    "group_name": "mamba_detail",
+                }
+            )
         optimizer = torch.optim.AdamW(
-            [
-                {"params": base_params, "lr": stage_lr, "group_name": "base"},
-                {"params": mamba_params, "lr": float(mamba_learning_rate), "group_name": "mamba"},
-            ],
+            param_groups,
             lr=stage_lr,
             weight_decay=weight_decay,
             foreach=optimizer_foreach,
         )
         logger.info(
-            "Optimizer param groups: base=%d (lr=%.2e), mamba=%d (lr=%.2e)",
+            "Optimizer param groups: base=%d (lr=%.2e), mamba=%d (lr=%.2e), detail=%d (lr=%s)",
             len(base_params),
             stage_lr,
             len(mamba_params),
             float(mamba_learning_rate),
+            len(detail_params),
+            f"{float(mamba_detail_learning_rate):.2e}" if mamba_detail_learning_rate is not None else "none",
         )
     else:
         if mamba_learning_rate is not None and not mamba_param_ids:
@@ -1740,6 +2078,148 @@ def _train_main(
             foreach=optimizer_foreach,
         )
     optimizer.zero_grad(set_to_none=True)
+
+    # --- EMA (exponential moving average of trainable weights) -------------
+    # Standard practice for diffusion training and absent from this codebase
+    # until 2026-09-01. Shadows the trainable params only -- but note that in
+    # this project that is the WHOLE UNet, not just the Mamba blocks: the
+    # optimizer has a `base` group (~1388 tensors, lr 1e-6) alongside `mamba`
+    # (~144 tensors, lr 5e-6). The fp32 shadow is therefore ~6.1 GiB, which
+    # does NOT fit alongside training on a 24 GiB card (measured: 21.9/24.5 GiB
+    # used with the shadow on GPU, ~2.6 GiB headroom -- too close to OOM during
+    # backward). Hence ema_device defaults to "cpu"; set it to "cuda" only if
+    # you have verified the headroom.
+    # One shadow per decay value. Tracking several decays in a single run costs
+    # only host RAM (~6.1 GiB each) and avoids re-running training once per
+    # decay -- important here because the right decay is not obvious: at 151
+    # steps/epoch, 0.999 averages over only ~6.6 epochs, far shorter than the
+    # 100+ epoch schedule, which is why the 2026-09-02 EMA test was inconclusive.
+    ema_decays: list[float] = [
+        float(x) for x in str(ema_decay).split(",") if str(x).strip()
+    ]
+    ema_states: dict[float, dict[str, torch.Tensor]] = {}
+    ema_state: dict[str, torch.Tensor] | None = None   # alias -> first decay, for checkpointing
+    ema_num_updates = 0
+
+    def _ema_key(name: str) -> str:
+        """Normalise a parameter name so the shadow is keyed the same way the
+        saved `model` state dict is. `accelerator.prepare` wraps the UNet in a
+        DeepSpeed engine whose `named_parameters()` are prefixed `module.`,
+        while `accelerator.get_state_dict()` strips that prefix. Keying the
+        shadow on the stripped name keeps it aligned with the checkpoint (and
+        therefore with `scripts/export_ema_checkpoint.py`)."""
+        return name[len("module."):] if name.startswith("module.") else name
+
+    def _ema_init() -> None:
+        nonlocal ema_state, ema_states, ema_num_updates
+        if not use_ema:
+            return
+        if not is_main_process:
+            # ZeRO-2 replicates parameters across ranks, so a non-main rank's
+            # shadow is an exact duplicate that is never checkpointed. Skip it:
+            # 2 ranks x 3 decays x 6.1 GiB of duplicates exhausted 125 GiB of
+            # host RAM alongside the CPU-offloaded optimizer state.
+            logger.info("EMA: shadows held on the main process only (rank>0 skipped)")
+            return
+        dev = torch.device(ema_device if torch.cuda.is_available() or ema_device == "cpu" else "cpu")
+        base = {
+            _ema_key(name): param.detach().clone().float().to(dev)
+            for name, param in pipeline.unet.named_parameters()
+            if param.requires_grad
+        }
+        ema_states = {
+            d: (base if i == 0 else {k: v.clone() for k, v in base.items()})
+            for i, d in enumerate(ema_decays)
+        }
+        ema_state = ema_states[ema_decays[0]]
+        # Resume the average rather than restarting it, when shapes still match.
+        # `ema_reset=True` starts a fresh average from the current weights --
+        # use it when the checkpoint's stored EMA is untrustworthy (e.g. written
+        # by the broken pre-2026-09-02 implementation, or by a different recipe).
+        restored = 0
+        if ckpt_ema_state and not ema_reset:
+            saved_by_key = {_ema_key(k): v for k, v in ckpt_ema_state.items()}
+            for name, shadow in ema_state.items():
+                saved = saved_by_key.get(name)
+                if saved is not None and tuple(saved.shape) == tuple(shadow.shape):
+                    shadow.copy_(saved.to(shadow.device, dtype=shadow.dtype))
+                    restored += 1
+            ema_num_updates = ckpt_ema_num_updates
+        if ema_warmup and len(ema_decays) > 1:
+            logger.warning(
+                "EMA: ema_warmup=True with %d decays -- warmup clamps every target "
+                "to (1+n)/(10+n), which needs ~%d steps just to release %.4f. On a "
+                "short run all shadows collapse to the same value and the sweep is "
+                "a no-op. Set ema_warmup=False for decay sweeps.",
+                len(ema_decays),
+                int((10 * max(ema_decays) - 1) / (1 - max(ema_decays))),
+                max(ema_decays),
+            )
+        total = sum(t.numel() for t in ema_state.values())
+        logger.info(
+            "EMA enabled: decays=%s device=%s params=%d (%.1f M, %.0f MiB fp32 each, "
+            "%d shadow(s)) start_step=%d restored=%d/%d updates=%d",
+            ",".join(str(d) for d in ema_decays), dev, len(ema_state),
+            total / 1e6, total * 4 / 2**20, len(ema_states),
+            ema_start_step, restored, len(ema_state), ema_num_updates,
+        )
+
+    def _ema_update(step_value: int) -> None:
+        """Call immediately after a successful optimizer.step()."""
+        nonlocal ema_num_updates
+        # rank>0 holds no shadow by design (see _ema_init); nothing to do there,
+        # and the matched==0 guard below must not fire for that legitimate case.
+        if ema_state is None or not ema_states or step_value < int(ema_start_step):
+            return
+        # Standard warmup so early steps are not dominated by the init value.
+        # The classic warmup min(decay, (1+n)/(10+n)) exists to stop a RANDOMLY
+        # initialised shadow from dominating early. Here the shadow is seeded
+        # from an already-trained checkpoint, so it is unnecessary -- and at 151
+        # steps/epoch it is actively harmful: it only reaches 0.999 after ~60
+        # epochs and 0.9999 after ~596, so on a 20-epoch run it silently clamps
+        # EVERY target decay to ~0.997 and makes a decay sweep a no-op (observed
+        # 2026-09-07: three decays produced bit-identical shadows).
+        warm = (
+            (1.0 + ema_num_updates) / (10.0 + ema_num_updates)
+            if ema_warmup else 1.0
+        )
+        matched = 0
+        with torch.no_grad():
+            for name, param in pipeline.unet.named_parameters():
+                if not param.requires_grad:
+                    continue
+                key = _ema_key(name)
+                val = None
+                for d, st in ema_states.items():
+                    shadow = st.get(key)
+                    if shadow is None:
+                        continue
+                    if val is None:
+                        val = param.detach().float().to(shadow.device)
+                        matched += 1
+                    dd = min(float(d), warm)
+                    shadow.mul_(dd).add_(val, alpha=1.0 - dd)
+        # Guard: a name mismatch between the shadow keys and the live module
+        # (e.g. the DeepSpeed engine's "module." prefix) would silently update
+        # nothing while still advancing the counter -- which is exactly how a
+        # 14-hour run on 2026-09-01 produced a completely frozen EMA. Fail loudly.
+        if matched == 0:
+            raise RuntimeError(
+                "EMA update matched 0 parameters: the shadow keys do not correspond to "
+                "pipeline.unet.named_parameters(). Was _ema_init() called before "
+                "accelerator.prepare()? Refusing to train with a non-functional EMA."
+            )
+        if ema_num_updates == 0:
+            logger.info("EMA first update: matched %d/%d shadowed params", matched, len(ema_state))
+        ema_num_updates += 1
+
+    # Under DeepSpeed the authoritative init happens AFTER accelerator.prepare
+    # (the engine rebinds pipeline.unet and prefixes parameter names). Building
+    # the shadows here as well would transiently hold two full sets --
+    # 2 x 3 decays x 6.1 GiB -- which is enough to exhaust host RAM.
+    if not ds_enabled:
+        _ema_init()
+
     lr_scheduler = None
     if sched_key == "exponential":
         lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=scheduler_gamma)
@@ -1774,6 +2254,11 @@ def _train_main(
         else:
             pipeline.unet, optimizer = accelerator.prepare(pipeline.unet, optimizer)
         pipeline.unet.train()
+        # accelerator.prepare REPLACES pipeline.unet with the DeepSpeed engine,
+        # whose named_parameters() are prefixed ("module."). An EMA shadow keyed
+        # on the pre-prepare names would silently match nothing. Re-initialise
+        # here so the keys come from the object the updates actually read.
+        _ema_init()
         trainable_params = [p for p in pipeline.unet.parameters() if p.requires_grad]
         if debug_deepspeed_param_scan:
             if hasattr(torch.autograd.graph, "_get_grad_fn_or_grad_acc"):
@@ -1870,9 +2355,16 @@ def _train_main(
     def _apply_stage_lrs() -> None:
         base_lr = float(stage_lr)
         mamba_lr = float(mamba_learning_rate) if mamba_learning_rate is not None else None
+        detail_lr = (
+            float(mamba_detail_learning_rate)
+            if mamba_detail_learning_rate is not None
+            else None
+        )
         for group in optimizer.param_groups:
             group_name = str(group.get("group_name", "base"))
-            if group_name == "mamba" and mamba_lr is not None:
+            if group_name == "mamba_detail" and detail_lr is not None:
+                group["lr"] = detail_lr
+            elif group_name == "mamba" and mamba_lr is not None:
                 group["lr"] = mamba_lr
             else:
                 group["lr"] = base_lr
@@ -1906,8 +2398,42 @@ def _train_main(
                 "mamba_gate_schedule": mamba_gate_schedule_key,
                 "mamba_gate_start": float(mamba_gate_start),
                 "mamba_gate_end": float(mamba_gate_end),
+                "origin_attn_feature_loss_weight": float(origin_attn_feature_loss_weight),
+                "diffusion_loss_weight": float(diffusion_loss_weight),
+                "mamba_detail_learning_rate": (
+                    float(mamba_detail_learning_rate)
+                    if mamba_detail_learning_rate is not None
+                    else None
+                ),
+                "noise_mask_loss_weight": float(noise_mask_loss_weight),
+                "x0_latent_loss_weight": float(x0_latent_loss_weight),
+                "x0_latent_mask_weight": float(x0_latent_mask_weight),
+                "x0_latent_grad_loss_weight": float(x0_latent_grad_loss_weight),
+                "x0_latent_grad_mask_weight": float(x0_latent_grad_mask_weight),
+                "teacher_latent_loss_weight": float(teacher_latent_loss_weight),
+                "teacher_latent_mask_weight": float(teacher_latent_mask_weight),
+                "teacher_regularization_video_path": teacher_regularization_video_path,
+                "teacher_regularization_is_sbs": bool(teacher_regularization_is_sbs),
+                "image_edge_loss_weight": float(image_edge_loss_weight),
+                "image_edge_loss_max_frames": int(image_edge_loss_max_frames),
+                "image_edge_loss_mask_weight": float(image_edge_loss_mask_weight),
+                "image_edge_loss_decode_chunk_size": int(image_edge_loss_decode_chunk_size),
                 "deepspeed_state_dir": ds_dir,
                 "model": model_state,
+                "model_ema": (
+                    {k: v.detach().cpu() for k, v in ema_state.items()}
+                    if ema_state is not None
+                    else None
+                ),
+                "model_ema_by_decay": (
+                    {
+                        str(d): {k: v.detach().cpu() for k, v in st.items()}
+                        for d, st in ema_states.items()
+                    }
+                    if len(ema_states) > 1
+                    else None
+                ),
+                "ema_num_updates": int(ema_num_updates),
             }
             path = os.path.join(save_dir, f"train_state_{tag}.pt")
             try:
@@ -1933,7 +2459,33 @@ def _train_main(
             "mamba_gate_schedule": mamba_gate_schedule_key,
             "mamba_gate_start": float(mamba_gate_start),
             "mamba_gate_end": float(mamba_gate_end),
+            "origin_attn_feature_loss_weight": float(origin_attn_feature_loss_weight),
+            "diffusion_loss_weight": float(diffusion_loss_weight),
+            "mamba_detail_learning_rate": (
+                float(mamba_detail_learning_rate)
+                if mamba_detail_learning_rate is not None
+                else None
+            ),
+            "noise_mask_loss_weight": float(noise_mask_loss_weight),
+            "x0_latent_loss_weight": float(x0_latent_loss_weight),
+            "x0_latent_mask_weight": float(x0_latent_mask_weight),
+            "x0_latent_grad_loss_weight": float(x0_latent_grad_loss_weight),
+            "x0_latent_grad_mask_weight": float(x0_latent_grad_mask_weight),
+            "teacher_latent_loss_weight": float(teacher_latent_loss_weight),
+            "teacher_latent_mask_weight": float(teacher_latent_mask_weight),
+            "teacher_regularization_video_path": teacher_regularization_video_path,
+            "teacher_regularization_is_sbs": bool(teacher_regularization_is_sbs),
+            "image_edge_loss_weight": float(image_edge_loss_weight),
+            "image_edge_loss_max_frames": int(image_edge_loss_max_frames),
+            "image_edge_loss_mask_weight": float(image_edge_loss_mask_weight),
+            "image_edge_loss_decode_chunk_size": int(image_edge_loss_decode_chunk_size),
             "model": pipeline.unet.state_dict(),
+            "model_ema": (
+                {k: v.detach().cpu() for k, v in ema_state.items()}
+                if ema_state is not None
+                else None
+            ),
+            "ema_num_updates": int(ema_num_updates),
             "optimizer": optimizer.state_dict(),
             "scheduler": lr_scheduler.state_dict() if lr_scheduler is not None else None,
             "scaler": scaler.state_dict() if _use_scaler() else None,
@@ -1950,10 +2502,38 @@ def _train_main(
     _apply_stage_lrs()
     _sync_scheduler_base_lrs()
 
-    train_log_header = ["step", "epoch", "stage", "video", "timestep", "loss_noise_mse"]
-    val_log_header = ["step", "epoch", "stage", "video", "timestep", "loss_noise_mse"]
-    train_metric_keys = ["timestep", "loss_noise_mse"]
-    val_metric_keys = ["timestep", "loss_noise_mse"]
+    train_log_header = [
+        "step",
+        "epoch",
+        "stage",
+        "video",
+        "timestep",
+        "loss_total",
+        "loss_noise_mse",
+        "loss_diffusion_weighted",
+        "loss_noise_weighted_mse",
+        "loss_x0_latent_mse",
+        "loss_x0_latent_grad_l1",
+        "loss_teacher_latent_l1",
+        "loss_image_edge_l1",
+        "loss_origin_attn_feature_mse",
+        "origin_attn_feature_count",
+    ]
+    val_log_header = list(train_log_header)
+    train_metric_keys = [
+        "timestep",
+        "loss_total",
+        "loss_noise_mse",
+        "loss_diffusion_weighted",
+        "loss_noise_weighted_mse",
+        "loss_x0_latent_mse",
+        "loss_x0_latent_grad_l1",
+        "loss_teacher_latent_l1",
+        "loss_image_edge_l1",
+        "loss_origin_attn_feature_mse",
+        "origin_attn_feature_count",
+    ]
+    val_metric_keys = list(train_metric_keys)
 
     # Keep val header aligned with train for downstream tooling.
     val_log_header = list(train_log_header)
@@ -2141,6 +2721,16 @@ def _train_main(
             mamba_gate_start,
             mamba_gate_end,
         )
+        distill_updated = set_origin_feature_distill(
+            _get_unwrapped_unet(),
+            origin_attn_feature_loss_weight > 0.0,
+        )
+        if origin_attn_feature_loss_weight > 0.0:
+            logger.info(
+                "Origin-attn feature distillation enabled: modules=%d weight=%.6g",
+                distill_updated,
+                origin_attn_feature_loss_weight,
+            )
 
     def _scheduled_mamba_gate(epoch_value: int, batch_value: int, batches_total: int) -> float:
         if mamba_gate_schedule_key == "none":
@@ -2195,6 +2785,17 @@ def _train_main(
         sq = 0.0
         for param in module.parameters(recurse=True):
             grad = param.grad
+            if grad is None:
+                # Under DeepSpeed ZeRO (stage 1/2/3), the reduced/partitioned
+                # gradient is not left on param.grad; it must be fetched via
+                # DeepSpeed's own accessor, which knows how to reassemble it
+                # from the ZeRO-3 flat buffer or ZeRO-1/2 hp mapping.
+                try:
+                    from deepspeed.utils import safe_get_full_grad
+
+                    grad = safe_get_full_grad(param)
+                except Exception:
+                    grad = None
             if grad is None:
                 continue
             sq += float(grad.detach().float().pow(2).sum().item())
@@ -2290,8 +2891,16 @@ def _train_main(
             }
             proj = getattr(module, "time_embed_proj", None)
             if isinstance(proj, torch.nn.Linear):
-                if proj.weight.grad is not None:
-                    entry["time_grad_norm"] = float(proj.weight.grad.detach().float().norm().item())
+                proj_grad = proj.weight.grad
+                if proj_grad is None:
+                    try:
+                        from deepspeed.utils import safe_get_full_grad
+
+                        proj_grad = safe_get_full_grad(proj.weight)
+                    except Exception:
+                        proj_grad = None
+                if proj_grad is not None:
+                    entry["time_grad_norm"] = float(proj_grad.detach().float().norm().item())
                 weight = proj.weight.detach().float()
                 entry["time_param_norm_pre"] = float(weight.norm().item())
                 entry["time_weight_pre_cpu"] = weight.cpu().clone()
@@ -2774,6 +3383,10 @@ def _train_main(
                             use_prev_target_overlap=use_prev_target_overlap,
                             overlap_teacher_prob=overlap_teacher_prob,
                             overlap_noise_std=overlap_noise_std,
+                            target_override_video_path=target_override_video_path,
+                            target_override_is_sbs=target_override_is_sbs,
+                            teacher_regularization_video_path=teacher_regularization_video_path,
+                            teacher_regularization_is_sbs=teacher_regularization_is_sbs,
                         )
                         for batch_i, batch in enumerate(batches, start=1):
                             if stop_event.is_set():
@@ -2865,26 +3478,39 @@ def _train_main(
                     )
                 else:
                     base_lrs = [group["lr"] for group in optimizer.param_groups]
-                    base_lr = max(base_lrs[0], 0.0) if base_lrs else 0.0
-                    eta_ratio = (eta_min / base_lr) if base_lr > 0 else 0.0
-                    eta_ratio = min(max(eta_ratio, 0.0), 1.0)
                     cosine_steps = max(1, t_max - warmup_steps)
+                    # Each param group (base/mamba/mamba_detail) can have a
+                    # different base LR, so the warmup/decay ratio against
+                    # eta_min must be computed per group -- reusing group 0's
+                    # ratio for every group silently flattens the schedule
+                    # whenever group 0's LR happens to equal eta_min.
+                    eta_ratios = [
+                        min(max((eta_min / lr) if lr > 0 else 0.0, 0.0), 1.0)
+                        for lr in base_lrs
+                    ]
 
-                    def lr_lambda(step_idx: int) -> float:
-                        if step_idx < warmup_steps - 1:
-                            factor = (step_idx + 2) / float(warmup_steps)
-                            return max(factor, eta_ratio)
-                        t = step_idx - (warmup_steps - 1)
-                        cosine = (1.0 + math.cos(math.pi * t / cosine_steps)) / 2.0
-                        return eta_ratio + (1.0 - eta_ratio) * cosine
+                    def _make_lr_lambda(eta_ratio: float):
+                        def lr_lambda(step_idx: int) -> float:
+                            if step_idx < warmup_steps - 1:
+                                factor = (step_idx + 2) / float(warmup_steps)
+                                return max(factor, eta_ratio)
+                            t = step_idx - (warmup_steps - 1)
+                            cosine = (1.0 + math.cos(math.pi * t / cosine_steps)) / 2.0
+                            return eta_ratio + (1.0 - eta_ratio) * cosine
+                        return lr_lambda
 
                     lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
-                        optimizer, lr_lambda=lr_lambda
+                        optimizer,
+                        lr_lambda=[_make_lr_lambda(r) for r in eta_ratios],
                     )
                     if start_epoch == 1 and pending_scheduler_state is None:
-                        initial_factor = max(1.0 / float(warmup_steps), eta_ratio)
-                        for group, lr in zip(optimizer.param_groups, base_lrs):
-                            group["lr"] = lr * initial_factor
+                        initial_factors = [
+                            max(1.0 / float(warmup_steps), r) for r in eta_ratios
+                        ]
+                        for group, lr, factor in zip(
+                            optimizer.param_groups, base_lrs, initial_factors
+                        ):
+                            group["lr"] = lr * factor
         if lr_scheduler is not None and pending_scheduler_state is not None and resume_same_stage:
             try:
                 lr_scheduler.load_state_dict(pending_scheduler_state)
@@ -2950,6 +3576,8 @@ def _train_main(
                     overlap_noise_std=overlap_noise_std,
                     target_override_video_path=target_override_video_path,
                     target_override_is_sbs=target_override_is_sbs,
+                    teacher_regularization_video_path=teacher_regularization_video_path,
+                    teacher_regularization_is_sbs=teacher_regularization_is_sbs,
                 )
                 local_batch_count = len(train_batches)
                 shared_batch_limit = _dist_max(local_batch_count)
@@ -3046,6 +3674,7 @@ def _train_main(
                                             pipeline.unet.parameters(), max_grad_norm
                                         )
                                     optimizer.step()
+                                    _ema_update(step_value)
                                     _log_mamba_diag(
                                         step_value=step_value,
                                         epoch_value=epoch,
@@ -3131,6 +3760,7 @@ def _train_main(
                             else:
                                 torch.nn.utils.clip_grad_norm_(trainable_params, max_grad_norm)
                                 optimizer.step()
+                            _ema_update(step_value)
                             _log_mamba_diag(
                                 step_value=step_value,
                                 epoch_value=epoch,
@@ -3161,8 +3791,51 @@ def _train_main(
 
                     if writer_tb:
                         writer_tb.add_scalar("mamba_gate/current", current_mamba_gate, global_step)
+                        total_val = metrics.get("loss_total", loss_raw)
+                        writer_tb.add_scalar("loss/total", total_val.detach().item(), global_step)
                         noise_val = metrics.get("loss_noise_mse", loss_raw)
                         writer_tb.add_scalar("loss/noise_mse", noise_val.detach().item(), global_step)
+                        diffusion_weighted_val = metrics.get("loss_diffusion_weighted")
+                        if diffusion_weighted_val is not None:
+                            writer_tb.add_scalar(
+                                "loss/diffusion_weighted",
+                                diffusion_weighted_val.detach().item(),
+                                global_step,
+                            )
+                        noise_weighted_val = metrics.get("loss_noise_weighted_mse")
+                        if noise_weighted_val is not None:
+                            writer_tb.add_scalar(
+                                "loss/noise_weighted_mse",
+                                noise_weighted_val.detach().item(),
+                                global_step,
+                            )
+                        x0_latent_val = metrics.get("loss_x0_latent_mse")
+                        if x0_latent_val is not None:
+                            writer_tb.add_scalar("loss/x0_latent_mse", x0_latent_val.detach().item(), global_step)
+                        x0_latent_grad_val = metrics.get("loss_x0_latent_grad_l1")
+                        if x0_latent_grad_val is not None:
+                            writer_tb.add_scalar(
+                                "loss/x0_latent_grad_l1",
+                                x0_latent_grad_val.detach().item(),
+                                global_step,
+                            )
+                        teacher_latent_val = metrics.get("loss_teacher_latent_l1")
+                        if teacher_latent_val is not None:
+                            writer_tb.add_scalar(
+                                "loss/teacher_latent_l1",
+                                teacher_latent_val.detach().item(),
+                                global_step,
+                            )
+                        image_edge_val = metrics.get("loss_image_edge_l1")
+                        if image_edge_val is not None:
+                            writer_tb.add_scalar("loss/image_edge_l1", image_edge_val.detach().item(), global_step)
+                        origin_feature_val = metrics.get("loss_origin_attn_feature_mse")
+                        if origin_feature_val is not None:
+                            writer_tb.add_scalar(
+                                "loss/origin_attn_feature_mse",
+                                origin_feature_val.detach().item(),
+                                global_step,
+                            )
                         for image_key in (
                             "image_diag_mse",
                             "image_diag_l1",
