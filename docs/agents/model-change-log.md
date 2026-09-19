@@ -9204,3 +9204,925 @@ weights. Neither direction has upside.
 (the canonical usage) was never run -- it costs days. Given both mid-training
 regimes are negative, expected value is low, but this is an assumption rather
 than a measurement.
+
+## 2026-09-10 - Benchmark audit: two gate bugs inflated every Mamba speed number. Light Mamba is FASTER than attention.
+
+Requested by the user ("re-check the measurements before trusting any
+bug-derived conclusion"). Instrumented `bench2.py` counts, per forward, how
+many times `origin_attn`, the Mamba core, and plain `attn1` actually execute.
+
+**Bug 1 (light-Mamba benchmarks, 2026-09-01).** In `gated_residual` mode the
+forward computes `mamba_y` FIRST and then, when `gate < 1.0`, ALSO runs
+`origin_attn`. The d_state/expand/resolution sweeps loaded no checkpoint, so the
+gate sat at its default **0.0** -> `origin_attn=16, mamba_core=16` per forward:
+**origin + Mamba, not origin - attention + Mamba.** Every "lightest Mamba is
+still +8.4% slower / no crossover below 3.6 MPix" number was inflated by exactly
+one attention pass.
+
+**Bug 2 (e102-lineage checkpoints).** The stored `mamba_gate` buffer is
+**0.9961**, not 1.0 (linear schedule not quite complete at e102), and
+`reference_disabled` is a runtime attribute, not a buffer, so at inference the
+condition `gate >= 1.0` is false and **both paths run**. All 2026-09 benches
+that loaded e102 (the "+16.4% / +38.4%" main comparison) double-executed.
+Output is 0.004·ref + 0.996·mamba, so quality results are unaffected; speed and
+VRAM were not. The e140 (uniform-sigma) lineage stores gate=1.0 and is clean.
+Historical wall-clock numbers (187.3 s vs origin 170.6 s) used plain `mamba`
+mode (no gate, Mamba-only) and are NOT affected.
+
+**Corrected, all with `origin_attn=0` verified per forward (UNet, fp16, 14 fr):**
+
+| config | 576x1024 | vs origin | 768x1344 | 1024x1792 | vs origin |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| origin | 0.4844 | -- | 0.932 | 1.876 | -- |
+| light all-16 (ds64, exp1, fwd) | 0.4586 | **-5.3%** | 0.817 (**-12.4%**) | 1.452 | **-22.6%** |
+| **light, level-0 only** (down0+up3, 5 blk) | **0.4561** | **-5.8%** | -- | -- | -- |
+| light, level-1 only (down1+up2) | 0.4861 | +0.4% | | | |
+| light all-16, bidirectional | 0.5044 | +4.1% | | | |
+| light all-16, ds128 | 0.4628 | -4.5% | | | |
+| **e140 as trained** (up-only 8, bwd, d256 exp2) | 0.4979 | **+2.8%** | | | |
+| e102 gate forced 1.0 (true cost of heavy cfg) | 0.5979 | +23.4% | | | |
+| e102 as stored (0.996, double-exec) | 0.6698 | +38.3% | | | |
+
+**Findings that survive the audit (and two that reverse):**
+1. **REVERSED: a light Mamba (d_state 64-128, expand 1, fwd-only) is faster
+   than flash attention at every resolution tested**, and the margin grows with
+   resolution. The 2026-09-01 "crossover at ~3.6 MPix" claim is retracted.
+2. **REVERSED: the best trained model (e140) costs +2.8%, not +16%.**
+3. **HOLDS: the heavy trained config (d256/exp2/bidir) is slower** (+23.4%).
+4. **HOLDS: the Amdahl ceiling.** Re-audited profile (replaced=0 asserted; hook
+   overhead +0.3%; 89-91% of time captured): attn1 spatial = 13.6% at 576x1024,
+   29.1% at 1024x1792.
+5. **NEW: the attention cost is concentrated.** Per level at 576x1024:
+   9216-token level (down_blocks.0 + up_blocks.3, 5 blocks) = **10.6%**;
+   2304 = 2.0%; 576 = 0.9%; mid = 0.1%. At 1024x1792 the top level alone is
+   24.4% -- the single largest component in the UNet. Replacing ONLY those
+   5 blocks captures the entire speed gain (-5.8%) at **+0.1% VRAM**; replacing
+   the 2304 level is neutral. Two independent measurements (bench delta and
+   profile breakdown) agree.
+6. **NEW: FF 29.7% splits as spatial 9.9% / temporal ff 9.9% / temporal ff_in
+   9.9%.** All three are per-token MLPs with no sequence mixing.
+
+**Answer to "can Mamba fix FF / conv too?": no, by construction.** Mamba is a
+sequence mixer whose advantage is O(N) vs attention's O(N^2). FeedForward has no
+sequence dimension at all (pointwise MLP, O(N·d^2)); the 3x3 convs are local and
+already O(N). Against operations that are already linear in N, Mamba offers no
+asymptotic win and brings its own projection cost. The ~60% of the UNet that is
+FF+conv is reachable only by quantization, distillation/step reduction, or
+architectural slimming -- not by any sequence-mixer swap.
+
+**Caveats:** the light config has never been trained (parameter shapes differ
+from every checkpoint), so its quality is unknown; fwd-only was visually worse
+than bidirectional for the HEAVY config, untested for light. The gate DiD
+result (Mamba-path resolution brittleness) still stands and applies to any
+scan-based variant.
+
+## 2026-09-10 (cont.) - Level-0-only replacement captures ~95% of the gain at zero VRAM; guidance=1.01 is paying full CFG for nothing
+
+**Level-0-only light Mamba across resolutions** (`down_blocks.0.* + up_blocks.3.*`,
+5 blocks, ds64/exp1/fwd, gate=1.0, `origin_attn=0` verified):
+
+| resolution | origin | light all-16 | **light level-0 only** | level-0 share of all-16 gain | level-0 VRAM |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 576x1024 | 0.4844 | -5.3% | **-5.8%** | >100% | +0.05% |
+| 768x1344 | 0.932 | -12.4% | **-11.8%** | 95% | +0.07% |
+| 1024x1792 | 1.876 | -22.6% | **-20.9%** | 92% | +0.05% |
+
+Consistent with the profile (top level = 78% of all attn1 time at 576, 84% at
+1024). **Replacing 11 more blocks buys 0.5-1.7 points and costs +3% VRAM plus
+the resolution-brittleness exposure of 11 extra scan layers.** Deployable form
+(plain `mamba` mode, ds128, level-0 only): 0.4582 s, -5.4%, VRAM +0.04%.
+
+**guidance_scale 1.01 -> 1.0 on origin:** LPIPS 0.3535 vs 0.3526, mask PSNR
+13.146 vs 13.135, sharpness 0.0313 vs 0.0315. **Indistinguishable.** But
+`do_classifier_free_guidance` is `guidance_scale > 1.0`, so 1.01 runs full CFG
+(UNet batch doubled) for a 1% guidance mix. This is inherited from the origin
+scripts' hardcoded 1.01 and has been paid on every run in the project's history.
+Cost multiplier measured next entry.
+
+**Answer to "what improvements remain" -- ranked by (measured gain) / (cost):**
+1. **guidance 1.0 (no CFG).** Halves UNet batch. Zero training, zero quality
+   cost (measured). Origin-side change, so it also lifts the baseline -- a Mamba
+   result must still be compared against origin-at-1.0.
+2. **Light Mamba, level-0 only.** -5.8% UNet at the project's operating point,
+   -21% at 1024x1792, +0.05% VRAM. **Requires training from scratch** (shapes
+   differ from every checkpoint) and quality is unknown; the bidirectional->
+   fwd-only quality loss seen for the heavy config is the main risk. Training
+   only 5 blocks should be far faster than the 16-block runs.
+3. **Quantization / step reduction** for the 60% that is FF+conv -- the only
+   levers on those; orthogonal to (1) and (2).
+4. NOT worth pursuing: replacing FF or conv with Mamba (no sequence dimension /
+   already O(N)); bidirectional light Mamba (+4.1%, loses the gain);
+   heavy config as trained (+23.4%).
+
+## 2026-09-10 (cont. 2) - CFG multiplier measured; the deployment comparison
+
+| config | UNet fwd | vs origin@1.01 | peak VRAM | vs origin@1.01 |
+| --- | ---: | ---: | ---: | ---: |
+| origin, guidance 1.01 (CFG on, batch 2) -- **as shipped** | 0.9593 | -- | 7,396 | -- |
+| origin, guidance 1.0 (batch 1) | 0.4839 | **-49.6%** | 5,075 | **-31.4%** |
+| light Mamba level-0 + guidance 1.0 (plain, ds128) | 0.4580 | **-52.3%** | 5,077 | -31.4% |
+
+CFG at batch 2 costs **1.98x** time and **+45.7%** VRAM. Quality at 1.0 is
+indistinguishable (prev. entry). This has been paid on every inference in the
+project's history, on both origin and Mamba sides equally.
+
+**Attribution, per the always-compare-against-origin rule:** of the -52.3%,
+**-49.6 points are origin-side** (turning off CFG) and only **-5.4% relative**
+(0.4580 vs 0.4839) is the Mamba contribution. A Mamba result must be reported
+against origin at guidance 1.0, not against origin as shipped.
+
+## 2026-09-10 (cont. 3) - Baseline must stay at the published guidance 1.01. Mamba gains re-measured under that condition; the CFG-off recommendation is withdrawn as a research step.
+
+User objection, accepted: the prior work fixes `guidance_scale=1.01`, so the
+comparison baseline is StereoCrafter *as published*. Changing the baseline's
+guidance changes the thing being compared against. The "apply CFG-off first"
+recommendation in the previous entry is **withdrawn as a research step**; the
+CFG observation stands only as a separate engineering note about StereoCrafter
+itself, and must not be folded into any Mamba speed claim.
+
+**Re-measured at the published condition (UNet batch 2 = CFG on), `origin_attn=0`
+verified:**
+
+| config | 576x1024 | vs origin | 1024x1792 | vs origin | VRAM @576 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| origin @1.01 | 0.9583 s | -- | 3.711 s | -- | 7,396 MiB |
+| light, level-0 only (5 blk) -- **untrained** | 0.9032 | **-5.7%** | 2.936 | **-20.9%** | +0.08% |
+| light, all-16 -- **untrained** | 0.9109 | -4.9% | -- | -- | +2.1% |
+| e140 as trained (up-only 8, bwd, d256) | 0.9899 | +3.3% | -- | -- | +2.7% |
+
+Batch-1 numbers were -5.8% / -20.9%; batch-2 gives -5.7% / -20.9%. **The Mamba
+gain is invariant to the guidance setting**, as expected (both attention and
+Mamba scale linearly in batch). All Mamba speed claims from here on are stated
+against origin @1.01.
+
+**Table hygiene, also raised by the user:** rows labelled "light" are
+**untrained architectures** (d_state/expand shapes match no checkpoint; Mamba
+blocks are randomly initialised). Timing does not depend on weight values, so
+the speed numbers are valid, but their *quality is unknown*. Trained rows are
+labelled as such. Earlier tables mixed the two without saying so.
+
+## 2026-09-10 (cont. 4) - Light level-0 Mamba training launched (smoke test first); gate-buffer trap closed at the source
+
+**Experiment.** Train the one configuration the audit identified as both faster
+and VRAM-neutral: light Mamba (**d_state=128, expand=1, fwd-only**) on the
+**9216-token level only** (`down_blocks.0.*` + `up_blocks.3.*`, 5 blocks),
+everything else attention. Bench (2026-09-10): -5.7% @576x1024, -20.9%
+@1024x1792 vs origin @1.01, VRAM +0.08%. Quality unknown -- that is the
+question. d_state=128 over 64 trades 1.3 speed points for quality headroom.
+
+**Seed.** e140 of the uniform-sigma lineage, with **all Mamba keys dropped**
+via `resume_ignore_key_patterns=[".fwd.", ".bwd.", "time_embed_proj",
+"mamba_gate", ".origin_attn."]` + `resume_ignore_mismatched_shapes=True`. The
+non-Mamba UNet keeps its 0160 fine-tune; the 5 new blocks start random. Slots
+that were Mamba in e140 but are attention here (up_blocks.1/2) fall back to
+base StereoCrafter attention -- lossless, since `origin_attn` was frozen at base
+weights throughout training. Filtered resume also resets optimizer state
+(correct for fresh blocks) and, by design, restarts the gate ramp.
+
+**Recipe held to the one that worked:** uniform sigma (`euler_low_sigma_prob=0`),
+no EMA (shown not to help in either regime), `mamba_learning_rate=5e-6`,
+`checkpoint_use_reentrant=False`. Gate ramp linear 0.05 -> 1.0 so the random
+blocks grow in behind the still-working attention.
+
+**Wrapper traps handled on the CLI** (the wrapper injects its own
+`exclude=up3.attn1`, `gate_start/end=1.0`, `stage_epochs`, `save_dir`):
+`--exclude_patterns='__nomatch__' --mamba_gate_start=0.05 --mamba_gate_end=1.0
+--stage_epochs=... --save_dir=...`. `MAMBA_SELF_ATTN_D_STATE/EXPAND` must be
+set identically for **training and every later inference** -- record them with
+the run.
+
+**Root-cause fix for the 0.9961 gate trap.** `_apply_scheduled_mamba_gate`
+disables the reference at `gate >= 0.999` but stored the raw scheduled value in
+the buffer; anything in [0.999, 1.0) rounds to 0.9961 in bf16, and at inference
+(`reference_disabled` is not checkpointed) `gate >= 1.0` fails -> double
+execution. Now, whenever the reference is disabled, the buffer is set to
+**exactly `mamba_gate_end`**. Belt-and-braces: inference on any gated checkpoint
+still passes `--mamba_gate_override=1.0`, and timing asserts `origin_attn` calls
+== 0.
+
+**Smoke test** (e140 -> e142, 2 epochs, save every epoch) verifies before the
+real run: `total_replaced=5` on the right slots at d_state=128, the resume
+filter log, `[ep 141/142]`, gate ramp starting ~0.05, per-epoch wall time, VRAM,
+and -- after e141 lands -- the checkpoint's block set, `A_log`/`in_proj` shapes,
+and gate buffer value. Real run length is decided from the measured epoch time.
+
+Run dir: `weights/Overfit0160_LightMamba_Lvl0_ds128_fwd_FromE140` ->
+`/mnt/ssd_data/stereocrafter_weights/...` (symlink, per the disk rule).
+
+**Smoke-test verification (2026-09-10, all pass):** startup log shows
+`total_replaced=5` on exactly `down_blocks.0.attentions.{0,1}` +
+`up_blocks.3.attentions.{0,1,2}`, `d_state=128 expand=1 mode=gated_residual`;
+192 resume keys filtered (Mamba + origin_attn); `[ep 141/142]`; gate ramp
+0.0785 -> 0.1102 over the first 20 batches (linear from 0.05). e141 checkpoint:
+5 blocks, `in_proj` (901, 320) = 2·320 + 2·128 + 5 -> confirms d_state=128 /
+expand=1 in the saved weights; gate buffer 0.5234 at the ramp midpoint; epoch
+141 / stage 576x1024. **53:13 per epoch**, 15.1 GiB reserved, no OOM.
+`mem_eff=False` in training is the stage-3 `mamba_use_fast_path=false` flag,
+identical to every prior lineage (which evaluated at mem_eff=True and
+reproduced exactly) -- known-benign path difference, not new.
+
+Real run planned: e141 -> e180 (40 epochs, ~35 h), save every 5 (~190 GB on
+ssd_data, 572 GB free), LPIPS checkpoints at e150/160/170/180 with early stop
+on plateau. Launch gated on the e142 eval-harness dry run.
+
+**Launch incident (2026-09-10 16:03) and fix.** The first real-run launch died
+at `makedirs` with `No space left on device`: ssd_data was at 0 B free. Cause:
+`Overfit0160_EMA_DecaySweep_FromE110/` (the 2026-09-07 decay sweep, concluded
+negative) had grown to **515 GB** -- 10 checkpoints each carrying three 6.1 GB
+EMA shadows (~21 GB `.pt`) plus a 21 GB DeepSpeed state -- and I quoted a
+"572 GB free" figure that was three days stale instead of re-reading `df` at
+launch time. Freed 280 GB by deleting DeepSpeed resume states only (concluded
+sweep + the finished smoke run + the empty crashed dir); all model `.pt` files
+kept. Launcher now **refuses to start below 200 GB free** and saves every 10
+epochs (evaluation points were already e150/160/170/180, so nothing planned is
+lost; 4 saves + latest ~120 GB). Relaunched 16:05 as
+`logs/light_lvl0_REAL_20260910_160515.log`.
+
+Rule added to the launch checklist: **read `df` in the launch script itself,
+never from memory.** Also: checkpoints written with `ema_decay` lists embed one
+6.1 GB shadow per decay -- budget for it, or strip `model_ema_by_decay` before
+archiving a concluded run.
+
+## 2026-09-10 (disk) - Checkpoint retention policy applied
+
+ssd_data hit 0 B free twice in one day. Policy now applied, per the user's rule
+("unused weights need not stay; keep what comparisons need"):
+
+| class | rule | examples |
+| --- | --- | --- |
+| **Keep on SSD** | base models; every evaluated checkpoint of the **best lineage** (uniform-sigma e110-e180 + mamba_only); its e140 resume state (seed of the live run); the e102 and e100 seeds; the live run | `stable-video-diffusion-*`, `StereoCrafter/`, `...BwdUniformSigmaFromE107Overnight/`, `Overfit0160GatedResidualMamba/`, `Overfit0160/`, `Overfit0160_LightMamba_Lvl0_*` |
+| **Keep, stripped** | concluded/retracted runs: one raw checkpoint each (EMA shadows + optimizer removed, `model` byte-identical, load-verified) | DecaySweep e130, EMAFIXED e210, broken-EMA e195 |
+| **Archive to HDD** (copy, byte-verify, then remove from SSD, symlink repointed) | comparison-relevant but inactive lineages: SigmaRevert, BwdMultiEpoch, the 2026-06/07 up-only and aux-loss sweeps, Feb-2026 baselines | 25 dirs, ~300 GB |
+| **Delete** | DeepSpeed resume states of every run not being resumed; non-final `.pt` of concluded/retracted runs; smoke-test dirs; root-disk duplicates; `Debug_Test` | ~700 GB |
+
+Sizes that caused the problem, for the record: a `.pt` written with
+`ema_decay="a,b,c"` carries **3 x 6.1 GB** of shadows (~21 GB per file); a
+DeepSpeed state is ~21 GB per save. A 20-epoch run saving every 2 epochs with
+3 EMA shadows = ~420 GB.
+
+**Outcome (2026-09-11):** ssd_data 257 GB -> **1.3 TB free**; root 624 -> 796 GB;
+298 GB archived to `/mnt/hdd_data/stereocrafter_archive/` (23 lineages, byte-
+verified, `weights/` symlinks repointed) plus `both_train_...` (9.4 GB). Kept on
+SSD: base models, best lineage (all `.pt` + e140 resume state), e102/e100 seeds,
+three stripped raw checkpoints (DecaySweep e130, EMAFIXED e210, broken-EMA e195),
+and the live run (69 GB at e162/180, ~120 GB at completion). **Not removable
+without sudo (root-owned, 126 GB on the root disk):** `weights/Debug_Test`,
+`weights/only_mamba_block_train_20260214`, `weights/both_train_with_1e-6_3e-6_
+learning_rate_50_50_epoch` -- both Feb-2026 dirs are already archived on HDD.
+
+## 2026-09-12 - Light level-0 run finished (e141-e180); quality at e180 is a starting point, not an endpoint. Continuation launched.
+
+All four saved checkpoints evaluated with the gate forced to 1.0 at inference
+(`eval_light.sh`; `origin_attn=0` asserted on every timing row):
+
+| epoch | gate stored | LPIPS | mask PSNR | sharpness | speed @1.01 (bs2) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| e150 | 0.287 | 0.8941 | 13.198 | 0.0075 | |
+| e160 | 0.523 | 0.6275 | 13.194 | 0.0237 | |
+| e170 | 0.762 | 0.4918 | 12.311 | 0.0338 | |
+| **e180** | **1.0** | **0.4449** | 11.742 | 0.0381 | **0.9085 s (-5.2%)**, 7,415 MiB (+0.3%) |
+| origin | -- | 0.3526 | 13.135 | 0.0315 | 0.9583 s |
+| heavy e140 (8 blk, 140 ep) | 1.0 | 0.3967 | 11.679 | 0.0421 | 0.9899 s (+3.3%) |
+
+**How to read it.** e150-e170 were *trained* with gate < 1 (the network still
+leaning on attention) but *evaluated* at gate 1 (pure Mamba), so those rows are
+not "the model at that point" -- they measure the Mamba path alone while the
+network was trained to expect a blend. The only row where train and eval
+conditions coincide is e180, and by then the model had **zero epochs of
+training in the pure-Mamba regime** (the ramp reached 1.0 on the last batch).
+The heavy lineage needed ~30 post-ramp epochs to go 0.44 -> 0.397. So 0.4449
+is the start of the useful trajectory, not its ceiling. LPIPS deltas
+(-0.136, -0.047) are decelerating but not flat; PSNR falls while LPIPS and
+sharpness rise, the same blur-favouring PSNR artefact seen all session.
+
+**Visual (frame 75, `outputs/diagnose_0160/frame_compare/light_lvl0_e180_f75.png`):**
+e180 keeps the signage letters legible and the whole frame structurally intact
+-- no melting -- with the familiar over-saturation and smearing on the left
+foliage and the wicker basket. Comparable to heavy e140, slightly worse.
+Clearly behind origin (signage, wicker texture, foliage detail).
+
+**Speed confirmed on trained weights: -5.2% vs origin at the published
+guidance, VRAM +0.3%.** Matches the untrained bench (-5.7%). The speed claim for
+this configuration is settled; quality is the open variable.
+
+**Continuation launched** e180 -> e210 (30 epochs, gate fixed at 1.0, true
+resume with the e180 DeepSpeed state so the optimizer continues; the resume
+key-filter is OFF in `config/0160_light_lvl0_cont.json` so the trained Mamba
+weights are kept). Evaluates e190/e200/e210 on completion (~27 h). Dropped the
+e150/160/170 resume states (-63 GB).
+
+**Tooling trap (2026-09-12):** a `pgrep -f 'inpainting_train'` guard inside an
+inline `bash -c` command matches the *shell itself* (its argv contains the
+pattern text) and reported "training running" on an idle GPU. Fixed by
+anchoring on the interpreter path:
+`pgrep -fc '^/home/kawa/miniconda3/envs/stereocrafter/bin/python -u inpainting_train'`.
+Same family as the other silent-wrong checks: a guard that can be satisfied by
+the checker itself.
+
+## 2026-09-13 - Light level-0 continuation (e181-e210, pure-Mamba regime): flat at ~0.44. Hypothesis refuted.
+
+| epoch (pure-Mamba epochs) | LPIPS | mask PSNR | sharpness | speed @1.01 |
+| --- | ---: | ---: | ---: | ---: |
+| e180 (0) | 0.4449 | 11.742 | 0.0381 | -5.2% |
+| e190 (10) | 0.4452 | 11.647 | 0.0392 | -5.2% |
+| e200 (20) | **0.4393** | 11.514 | 0.0391 | -5.2% |
+| e210 (30) | 0.4432 | 11.457 | 0.0385 | -5.2% |
+| origin | 0.3526 | 13.135 | 0.0315 | -- |
+| heavy e140 (8 blk, d256/exp2/bwd) | 0.3967 | 11.679 | 0.0421 | +3.3% |
+
+Range over 30 pure-Mamba epochs: **0.439-0.445 (0.006 wide) -- flat.** All
+gates stored at exactly 1.0; `origin_attn=0` on every timing row; the three
+speed numbers agree to 0.001 s. This is a real plateau, not a measurement
+artefact. Visual (`outputs/diagnose_0160/frame_compare/light_lvl0_e210_f75.png`):
+e180 and e210 are nearly indistinguishable -- same over-saturation, same
+smeared left foliage, same soft wicker -- structurally intact, no melting, a
+notch below heavy e140, clearly behind origin.
+
+**The 2026-09-12 hypothesis ("e180 is the start of a 0.44 -> 0.40 trajectory
+like the heavy lineage's") is refuted.** The light level-0 configuration's
+capacity on this clip is ~0.44.
+
+**What this settles for the light level-0 config (5 blocks, d_state=128,
+expand=1, fwd-only), at the published guidance 1.01:**
+- speed **-5.2%**, VRAM **+0.3%** (measured on trained weights, double-exec
+  excluded) -- the only Mamba configuration in this project that is faster
+  than origin;
+- quality **LPIPS 0.44 vs origin 0.35 (-0.09) and vs the heavy trained config
+  0.40 (-0.045)**.
+Per the pre-committed criterion this is the worse branch: a trade-off, not a
+win -- ~5% speed for ~0.09 LPIPS on the memorised clip.
+
+**Why worse than heavy cannot be attributed from one run.** Four things differ
+at once (d_state 128 vs 256, expand 1 vs 2, fwd-only vs bwd-only, 5 level-0
+blocks vs 8 up-only blocks). The one with prior evidence is direction:
+bidirectional beat single-direction visually on the heavy config, and the
+light bench showed bidirectional costs the whole speed gain (+4.1%). A
+bwd-only light run would isolate direction at equal cost, but on the evidence
+so far the expected value of another 35 h run is low.
+
+Generalisation to the three unseen clips is being scored (light e210 vs origin
+vs heavy) before anything is written up; per the 2026-09-03 finding, a
+0160-only number is provisional.
+
+**Generalisation of light e210 (3 unseen clips, aligned LPIPS, left-eye 46-51 dB):**
+
+| clip | origin | heavy up-only e140 (8 blk) | light lvl0 e210 (5 blk) | light - heavy |
+| --- | ---: | ---: | ---: | ---: |
+| 0160 (memorised) | 0.3526 | **0.3967** | 0.4432 | +0.046 |
+| 0042 | 0.2309 | 0.5587 | **0.4598** | **-0.099** |
+| 0204 | 0.2100 | 0.4143 | 0.4207 | +0.006 |
+| 0301 | 0.4573 | 0.6058 | 0.6089 | +0.003 |
+
+**Reframe:** the heavy config's 0.045 edge exists only on the clip it
+memorised for 140 epochs. Off that clip the light config is equal (2 clips) or
+clearly better (0042, by 0.10). So against the heavy trained config, the light
+level-0 config is better on speed (-5.2% vs +3.3%), VRAM (+0.3% vs +2.7%) and
+generalisation, and worse only on the memorised clip. Both remain far behind
+origin off-0160 (0.21-0.46 vs 0.42-0.61), as expected for single-clip overfit
+models -- the generalisation gap to origin is a property of the training
+design, not of either architecture.
+
+**Final standing of the light level-0 configuration:** the only Mamba variant
+in this project that beats origin on speed and VRAM; on the memorised clip it
+trails origin by 0.09 LPIPS and the heavy config by 0.045; on unseen clips it
+matches or beats the heavy config. The project's stated goal (preserve origin
+quality, improve speed/VRAM) is met on the speed/VRAM half and not on quality.
+
+## 2026-09-13 - ROOT CAUSE: the Mamba SSM parameters were never trained, in any lineage (bf16 rounding swallowed every update)
+
+Per-tensor weight movement on the light run, e180 -> e210 (30 pure-Mamba
+epochs, lr 5e-6): **A_log 0.00%, dt_bias 0.00%, D 0.00%**; in_proj 2.6%,
+out_proj 2.1%, conv1d 0.3%. Heavy lineage e110 -> e140 (bwd core, 30 epochs):
+A_log / dt_bias / D **max element change exactly 0.00000**; in_proj 1.8%.
+
+Gradients are NOT missing. Reconstructing the fp32 master weights from the
+e210 ZeRO-2 partitions (`zero_to_fp32.py`) and comparing to the bf16 model:
+
+| tensor | fp32 master drift (max) | bf16 ULP at that magnitude | visible in bf16? |
+| --- | ---: | ---: | --- |
+| A_log | 2.7e-3 | 1.07e-2 | no |
+| dt_bias | 4.0e-3 | 2.11e-2 | no |
+| D | 1.7e-3 | 3.9e-3 | no |
+| in_proj | 2.4e-4 | 2.6e-4 | barely |
+
+**Mechanism.** Adam moves a parameter by at most ~lr per step. At lr=5e-6 the
+fp32 master of A_log (elements ~2.4) drifts a few 1e-3 over 4,500 steps --
+below half a bf16 ULP -- so the bf16 copy that the forward pass uses rounds
+back to its initial value every single step. **The SSM dynamics were optimised
+in fp32 and never reached the running model.** Everything the project measured
+as "Mamba quality" came from randomly-initialised state dynamics with a lightly
+tuned in/out projection, wrapped by a base UNet that co-adapted to that noise.
+The gate DiD "resolution brittleness" finding is also a property of *untrained*
+scan dynamics and must be re-tested after this fix.
+
+Why it was invisible: loss still fell (base UNet at 1e-6 with ~0.02-0.1 element
+scale does cross bf16 ULPs), `module_grad_norm` in `mamba_diag` was healthy
+(gradients exist), and the tell -- "parameter that never changes across
+checkpoints" -- was never checked. Same detection rule as the other seven
+bugs: compare the thing across time.
+
+**Fix under test:** `mamba_learning_rate` 5e-6 -> **2e-4** (40x; Mamba2
+from-scratch practice is 1e-4..1e-3), 300-step warmup, grad-clip 1.0 (already
+on), base UNet still 1e-6, gate fixed 1.0, resume from light e210 with optimizer
+state. Acceptance test for the 1-epoch smoke: the **bf16** A_log/dt_bias/D of
+e211 must differ from e210 (max drift 2e-4 x 151 = 0.03 ~ 3 ULPs), loss must
+not spike. A cleaner long-term fix is keeping the 15 scalar SSM params per block
+in fp32 (own param group), but the LR alone should unfreeze them.
+
+**Corroboration (module-level grad check, one gated block, d128/exp1):** A_log,
+dt_bias, D all receive gradients (norms 3.4e-5 / 1.0e-5 / 3.1e-3 vs in_proj
+2.7e-2) in both bf16 and fp32 -- autograd is fine. lr 5e-6 expressed in bf16
+ULPs: A_log **0.001**, dt_bias **0.000**, D **0.001**, in_proj 0.023 -- i.e. a
+step is a thousandth of the representable resolution for the SSM scalars. Also:
+`MAMBA_MEM_EFF` 0 vs 1 give **bit-identical** outputs and gradients, so the
+train/inference kernel-path difference noted on 2026-09-10 is closed as benign.
+
+**Gotcha while testing the LR fix (2026-09-13):** the LR scheduler in
+`inpainting_train.py` is stepped **once per epoch** (right after the epoch's
+checkpoint save), and `t_max = planned_epochs_total` is in **epochs**. So
+`num_warmup_steps` is a count of *epochs*, not optimizer steps. The first
+hiLR smoke used `num_warmup_steps=300` intending a 300-step warmup; the
+per-epoch warmup factor `(idx+2)/300` at a fresh scheduler index put the mamba
+group at 2e-4 x 0.0067 = **1.3e-6 for the entire epoch** -- lower than the
+5e-6 it was meant to replace. Caught because the direct measurement (mamba
+module norm drift per step) came out ~40x *slower* than the previous run
+instead of ~40x faster. Corrected to `num_warmup_steps=4` (epochs: factors
+0.5 / 0.75 / 1.0). Added `[LR-AUDIT]` log lines that print every param group's
+live lr after restore, at optimizer steps 1/50/100..., and at each scheduler
+step -- so an LR that is not what the config says can no longer hide.
+
+**Third LR bug (2026-09-13), found by the `[LR-AUDIT]` lines:** after restore
+the config lr (2e-4) was in `group["lr"]`, but at the first optimizer step Adam
+was using **2.5e-6 = 5e-6 x 0.5**. The restored optimizer state carries the
+*previous* run's `initial_lr=5e-6` in each param group; `LambdaLR.__init__`
+uses `group.setdefault("initial_lr", ...)`, so the stale value becomes
+`base_lrs` and every scheduler step re-imposes 5e-6-scaled LRs.
+`_sync_scheduler_base_lrs()` runs before the scheduler exists (no-op).
+**Consequence: changing any LR in the config on a resumed run had no effect --
+ever.** Fix: purge `initial_lr` from all param groups right before each
+scheduler constructor. Verified 2026-09-13 09:52 (log `logs/20260913093744_rank0.log`):
+`[LR-AUDIT optimizer.step 34550] ... ('mamba', 0.0001) | inner(DeepSpeedCPUAdam) groups=[1e-06, 0.0001]`
+= 2e-4 x warmup factor 0.5. The config LR now reaches Adam.
+
+## 2026-09-13 - hiLR smoke (mamba lr 2e-4, 1 epoch from light e210): LR now applied, but the jump is too violent
+
+Run: `weights/Overfit0160_LightMamba_Lvl0_hiLR_FromE210/` (e210 -> e211), light level-0
+config (5 blocks, ds128/exp1/fwd), warmup factor 0.5 -> live mamba lr **1e-4** all epoch
+(`[LR-AUDIT optimizer.step]` at steps 34550/34600/34650), base lr 1e-6.
+
+| | old run e199-e210 (mamba lr ~5e-6 -> 1e-6 cosine tail) | hiLR e211 |
+| --- | ---: | ---: |
+| epoch `avg_loss` | 0.217 - 0.283 (mean ~0.245) | **0.5706** |
+
+Parameter movement in ONE epoch (relative Frobenius change vs e210, bf16 checkpoint):
+
+| block | A_log | dt_bias | D | in_proj.weight |
+| --- | ---: | ---: | ---: | ---: |
+| down0.attn0 | 0.14% | 0.23% | 0.17% | 5.09% |
+| down0.attn1 | 0.17% | 0.00% | 0.17% | 10.09% |
+| up3.attn0 | 0.00% | 0.00% | 0.17% | 3.57% |
+| up3.attn1 | 0.00% | 0.00% | 0.17% | 8.65% |
+| up3.attn2 | 0.33% | 0.00% | 0.49% | 11.38% |
+
+Reading: (1) the LR fix works -- `in_proj` moved 4-11 % in one epoch (the old run moved
+~2e-6 per epoch). (2) The bf16 SSM scalars now flip occasionally (a 1e-4 step is still
+0.01 ULP for `A_log`~2.4, so single elements flip only when the fp32 master crosses a
+rounding boundary): D moved in 5/5 blocks, A_log in 3/5, dt_bias in 1/5. The storage
+limitation is real but the parameter count is tiny (5 heads x 3 scalars per direction).
+(3) A 100x LR jump (1e-6 tail -> 1e-4) from a converged state doubled the epoch loss;
+one epoch cannot tell transient from damage. Decision: do NOT launch the 26 h run at
+2e-4 blindly. First run the standalone attention->Mamba regression probe
+(`scripts/distill/capture_attn.py` + `distill_standalone.py`) to measure the achievable
+imitation floor per block and the LR the blocks tolerate with fp32 Adam; if the probe
+reaches a low relative MSE, inject the distilled blocks into e210
+(`scripts/distill/inject_distilled.py`) and read LPIPS directly before any long training.
+
+**e211 LPIPS (aligned, vs origin, 0160): 0.9151, sharpness 0.0076** (e210 was 0.44 /
+~0.03; origin 0.3526 / 0.0315). One epoch at live mamba lr 1e-4 from the converged e210
+state destroyed the light Mamba blocks (output is featureless). So a 100x LR jump is
+not a "transient" at the 1-epoch horizon; end-to-end diffusion training at 1e-4 from
+this state is off the table. Kept `train_state_epoch000211.pt` as evidence, deleted the
+DS state and the duplicate final/latest files (9 GB).
+
+## 2026-09-13 - Standalone attention->Mamba probe: the light blocks were never near attention; 100 s of direct regression gets within 1-5 %
+
+Setup: `scripts/distill/capture_attn.py` hooked the 5 light level-0 `attn1` slots during a
+real 0160 inference (light e210 model, gate override 0.0 => every slot returns the frozen
+ORIGIN attention output): 112 UNet calls (14 windows x 8 steps, CFG batch 28), 4 random
+sequences per call per slot => 560 records, 25 GB at `/mnt/ssd_data/attn_cache/0160_light_e210_gate0`.
+`scripts/distill/distill_standalone.py` then trains ONE Mamba block per slot on
+(x, origin_attn1(x), time_emb) with fp32 AdamW, bf16 autocast, relative MSE
+= ||y_hat - y||^2 / ||y||^2, held-out = every 5th window (96 seqs), 1500 steps, batch 8.
+
+| slot | e210 blocks as trained end-to-end (initial) | after 1500 standalone steps (eval) |
+| --- | ---: | ---: |
+| down0.attn0 | **1.001** | 0.028 |
+| down0.attn1 | **1.013** | 0.013 |
+| up3.attn0 | **1.416** | 0.151 |
+| up3.attn1 | 0.847 | 0.009 |
+| up3.attn2 | **2.170** | 0.052 |
+
+Reading: relative MSE 1.0 = no better than outputting zeros; >1 = worse than zeros.
+**After 70 end-to-end epochs (~60 GPU-hours at mamba lr <= 5e-6) the light Mamba blocks
+did not approximate attention at all -- three of five were actively harmful.** The same
+architecture (ds128, expand 1, fwd-only, 5 heads, 1.61 M params/slot) reaches 1-5 %
+relative error on held-out windows after 45-100 s of direct regression (up3.attn0 is
+the hard slot at 15 %). So the capacity of the light block is NOT the bottleneck of
+the 0.44 plateau; the training signal/LR was. Next: LPIPS of these distilled blocks
+with zero end-to-end training, (a) dropped onto the untouched origin UNet, (b) injected
+into light e210 (`scripts/distill/after_probe.sh`), plus architecture variants
+(fresh init, bidirectional, d_state 256, headdim 32, expand 2, linear baseline).
+
+**Variant table (same cache, 1500 steps, eval = held-out windows, relative MSE per slot
+down0.a0 / down0.a1 / up3.a0 / up3.a1 / up3.a2):**
+
+| variant | init | final |
+| --- | --- | --- |
+| e210 blocks, lr 5e-4 | 1.00/1.01/1.42/0.85/2.17 | 0.028/0.013/0.151/0.009/0.052 |
+| e210 blocks, lr 1e-4 | same | 0.035/0.023/0.166/0.010/0.061 |
+| fresh ds128 fwd | 4.2/5.2/2.5/2.0/9.2 | 0.027/0.011/0.148/0.009/0.050 |
+| fresh ds128 both | 2.6/3.1/1.8/1.4/5.2 | 0.026/0.009/0.145/0.009/0.050 |
+| fresh ds256 fwd | | 0.028/0.011/0.148/0.009/0.050 |
+| fresh headdim32 fwd | | 0.027/0.011/0.148/0.009/0.050 |
+| fresh expand2 fwd | | 0.026/0.008/0.143/0.008/0.048 |
+| **per-token Linear(320,320), no mixing** | 1.0 | **0.046/0.020/0.181/0.011/0.058** |
+
+Readings: (1) every Mamba variant lands on the same floor (0.026-0.028 / ~0.01 /
+0.143-0.151 / 0.009 / 0.050): d_state, bidirectionality, head count and expand do not
+move it, so the residual is not a knob-tunable capacity limit of the 1-D scan. (2) A
+per-token linear map already explains 95-99 % of these level-0 attention outputs; Mamba
+adds a few points on top (0.046->0.027, 0.181->0.148). (3) `up_blocks.3.attentions.0`
+is the one slot where attention does substantial real mixing (linear 18 %, Mamba 15 %):
+it is the first level-0 block after the decoder skip-concat, i.e. where inpainting pulls
+context into the mask. If the injection LPIPS shows a residual gap, that slot is the
+first suspect (keep it on attention = ~2 % of UNet time, or give it a 2-D scan).
+(4) Fresh init from zero reaches the same floor as the e210-initialised blocks, i.e.
+the 70 end-to-end epochs contributed nothing reusable.
+
+**Injection LPIPS (no end-to-end training; aligned LPIPS vs origin on 0160; origin
+0.3526, light e210 0.4432):**
+
+| blocks | dropped onto origin UNet | injected into light e210 |
+| --- | ---: | ---: |
+| e210-init distilled (relMSE 0.03/0.01/0.15/0.01/0.05) | **0.7501** (maskPSNR 10.47, sharp 0.021) | 0.4775 |
+| fresh distilled (same relMSE) | **0.9515** | 0.4782 |
+
+Reading: teacher-forced imitation error of 1-5 % (15 % at up3.attn0) is NOT enough:
+on the untouched origin UNet the distilled blocks give 0.75-0.95, far worse than
+e210's garbage-but-adapted blocks (0.44). Two candidate causes, both testable cheaply:
+(1) **cascade / off-policy inputs** -- down0.attn0 is the first attention in the UNet,
+so its 3 % error perturbs every later block, and the 8-step sampler compounds it; the
+two weight sets with identical teacher-forced error but very different LPIPS (0.75 vs
+0.95) point at different behaviour on shifted inputs, i.e. this cause. (2) A
+numerical mismatch between the standalone module and the in-UNet module (dtype,
+chunking) -- ruled in/out by the on-policy capture, which measures the student's error
+against the teacher on the student's own inputs inside the real UNet.
+Also: e210 + distilled (0.478) is slightly worse than e210 (0.443), consistent with
+the rest of e210 having adapted to its own broken slots over 70 epochs.
+Next: DAgger-style on-policy rounds (`scripts/distill/onpolicy_rounds.sh`): run the full
+student, capture (student-cascade x, origin_attn(x)), retrain, inject, repeat x3.
+
+**6000 teacher-forced steps (long6k):** eval relMSE 0.025/0.007/0.142/0.008/0.049 (floor
+nearly reached with 352 training sequences) but LPIPS on origin got WORSE: 0.8308
+(maskPSNR 9.15). Lower teacher-forced error does not help at all, which rules out
+"just train the regression longer" and points squarely at off-policy inputs (or a
+numerical mismatch), to be separated by the on-policy capture.
+
+## 2026-09-13 - Why the injected blocks blew up: the cache came from the e210 UNet, whose time embedding differs 4x from origin's
+
+On-policy capture (origin UNet + long6k blocks, gate 1, teacher = `origin_attn` on the
+student's own input, `scripts/distill/onpolicy_breakdown.py`): student-vs-teacher relMSE is
+**50-300 at every denoising step, including step 0** (identical input distribution), so
+this is not cascade drift but a mismatch. Magnitudes at down0.attn0 step 0: x rms 0.65,
+teacher rms 0.23, **student rms 2.6**, and `time_emb` rms **5.64** -- vs **1.35** in the
+teacher-forced cache captured from the e210 UNet. The FiLM conditioning input differs
+4x between the two UNets (e210's lineage trained the whole UNet at 1e-5/5e-6 in stages
+1-2), so the standalone-fitted `time_embed_proj` produces 4x-too-large gamma/beta on
+the origin UNet and the output explodes. This also explains why e210+distilled (same
+UNet as the cache) was merely mediocre (0.478) while origin+distilled was catastrophic
+(0.75-0.95). **Rule: distil against the UNet you will deploy on.** The running on-policy
+rounds already use the origin UNet; a clean teacher-forced-on-origin baseline is queued.
+
+**On-policy round 1 (origin UNet, student-cascade inputs, teacher = origin_attn(x), init
+long6k, 2000 steps):** eval relMSE 0.022 / 0.002 / 0.027 / 0.001 / 0.010 -- note
+up3.attn0 drops from 0.15 (e210-UNet cache) to 0.027 on the origin UNet -- and
+**LPIPS on origin 0.5075** (from 0.83), maskPSNR 13.08 (origin ~13.2), sharpness 0.025
+(origin 0.0315). One round of on-policy distillation with no end-to-end training already
+beats every "origin+blocks" number so far; still behind e210 (0.443) and origin (0.353).
+Rounds 2-3 (student now near-manifold) follow.
+
+**On-policy round 2: LPIPS 0.3589 vs origin 0.3526 on 0160 (maskPSNR 13.107 vs ~13.18,
+sharpness 0.0316 vs 0.0315) -- with ZERO end-to-end training.** Student error measured
+in the real UNet before round-2 training: 0.08 / 38.1 / 0.29 / 0.025 / 0.41 (down0.attn1
+had been fitted on the garbage-cascade inputs of round 1; once down0.attn0 was fixed its
+inputs changed completely), after training 0.021 / 0.057 / 0.040 / ... . Two rounds =
+~25 GPU-minutes; the previous best Mamba number on this clip was the heavy config's
+0.3967 after 140 epochs (days), and the light config's end-to-end plateau was 0.443.
+Architecture unchanged (light level-0, ds128/exp1/fwd), so the measured speed/VRAM
+figures (-5.2 % / +0.3 % vs origin @1.01, bs2) carry over. Caveat: distillation data
+came from clip 0160 only; generalisation to the 3 unseen clips is the next check, and
+multi-clip distillation is cheap if it is needed.
+
+**On-policy round 3: LPIPS 0.3548 vs origin 0.3526 (gap 0.002), maskPSNR 13.088,
+sharpness 0.0317.** In-UNet student error before round 3: 0.027 / 0.102 / 0.057 / 0.005 /
+0.031; after: 0.021 / 0.052 / 0.014 / 0.001 / ~0.02. Three rounds ~35 GPU-minutes total.
+Weights: `scripts/distill/distill_probe/onpolicy_r3.pt` (Mamba-only state; load onto the
+origin UNet with `--include_patterns='down_blocks.0.*,up_blocks.3.*'
+--exclude_patterns='__nomatch__' --mamba_gate_override=1.0`, env ds128/exp1/fwd).
+Output video: `outputs/diagnose_0160/light_lvl0/origin_plus_onpolicy_r3/`.
+Generalisation to 0042/0204/0301 and multi-clip distillation are running next.
+
+**Generalisation of the single-clip (0160-only) on-policy r3 blocks to the 3 unseen clips
+(aligned LPIPS, `scripts/distill/clips_distilled.sh`, outputs `outputs/diagnose_0160/clips/*_origin_plus_distilled/`):**
+
+| clip | origin | light e210 (end-to-end) | origin + distilled r3 |
+| --- | ---: | ---: | ---: |
+| 0160 (distillation clip) | 0.3526 | 0.4432 | **0.3548** |
+| 0042 | 0.2309 | 0.4598 | 0.3445 |
+| 0204 | 0.2100 | 0.4207 | 0.4083 |
+| 0301 | 0.4573 | 0.6089 | **0.4609** |
+
+Better than the end-to-end light model on every clip, origin-level on 0160 and 0301,
+but a clear gap remains on 0042/0204: blocks fitted to one clip's feature distribution
+do not cover the others. Since a distillation round costs ~3 min of capture per clip
+and ~1 min of training per slot, multi-clip distillation is the natural fix
+(`scripts/distill/multiclip_distill.sh`: 0160+0001+0002+0003, 2 rounds, running;
+`multiclip_big.sh`: 13 clips, queued).
+
+## 2026-09-13 - Multi-clip on-policy distillation closes the generalisation gap: origin-level on all 3 unseen clips
+
+`scripts/distill/multiclip_distill.sh`: 2 on-policy rounds over 4 distillation clips (0160 +
+0001/0002/0003; the 3 evaluation clips were never used), 3 sequences per UNet call per
+slot, 4000 standalone steps per round (lr 2e-4), init = 0160-only round 3. Total ~70 GPU-min.
+
+| clip | origin | light e210 (end-to-end, 70 ep) | 0160-only r3 | **4-clip mc_r2** |
+| --- | ---: | ---: | ---: | ---: |
+| 0160 (in the distillation set) | 0.3526 | 0.4432 | 0.3548 | 0.3556 |
+| 0042 (unseen) | 0.2309 | 0.4598 | 0.3445 | **0.2569** |
+| 0204 (unseen) | 0.2100 | 0.4207 | 0.4083 | **0.2159** |
+| 0301 (unseen) | 0.4573 | 0.6089 | 0.4609 | **0.4508** |
+
+Sharpness on the unseen clips matches origin (0042 0.0104 vs 0.0080, 0204 0.0054 vs
+0.0057, 0301 0.0235 vs 0.0232); left-eye PSNR 46-51 dB (alignment sane). Gap to origin
+is now 0.003 / 0.026 / 0.006 / -0.007 LPIPS across the four clips, with the -5.2 % speed
+/ +0.3 % VRAM architecture unchanged. Weights:
+`/mnt/ssd_data/stereocrafter_weights/_distill_injected/light_lvl0_multiclip4_r2_mamba_only.pt`
+(16 MB Mamba-only state). Outputs: `outputs/diagnose_0160/light_lvl0/origin_plus_mc_r2/`,
+`outputs/diagnose_0160/clips/*_origin_plus_mc/`. A 13-clip run (`multiclip_big.sh`) is
+running to see whether more data helps further.
+
+**13-clip on-policy distillation (`scripts/distill/multiclip_big.sh`: 0160 + 0001..0012, 2
+sequences per call, 2 rounds x 6000 steps, init = 4-clip mc_r2; 258 GB of cache per
+round, deleted afterwards):**
+
+| clip | origin | 4-clip mc_r2 | **13-clip big_r2** |
+| --- | ---: | ---: | ---: |
+| 0160 | 0.3526 | 0.3556 | 0.3554 |
+| 0042 (unseen) | 0.2309 | 0.2569 | **0.2303** |
+| 0204 (unseen) | 0.2100 | 0.2159 | 0.2129 |
+| 0301 (unseen) | 0.4573 | 0.4508 | **0.4407** |
+
+Gap to origin now +0.003 / -0.001 / +0.003 / -0.017; sharpness matches origin on every
+clip (0.0085/0.0053/0.0231 vs 0.0080/0.0057/0.0232). More distillation data keeps
+helping on unseen clips and costs nothing on 0160. Weights:
+`/mnt/ssd_data/stereocrafter_weights/_distill_injected/light_lvl0_multiclip13_r2_mamba_only.pt`
+(recommended), outputs `outputs/diagnose_0160/clips/*_origin_plus_big/`,
+`outputs/diagnose_0160/light_lvl0/origin_plus_big_r2/`. Feature caches under
+`/mnt/ssd_data/attn_cache` were deleted (reproducible in minutes).
+
+## 2026-09-13 - "Mamba is resolution-brittle" RETRACTED: the distilled light blocks hold at 1024x1792
+
+`scripts/distill/hires_distilled.sh`: 13-clip big_r2 blocks (distilled only on 576x1024
+features, 9,216 tokens) run at 1024x1792 (28,672 tokens), tiling off, vs the existing
+origin and heavy-e140 outputs at the same resolution (`scripts/distill/score_hires.py`,
+offset (-28,0), left-eye 43.66 dB for all three).
+
+| 1024x1792 | LPIPS | sharpness | gap to origin |
+| --- | ---: | ---: | ---: |
+| origin | 0.3388 | 0.0245 | -- |
+| heavy e140 (2026-09-03 verdict) | 0.4553 | 0.0343 | 0.117 |
+| **light distilled (13-clip)** | **0.3510** | 0.0237 | **0.012** |
+
+The 2026-09-03 gate difference-in-differences attributed a 0.085 resolution penalty
+to "the Mamba path"; it was measuring blocks that did not imitate attention at any
+resolution. Blocks that do imitate attention transfer to a 3.1x longer scan with a
+0.012 gap, without any high-resolution distillation data. At this resolution the light
+level-0 config is where its speed gain is largest (-20.9 % UNet time, section B of
+the report). Output: `outputs/diagnose_0160/hires/light_distilled_1024x1792/`.
+
+## 2026-09-13 - Teacher-forced distillation on the ORIGIN UNet also reaches origin level; on-policy is a safety margin, not the essential ingredient
+
+`scripts/distill/tf_origin.sh`: capture with a Mamba-only state on the origin UNet at gate 0
+(slots return origin attention; origin time_emb), one standalone fit of 3000 steps.
+
+| 0160 | LPIPS | maskPSNR | sharpness |
+| --- | ---: | ---: | ---: |
+| origin | 0.3526 | 13.14 | 0.0315 |
+| teacher-forced on origin, fresh init | **0.3545** | 13.10 | 0.0316 |
+| teacher-forced on origin, long6k init | 0.3572 | 13.12 | 0.0312 |
+| on-policy round 3 (for reference) | 0.3548 | 13.09 | 0.0317 |
+
+So the decisive ingredient was **distilling against the UNet you deploy on**; one
+teacher-forced capture (3 min) + one fit (5 min) already lands at origin level on the
+distillation clip. On-policy rounds are worth keeping as the robust default (they
+recover from a bad start, as round 1 -> 2 showed) but are not what closed the gap.
+
+**Noise-sensitivity run of 16:17 is INVALID**: `noise_sens.sh` used the e210 full
+checkpoint as the "origin" (its non-Mamba weights differ from origin), so the flat
+0.479-0.483 across 3-30 % noise mostly measures e210-at-gate-0, not noise. Rerun with
+the origin UNet (`noise_sens2.sh`, noise 0.0 as the sanity baseline) -- see next entry.
+
+## 2026-09-13 - Corrected sensitivity calibration: the level-0 slots tolerate ~3 % i.i.d. error for +0.003 LPIPS
+
+`scripts/distill/noise_sens2.sh`: origin UNet + Mamba-only state at gate 0 (slots return
+origin attention), relative Gaussian noise added to the 5 level-0 attn1 outputs.
+
+| relative noise | LPIPS | maskPSNR | sharpness |
+| --- | ---: | ---: | ---: |
+| 0.00 (sanity) | 0.3526 | 13.135 | 0.0315 |
+| 0.03 | 0.3559 | 13.141 | 0.0311 |
+| 0.10 | 0.3620 | 13.219 | 0.0302 |
+| 0.30 | 0.4512 | 13.718 | 0.0231 |
+
+Noise 0 reproduces origin exactly (the gate-0 path through the adapter is bit-faithful).
+The distilled blocks' 2-5 % relative error (0.1 % after 13-clip rounds on some slots)
+costing +0.002-0.003 LPIPS is consistent with this curve; 30 % error costs ~0.10, which
+is the regime the end-to-end-trained blocks (relative error >= 100 %) were in. The
+earlier flat 0.48 result (e210 checkpoint as "origin") is superseded.
+
+**Session close-out (2026-09-13 17:10).** Recommended deliverable: light level-0
+Mamba (5 slots, ds128/exp1/fwd) + `light_lvl0_multiclip13_r2_mamba_only.pt` on the
+origin UNet, `--mamba_gate_override=1.0`; -5.2 % UNet time / +0.3 % VRAM @1.01 bs2
+(-20.9 % at 1024x1792); LPIPS vs origin: 0160 +0.003, 0042 -0.001, 0204 +0.003,
+0301 -0.017, 1024x1792 +0.012. Recipe: `scripts/distill/capture_attn.py` +
+`distill_standalone.py` (`multiclip_big.sh` for the full loop). GPU queue is empty;
+all feature caches deleted; report artifact v9.
+
+## 2026-09-18 - Why the "cannot improve" verdict was wrong (user asked to preserve this), and the re-audit on the ORIGIN teacher cache
+
+**Meta-lesson (saved to memory as `verify-component-before-declaring-infeasible`).** Every negative verdict of the
+past months was a verdict about ONE training method (end-to-end diffusion loss, mamba lr <= 5e-6, bf16, DeepSpeed
+resume) carrying three hidden bugs and a broken metric -- never about the architecture. The quantity the blocks
+must produce (attention output) was never measured; "training plateaued" was read as "architecture cannot".
+Rule: before accepting "X cannot do Y", measure X's local job directly, verify the signal reaches the weights
+(effective LR from the optimizer, weight deltas between checkpoints), prefer the most direct teacher, and
+distil on the network you deploy on.
+
+**Variant sweep RE-RUN on the origin teacher-forced cache** (`scripts/distill/sweep_origin.sh`, 1500 steps, held-out
+windows; the 2026-09-13 sweep had used an e210-UNet cache and is superseded). relMSE d0a0 / d0a1 / u3a0 / u3a1 / u3a2:
+
+| variant | final |
+| --- | --- |
+| 13-clip weights, warm (lr 3e-4) | 0.0194 / 0.0472 / 0.0128 / 0.0011 / 0.0075 |
+| fresh ds128 fwd | 0.0282 / 0.0829 / 0.0175 / 0.0028 / 0.0110 |
+| fresh ds32 / ds64 / ds256 | 0.030 / 0.083 / 0.018 / 0.0022 / 0.011 (all three within 5 %) |
+| fresh both (bidirectional) | 0.0256 / 0.0703 / 0.0163 / 0.0016 / 0.0105 |
+| fresh headdim 32 | 0.0284 / 0.0805 / 0.0177 / 0.0021 / 0.0110 |
+| fresh expand 2 | 0.0254 / 0.0613 / 0.0163 / 0.0018 / 0.0105 |
+| per-token Linear(320,320) | 0.0438 / 0.1022 / 0.0201 / 0.0023 / 0.0095 |
+
+RETRACTION of the 09-13 reading "up3.attn0 is the hard slot (0.15)": on the correct cache it is 0.013-0.018; the
+hard slot is **down0.attn1** (0.05-0.10). Architecture knobs move the floor < 15 % (expand 2 / bidir help d0a1 by
+~25 % at +0.5-1 % UNet time); data (13 clips) and steps move it more. d_state 32 == 128 on every slot.
+
+**Per-slot noise sensitivity** (`noise_slot.sh`; origin UNet, gate 0, relative Gaussian noise on ONE slot; LPIPS vs
+GT on 0160, origin 0.3526). CAVEAT: this run consumed the sampler's global RNG (audit finding), which adds a
+~+0.002 floor to every row; a re-run with a private generator (`noise_slot_v2`) is queued.
+
+| slot | 3 % | 10 % | 30 % |
+| --- | ---: | ---: | ---: |
+| down0.attn0 | +0.0021 | +0.0033 | +0.0147 |
+| down0.attn1 | +0.0018 | +0.0021 | +0.0025 |
+| up3.attn0 | +0.0022 | +0.0029 | +0.0126 |
+| **up3.attn1** | +0.0022 | +0.0045 | **+0.0298** |
+| up3.attn2 | +0.0021 | +0.0032 | +0.0123 |
+
+Sensitivity is INVERTED relative to fit difficulty: d0a1 (hardest to fit) is the least quality-relevant slot;
+u3a1 (fitted to 0.001) is the most sensitive. The d0a1 floor is not worth attacking.
+
+**Attention concentration** (`attn_stats.py`, origin attention on real inputs, 3 clips x 3 windows; normalised
+entropy, mean max-prob, mass within a Chebyshev radius on the 72x128 grid):
+
+| slot | entropy | maxP | self | r<=5 | r<=10 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| down0.attn0 | 0.71-0.74 | 0.06-0.07 | 0.00 | 0.03 | 0.07 |
+| down0.attn1 | 0.81-0.82 | 0.02-0.03 | 0.01-0.02 | 0.07-0.11 | 0.14-0.17 |
+| up3.attn0 | 0.23-0.24 | 0.56-0.58 | 0.01-0.05 | 0.10-0.17 | 0.18-0.25 |
+| up3.attn1 | 0.004 | 0.98-0.99 | 0.000 | 0.01-0.02 | 0.05 |
+| up3.attn2 | 0.002 | 0.99 | 0.00-0.01 | 0.05 | 0.11-0.13 |
+
+down0 attention is diffuse/global (a near-uniform average), up3.attn1/attn2 put ~99 % of the mass on ONE non-self
+token (attention-sink behaviour: the output is nearly a per-sequence constant), up3.attn0 is the only genuine
+local mixer. This is why a per-token linear map explains 95-99 % of these outputs and why d0 needs a scan
+(global accumulation). Statistics are clip- and format-consistent (2160 vs 4400); at 1024x1792 the r<=10 mass
+halves (finer grid) -- a real distribution shift, hence the +0.012 high-res gap.
+
+**Optimiser crater in every warm-start fit** (audit): re-fitting converged blocks at lr 2e-4..5e-4 with a 20-step
+warmup blows relMSE up 3-6x for the first ~1000 steps (big_r2: d0a0 0.0206 -> 0.0649 @1k -> 0.0196 @6k), so the
+"6000 more steps did nothing" reading (09-13) was an artefact of the schedule, and the final weights were saved
+instead of the best. Fixed in the new trainer: WARMUP (default 200), best-on-dev checkpointing, fresh init for
+comparable curve points, lr <= 1e-4 for warm continuation.
+
+**Audit of scripts/distill before the full-data run (10 agents, adversarial):** RAM torch.cat of whole caches;
+whole-clip fp32 decode (an 8415-frame 4400 clip would need ~2 TB); window-modulus eval split invalid for
+few-window clips; on-policy caches stored y_student (3x disk); ~50 % of every row so far was the CFG-UNCOND
+half (weight -0.01 at the output); noise runs consumed the global RNG; full checkpoints accepted as CKPT (the
+e210 trap). All addressed in `capture_fulldata.py` / `distill_fulldata.py` (below).
+
+## 2026-09-18 - Full-data distillation protocol (fulldata_v1) launched
+
+"Stop single-clip overfit, use all data" now means broader activation coverage for the 5-slot regression -- the
+origin UNet stays frozen; there is no end-to-end run.
+
+- Split `scripts/distill/splits/fulldata_v1.json` (seed 20260918): test 12 (6x2160 + 6x4400, incl. 0042/0204/0301,
+  never trained), dev 8 (model selection only), train 333 (0160 stays in train as the contaminated continuity
+  reference). Nested curve 13 -> 40 -> 120 -> all, stratified by format and length; each point a prefix of the
+  next and of the capture order. Excluded: 0312 (unreadable), 0362-0365 (960x1280). 4400 clips included (the
+  attention statistics are format-invariant; the deployed crop is what the model sees).
+- Capture `capture_fulldata.py`: manifest of windows (W=2/3/4/6 per clip by length on the deployed window grid),
+  decodes only those 14 frames (deep seeks into 7779-frame clips are cheap), reproduces the deployed crop chain
+  bit-exactly (smoke: 4/4 rows identical to the legacy cache), per-window noise seed, VAE decode and video write
+  stubbed (x unchanged, 240/240 files bit-identical), rows = 87.5 % cond / 12.5 % uncond, x only (teacher y is
+  recomputed in bf16 at train time -- GPU check relMSE 0.00 vs stored y), temb guard (8 reference vectors; the
+  e210 negative control aborts with rms ratio 0.198), Mamba-only CKPT guard. 1002 windows in 44 chunks, ~11 s
+  per window incl. load, peak RSS 28 GB; 156 extra "13-W14" control windows in a separate cache dir.
+- Trainer `distill_fulldata.py`: lazy per-row loading (DataLoader, 6 workers), split-aware (TRAIN=13|40|120|all),
+  dev/test breakdown per clip/format/step/cond-uncond, WARMUP 200, lr 5e-4, 8000 steps, batch 8, fresh init,
+  best-on-dev + last checkpoints, bf16 round-trip eval, optional high-res cache mixing (HIRES_P).
+- Lanes: GPU0 capture -> high-res capture (62 windows @1024x1792) -> fits all_8k / all_24k / lr1e-3 / +hires /
+  ds32; GPU1 origin baselines for the new test clips -> reference row (13-clip weights) -> per-prefix fits + LPIPS
+  (12 test clips + 0160) -> seed floor (0160/0042 x 3 seeds, origin and student) -> high-res eval on 0160 + 4 test
+  clips. Acceptance is an equivalence claim: mean test gap <= +0.005 and worst clip <= +0.015, read against the
+  seed floor. Expected result: flat curve (13 clips already suffice at 576x1024); the informative rows are the
+  high-res arm and the 13-W14 control (clips vs windows).
+
+**Interim results 2026-09-18 12:25 (fulldata_v1, 12 never-trained test clips, aligned LPIPS vs GT, origin mean 0.2607):**
+
+| row | data | mean gap vs origin | worst clip | best clip | 0160 gap | dev relMSE d0a0/d0a1/u3a0/u3a1/u3a2 |
+| --- | --- | ---: | ---: | ---: | ---: | --- |
+| ref (09-13 13-clip weights) | 13 x 14 win, 2 OP rounds, ~50 % uncond | +0.0009 | +0.0095 | -0.0166 | +0.0028 | -- |
+| fit_c13 | 13 clips x 2 windows (30 win), fresh, 8k | **-0.0031** | +0.0023 | -0.0269 | -0.0013 | 0.036/0.103/0.015/0.0025/0.010 |
+| fit_c13w14 | same 13 clips x 14 windows | -0.0038 | +0.0040 | -0.0310 | -0.0030 | 0.035/0.100/0.014/0.0024/0.010 |
+| fit_c40 | 40 clips (94 win) | -0.0033 | +0.0018 | -0.0286 | -0.0026 | 0.033/0.095/0.015/0.0024/0.010 |
+| all_8k | 333 clips (798 win) | (LPIPS pending) | | | | 0.031/0.080/0.014/0.0024/0.010 |
+
+**Seed floor** (`runs/fulldata/lpips/seedfloor.txt`): origin at seeds 1234/1/2/3 = 0.3526/0.3526/0.3522/0.3537 on 0160
+and 0.2309/0.2319/0.2309/0.2313 on 0042 -> origin's own seed spread is ~+-0.001; the reference student is +0.003
+on 0160 at every seed and -0.0005 on 0042 at every seed, so 0.003 differences ARE resolvable. The new-recipe
+students are consistently ~0.003 BETTER than origin on the test mean (three independent fits agree; above the
+floor) and never worse than +0.004 on any clip. Curve is flat from 13 clips on at 576x1024, as predicted: the
+recipe change (fresh init, no warm-start crater, 87.5 % cond rows, format-stratified clips) mattered more than
+data volume; windows-per-clip (c13w14 vs c13) is within noise. Loader: 33-37 it/s at batch 8 from cold SSD.
+High-res capture: 39 s/window at 28,672 tokens (62 windows).
+
+## 2026-09-19 - fulldata_v1 FINAL: origin-equivalent at every resolution, -5.3 % / -20.5 % / -21.7 % UNet time; deliverable chosen
+
+All rows: `scripts/distill/runs/fulldata/FINAL_TABLES.txt`. Test = 12 never-trained clips (6x2160 + 6x4400),
+aligned LPIPS vs GT, guidance 1.01, seed 1234; seed floor measured as +-0.001 (origin at 4 seeds: 0160
+0.3522-0.3537, 0042 0.2309-0.2319).
+
+| 576x1024, 12 test clips | mean gap vs origin | worst clip | 0160 |
+| --- | ---: | ---: | ---: |
+| reference (09-13 13-clip weights) | +0.0009 | +0.0095 | +0.0028 |
+| 13 clips, new recipe | -0.0031 | +0.0023 | -0.0013 |
+| 13 clips x 14 windows (control) | -0.0038 | +0.0040 | -0.0030 |
+| 40 clips | -0.0033 | +0.0018 | -0.0026 |
+| 120 clips | -0.0033 | +0.0008 | +0.0000 |
+| **333 clips, 8k steps (DELIVERABLE)** | **-0.0039** | **+0.0017** | -0.0016 |
+| 333, 24k steps | -0.0028 | +0.0010 | -0.0015 |
+| 333, lr 1e-3 | -0.0035 | +0.0012 | +0.0023 |
+| 333 + 25 % 1024x1792 rows | -0.0027 | +0.0016 | -0.0003 |
+| 333, d_state 32 | -0.0011 | +0.0058 | +0.0004 |
+
+Curve is flat from 13 clips on; the recipe (fresh init, WARMUP 200, best-on-dev, 87.5 % cond rows, format
+stratification) is what moved the reference row's +0.0009 to -0.003..-0.004. The mean "better than origin" is
+carried mostly by 0301 (origin 0.457, student 0.43); excluding it the gap is -0.001..-0.002, i.e. equivalence.
+
+| tiling off | origin | ref13 | 333 (8k) | 333 + hires rows |
+| --- | --- | --- | --- | --- |
+| 1024x1792, 0160 | 0.3388 | 0.3510 (+0.012) | 0.3397 (+0.0009) | 0.3390 (+0.0002) |
+| 1024x1792, 4 test clips mean gap | -- | +0.0024 | -0.0025 | -0.0006 |
+| 1920x1024 (Full-HD frame), 0160 | 0.3357 | -- | 0.3354 (-0.0003) | 0.3349 (-0.0008) |
+| 1920x1024, 4 test clips mean gap | -- | -- | -0.0023 | -0.0005 |
+
+The 09-13 high-res gap (+0.012) is closed by the 333-clip fit alone; mixing 1024x1792 rows adds nothing.
+Blocks distilled only at 576x1024 transfer to 3.3x longer scans.
+
+| exclusive bench, UNet fwd, bs2 | origin | light ds128 | light ds32 |
+| --- | ---: | ---: | ---: |
+| 576x1024 (9,216 tok) | 0.961 s / 7,396 MiB | 0.910 s (**-5.3 %**) / +0.11 % | 0.901 s (-6.2 %) |
+| 1024x1792 (28,672 tok) | 3.716 s / 16,762 MiB | 2.955 s (**-20.5 %**) / +0.05 % | 2.929 s (-21.2 %) |
+| 1920x1024 (30,720 tok) | 4.055 s / 17,751 MiB | 3.174 s (**-21.7 %**) / +0.05 % | 3.148 s (-22.4 %) |
+
+Rep spread <= 0.008 s. VRAM is flat because origin's attention is SDPA (flash), already O(N) in memory, and
+the peak is set by conv/FF activations + weights, not by the mixer.
+
+**Deliverable: d_state 128, 333-clip, 8k steps** ->
+`/mnt/ssd_data/stereocrafter_weights/_distill_injected/light_lvl0_fulldata333_8k_mamba_only.pt` (16 MB, Mamba-only
+state; load onto origin with `--include_patterns='down_blocks.0.*,up_blocks.3.*' --exclude_patterns='__nomatch__'
+--mamba_gate_override=1.0`, env ds128/exp1/fwd). d_state 32 rejected: +0.0058 on 0170 (5x the floor) for 1 %
+more speed. Outputs: `outputs/fulldata/{clips,hires,fullhd,seedfloor}/`. Caches: `fulldata_tf` (373 GB) kept as
+the reusable asset (3 GPU-h to recreate); control/hires/smoke caches deleted.
+
+Two lane bugs during the run (fixed): `eval_split.sh` overwrote MAMBA_SELF_ATTN_D_STATE (ds32 row re-run), and
+an unclosed paren in the hires clip-list line (test clips re-run in `fixup_lane.sh`).

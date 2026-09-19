@@ -1,0 +1,58 @@
+{
+ "cache": "/mnt/ssd_data/attn_cache/0160_origin_tf",
+ "device": "cpu",
+ "dtype": "torch.bfloat16",
+ "pass": true,
+ "slots": {
+  "down_blocks.0.attentions.0": {
+   "relmse": 2.398963222048284e-06,
+   "rows": 8,
+   "files": [
+    "down_blocks.0.attentions.0.transformer_blocks.0.attn1__call0000.pt",
+    "down_blocks.0.attentions.0.transformer_blocks.0.attn1__call0056.pt"
+   ],
+   "processor": "AttnProcessor2_0",
+   "heads": 5
+  },
+  "down_blocks.0.attentions.1": {
+   "relmse": 2.2396666285490912e-06,
+   "rows": 8,
+   "files": [
+    "down_blocks.0.attentions.1.transformer_blocks.0.attn1__call0000.pt",
+    "down_blocks.0.attentions.1.transformer_blocks.0.attn1__call0056.pt"
+   ],
+   "processor": "AttnProcessor2_0",
+   "heads": 5
+  },
+  "up_blocks.3.attentions.0": {
+   "relmse": 9.015999992918368e-07,
+   "rows": 8,
+   "files": [
+    "up_blocks.3.attentions.0.transformer_blocks.0.attn1__call0000.pt",
+    "up_blocks.3.attentions.0.transformer_blocks.0.attn1__call0056.pt"
+   ],
+   "processor": "AttnProcessor2_0",
+   "heads": 5
+  },
+  "up_blocks.3.attentions.1": {
+   "relmse": 2.967515171836358e-07,
+   "rows": 8,
+   "files": [
+    "up_blocks.3.attentions.1.transformer_blocks.0.attn1__call0000.pt",
+    "up_blocks.3.attentions.1.transformer_blocks.0.attn1__call0056.pt"
+   ],
+   "processor": "AttnProcessor2_0",
+   "heads": 5
+  },
+  "up_blocks.3.attentions.2": {
+   "relmse": 3.4408439506651606e-05,
+   "rows": 8,
+   "files": [
+    "up_blocks.3.attentions.2.transformer_blocks.0.attn1__call0000.pt",
+    "up_blocks.3.attentions.2.transformer_blocks.0.attn1__call0056.pt"
+   ],
+   "processor": "AttnProcessor2_0",
+   "heads": 5
+  }
+ }
+}

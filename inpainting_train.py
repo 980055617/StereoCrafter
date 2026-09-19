@@ -2222,6 +2222,12 @@ def _train_main(
 
     lr_scheduler = None
     if sched_key == "exponential":
+        # A restored optimizer carries the PREVIOUS run's "initial_lr" in each param
+        # group; PyTorch schedulers use it (setdefault) as base_lr, which silently
+        # overrides any LR change made in the config on resume (2026-09-13: config
+        # said 2e-4, Adam ran at 5e-6*warmup). Purge it so base_lr = current lr.
+        for _g in optimizer.param_groups:
+            _g.pop("initial_lr", None)
         lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=scheduler_gamma)
 
     if ds_enabled and accelerator is not None:
@@ -2501,6 +2507,16 @@ def _train_main(
 
     _apply_stage_lrs()
     _sync_scheduler_base_lrs()
+    try:
+        logger.info(
+            "[LR-AUDIT after restore] groups=%s | scheduler=%s last_epoch=%s base_lrs=%s",
+            [(g.get("group_name"), float(g["lr"])) for g in optimizer.param_groups],
+            type(lr_scheduler).__name__ if lr_scheduler is not None else None,
+            getattr(lr_scheduler, "last_epoch", None),
+            [float(x) for x in getattr(lr_scheduler, "base_lrs", [])],
+        )
+    except Exception as _e:
+        logger.warning("[LR-AUDIT] failed: %r", _e)
 
     train_log_header = [
         "step",
@@ -2751,6 +2767,13 @@ def _train_main(
             return 1.0
         gate = _scheduled_mamba_gate(epoch_value, batch_value, batches_total)
         disable_reference = gate >= 0.999
+        if disable_reference:
+            # Store EXACTLY gate_end. `reference_disabled` is a runtime attribute
+            # and is not checkpointed; only the gate buffer is. A value in
+            # [0.999, 1.0) rounds to 0.9961 in bf16, and at inference
+            # `gate >= 1.0` is then false -> both Mamba and reference attention
+            # run (the e102-lineage double-execution found 2026-09-10).
+            gate = float(mamba_gate_end)
         updated = set_gated_mamba_gate(_get_unwrapped_unet(), gate, disable_reference=disable_reference)
         if (
             mamba_gate_log_interval > 0
@@ -3466,6 +3489,12 @@ def _train_main(
             t_max = max(int(t_max), 1)
             eta_min = max(scheduler_eta_min, 0.0)
             if sched_key == "cosine":
+                # A restored optimizer carries the PREVIOUS run's "initial_lr" in each param
+                # group; PyTorch schedulers use it (setdefault) as base_lr, which silently
+                # overrides any LR change made in the config on resume (2026-09-13: config
+                # said 2e-4, Adam ran at 5e-6*warmup). Purge it so base_lr = current lr.
+                for _g in optimizer.param_groups:
+                    _g.pop("initial_lr", None)
                 lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
                     optimizer, T_max=t_max, eta_min=eta_min
                 )
@@ -3473,6 +3502,12 @@ def _train_main(
                 warmup_steps = max(int(num_warmup_steps), 0)
                 warmup_steps = min(warmup_steps, t_max)
                 if warmup_steps == 0:
+                    # A restored optimizer carries the PREVIOUS run's "initial_lr" in each param
+                    # group; PyTorch schedulers use it (setdefault) as base_lr, which silently
+                    # overrides any LR change made in the config on resume (2026-09-13: config
+                    # said 2e-4, Adam ran at 5e-6*warmup). Purge it so base_lr = current lr.
+                    for _g in optimizer.param_groups:
+                        _g.pop("initial_lr", None)
                     lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
                         optimizer, T_max=t_max, eta_min=eta_min
                     )
@@ -3498,6 +3533,18 @@ def _train_main(
                             cosine = (1.0 + math.cos(math.pi * t / cosine_steps)) / 2.0
                             return eta_ratio + (1.0 - eta_ratio) * cosine
                         return lr_lambda
+
+                    # A restored optimizer carries the PREVIOUS run's "initial_lr" in each param
+
+                    # group; PyTorch schedulers use it (setdefault) as base_lr, which silently
+
+                    # overrides any LR change made in the config on resume (2026-09-13: config
+
+                    # said 2e-4, Adam ran at 5e-6*warmup). Purge it so base_lr = current lr.
+
+                    for _g in optimizer.param_groups:
+
+                        _g.pop("initial_lr", None)
 
                     lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
                         optimizer,
@@ -3674,6 +3721,17 @@ def _train_main(
                                             pipeline.unet.parameters(), max_grad_norm
                                         )
                                     optimizer.step()
+                                    if global_step == 0 or (global_step + 1) % 50 == 0:
+                                        try:
+                                            _inner = getattr(optimizer, "optimizer", optimizer)
+                                            _inner = getattr(_inner, "optimizer", _inner)
+                                            logger.info("[LR-AUDIT optimizer.step %d] wrapper groups=%s | inner(%s) groups=%s",
+                                                        global_step + 1,
+                                                        [(g.get("group_name"), float(g["lr"])) for g in optimizer.param_groups],
+                                                        type(_inner).__name__,
+                                                        [float(g["lr"]) for g in getattr(_inner, "param_groups", [])])
+                                        except Exception as _e:
+                                            logger.warning("[LR-AUDIT] step audit failed: %r", _e)
                                     _ema_update(step_value)
                                     _log_mamba_diag(
                                         step_value=step_value,
@@ -3892,6 +3950,12 @@ def _train_main(
                 _save_full_checkpoint(f"epoch{epoch:06d}", epoch, update_latest=False)
             if lr_scheduler is not None:
                 lr_scheduler.step()
+                try:
+                    logger.info("[LR-AUDIT scheduler.step] last_epoch=%s groups=%s",
+                                getattr(lr_scheduler, "last_epoch", None),
+                                [(g.get("group_name"), float(g["lr"])) for g in optimizer.param_groups])
+                except Exception:
+                    pass
                 current_lr = optimizer.param_groups[0]["lr"]
                 logger.info("Scheduler step completed. Current learning rate: %.6e", current_lr)
             # 目標avg_loss に到達したら早期終了

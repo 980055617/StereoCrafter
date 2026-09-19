@@ -1,0 +1,9 @@
+RESULT {"label": "origin_r1", "mode": "gated_residual", "tokens": 9216, "batch": 2, "sec": 0.9592, "peak_MiB": 7396, "per_fwd_calls": {"origin_attn": 0, "mamba_
+RESULT {"label": "light_ds128_r1", "mode": "gated_residual", "tokens": 9216, "batch": 2, "sec": 0.9089, "peak_MiB": 7404, "per_fwd_calls": {"origin_attn": 0, "m
+RESULT {"label": "light_ds32_r1", "mode": "gated_residual", "tokens": 9216, "batch": 2, "sec": 0.9003, "peak_MiB": 7403, "per_fwd_calls": {"origin_attn": 0, "ma
+RESULT {"label": "origin_r2", "mode": "gated_residual", "tokens": 9216, "batch": 2, "sec": 0.961, "peak_MiB": 7396, "per_fwd_calls": {"origin_attn": 0, "mamba_c
+RESULT {"label": "light_ds128_r2", "mode": "gated_residual", "tokens": 9216, "batch": 2, "sec": 0.9099, "peak_MiB": 7404, "per_fwd_calls": {"origin_attn": 0, "m
+RESULT {"label": "light_ds32_r2", "mode": "gated_residual", "tokens": 9216, "batch": 2, "sec": 0.9016, "peak_MiB": 7403, "per_fwd_calls": {"origin_attn": 0, "ma
+RESULT {"label": "origin_r3", "mode": "gated_residual", "tokens": 9216, "batch": 2, "sec": 0.9625, "peak_MiB": 7396, "per_fwd_calls": {"origin_attn": 0, "mamba_
+RESULT {"label": "light_ds128_r3", "mode": "gated_residual", "tokens": 9216, "batch": 2, "sec": 0.9101, "peak_MiB": 7404, "per_fwd_calls": {"origin_attn": 0, "m
+RESULT {"label": "light_ds32_r3", "mode": "gated_residual", "tokens": 9216, "batch": 2, "sec": 0.9016, "peak_MiB": 7403, "per_fwd_calls": {"origin_attn": 0, "ma

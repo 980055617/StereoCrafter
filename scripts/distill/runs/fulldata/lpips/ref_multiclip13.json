@@ -1,0 +1,272 @@
+{
+ "label": "ref_multiclip13",
+ "n_test": 12,
+ "mean_gap": 0.0008916666666666703,
+ "worst_gap": 0.009500000000000008,
+ "best_gap": -0.016600000000000004,
+ "mean_lpips": 0.26164166666666666,
+ "mean_origin": 0.26075,
+ "gap_0160": 0.002799999999999969,
+ "rows": {
+  "0042": {
+   "origin": {
+    "offset": [
+     -12,
+     -12
+    ],
+    "leftPSNR": 49.85,
+    "lpips": 0.2309,
+    "sharp": 0.008
+   },
+   "ref_multiclip13": {
+    "offset": [
+     -12,
+     -12
+    ],
+    "leftPSNR": 49.85,
+    "lpips": 0.2303,
+    "sharp": 0.0085
+   }
+  },
+  "0052": {
+   "origin": {
+    "offset": [
+     -12,
+     -12
+    ],
+    "leftPSNR": 52.06,
+    "lpips": 0.1766,
+    "sharp": 0.0134
+   },
+   "ref_multiclip13": {
+    "offset": [
+     -12,
+     -12
+    ],
+    "leftPSNR": 52.06,
+    "lpips": 0.1773,
+    "sharp": 0.0132
+   }
+  },
+  "0125": {
+   "origin": {
+    "offset": [
+     -12,
+     -12
+    ],
+    "leftPSNR": 50.56,
+    "lpips": 0.2988,
+    "sharp": 0.0101
+   },
+   "ref_multiclip13": {
+    "offset": [
+     -12,
+     -12
+    ],
+    "leftPSNR": 50.56,
+    "lpips": 0.303,
+    "sharp": 0.0098
+   }
+  },
+  "0128": {
+   "origin": {
+    "offset": [
+     -12,
+     -12
+    ],
+    "leftPSNR": 50.04,
+    "lpips": 0.3049,
+    "sharp": 0.0136
+   },
+   "ref_multiclip13": {
+    "offset": [
+     -12,
+     -12
+    ],
+    "leftPSNR": 50.04,
+    "lpips": 0.3052,
+    "sharp": 0.0137
+   }
+  },
+  "0141": {
+   "origin": {
+    "offset": [
+     -12,
+     -12
+    ],
+    "leftPSNR": 55.14,
+    "lpips": 0.2068,
+    "sharp": 0.0049
+   },
+   "ref_multiclip13": {
+    "offset": [
+     -12,
+     -12
+    ],
+    "leftPSNR": 55.14,
+    "lpips": 0.2063,
+    "sharp": 0.0051
+   }
+  },
+  "0147": {
+   "origin": {
+    "offset": [
+     -12,
+     -12
+    ],
+    "leftPSNR": 51.26,
+    "lpips": 0.1416,
+    "sharp": 0.0066
+   },
+   "ref_multiclip13": {
+    "offset": [
+     -12,
+     -12
+    ],
+    "leftPSNR": 52.37,
+    "lpips": 0.1434,
+    "sharp": 0.007
+   }
+  },
+  "0170": {
+   "origin": {
+    "offset": [
+     -28,
+     0
+    ],
+    "leftPSNR": 47.38,
+    "lpips": 0.1825,
+    "sharp": 0.0205
+   },
+   "ref_multiclip13": {
+    "offset": [
+     -28,
+     0
+    ],
+    "leftPSNR": 47.38,
+    "lpips": 0.1844,
+    "sharp": 0.0207
+   }
+  },
+  "0204": {
+   "origin": {
+    "offset": [
+     -28,
+     0
+    ],
+    "leftPSNR": 51.0,
+    "lpips": 0.21,
+    "sharp": 0.0057
+   },
+   "ref_multiclip13": {
+    "offset": [
+     -28,
+     0
+    ],
+    "leftPSNR": 51.0,
+    "lpips": 0.2129,
+    "sharp": 0.0053
+   }
+  },
+  "0225": {
+   "origin": {
+    "offset": [
+     -28,
+     0
+    ],
+    "leftPSNR": 45.15,
+    "lpips": 0.2563,
+    "sharp": 0.012
+   },
+   "ref_multiclip13": {
+    "offset": [
+     -28,
+     0
+    ],
+    "leftPSNR": 45.15,
+    "lpips": 0.2658,
+    "sharp": 0.011
+   }
+  },
+  "0251": {
+   "origin": {
+    "offset": [
+     -28,
+     0
+    ],
+    "leftPSNR": 51.34,
+    "lpips": 0.2865,
+    "sharp": 0.0086
+   },
+   "ref_multiclip13": {
+    "offset": [
+     -28,
+     0
+    ],
+    "leftPSNR": 51.34,
+    "lpips": 0.2924,
+    "sharp": 0.0082
+   }
+  },
+  "0259": {
+   "origin": {
+    "offset": [
+     -28,
+     0
+    ],
+    "leftPSNR": 47.03,
+    "lpips": 0.3768,
+    "sharp": 0.0262
+   },
+   "ref_multiclip13": {
+    "offset": [
+     -28,
+     0
+    ],
+    "leftPSNR": 47.03,
+    "lpips": 0.378,
+    "sharp": 0.0264
+   }
+  },
+  "0301": {
+   "origin": {
+    "offset": [
+     -28,
+     0
+    ],
+    "leftPSNR": 46.26,
+    "lpips": 0.4573,
+    "sharp": 0.0232
+   },
+   "ref_multiclip13": {
+    "offset": [
+     -28,
+     0
+    ],
+    "leftPSNR": 46.26,
+    "lpips": 0.4407,
+    "sharp": 0.0231
+   }
+  },
+  "0160": {
+   "origin": {
+    "offset": [
+     -28,
+     0
+    ],
+    "leftPSNR": 41.65,
+    "lpips": 0.3526,
+    "sharp": 0.0315
+   },
+   "ref_multiclip13": {
+    "offset": [
+     -28,
+     0
+    ],
+    "leftPSNR": 41.65,
+    "lpips": 0.3554,
+    "sharp": 0.0316
+   }
+  }
+ }
+}

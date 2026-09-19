@@ -1,0 +1,24 @@
+{
+ "split_sha": "ae7855f1bf791e54",
+ "chunk_size": 24,
+ "n_windows": 1002,
+ "n_chunks": 44,
+ "groups": {
+  "dev": 24,
+  "test": 24,
+  "c13": 30,
+  "c13w14": 156,
+  "c40": 64,
+  "c120": 196,
+  "call": 508
+ },
+ "prefix_last_chunk": {
+  "dev": 0,
+  "test": 1,
+  "c13": 3,
+  "c13w14": 10,
+  "c40": 13,
+  "c120": 22,
+  "all": 43
+ }
+}
