@@ -10126,3 +10126,672 @@ the reusable asset (3 GPU-h to recreate); control/hires/smoke caches deleted.
 
 Two lane bugs during the run (fixed): `eval_split.sh` overwrote MAMBA_SELF_ATTN_D_STATE (ds32 row re-run), and
 an unclosed paren in the hires clip-list line (test clips re-run in `fixup_lane.sh`).
+
+## 2026-09-19 (cont.) - Temporal consistency, blind review sheets, commit; the VS Code crash was a host OOM from whole-clip decode
+
+**Commit** `b63f846` on `attn1_only_version` (the working branch; there is no `master`): scripts/distill toolchain,
+the initial_lr fix in inpainting_train.py, the light level-0 configs, this log. Bundle-side edits left uncommitted.
+
+**Temporal consistency at 576x1024** (`scripts/distill/score_temporal.py`; 12 test clips + 0160; all frames;
+tLP = mean LPIPS between consecutive frames, warp = RAFT-flow warp error on fwd-bwd-consistent pixels, seam =
+mean |dR| at window seams t=11k+2 vs elsewhere): origin and the 333-clip student are indistinguishable --
+per-clip tLP ratio student/origin within 0.99-1.02, warp within 0.95-1.06, seam/nonseam ratios equal (e.g.
+0160: 1.82 vs 1.78; 0042: 1.27 vs 1.25). The student adds no flicker and no seam artefacts. Both methods
+show seams ~1.2-2.2x the non-seam frame difference on several clips -- a property of origin's windowed
+inference (overlap_prev_weight 0), inherited unchanged. Table: `scripts/distill/runs/fulldata/temporal/temporal_576.txt`.
+
+**Blind review sheets** `outputs/fulldata/review/{clip}.png` (8 test clips + 0160; rows = max-mask frame, seam
+pair, seeded random frame; columns GT | A | B | |A-B|x8 | mask overlay; A/B assignment in
+`_KEY_do_not_open_before_rating.json`). On 0042 A and B are not distinguishable by eye; x8 difference shows
+only faint edge outlines. Human rating still to be done by the user.
+
+**Crash root cause.** The 13:23 VS Code crash coincided with the first out-of-dataset run: `read_and_prepare_video`
+decodes the WHOLE clip to fp32 (car: 1800 frames x 1440x2560 -> ~80 GB + /255 copies), the host OOM killer fired
+(confirmed on the systemd re-run: "killed by the OOM killer"), and took the editor with it. Fix for this test:
+pre-cut the bundle clips to 231 frames (`run_ood2.sh`); the general fix (windowed decode) is the audit item
+already implemented for capture (`capture_fulldata.py`) but not for `inpainting_inference.py`. Long-running
+jobs are now launched as transient systemd user units (`systemd-run --user`) so an editor crash cannot kill them.
+Full-HD temporal pass OOMed on the GPU in RAFT (corr volume, batch 4 at 1920x1024); batch set to 1 above
+600x1100 and re-run.
+
+**Temporal consistency at 1920x1024 (Full-HD frame, 0160 + 4 test clips, `temporal/temporal_fullhd.txt`):** same as
+576x1024 -- student/origin tLP ratio 0.98-1.01, warp-error ratio 0.99-1.03, seam/nonseam ratios equal (0160: 2.01 vs
+2.00; 0204: 1.84 vs 1.77). No flicker or seam artefacts introduced at Full HD either.
+
+**Out-of-dataset check (bundle project's real footage: car / animal / human, 1280x720 work tiles, first 231 frames,
+576x1024 center crop; `scripts/distill/run_ood2.sh`, `score_pair.py`, outputs `outputs/fulldata/ood/`).** No GT, so
+the metric is the distance between the student and origin at the same seed, against origin's own seed-to-seed distance:
+
+| clip | LPIPS(student, origin) | PSNR | LPIPS(origin s1, origin s1234) | PSNR | tLP student / origin |
+| --- | ---: | ---: | ---: | ---: | --- |
+| car | 0.0160 | 39.5 | 0.0430 | 34.2 | 0.0383 / 0.0384 |
+| animal | 0.0176 | 40.7 | 0.0374 | 36.4 | 0.0276 / 0.0278 |
+| human | 0.0172 | 39.2 | 0.0478 | 35.9 | 0.0134 / 0.0137 |
+| 0160 (in-dataset ref) | 0.0195 | 33.9 | 0.0953 | 25.2 | 0.0430 / 0.0442 |
+| 0042 (in-dataset ref) | 0.0180 | 39.2 | 0.0387 | 34.9 | 0.0567 / 0.0562 |
+
+On footage from a different source the student is 2.3-2.8x closer to origin than origin is to itself across seeds,
+the same margin as on the dataset clips -- the 5 distilled blocks generalise beyond the training distribution.
+Caches: `/mnt/ssd_data/attn_cache/fulldata_tf` (373 GB) deleted at the user's request to free disk (reproducible
+in ~3 GPU-h with `fulldata_capture.sh`).
+
+**Blind A/B rating (user, 2026-09-19, page `mamba_blind_rating.html`, 27 rows = 9 clips x {max-mask, seam, random}):**
+user reports "ほぼほぼ同じ" -- origin and the 333-clip Mamba student are not distinguishable by eye. Matches the
+LPIPS (gap within seed noise) and temporal metrics. Quality-preservation claim now has metric + human support.
+
+## 2026-09-19 (beyond origin) - Compositing the known pixels back cuts the gap to GT by ~27 %; the gap is outside the mask
+
+Context: user now asks to go beyond origin toward GT. First probe (no training): `scripts/distill/score_composite.py`
+-- composite = warped input where mask==0, generated right eye where mask==1 (mask dilated 8 px, feathered 8 px), on
+the 12 test clips + 0160, for origin and the 333-clip student (identical numbers, as expected).
+
+| 12 test clips, LPIPS vs GT | origin | student |
+| --- | ---: | ---: |
+| raw whole-frame output (as shipped) | 0.2607 | 0.2568 |
+| **composite** | **0.1872** (-28 %) | **0.1869** (-27 %) |
+| warped input only (no inpainting at all) | 0.2073 | -- |
+
+The disocclusion mask covers only 0.03-2.9 % of the frame (mean 1.1 %), yet the pipeline regenerates the whole right
+eye through VAE + diffusion, and that regenerated background is WORSE than the warped input it started from (on 9 of
+13 clips even the un-inpainted warped frame beats the shipped output; 0301: 0.219 vs 0.457). So ~70 % of the "gap
+to GT" is collateral damage outside the mask, not inpainting quality. Compositing is free, applies to origin and the
+Mamba student alike, and is the largest single quality lever found in this project. Implication for the planned
+GT fine-tune of the 5 Mamba blocks: whole-frame LPIPS is the wrong target; evaluate inside the mask region.
+
+**Inference-knob sweep (origin, 0160 / 0042, `runs/fulldata/beyond/steps.txt`):** 16 steps 0.3478 / 0.2134 (vs 8 steps
+0.3526 / 0.2309), 25 steps 0.3519 / 0.2099, guidance 1.5 0.3608 / 0.2013 (clip-dependent sign), guidance 1.0 0.3535 /
+0.2317 (== 1.01), overlap_prev_weight 1.0 0.4553 / 0.2558 (clearly worse -- the published matched config's 0.0 is
+right). Doubling steps buys ~0.005-0.018 LPIPS for 2x UNet time; compositing buys ~0.07 for free. Not adopted.
+
+## 2026-09-19 - GT-supervised fine-tune of the 5 distilled Mamba blocks launched (base frozen)
+
+Goal: beyond origin, inside the mask. Trainer additions: `freeze_base` (only `.attn1.fwd/.bwd/.time_embed_proj`
+trainable -- first version also caught the 11 untouched attention slots + 16 temporal attn1 via a loose `.attn1.`
+match, fixed) and `max_chunks_per_video` (random window subset per video per epoch; the lazy `_BatchIterable._ranges`
+is subset). Run `weights/GTfinetune_light40/` (SSD): init = 333-clip distilled state wrapped as an epoch-150 seed so
+the run lands in stage 3 (576x1024, frames_chunk 2), 36 GT clips of the curve-40 set (test/dev untouched), 24 windows
+per clip per epoch, mamba lr 1e-5 (warmup 1 epoch, cosine), base group empty, diffusion loss on GT + origin-attention
+feature loss 0.02 as a leash, 6 epochs (~2 h each on 2 GPUs). Verified: 90 trainable tensors, `[LR-AUDIT]` mamba 1e-5,
+loss 0.93 -> 0.78 in the first 20 steps. Evaluation per epoch: `scripts/distill/eval_gt.sh` -> whole-frame LPIPS,
+composite LPIPS and inside-mask PSNR on the 12 test clips vs origin and the distilled student.
+
+## 2026-09-21 - BLOCKER: the "GT right eye" in video_data/train is the LEFT eye; every absolute vs-GT number is invalid
+
+Found by the compositing crack analysis (workflow, 4 agents, adversarially verified). `video_data/right_eye/<clip>.mp4` is
+byte-identical (`cmp`) to `video_data/left_eye/<clip>.mp4` for all 12 test clips, 0160, 35/36 `train_gt40` clips and
+319/364 pairs overall (both dirs dated 2025-12-06). `run_replace_right.sh` -> `scripts/replace_top_right_tile.py` pastes
+`right_eye/<stem>.mp4` into the top-right tile of `video_data/train/<clip>_train.mp4`, and every evaluator
+(`scripts/evaluate_inpainting_aligned.py`, `scripts/distill/score_clip.py`, `score_lpips.py`, `score_composite.py`,
+`score_temporal.py`'s warp flow) reads that quadrant as GT. The 45 non-identical pairs (0320-0365) are of unknown
+provenance and do not behave like a right view either (warped is closer to L than to R at dx=0).
+
+What is VOID: every absolute "LPIPS vs GT" / "PSNR vs GT" since 2025-12 (the 0.35 / 0.26 "gap to GT"), the 2026-09-19
+compositing gain (-28 % = "closer to the left eye"; the warped frame IS the left eye shifted by disparity), and the
+GT-supervised fine-tune (`weights/GTfinetune_light40`, target = left eye => it was learning to remove parallax; run stopped,
+checkpoints kept for the record only, evaluations cancelled).
+
+What SURVIVES (GT-free or paired): origin-vs-Mamba equivalence -- direct LPIPS(student, origin) within origin's own
+seed spread on in-dataset and out-of-dataset clips; the blind A/B rating; tLP and seam statistics; the speed/VRAM
+benches; the standalone relMSE curves; and every RELATIVE comparison scored against the same (left-eye) reference,
+which is a paired comparison of two outputs against a fixed image (origin vs Mamba deltas remain meaningful, their
+absolute values do not). The published origin outputs are still the reference for "preserve origin quality".
+
+Also learned from the analysis (GT-free, valid): (1) the published StereoCrafter ships the whole regenerated frame,
+no compositing anywhere (`inpainting_inference_origin.py:275-278`, upstream identical); mask-only compositing is the norm
+in video inpainting (ProPainter) and SD-inpainting tooling, and GenStereo (ICCV 2025) uses a learned soft fusion.
+(2) Black splat cracks are inside the hard mask by construction (`depth_splatting_inference.py:711-722`: zero coverage
+=> black AND occlu=1); the unmasked residue is partial-coverage blends (mean 3.8 % of the frame, 3.4x the hard mask,
+59 % within 4 px of a hole; 0301 has 15.6 % partial coverage far from holes) -- not dark stripes, but stretched texture.
+(3) Whole-frame regeneration removes ~42 % of the high-frequency energy outside the mask (|Laplacian| origin 0.58x the
+left eye, 0.62x the warped input; `crackcheck/sharpness_noref.txt`) -- a real, GT-free cost of origin's design.
+(4) The mask reaches the UNet binarised at 0.5 and nearest-downsampled /8: only 22-66 % of hard-mask pixels land in an
+ON latent cell, so the UNet infers holes mostly from the warped latents.
+
+Next: the user must say where a real right eye exists (if anywhere). Until then, quality claims are "origin-equivalent",
+never "x from GT".
+
+## 2026-09-24 - GT data regenerated (HANDOFF_v2_regen.md executed through section 5); wiring (section 6) awaits approval
+
+Root cause (from the other environment's handoff): the sources are Apple MV-HEVC spatial .mov files (right eye = HEVC
+layer 1, not side-by-side); the December split (`ffmpeg -map 0:v:0 -c copy`) could not decode the second view, so
+left_eye/right_eye were identical base layers, and the base layer is the LEFT eye for AVP/long (0001-0159, 0310-0319)
+but the RIGHT eye for iPhone (0160-0309). New `video_data/left_eye_v2`, `right_eye_v2` (319 each, ffmpeg 9 vpos
+mapping, md5-verified) were delivered.
+
+Executed on this machine: Step 0/1 OK; Step 2 (parameter reproduction, 0163 from right_eye_v2): the handoff's
+`tilemad OLD=` usage is invalid (compares a tile to the resized full grid); tile-by-tile at the same frame: TL 1.5-1.6,
+BR warped 4.0-4.9 (<5: disparity settings reproduce), BL mask 5.3-6.1 (binarised disagreement 1.6-2.5 % of the frame),
+TR depth-vis 5-12 (corr 0.97-0.99, global level shift ~10; tile is discarded). User chose (a): reuse AVP splatting.
+Phase A (AVP 0001-0159 bundles, CPU, 2 parallel, 29 s/clip): 159/159, reused tiles identical to old (0.000-0.024).
+Phase B-1 (iPhone 0160-0309 splatting from left_eye_v2, 2 GPUs, ~200 s/clip): 150/150, 0 errors, no npz pollution.
+Phase B-2 (iPhone bundles, 4 parallel): 150/150. Acceptance (section 5): 309 bundles + 150 splattings readable, frame
+counts 149(5)/150(148)/151(155)/200(1); tile MAD frame 30 -- TR vs R2 = 2.16-3.49 (<5) and TR vs L2 = 8.3-23.0 on
+AVP 0011/0154/0002/0107 and iPhone 0160/0163/0230/0305; iPhone TL vs L2 4.2-5.0 (<6, was 14-20). Old bundles show
+the inverted relation (TR vs L2 2.5). New data: `video_data/train_v2` (309, 29 GB), `video_data/splatting_v2` (150, 12 GB).
+Nothing old was moved or deleted; no repo code edited. Section 6 (wiring X/Y) and section 8 decisions are pending.
+
+**Plan Y executed 2026-09-24 (user approved):** `video_data/train` -> `train_leftGT_broken` (38 GB, kept as the record
+behind all pre-2026-09-24 numbers); new `train/` = 309 regenerated bundles + 19 symlinks to the unaffected >=0320
+bundles (328 files, so the seed-7 [8,1,1] split is unchanged); `right_eye` -> `right_eye_BROKEN_copy_of_left`, new
+`right_eye/` = 319 links to `right_eye_v2` + 45 links to the old >=0320 files (364); iPhone `splatting/0160-0309`
+-> `splatting_wrongview/` (150), replaced by `splatting_v2` (358 total). Verified: no dangling links, `train_gt40`
+now resolves to the new content (0011 TR vs real right eye 2.45), 0160 TR vs R2 3.49 / TL vs L2 4.98.
+Consequences: every consumer of `video_data/train`, `right_eye`, `splatting` now reads correct data without edits;
+outputs generated before today from iPhone clips (0160-0309) used the WRONG-VIEW splatting and must be regenerated;
+AVP outputs (0001-0159) used the correct input and only need re-scoring against the new GT.
+
+**First evaluation against the REAL right eye (2026-09-24, `scripts/distill/runs/fulldata_v2/lpips_realgt.txt`,
+outputs `outputs/fulldata_v2/clips/`; AVP outputs reused (input unchanged), iPhone clips + 0160 re-inferred on the
+regenerated splatting; aligned LPIPS vs GT right eye, 576x1024):**
+
+| clip | origin | Mamba (333-clip distilled, unchanged weights) | diff |
+| --- | ---: | ---: | ---: |
+| 0042 / 0052 / 0125 / 0128 / 0141 / 0147 (AVP) | 0.4337 / 0.4432 / 0.4768 / 0.4146 / 0.4709 / 0.5183 | 0.4344 / 0.4428 / 0.4738 / 0.4127 / 0.4732 / 0.5179 | +0.0007 / -0.0004 / -0.0030 / -0.0019 / +0.0023 / -0.0004 |
+| 0170 / 0204 / 0225 / 0251 / 0259 / 0301 (iPhone) | 0.2617 / 0.2122 / 0.2837 / 0.3505 / 0.4397 / 0.4445 | 0.2592 / 0.2091 / 0.2828 / 0.3494 / 0.4415 / 0.4316 | -0.0025 / -0.0031 / -0.0009 / -0.0011 / +0.0018 / -0.0129 |
+| 0160 (iPhone, in train) | 0.4387 | 0.4408 | +0.0021 |
+
+Mean over the 12 test clips: origin 0.3958, Mamba 0.3940 (gap -0.0018, worst +0.0023, 9/12 better) -> the
+origin-equivalence holds on real GT. Absolute levels are much higher than the old left-eye numbers (AVP 0.41-0.52
+with ~29 px parallax; iPhone 0.21-0.44), i.e. the true gap of BOTH models to the real right eye is large -- this is
+the first honest "gap to GT" in the project. Sharpness origin vs Mamba within 0.003 everywhere.
+Caveat: the Mamba blocks were distilled on the OLD splatting activations (iPhone clips = wrong view); an in-UNet
+on-policy check on the new inputs is queued, and re-distillation on the corrected data is the next step before any
+GT fine-tune.
+
+**In-UNet on-policy error of the 333-clip blocks on the CORRECTED inputs (6 windows/clip, cond rows):**
+d0a0 / d0a1 / u3a0 / u3a1 / u3a2 = 0160 0.065/0.136/0.014/0.0016/0.009; 0204 0.051/0.118/0.012/0.0016/0.009;
+0170 0.078/0.183/0.013/0.0016/0.011; 0042 (AVP, input unchanged) 0.056/0.148/0.014/0.0024/0.011. The iPhone clips
+now sit at the "unseen clip" level (0160 was 0.021/0.055 as a training clip on the old, wrong-view input); by the
+noise calibration (d0a0 10 % -> +0.001, d0a1 the least sensitive slot) this costs no measurable LPIPS, consistent
+with the real-GT equivalence above. Still, the deliverable must not rest on wrong-view activations: re-distilling
+on the corrected splatting (teacher-forced capture of the fulldata_v1 windows into `attn_cache/fulldata_tf_v2`,
+2 GPUs) is launched next, followed by the GT fine-tune redo from the new seed.
+
+## 2026-09-24 - Re-distilled on the corrected data: same floors, origin-equivalent on real GT; deliverable v2
+
+Teacher-forced capture of the fulldata_v1 windows (845, regenerated windows) on the corrected splatting
+(`attn_cache/fulldata_tf_v2`, 372 GB, 2 GPUs, 78 min), fresh fit with the standard recipe (`runs/fulldata_v2/fits/all_8k_v2`;
+DataLoader workers segfaulted under the conda-activated env -> NW=0, 16-19 it/s). Dev/test relMSE per slot are
+identical to the old-data fit (d0a0 0.0315/0.0301, d0a1 0.0875/0.0835, u3a0 0.0142/0.0151, u3a1 0.0024/0.0017,
+u3a2 0.0097/0.0104 vs 0.0308/0.0295, 0.0884/0.0839, 0.0142/0.0155, 0.0023/0.0017, 0.0097/0.0102): the corrected iPhone
+inputs are no harder to imitate. Real-GT LPIPS (12 test clips, fresh inference on corrected inputs):
+origin 0.3958, **Mamba v2 0.3948** (gap -0.0010, worst +0.0020, 0160 +0.0011).
+**Deliverable v2**: `/mnt/ssd_data/stereocrafter_weights/_distill_injected/light_lvl0_fulldata333_v2_8k_mamba_only.pt`
+(distilled and evaluated entirely on corrected data). Outputs: `outputs/fulldata_v2/clips/*_all_8k_v2/`.
+
+## 2026-09-25 - GT fine-tune redo (v2 seed, real GT, base frozen): NEGATIVE -- the diffusion objective wrecks the distilled blocks
+
+`weights/GTfinetune_v2_light28/MambaCrafter_20260924_175623/`: init = v2 distilled seed, 28 gt40 clips with real right-eye
+GT (8 near-zero-parallax iPhone clips excluded), 24 windows/clip/epoch, only the 90 Mamba tensors trainable, mamba lr
+1e-5 (warmup 1 ep, cosine), diffusion loss + origin-attention feature loss 0.02, 6 epochs (avg_loss 0.575 -> 0.525,
+noisy). Real-GT LPIPS on the 12 test clips (`runs/fulldata_v2/lpips_gt_v2_e00{2,4,6}.txt`):
+
+| | origin | v2 seed (no fine-tune) | e002 | e004 | e006 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| mean | 0.3958 | 0.3948 | **1.0207** | 0.7201 | 0.6968 |
+| 0160 | 0.4387 | 0.4398 | 1.1651 | 0.8374 | 0.7809 |
+
+Two epochs (~700 steps at lr 1e-5) take a block set that imitates attention to 1-5 % and turns the output into
+something far worse than any model in this project (LPIPS > 1.0), with partial recovery afterwards. Together with
+the 09-13 result (lr 1e-4 from e210: 0.44 -> 0.92 in one epoch) and the whole 0.40-0.44 plateau history, this says
+the end-to-end diffusion objective AS IMPLEMENTED IN THIS TRAINER pushes the level-0 blocks away from origin's
+function, regardless of LR or init; the 0.02 feature leash does not hold. Whether that is a property of the
+objective (train/inference mismatch: 2-frame chunks, sigma grid, conditioning) or of the trainer is untested --
+the decisive control is to fine-tune origin's OWN 5 attention slots with the same trainer for 1-2 epochs: if origin
+itself degrades, the trainer/objective is at fault and "beyond origin" needs a fixed objective, not a Mamba change.
+Deliverable stays the v2 distilled state; the fine-tuned checkpoints are kept (e002/e006) as evidence only.
+
+## 2026-09-25 - CONTROL: fine-tuning origin's OWN attention with the same trainer also degrades it -> the objective/pipeline is at fault, not Mamba
+
+`weights/GTfinetune_v2_originattn_control/MambaCrafter_20260925_143200/`: no Mamba (include `__nomatch__`), only the 25
+tensors of origin's 5 level-0 `attn1` slots trainable (`freeze_keep`), lr 1e-5, real GT, 28 clips x 24 windows, 2
+epochs (avg_loss 0.566 -> 0.516). Real-GT LPIPS on the 12 test clips (origin-mode inference with the fine-tuned state):
+
+| | origin | attn fine-tune e001 | e002 | (Mamba fine-tune e006, for comparison) |
+| --- | ---: | ---: | ---: | ---: |
+| mean | 0.3958 | **0.5061** (+0.110) | 0.5160 (+0.120) | 0.6968 (+0.301) |
+| worst clip | -- | +0.293 | +0.319 | +0.545 |
+
+Origin's own attention, trained with this trainer on the correct GT, gets WORSE within one epoch on every clip.
+Therefore the training objective as implemented (stage-3 recipe: 2-frame chunks, uniform sigma on the 20-step grid,
+v-prediction loss on the whole latent, DeepSpeed bf16) does not improve the quantity the inference measures, for
+attention or for Mamba. Every negative end-to-end result in this project (0.40-0.44 plateaus, 09-13 lr 1e-4 collapse,
+the 09-24 Mamba fine-tune) is explained by the same cause. Consequences: (1) the Mamba claim is unaffected -- it never
+depended on this trainer (distillation only); (2) "beyond origin" is a question about the training objective
+(train/inference mismatch), not about Mamba, and is out of scope for this line. Prime suspects to test if it is
+ever pursued: 2-frame training chunks vs 14-frame inference windows (temporal context), the sigma sampling vs the
+8-step inference grid, and the per-window conditioning path. Checkpoints kept as evidence (e001/e002, 6 GB).
+
+## 2026-09-29 - DIAGNOSIS: why the trainer degrades origin's own attention -- three train/inference mismatches, not "GT is a bad teacher"
+
+Seven-agent audit of `inpainting_train.py` vs the deployed pipeline (scratch + probes in
+`scripts/distill/runs/diag_trainer/`, 666 MB; no checkpoint or video_data touched). Confirmed causes, ranked:
+
+1. **Window regime**: stage-3 `frames_chunk 2 / overlap 1` vs 14/3 at inference. The frozen temporal stack is
+   off-distribution at 2 frames (origin's own v-loss 2-4x worse); the trainable attn1 learns a 2-frame hedge that is
+   wrong at the low-sigma sampler steps. Sampling the damaged e001 with 2-frame windows removes 95 % of its excess
+   (0301: +0.293 -> +0.015) and restores sharpness.
+2. **Cond-latent scale** (`inpainting_train.py:979`, since cefb4bf 2026-01-23): trainer multiplies the warped-frame
+   latents by 0.18215; both inference pipelines feed them raw (5.5x). Origin sampled at x0.18215: 0301 LPIPS 0.6479 /
+   sharp 0.0116 (deployed 0.4445 / 0.0235) -- the trainer trains where the frozen net's output is already blurry.
+   Largest single rotation of the 25-tensor gradient (cos 0.05-0.12 vs deployment-faithful at sigma >= 12).
+3. **Loader misregistration** (`utils/training_batches.py:97-100` crops to 2*tile then splits; `utils/inpainting.py:147-158`
+   splits at the true half then crops): cond/mask displaced 24 px (AVP) / 56 px (iPhone) from the GT quadrant in every
+   batch. Small gradient rotation (cos 0.87-0.96) but unlearnable; must be fixed.
+Ceiling behind all GT supervision: residual disparity cond->GT >= 8 px on 40/40 clips (median 29/24 px), holes ~1 % of
+the crop, so a whole-frame per-pixel loss asks for a re-warp the level-0 attention cannot express.
+Also found: `ff_chunk_size 1 dim 1` (re-forced at :694-699) = 9216 GEGLU calls per FF -> 14.8 s/step vs ~1 s (10x);
+gradient clipping silently off under DeepSpeed (accelerate returns None, no `gradient_clipping` in ds_config);
+rank padding duplicates the last video (0154 = 17 % of steps); `train_gt28/0358` resolves to the broken left-GT bundle;
+cosine schedule ran epoch 2 at 1e-6. KILLED hypotheses: high-sigma mean-seeking (e001's tensors used only at sigma
+700/287/103 give 0.4453 vs 0.4445), optimizer noise (same-norm random perturbation: -0.009 %), bf16/ZeRO numerics.
+Damage localises to the 15 `up_blocks.3` attn1 tensors (0.7433 alone; `down_blocks.0` alone 0.4312) at sigma <= 31.
+Single-step v-MSE is NOT a proxy for sample quality (x0.18215 lowers loss, ruins samples); use the hybrid sigma-band
+weight-swap sampling (`xcheck_hybrid.py`) + LPIPS. Why distillation worked: deployed-path inputs, deterministic
+per-token target, loss floor 0. Next: positive controls P1-null / P1-pos (standalone, deployment-faithful), then the
+trainer fixes F1-F8 and a v3 control retrain (`config/gt_finetune_v3_originattn_control.json`).
+
+## 2026-09-29 - Trainer fixes F1-F8 applied; positive controls P1-null / P1-pos BOTH FAIL -> the per-pixel v-MSE objective itself moves origin off its fixed point
+
+Fixes (uncommitted, CPU-verified): `inpainting_train.py` `cond_latent_scale` param (default 1.0, replaces the x0.18215 at
+old :979), `gradient_clipping` written into ds_config, `_get_chunk_count` clamped by `max_chunks_per_video`, rank-padding
+duplicates / re-fed batches zero-weighted (collectives still run); `utils/training_batches.py` splits at the true half then
+crops (P0: cond/mask displacement 24/24/56 px -> 0 on 0154/0011/0358/0204/0042); `config/gt_finetune_v3_originattn_control.json`
+(fc 8 / ov 3, ff_chunk 0, 8-sigma grid, constant lr, train_gt27 = train_gt28 minus 0358, save_dir v3);
+`scripts/distill/launch_originattn_control_v3.sh`, `originattn_ctrl_eval_v3.sh` (not run).
+
+Positive controls (`scripts/distill/runs/diag_trainer/minift/`, standalone, deployment-faithful: 14-frame windows on the
+stride-11 grid, raw cond latents, registered crop, sigma uniform over the 8 deployment sigmas, 15 `up_blocks.3` attn1
+tensors, AdamW 1e-5, clip 1.0, 300 steps, 1.0 s/step, 15.3 GiB):
+
+| clip 0301 (origin 0.4445 / sharp 0.0235) | step 100 | 200 | 300 |
+| --- | ---: | ---: | ---: |
+| P1-null (target = origin's OWN deployed output) | 0.4752 / 0.0203 | 0.4928 / 0.0190 | 0.5041 / 0.0184 |
+| P1-pos (target = real GT) | 0.7727 / 0.0110 | 0.6736 / 0.0145 | 0.7075 / 0.0133 |
+| random perturbation, same per-tensor norm as null-300 | | | 0.4454 / 0.0234 |
+
+Held-out 0042 (origin 0.4337): null +0.005/+0.010/+0.013, pos +0.085/+0.072/+0.093. Sigma-band swap of the step-300
+tensors: high-sigma-only (700/287/103) harmless (0.4472 null, 0.4500 pos); everything lives at sigma <= 31. Weight change
+0.2 % (= the DeepSpeed epoch), directional (cos of successive increments 0.54; cos(null, pos) = 0.57). Null loss is
+flat (origin already near-optimal on its own sample) yet the sample degrades monotonically with the hedge signature.
+Conclusion: the single-sample v-MSE descent direction on the output-side attention is harmful at the detail-forming
+sigmas regardless of target and independently of the trainer bugs; F1-F8 are necessary but not sufficient. The v3
+DeepSpeed retrain is on hold. Next: bisect by training-sigma band (null_hi5 / null_mid1 / null_low2, pos_hi5,
+pos_lognormal P_mean 0.7 P_std 1.6) to find which sigmas carry the harmful direction.
+
+## 2026-09-29/30 - Sigma bisect + the real reason: a deterministic per-sample target makes the objective's optimum a ONE-STEP model
+
+Bisect of the harmful descent direction (`scripts/distill/runs/diag_trainer/minift/`, same standalone recipe, 300 steps,
+target = origin's own deployed output unless noted; clip 0301, origin 0.4445 / sharp 0.0235):
+
+| training sigmas | target | 0301 LPIPS / sharp | verdict |
+| --- | --- | ---: | --- |
+| all 8 deployment sigmas | own output | 0.5041 / 0.0184 | harmful (reference) |
+| 700, 286.5, 102.9, 31.0, 7.28 | own output | 0.5002 / 0.0190 | 93 % of the damage |
+| 1.17 only | own output | 0.4950 / 0.0197 | 85 % of the damage |
+| 0.097, 0.002 | own output | 0.4459 / 0.0232 | **harmless** (same weight-change size) |
+| all 8 | real GT | 0.7075 / 0.0133 | fail |
+| 700 ... 7.28 | real GT | 0.6777 / 0.0156 | fail (best GT variant) |
+| lognormal P_mean 0.7 P_std 1.6 (EDM/SVD recipe) | real GT | 0.6936 / 0.0134 | fail |
+
+**Corrected explanation** (supersedes the 2026-09-29 wording "the v-MSE descent direction is harmful regardless of
+target", which stated the fact but not the cause). With a deterministic target x0 for a given conditioning, the
+Bayes-optimal v-prediction at EVERY sigma is the one pointing exactly at that x0: the objective's optimum is a ONE-STEP
+model. Partially collapsing toward it and then running the shipped 8-step Euler sampler makes the first step jump most
+of the way to a conditional-mean-over-residual-uncertainty estimate (blurry) and leaves the later steps nothing to
+refine. This predicts every observation: the damage sits at high sigma (93 % from the 5 high sigmas), sigma <= 0.097 is
+inert because there x0-hat already equals the final answer, and training loss falls while sharpness falls and LPIPS
+rises. Origin is optimal for the DISTRIBUTIONAL objective (predict E[x0 | x_t] over the data distribution), not for a
+point objective; so any per-sample diffusion-loss fine-tune must move it off its own fixed point, which is why the
+0.40-0.44 plateau has stood since February. Feature distillation was immune because it matched a deterministic FUNCTION
+at the inputs the deployed sampler actually visits, where origin is the exact optimum (loss floor 0).
+Rule adopted: never select a checkpoint on training loss again; select on sampled LPIPS.
+Open fork being tested now: is it the point target, or is it Adam marching along a flat direction the sampler is
+sensitive to (P1-null's loss was flat, 0.0939 -> 0.0936 at sigma 700, while the sample degraded monotonically)? The
+discriminator is the step-0 gradient norm of a trajectory-consistent objective (Test A1) vs P1-null's 0.149.
+
+## 2026-10-01 - BREAKTHROUGH: deployed origin is COMPUTE-limited, not capability-limited. 25 sampling steps beats it on 11/12 clips
+
+Pure inference on the frozen origin UNet, no training. Deployed config = 8 steps, guidance 1.01, 14-frame windows
+overlap 3. Steps and guidance were already Fire CLI params (`--num_inference_steps`, `--min_guidance_scale` AND
+`--max_guidance_scale`; setting only max builds a per-frame `linspace` ramp). Provenance: all 13 baselines re-run today
+with the exact deployed command are MD5-IDENTICAL to the shipped `*_origin` files, so every delta below is the knob alone.
+
+| | 12-clip real-GT LPIPS | delta | improved | worst clip | mean sharp ratio | s/clip |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| origin, 8 steps, guid 1.01 (deployed) | 0.3958 | - | - | - | 1.000 | 166 |
+| **origin, 25 steps, guid 1.01 (s25)** | **0.3820** | **-0.0138** | **11/12** | +0.0009 (0259) | 1.127 | 421 (2.55x) |
+
+Per-clip: 0301 -0.0362, 0125 -0.0262, 0128 -0.0218, 0204 -0.0172, 0225 -0.0156, 0042 -0.0155, 0141 -0.0097, 0251 -0.0087,
+0170 -0.0086, 0052 -0.0064, 0147 -0.0007, 0259 +0.0009. Table `scripts/distill/runs/fulldata_v2/beyond3/score_s25_full.txt`,
+summary `.../beyond3/s25_12clip_summary.txt`; outputs `outputs/fulldata_v2/clips/<clip>_origin_s25/` and the provenance
+re-runs `<clip>_origin_repro8g101/`. Smoke sweep (3 clips, `.../beyond2/SUMMARY_TABLE.txt`): interior optimum in step
+count - s50 REGRESSES vs s25 on 2 of 3 clips; s16 buys 88 % of the gain at 1.76x. Guidance has its own interior optimum
+around 1.25-1.40 at ESSENTIALLY UNCHANGED COST (3-clip mean -0.0179 at g125) but it is clip-dependent and sits at a
+cliff (0301 collapses at g200), and its gain is bought with sharpness that overshoots GT on the AVP clips - needs a
+12-clip lossless check before it can be a deployment candidate. Caveats: right-eye PSNR falls monotonically as LPIPS
+improves (perception-distortion); the mp4v writer (`utils/inpainting.py:123`) is lossy and contaminated 0160 (leftPSNR
+46.21 -> 42.69), so headline beyond-origin numbers must be written lossless (flow-audit C1);
+5 of 12 clips have origin ALREADY sharper than GT, yet they still improved (-0.0108 vs -0.0159 for the under-sharp half).
+
+**Why this matters.** The Mamba line was fighting over 0.000-0.002 LPIPS; this is a measured -0.0138 of headroom, an
+order of magnitude larger, and it is reachable by a DETERMINISTIC FUNCTION of the deployed inputs - exactly the shape of
+target that distillation in this project provably converges on (1-5 % relMSE), unlike the per-sample diffusion objective
+that collapses the model. The beyond-origin plan is therefore: distil the 25-step trajectory into the 8-step sampler.
+
+## 2026-10-01 - The FIXED trainer (F1-F8) is 3.2x MORE damaging than the broken one: the objective, not the plumbing
+
+`weights/GTfinetune_v3_originattn_control/MambaCrafter_20261001_004055/`, eval
+`scripts/distill/runs/fulldata_v2/v3ctrl/`. All nine fix confirmations passed in the run log (registered loader proven by
+offset-scan argmax at (0,0) on both resolution families, `cond_latent_scale=1.0`, `sigmas_head` exactly the deployed
+eight, `gradient_clipping: 1.0` present where v2 had no such key, 27 clips, balanced 140/130, "10 of 140 steps were
+zero-weight"), and the ff-chunk fix cut the step from 14.34 s to 2.93 s.
+
+| | 12-clip gap vs origin | sharp ratio | improved |
+| --- | ---: | ---: | ---: |
+| v2 (three mismatches present) e001 | +0.1103 | 0.593 | 0/12 |
+| **v3 (all fixes applied) e001** | **+0.3507** | 0.240 | 0/12 |
+| v3 e002 | +0.3476 | 0.186 | 0/12 |
+
+Training loss fell FURTHER than v2's (0.5002 -> 0.4249 vs 0.5656 -> 0.5157) while quality fell further, and the output
+sharpness spread compressed to stdev 0.0009 against origin's 0.0078 - the outputs converge on one near-constant blur
+level. So v2's bugs had been acting as unintentional BRAKES on the collapse, not as its cause. This rules out "the
+trainer had bugs; fix them and GT supervision will work". Sigma-grid concentration is also ruled out (the 8-step and
+20-step Karras grids put the identical 75 % of steps in the damaging band). The fixes stay - they are correct and the
+registration/cond-scale bugs would poison any future run - but the v3 line is closed as a quality lever.
+
+## 2026-10-01 - Mechanism, refined: it is the TARGET's determinism, not the input distribution; and the deployed sampler is effectively 3 steps
+
+`scripts/distill/runs/diag_trainer/mech/`. A wrapper harness (scheduler.step and unet.forward wrapped, `pipelines/*`
+never edited) captured the deployed sampler exactly, so training could run on the REAL trajectory points.
+- **A1, on-trajectory, target = origin's own per-step v:** gradient EXACTLY 0 at every point (the forward is bitwise
+  deterministic; repeat-forward rel diff 0.000e+00), 300 steps change nothing (0.4445 / 0.0235, rel ||dW|| 0.000000).
+  This kills the competing "Adam marches along a flat direction" explanation: with a FUNCTION target there is no
+  direction to march. P1-null's 0.1485 gradient was a real signal pointing at its point target.
+- **A2, on-trajectory, target = real GT x0:** 0.9182 / 0.0051 - WORSE than off-trajectory P1-pos (0.7075). Sigma-matched,
+  a2_hi5 0.7513 vs pos_hi5 0.6777, and the weight deltas point the same way: cos(a2_hi5, pos_hi5) = 0.909 vs
+  cos(a2_hi5, null) = -0.038. **The target picks the harmful direction; the input distribution does not.** A2's GT
+  target is also ill-posed at low sigma (||v_gt||rms 0.78 at sigma 700 -> 392.9 at 0.002; MSE(origin_v, v_gt) 0.56 ->
+  1.5e5), and an x0-space reweighting that removes that blowup does not help (0.9103).
+- **Where the sampler actually works** (exact unrolling of the Euler recursion, `mech/testb/euler_information_weights.txt`):
+  steps at sigma 700..7.28 contribute 0.163 % of the final latent, sigma 1.17 contributes 1.86 %, and sigma 0.097
+  contributes 97.70 %. The deployed "8-step" sampler is effectively a 3-step sampler.
+- **x0-hat sharpness along the trajectory** (`mech/testb/testb_table.txt`): origin rises 0.0173 -> 0.0231 (+33.5 %), and
+  35.3 % of that gain happens at sigma 1.17 with 24.2 % at 0.097. The damaged null300 rises only +0.00204 and LOSES
+  detail at sigma 1.17 - it has lost the refinement step, which is the blur. NOTE: the pre-registered prediction that the
+  damaged model's x0-hat would be SHARPER at sigma 700 was FALSE (0.0157 vs origin 0.0173, 9 % blurrier) and a 1-step
+  sampler run confirms null does not beat origin at 1 step (0.5514 vs 0.5395). So the mechanism is not "it learned to
+  jump"; it is "a point target destroys the refinement the last two steps perform".
+- **Measurement-bug correction:** `weights/StereoCrafter/unet_diffusers/*.safetensors` are float16 while training starts
+  from a bfloat16 cast, so the earlier `analyze_deltas.py` added a constant cast vector of relative norm 0.001680 to
+  every delta. Corrected relative weight changes: null 0.001160 (published 0.002042), pos 0.001740 (0.002420); and
+  **cos(null, pos) is -0.002, not the published 0.571** - the own-output hedge and the GT hedge are orthogonal
+  directions, not one shared direction.
+
+## 2026-10-01 - BEYOND ORIGIN ACHIEVED: step distillation gives 91 % of the 25-step quality at deployed 8-step cost
+
+`scripts/distill/runs/beyond_distil/` (training), `scripts/distill/runs/beyond4/` (lossless path + guidance),
+`scripts/distill/runs/skeptic1/` (independent verification). All headline numbers below are LOSSLESS (FFV1), 12 test
+clips, real-GT LPIPS, sampled at the DEPLOYED config (8 steps, guidance 1.01) unless the row says otherwise.
+
+| config | 12-clip LPIPS | delta | improved | mean sharp ratio | s/clip |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| origin, 8 steps (deployed) | 0.3933 | - | - | 1.000 | 165-195 |
+| origin, 25 steps (s25) | 0.3786 | -0.0146 | 12/12 | 1.127 | 390-453 |
+| **step-distilled student, 8 steps** | **0.3800** | **-0.0133** | **12/12** | 1.111 | 175-196 |
+
+The student captures **90.7 %** of the 25-step gain at deployed cost, **85.3 % on the ten clips it never saw**
+(trained on 0301 and 0204 only, 800 steps, 15 tensors, 4.9 MB). Worst clip is an improvement (-0.0026), sharpness rises
+on every clip and never overshoots s25. By regime it captures 94.9 % on the seven under-sharp clips and 82.8 % on the
+five where the frame-wide statistic calls origin "already sharper than GT", i.e. it is more conservative exactly where
+over-sharpening is the risk. Deliverable `scripts/distill/runs/beyond_distil/smoke1/step800.pt`, loadable through the
+tracked entry point (`inpainting_inference.py --unet_state_path=... --expected_partial_unet_state=True`, missing=1413
+unexpected=0, pixel-identical to the hook run), so its inference cost is exactly origin's.
+
+**The objective, and why it does not collapse.** At each deployed sampler step the target is THE NEXT trajectory point
+from a fine Karras sub-integration of the same frozen UNet, never the final x0. Both grids are exactly uniform in the
+Karras coordinate u = sigma^(1/7) and |du_8|/|du_25| = 24/7 EXACTLY, so M=4 substeps per coarse interval reproduces the
+25-step density (28 sub-intervals vs 24). Target: `x0hat_target = x_k - sigma_k (x_target - x_k)/(sigma_{k+1} - sigma_k)`.
+Controls: M=1 substeps reproduce the coarse step to 1.68e-3 = the bf16 floor; the full oracle lands ON s25 (0301 0.4064
+vs s25 0.4083) not on deployed; the step-0 gradient norm is NONZERO (0.104 / 0.156 / 0.004 at k=4/5/6) unlike the
+self-consistent objective's exact 0; a zero-cost scalar Euler-step rescale FAILS (0204 0.2272, worse than origin), so
+the student is not merely changing the effective step size - the correction is 78-87 % orthogonal to the Euler direction.
+Per-step target error fell 0.128 -> 0.052 (k=4), 0.130 -> 0.062 (k=5), 0.0170 -> 0.0089 (k=6).
+
+**CORRECTION to the 2026-10-01 entry above: the c_k weighting quoted there is BACKWARDS.**
+`mech/testb/euler_information_weights.txt`'s "sigma 0.097 = 97.70 %" holds the LATER model outputs fixed, which is
+invalid because x0hat_6 is re-evaluated at the perturbed y_6 with O(1) Jacobian gain. The arithmetic reproduces to 4
+digits, so the error is in the assumption. Measured end-to-end sensitivity (substitute the exact target at step k only,
+model live elsewhere): **k=4 (sigma 7.28) 36 %, k=5 (sigma 1.17) 61 %, k=6 (sigma 0.097) 8 % and AT the chain noise
+floor**, k<=3 at the noise floor, k=7 2e-5. Confirmed by a second route: the oracle restricted to k=4,5,6 matches the
+all-steps oracle (0301 0.4059 vs 0.4064) for 17 UNet calls instead of 32. Training used the measured gains
+{0.7177, 0.8926, 0.9905} on steps {4,5,6} with an x0-space residual.
+
+**On-policy refresh HURT** (2-clip 102.2 % -> 77.2 % of the s25 gain, sharpness overshooting past s25) while
+monotonically improving its own objective on all three trained steps - the third sighting of the loss/quality
+anti-correlation this session. Do not refresh on-policy for this objective.
+
+## 2026-10-01 - GUIDANCE REJECTED, and the mp4v codec was contaminating every table in this project
+
+**Guidance:** g125 at 12-clip lossless scale is only -0.0065 with 4/12 clips REGRESSING (worst +0.0104 on 0259).
+There is no guidance value that suits the clip set: 0147 is monotonically worse and wants guidance off, 0301 peaks near
+1.2 (-0.0283) and collapses by 1.40, 0052/0204 are flat to 1.40. The 3-clip mp4v smoke that motivated it (-0.0179) had
+landed on three of the best clips; the same config gives -0.0158 on those three losslessly, -0.0105 on four, -0.0065 on
+twelve. No ringing signature was found, so it is not a classical over-sharpener, but exploiting its per-clip wins needs
+a selector that cannot be built from LPIPS-vs-GT at deployment time. `scripts/distill/runs/beyond4/`.
+
+**The codec finding matters beyond guidance.** `utils/inpainting.py`'s cv2 mp4v writer moves measured LPIPS on the
+deployed origin by **-0.0100 to +0.0104 per clip - a spread of 0.0204, larger than the entire s25 gain, and
+sign-changing**, so no constant corrects it; and it shifts the mean by -2.149/255, which happens to cancel the
+splatting inputs' own +2.079/255 offset (the only reason this project's tables ever reported "leftPSNR ~47 dB"; the true
+input-vs-GT level gap is ~39 dB). It also makes the `sharp` statistic unreliable in both directions (deflates 0204 by
+4.3 %, inflates 0147 by 7.8 %). **Two previously published regressions were pure codec artefacts**: s25 on 0259
+(+0.0009 -> -0.0009) and the student on 0147 (+0.0001 -> -0.0031), so both knobs now improve 12/12.
+Lossless path: `scripts/distill/runs/beyond4/infer_lossless.py` rebinds `inpainting_inference.write_video_opencv` to an
+FFV1 writer with no tracked-file change; faithfulness proven by a four-link chain (mp4v control reproduces the shipped
+baseline byte for byte; the monkeypatch hands the writer an identical array; decord decodes FFV1 bit-exactly; the left
+half is bit-identical to the splatting input, 0 of 267,190,272 bytes differing). **Under lossless writing leftPSNR is
+identical across every config of a clip; under mp4v it is NOT** (up to 41/255 per pixel, 53-63 dB) - so the project's
+habit of using leftPSNR as a codec-bleed detector was invalid, and the detector silently failed on 12/12 clips.
+FIX THIS IN THE SHIPPING PIPELINE (flow-audit C1).
+
+## 2026-10-01 - Stacking: s25 composes with the Mamba deliverable, but the distilled tensors COLLIDE with its slots
+
+Four regime-spanning clips, lossless (`scripts/distill/runs/skeptic1/SCORES_STACK_lossless.txt`):
+
+| | 4-clip LPIPS | vs origin |
+| --- | ---: | ---: |
+| origin | 0.4035 | - |
+| shipped 5-slot Mamba | 0.4001 | -0.0034 |
+| origin + s25 | 0.3872 | -0.0163 |
+| **Mamba + s25** | **0.3861** | **-0.0174** |
+
+Mamba + s25 beats origin + s25 on 4/4 clips, so the speed win composes with the 25-step quality win and the feared
+off-distribution penalty (running an 8-step-distilled Mamba on a 25-step grid) did not materialise; s25 retains 86 % of
+its gain on top of Mamba.
+
+**The conflict:** all 15 distilled tensors are `up_blocks.3.attentions.{0,1,2}...attn1.*`, and Mamba replaces exactly
+those three slots plus two in `down_blocks.0`, re-parenting the attention to `attn1.origin_attn.*` with
+`mamba_gate=1.0`, at which `forward()` returns the Mamba output before the trained attention is ever called. Verified
+bit-exactly: Mamba + student is pixel-identical to Mamba alone (same pre-encode md5) even after remapping all 15 keys
+and confirming all 15 values changed. So this is a choice in the same five slots, not a lost stack. Two options are
+already measured:
+- **2-slot Mamba** (`down_blocks.0` only) leaves `up_blocks.3` as real attention and accepts the distilled tensors
+  directly, retaining essentially the whole quality win: -0.0158 vs origin+student's -0.0160 (equal within the 0.001
+  floor on 3 of 4 clips). Costs whatever speed the three `up_blocks.3` slots were providing.
+- **Re-distil inside the 5-slot Mamba.** The gate is measured: the Mamba-side oracle at k=4,5,6 reaches 0301 0.3958 and
+  0052 0.4372, against Mamba+s25's 0.3978 / 0.4375 - the same headroom exists inside the Mamba model, so the objective
+  above can be re-run with the Mamba parameters as the trainable set.
+At 576x1024 wall clock cannot decide this (origin 165-195 s, Mamba 5-slot 173-201 s, 2-slot 179-210 s); the published
+-5.3 / -20.5 / -21.7 % were UNet-module times. Next step is therefore a module-time profile of 5-slot vs 2-slot at
+1024x1792 and 1920x1024 via the existing `--module_profile_json` / `--module_profile_include`.
+Full-scale cost of the origin-side student if wanted: ~35.4 GPU-h for 333 clips, ~13.4 GPU-h for a 40-clip subsample
+(justified because ten held-out clips already reach 85 % from two training clips).
+
+## 2026-10-01 - DELIVERABLE: 5-slot Mamba + step-distilled up_blocks.3 beats deployed origin on 12/12 clips AT the Mamba speed
+
+`/mnt/ssd_data/stereocrafter_weights/_distill_injected/mamba5slot_plus_stepdistil_up3_train10clip_step800_20261001.pt`
+(md5 08cf44850b8f392efb307e3a48cd82d1, 16.1 MB). Protected predecessor untouched (md5 still
+e9c232878319d041680e7fb3be74bf10). Work in `scripts/distill/runs/{slotbudget,beyond_distil_mamba}/`; headline table
+`scripts/distill/runs/beyond_distil_mamba/TABLE_12CLIP_mstudent1_step600.txt`.
+
+12 test clips, LOSSLESS FFV1, real-GT LPIPS, sampled at the DEPLOYED config (8 steps, guidance 1.01):
+
+| row | mean LPIPS | vs origin | improved | sh/GT | UNet time 576x1024 / 1024x1792 / 1024x1920 |
+| --- | ---: | ---: | ---: | ---: | --- |
+| origin, 8 steps (deployed) | 0.3933 | - | - | 0.936 | 0 / 0 / 0 |
+| shipped 5-slot Mamba | 0.3927 | -0.0006 | 8/12 | 0.959 | -5.41 / -20.56 / -21.87 % |
+| origin + s25 (2.4x cost) | 0.3786 | -0.0146 | 12/12 | 1.046 | 0 / 0 / 0, but 2.4x the steps |
+| origin + step-distilled attn (2 clips) | 0.3800 | -0.0133 | 12/12 | 1.030 | 0 / 0 / 0 |
+| **THIS DELIVERABLE** | **0.3804** | **-0.0128** | **12/12** | 1.02 | **-5.50 / -20.74 / -22.14 %** |
+| (2-clip variant, ALT file) | 0.3766 | -0.0167 | 12/12 | 1.106 | same |
+
+So the project now has, in one artefact, the shipped Mamba's speed AND a quality level that beats 25-step origin
+sampling at 1/2.4 of its cost. Peak VRAM +0.26 / +0.11 / +0.09 %. Loads through the tracked entry point.
+
+**The slot-budget decision, settled by measurement** (`scripts/distill/runs/slotbudget/TABLES_v1.txt`). The three
+`up_blocks.3` slots provide **59-63 %** of the shipped 5-slot speed win at all three resolutions, by two independent
+methods (marginal (T2slot-T5slot)/(Torigin-T5slot): 63.0 / 60.3 / 59.7 %; per-slot attribution: 60.5 / 59.4 / 59.1 %).
+Dropping to a 2-slot Mamba to make room for the attention-side student would turn the two hi-res headline claims into
+-8.16 % and -8.81 % and the deployed claim into -2.00 %, only 5x the measurement spread; and Mamba's per-slot advantage
+GROWS with resolution (2.05x -> 5.98x -> 6.43x). Quality cannot break the tie - the 2-slot Mamba alone is
+origin-equivalent on 12 lossless clips (0.3931 vs 0.3933) - so the profile is the whole decision. Harness anchored: it
+reproduces the published origin times to 0.3 % and the published 5-slot deltas to 0.2 points.
+PROVENANCE CORRECTION: the published -5.3 / -20.5 / -21.7 % came from `scripts/distill/bench2.py`
+(`fulldata_tail.sh`, `fullhd.sh`), NOT from `--module_profile_json`; both instruments were used here and agree.
+NEW CAVEAT: on the un-warmed deployed path the FIRST call into a Mamba slot costs a one-time ~5.07 s of Mamba2 kernel
+build/autotune, which nearly cancels the ~5.35 s of UNet time the 5-slot saves on a 151-frame 576x1024 clip. The
+576x1024 win is real in UNet-module time (what is published) but a wash end-to-end per process; at hi-res the
+0.77-0.89 s per-forward saving swamps it.
+
+**MORE TRAINING CLIPS MADE IT WORSE.** Three independent readouts agree in sign: dev at matched optimiser budget 2 clips
+0.5454 vs 10 clips 0.5464; the ten test clips held out by both runs -0.0135 vs -0.0102; the eight clips clean of both
+training and selection -0.0144 vs -0.0109. The 10-clip ladder peaks at step800 and degrades to worse-than-shipped-Mamba
+by step2000, so 5.2x the data does not catch up at any rung. **The 333-clip / ~35 GPU-h full-scale plan should NOT be
+funded.** One untested confound remains: at matched steps, 10 clips means fewer passes per window.
+The shipped file is the 10-clip one even though the 2-clip weights score 0.0035 better on any fixed clip set, because
+the 10-clip rung was selected on DEV rather than on test clips and over-sharpens measurably less (n=8 sharpness 1.056x
+GT vs 1.088x); the 2-clip weights are kept as `..._test2clip_step600_20261001_ALT_trained_on_0301_0204.pt`
+(md5 8f6f94b87241e7c27f3a80d57c78eb4d) so the choice is reversible with one path change. Weakest link named by the
+author: the selection instrument, not the model - the dev ladder spans only 0.0008 LPIPS and dev is skewed to low GT
+sharpness (0.0093 vs test's 0.0164). Pre-registration in `beyond_distil_mamba_scaled/PREREGISTRATION.txt`.
+
+**Corrections to earlier rows of this log.** (a) The 12-clip shipped-Mamba number is -0.0006 vs origin (8/12 improved,
+worse on 4/12), NOT the -0.0034 the 4-clip subset implied; eight of the twelve lossless Mamba baselines did not exist
+before this run. Still "origin-equivalent", but the small 4-clip edge does not hold on the full suite. (b) The
+Mamba-side student reached 127.3 % of the Mamba+s25 headroom on the 4-clip set, i.e. it EXCEEDS the fine trajectory it
+was trained to follow; that is regime-dependent and is a warning as much as a win - on the most over-sharp clips the
+oracle is the ceiling and the student overshoots it (0147 captures only 54.4 %, sharpness ~1.78x GT). This student is
+MORE aggressive than s25 exactly where over-sharpening is the risk, unlike the attention-side one. step400 is the
+conservative rung for an over-sharp-heavy corpus. (c) The SSM core moved more in absolute ||dW|| than the FiLM
+(0.615 vs 0.454) while carrying ~1 % of the gradient norm, so the solution is a genuinely changed recurrence.
+**Sixth sighting of the loss/quality anti-correlation**: training loss fell monotonically 2.245e-3 -> 1.959e-3 through
+step1600 while sampled dev LPIPS peaked at step800; selecting on loss would have shipped step1600.
+
+## 2026-10-01 - VISUAL REVIEW of the deliverable: the extra sharpness is real detail, the artefact is amplified splatting stripe. Plus TWO GT-geometry bugs
+
+`outputs/review_20261001/` (open `index.html`; 12 strips at 100 % zoom, 384x384 per panel, panels
+GT / origin / shipped Mamba / THIS DELIVERABLE / origin+s25 / GT-at-the-scorer-window, plus context sheets with the mask
+in red and edge-profile scanlines). Scripts `scripts/distill/runs/review_20261001/`.
+
+**TWO GEOMETRY BUGS, read before trusting any GT-relative region statistic.**
+1. `make_crops.py` and `ringing_metrics.py` sliced the LEFT eye, not the right: `score_clip_ll.py` slices the quadrant
+   first, so the real right eye is `tile[t0:t0+h, W+l0 : W+l0+w]` and both helpers omitted the `W +`. Verified at ~40 dB
+   against the render's pass-through left half. **Every region in the earlier `RINGING_STUDENT.txt` /
+   `RINGING_12CLIP.txt`, and the "origin is already sharper than GT" framing built on them, were left-eye-defined.**
+   Corrected throughout this review.
+2. **The real right eye is not pixel-registered with the renders at the scorer's window**: it needs an additional
+   horizontal shift of **-15 to -59 px per clip** (estimated against the model's own warped input, so it cannot favour a
+   config) because the renders' stereo disparity is far smaller than the real baseline - the same under-disparity the
+   09-29 audit measured as "residual disparity cond->GT >= 8 px on 40/40 clips". Published LPIPS deltas are unaffected
+   (identical misregistration for every config) but the ABSOLUTE vs-GT values are inflated, and an unregistered GT
+   region badly depresses edge statistics: 0147 whole-frame origin reads edgeHF 0.234 unregistered vs 0.562 registered.
+   Panel 6 of every strip shows the scorer window so the displacement is visible.
+All 24 panels were verified to be the scored artefacts by recomputing the scorer's frame-wide `sharp` to <=7e-5.
+
+**The headline question answered.** On the four clips whose frame-wide `sharp` is 1.46-1.78x GT, the deliverable's
+energy at the GT's REAL edges is only 0.52-0.73, i.e. still 27-48 % SHORT of the real right eye, while its flat-region
+stripe energy is 1.9-5.5x GT. So the "over-sharpening" is **amplified depth-splatting stripe artefact in flat regions,
+not over-drawn edges**. Edge detail rises on 12/12 crops and stays below the GT's own on 11/12. Registration-free
+ringing test (plateau overshoot across strong step edges): the deliverable is the most aggressive of the four render
+configs on 6/6 clips but stays INSIDE the excursion the real right eye itself carries on 6/6, with no bright-rim /
+dark-rim pairs in any zoomed crop - **not ringing**.
+
+| clip | frame-wide sharp/GT | edgeHF/GT origin / mamba / DELIV / s25 | stripeE/GT origin / mamba / DELIV / s25 |
+| --- | ---: | --- | --- |
+| 0147 | 1.778 | .562 / .559 / **.638** / .588 | 4.57 / 4.58 / **5.48** / 5.31 |
+| 0141 | 1.644 | .531 / .538 / **.615** / .580 | 4.03 / 4.15 / **5.11** / 4.82 |
+| 0128 | 1.546 | .437 / .462 / **.523** / .480 | 1.57 / 1.63 / **1.92** / 1.85 |
+| 0042 | 1.458 | .618 / .662 / **.725** / .631 | 3.12 / 3.21 / **3.72** / 3.62 |
+| 0301 | 0.565 | .246 / .257 / **.279** / .264 | 0.80 / 0.84 / **0.99** / 1.03 |
+| 0204 | 0.667 | .576 / .601 / **.682** / .652 | 1.93 / 1.98 / **2.47** / 2.46 |
+
+**Per-clip read.** 0128 strong positive on both crops (GT separates grass blades and rust mottle, origin renders green
+mush, the deliverable re-separates them and lands closest to GT; flat energy reaches exactly GT's level, 1.033).
+0204 positive (ripples and feathers restored; but 0204 has essentially NO disocclusion in the deployed window, 0.028 %,
+so its "hole" crop is a second texture crop). 0301 positive, and notably **s25 is the LEAST detailed config there**
+(0.296) - the ceiling loses detail on dense foliage. 0141 positive on texture, mixed in the hole (tightest letterforms
+but the largest artefact rise in the set). 0147 the worst trade of the twelve on texture (+0.024 edge for +0.204 flat
+and +0.616 stripe; origin+s25 is closest to GT there) but a clean positive in the hole.
+**0042 is the one durable negative:** inside the disocclusion its halo fraction is 50.9 % vs origin's 47.0 % while
+origin+s25 FALLS to 44.3 % - the only crop where the 25-step ceiling improves halo and the deliverable worsens it. It
+re-draws a handrail rim harder and thicker than the GT's. Inside a hole there is no GT to recover, so part of what it
+sharpens there is confident invention. Reviewer recommendation: SHIP, with 0042's hole halo re-checked at scale.
+
+**Selection discrepancy, now being resolved with data.** `TABLE_DEV_SELECTION.txt` prints
+`SELECTED: mstudent2_step200_ll (tie-break on sharpness-vs-GT)` and `SELECTED_STEP=200`, while step800 was shipped on
+the grounds that step800 wins dev LPIPS (0.5464 vs 0.5472) and the tie-break's precondition - a meaningful sharpness
+difference - is absent (1.316 vs 1.310, 0.5 %). The dev ladder spans only 0.0026 across six rungs, inside noise, and
+the conservative rungs step200/step400 have never been rendered or scored on the 12 TEST clips. A follow-up is
+rendering and scoring both on all 12 clips and re-measuring 0042's hole halo over every frame for all rungs.
+
+## 2026-10-01 - Rung check closed: step800 stands on 12-clip evidence, and the "one durable negative" partly reverses
+
+`outputs/rung_check_20261001/` (FINDINGS.txt is the write-up; 24 new lossless renders, 3.0 GB) and
+`scripts/distill/runs/rung_check_20261001/`. The four reused rows were RE-SCORED, not transcribed, and all land within
+5e-5 of published (origin 0.39325, mamba 0.39265, step800 0.38043, s25 0.37861); re-rendering dev clip 0040 at step200
+through the new driver reproduced the published dev-ladder render's pre-encode digest bit-for-bit.
+
+| row | 12-clip LPIPS | vs origin | vs step800 | improved | sh/GT | worst clip |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| origin, 8 steps | 0.3933 | - | +0.0128 | 0/12 | 0.936 | - |
+| shipped 5-slot Mamba | 0.3927 | -0.0006 | +0.0122 | 8/12 | 0.959 | 0259 +0.0036 |
+| mstudent2 step200 | 0.3819 | -0.0113 | +0.0015 | 11/12 | **1.076** | 0259 +0.0052 |
+| mstudent2 step400 | 0.3807 | -0.0125 | +0.0003 | 11/12 | 1.067 | 0259 +0.00004 |
+| **step800 = DELIVERABLE** | **0.3804** | **-0.0128** | 0 | **12/12** | 1.071 | 0259 -0.0019 |
+| origin + s25 (2.4x cost) | 0.3786 | -0.0146 | -0.0018 | 12/12 | 1.046 | 0259 -0.0009 |
+
+**The selection discrepancy resolves for step800, on a stronger ground than its author gave:** the literal tie-break's
+own purpose is defeated by the rung it names. On the TEST set step200 is the MOST over-sharpened row in the table
+(sh/GT 1.076, above step800's 1.071, step400's 1.067 and even s25's 1.046) - the dev ordering (step200 1.310 "gentler"
+than step800 1.316) INVERTS on test. step200 is dominated on every axis: LPIPS, over-sharpening, in-hole halo, and it
+loses a real 0259 (+0.0052). step800 also wins the primary criterion outright and is the only rung losing on no clip
+(step400's single non-improving clip is 0259 at +3.7e-5, below the 5e-5 scorer reproducibility, so "12/12 vs 11/12"
+does not discriminate).
+
+**The 0042 in-hole halo, re-measured over ALL frames on the 9 clips with >0.3 % disocclusion.** The deliverable's rise
+reproduces (+3.874 over 150 frames on the review's own window vs the +3.9 it measured on one frame), but **the claim
+that made it durable reverses**: over 150 frames origin+s25 is +0.228 ABOVE origin there (above it on 57 % of frames),
+not the improvement a single frame showed. On the 9-clip mean origin+s25 raises in-hole halo MORE than the deliverable
+(+2.94 vs +2.79) and is worse than origin on 9/9 clips vs the deliverable's 8/9; paired per frame the two are a wash.
+0042 is not even the deliverable's worst clip (0259 +5.11, 0128 +4.37, 0301 +3.54, 0125 +3.50, 0251 +3.39 all exceed
+it). So the verdict is a general tendency **of sharpening, not of this student** - the project's own 25-step ceiling
+pays more of it. Structural fact the review never stated: these holes are **1-3 px wide stripes, not areas** (on 0042
+the mask is 8783 px/frame and a one-pixel erosion leaves 112) - there is no hole interior.
+Honest caveat recorded: inside holes EVERY render exceeds the real right eye's own plateau excursion (0042: GT 0.177,
+origin 0.234, step800 0.266, s25 0.242), so the review's "stays inside what the GT carries" does not hold in holes -
+but it fails for origin too, i.e. it is the warp+inpaint, not the student.
+**If the project ever wants ~20-25 % less in-hole halo for +0.0003 LPIPS, the rung is step400, never step200** - a
+deliberate trade, not a correction (paired per frame vs step800: -0.35 / -0.48 / -0.74, lower on 65/84/97 % of frames).
+Build command in `FINDINGS.txt`; no such checkpoint was created.
+
+### Session close-out, 2026-09-29 .. 2026-10-01
+Deliverable: `_distill_injected/mamba5slot_plus_stepdistil_up3_train10clip_step800_20261001.pt`
+(md5 08cf44850b8f392efb307e3a48cd82d1). Protected predecessor re-verified unchanged
+(light_lvl0_fulldata333_v2_8k_mamba_only.pt, md5 e9c232878319d041680e7fb3be74bf10). ALT 2-clip variant kept.
+Recommendations left open for a human decision: (1) replace the cv2 mp4v writer in `utils/inpainting.py` with a
+lossless or H.264-high option - it moves measured LPIPS by -0.0100..+0.0104 per clip and hid a 2.1/255 DC offset; this
+is Unity-observable for shipped video, so it needs its own `docs/bundle-shared/D-0NN` per the project rule;
+(2) do NOT fund the 333-clip step-distillation run (more clips measurably hurt); (3) the GT-vs-render residual
+disparity of -15..-59 px means every absolute vs-GT number in this project is inflated - deltas are unaffected, but a
+registered scorer would be worth having.
