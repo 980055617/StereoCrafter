@@ -1,0 +1,205 @@
+SLOT BUDGET: what the three up_blocks.3 slots actually buy        2026-10-01, GPU 0 (RTX 4090), branch attn1_only_version
+(GPU 0 exclusive throughout: the concurrent option-(A) lane in scripts/distill/runs/beyond_distil_mamba
+ pins CUDA_VISIBLE_DEVICES=1 in every one of its chains, and nvidia-smi showed only the 13 MiB desktop
+ process on GPU 0)
+=========================================================================================================================
+
+VERDICT
+KEEP 5 SLOTS: up3 provides 63.0% of the speed win at 576x1024
+  (marginal method at the deployed resolution; 60.3 % at 1024x1792 and 59.7 % at 1920x1024, and the
+  independent per-slot attribution says 60.5 / 59.4 / 59.1 %.  The honest band: 59-63 %, i.e. every
+  estimate at every resolution is a clear majority.  The 63.0 % figure carries about +-5 points because
+  origin sits in its denominator and the origin row has the largest spread, +-0.0040 s; that is exactly
+  why the two methods differ by 2.5 points at 576x1024 and by <1 point at both hi-res settings.)
+  Option (B) would surrender almost exactly that:
+    576x1024   UNet/step -5.41 %  ->  -2.00 %
+    1024x1792  UNet/step -20.56 % ->  -8.16 %
+    1920x1024  UNet/step -21.87 % ->  -8.81 %
+  i.e. at the deployed resolution the published speed claim shrinks from -5.4 % to -2.0 %, and the
+  two head-line hi-res claims (-20.5 / -21.7 %) become -8.2 / -8.8 %.
+  CAVEAT found while cross-checking on the deployed path (section 6): the first call into the first
+  Mamba slot costs a one-time 5.07 s of kernel build+autotune per inference process, which nearly
+  cancels the ~5.35 s of UNet time the 5-slot model saves on a 151-frame clip at 576x1024.  The
+  deployed-resolution win is therefore real in UNet-MODULE time (which is what is published) but a wash
+  end-to-end per process; at 1024x1792 / 1920x1024 the per-forward saving (0.77 / 0.89 s) swamps it.
+  Quality does not enter the decision: the 2-slot Mamba alone is origin-equivalent on 12 clips
+  (0.3931 vs 0.3933 lossless, section 7), as the 5-slot is.
+
+
+1. PROVENANCE OF THE PUBLISHED -5.3 / -20.5 / -21.7 %  (a correction to the brief)
+---------------------------------------------------------------------------------
+The published numbers were NOT produced by inpainting_inference.py --module_profile_json.  They are
+whole-UNet wall-clock numbers from scripts/distill/bench2.py:
+  * scripts/distill/fulldata_tail.sh:9-13   -> 576x1024, reps 1..3  -> scripts/distill/runs/fulldata/bench_tail.txt
+  * scripts/distill/fullhd.sh:19-23 and scripts/distill/fixup_lane.sh:30-33
+                                            -> 1024x1792 + 1024x1920, reps 1..2 -> scripts/distill/runs/fulldata/bench_fullhd.txt
+  * tabulated in scripts/distill/runs/fulldata/FINAL_TABLES.txt under
+    "=== exclusive-GPU bench, UNet forward, guidance 1.01 (batch 2), 14 frames ===" (n=3 / n=2).
+--module_profile_json / --module_profile_include (inpainting_inference.py:89-90,232-242,360-377 ->
+utils/module_timing.py install_cuda_module_timer / write_cuda_module_timing, default include "*.attn1")
+is a SEPARATE per-module CUDA-event instrument; its precedent outputs are
+outputs/diagnose_0160/module_timing_*_2chunks*/module_timing.json.  Both are used here: bench2.py for
+the totals (pass A), the module timer for the per-slot breakdown (pass B), plus one deployed-path
+module-profile cross-check (section 6).
+
+2. METHODOLOGY, REPRODUCED EXACTLY
+----------------------------------
+Pass A, scripts/distill/bench2.py UNMODIFIED, driver scripts/distill/runs/slotbudget/bench_totals_v1.sh:
+  synthetic UNet-only forward (no VAE, no sampler, no I/O); batch 2 (guidance 1.01 keeps the
+  CFG-doubled batch); 14 frames; latent (H/8, W/8) + 1 mask channel; fp16; NO checkpoint loaded -
+  the published bench timed the ARCHITECTURE via env only (MAMBA_SELF_ATTN_INCLUDE / _EXCLUDE,
+  D_STATE=128, EXPAND=1, BIDIRECTIONAL_MODE=fwd, REPLACEMENT=gated_residual, INITIAL_GATE=1.0), so the
+  protected deliverable checkpoint is never touched; 3 untimed warmup forwards, then 10 timed forwards,
+  wall clock bracketed by torch.cuda.synchronize(), divided by 10 -> seconds per UNet forward = per
+  sampler step (deployed = 8 steps); peak VRAM = torch.cuda.max_memory_allocated() after
+  reset_peak_memory_stats() following warmup; exclusive GPU 0; one process per repeat; loop order
+  reps-outer / configs-inner so thermal drift cannot alias onto a config.  Resolutions are written HxW.
+Pass B, scripts/distill/runs/slotbudget/bench_slots_v2.py (copy of bench2.py's setup + timing protocol
+  plus utils.module_timing hooks), driver bench_slots_v1.sh:
+  phase 1 = the pass-A protocol with NO hooks (the quoted total), phase 2 = hooks installed on exactly
+  the five level-0 spatial slots, 1 warmup forward, events cleared, 10 timed forwards.  Module time is
+  INCLUSIVE of the slot's children: for a replaced slot that is the whole GatedResidualMambaSelfAttention
+  adapter, which is the apples-to-apples unit ("time of whatever occupies the attn1 slot").  Hook cost
+  is +0.002 s (+0.2 %) at 576x1024 and within the spread at both hi-res settings.
+Configurations (all with gate 1.0, d_state 128, expand 1, fwd-only, gated_residual):
+  origin  MAMBA_SELF_ATTN_INCLUDE=__nomatch__                        (0 slots replaced)
+  mamba5  MAMBA_SELF_ATTN_INCLUDE='down_blocks.0.*,up_blocks.3.*'    (the shipped deliverable, 5 slots)
+  mamba2  MAMBA_SELF_ATTN_INCLUDE='down_blocks.0.*'                  (2 slots, option (B)'s model)
+Per-run verification, from bench2.py's own counters (per UNet forward) and the adapter log:
+  origin: mamba_core=0  plain_attn1=16  origin_attn=0  gates=[]
+  mamba5: mamba_core=5  plain_attn1=11  origin_attn=0  gates=[1.0]   total_replaced=5
+  mamba2: mamba_core=2  plain_attn1=14  origin_attn=0  gates=[1.0]   total_replaced=2, and the adapter
+          log shows [filter-skip] on up_blocks.3.attentions.{0,1,2}.transformer_blocks.0.attn1, while
+          pass B reports class=Attention for those three slots and GatedResidualMambaSelfAttention for
+          the two down_blocks.0 slots.  origin_attn=0 everywhere -> the re-parented reference attention
+          is never evaluated, so no double-execution is inflating any row.
+
+3. PASS A - TOTAL UNet FORWARD TIME AND PEAK VRAM          (scripts/distill/runs/slotbudget/bench_totals_v1.txt)
+----------------------------------------------------------------------------------------------------------------
+res (HxW)    config   n   s/step   +-half   vs origin   peakMiB   dVRAM
+576x1024     origin   5   0.9641   0.0040     +0.00 %      7396   +0.00 %     (published: 0.961 +-0.001, 7396)
+576x1024     mamba5   5   0.9119   0.0010     -5.41 %      7404   +0.11 %     (published: 0.910, -5.3 %, +0.11 %)
+576x1024     mamba2   5   0.9448   0.0006     -2.00 %      7400   +0.05 %
+1024x1792    origin   3   3.7251   0.0139     +0.00 %     16790   +0.00 %     (published: 3.716 +-0.004, 16762)
+1024x1792    mamba5   3   2.9592   0.0018    -20.56 %     16798   +0.05 %     (published: 2.955, -20.5 %, +0.05 %)
+1024x1792    mamba2   3   3.4212   0.0022     -8.16 %     16793   +0.02 %
+1024x1920    origin   3   4.0745   0.0076     +0.00 %     17783   +0.00 %     (published: 4.055 +-0.008, 17751)
+1024x1920    mamba5   3   3.1835   0.0028    -21.87 %     17788   +0.03 %     (published: 3.174, -21.7 %, +0.05 %)
+1024x1920    mamba2   3   3.7156   0.0025     -8.81 %     17784   +0.01 %
+Spread is the half-range (max-min)/2 over repeats, the published "+-" convention.  Largest spread is
+0.0040 s (0.4 %) for origin at 576x1024; the smallest effect claimed below (the 2-slot win, 0.0193 s)
+is 4.8x that, and the up3 increment (0.0329 s) is 8x it.  No configuration failed to fit: peak
+allocated stays <= 17.8 GiB of 24 GiB everywhere.  Baseline anchoring: origin reproduces the published
+seconds to within 0.3 % at all three resolutions and the three deltas to within 0.2 points, so the
+harness is the published one.  Peak VRAM sits 28-32 MiB (0.2-0.4 %) above the published figures at
+every resolution and config, i.e. a constant offset (the published hi-res lane exported
+PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True, this lane does not); the dVRAM percentages, which is
+what the claim is about, match.
+
+4. THE NUMBER THE PROJECT NEEDS
+-------------------------------
+Marginal decomposition from the pass-A totals (option (B) IS the mamba2 row, so what it surrenders is
+literally T(mamba2) - T(mamba5)):
+res (HxW)    win5 (s)   win5 %   win2 (s)   win2 %   up3 (s)   up3 % of win5   down0 % of win5
+576x1024       0.0522   -5.41      0.0193   -2.00     0.0329        63.0 %           37.0 %
+1024x1792      0.7659  -20.56      0.3039   -8.16     0.4620        60.3 %           39.7 %
+1024x1920      0.8910  -21.87      0.3589   -8.81     0.5321        59.7 %           40.3 %
+Independent attribution from pass B (sum over slots of origin slot time - mamba slot time):
+res (HxW)    down0 saving   up3 saving   total     up3 share   (and: total UNet saving from pass A)
+576x1024       20.66 ms      31.69 ms    52.35 ms    60.5 %     52.2 ms
+1024x1792     312.90 ms     457.17 ms   770.07 ms    59.4 %    765.9 ms
+1024x1920     366.72 ms     530.79 ms   897.51 ms    59.1 %    891.0 ms
+The mamba2 row is the right speed proxy for option (B): option (B) is the 2-slot Mamba plus the
+already-trained up_blocks.3 attention TENSORS, which are weight values inside the same three Attention
+modules (identical shapes, identical class, zero architectural effect), so they cannot change its time.
+The two methods agree to 2.5 points at 576x1024 and to <1 point at both hi-res settings, and the
+attn1-slot saving accounts for 100.3 / 100.5 / 100.7 % of the measured whole-UNet saving - the win is
+entirely the five slots, with no second-order effects, so the budget is additive.
+
+5. PASS B - PER-SLOT attn1 TIME (ms per UNet forward, inclusive)   (bench_slots_v1.txt, profiles/*.json)
+--------------------------------------------------------------------------------------------------------
+576x1024    down0.a0  down0.a1   up3.a0   up3.a1   up3.a2      sum   class
+origin        20.324    20.350   20.581   20.576   20.593   102.424  Attention                    (10.6 % of the forward)
+mamba5        10.006    10.012   10.034   10.017   10.010    50.080  GatedResidualMambaSelfAttention
+mamba2        10.015    10.024   20.562   20.588   20.573    81.761  2x Mamba + 3x Attention
+1024x1792
+origin       184.536   190.177  183.207  183.350  183.382   924.653  Attention                    (24.8 % of the forward)
+mamba5        30.903    30.916   30.942   30.917   30.909   154.586  GatedResidualMambaSelfAttention
+mamba2        30.926    30.924  183.789  183.469  183.514   612.622  2x Mamba + 3x Attention
+1024x1920
+origin       212.977   219.910  209.918  210.062  210.080  1062.947  Attention                    (26.1 % of the forward)
+mamba5        33.087    33.076   33.090   33.081   33.101   165.436  GatedResidualMambaSelfAttention
+mamba2        33.100    33.070  210.518  210.175  210.122   696.985  2x Mamba + 3x Attention
+Per-slot half-spreads are <=0.04 ms at 576x1024 and <=1.42 ms at 1920x1024 (<0.7 %).  The five slots
+are interchangeable by cost: all five carry the same token count (H/8 x W/8) and 320 channels, so each
+replacement saves the same 10.5 / 154.0 / 179.5 ms and the 3:2 slot count is the whole story
+(3/5 = 60 %).  Per-slot speedup of Mamba over attention: 2.05x at 576x1024, 5.98x at 1024x1792,
+6.43x at 1920x1024 - the quadratic-vs-linear crossover, which is why the budget question only matters
+more at higher resolution, never less.
+
+6. DEPLOYED-PATH CROSS-CHECK (inpainting_inference.py --module_profile_json, the literal instrument)
+----------------------------------------------------------------------------------------------------
+clip 0301, config/0160_overfit_inference_matched.json (8 steps, guidance 1.01, 14-frame chunks
+overlap 3, 576x1024, tile_num 1, precision bf16 - note bench2.py times fp16), --max_profile_chunks=2
+(the same 2-chunk recipe as the existing precedent outputs/diagnose_0160/module_timing_*_2chunks_v2),
+--module_profile_include='*.attn1' (32 modules).  Steady state = calls 2..16, first call excluded:
+config    down0.a0  down0.a1   up3.a0   up3.a1   up3.a2     sum5
+origin      20.214    20.219   20.275   20.352   20.356   101.416 ms
+mamba5      10.712    10.740   10.733   10.739   10.732    53.655 ms
+mamba2      10.714    10.740   20.306   20.384   20.388    82.533 ms
+  -> attn1 saving per forward: down0 18.98 ms, up3 28.78 ms, total 47.76 ms
+  -> up3 = 60.3 %, down0 = 39.7 % of the deployed attn1-level saving.  The split is identical to the
+     synthetic bench (60.5 %), so nothing about bf16, tiling, the real sampler or real inputs changes it.
+NEW OBSERVATION the project should know: the deployed path has no warmup, and the FIRST call into the
+first Mamba slot costs 5068 ms (mamba5) / 4977 ms (mamba2) - a one-time Mamba2 kernel build+autotune
+per inference process.  Clip 0301 is 151 frames = ~14 chunks x 8 steps = ~112 UNet forwards, so the
+5-slot deliverable saves ~112 x 47.76 ms = 5.35 s of UNet time per clip against a 5.07 s one-time cost: at
+576x1024 the two nearly cancel, which is exactly why end-to-end wall clock at this resolution "cannot
+decide it" (origin 165-195 s vs 5-slot 173-201 s).  For the 2-slot the arithmetic is worse: ~112 x
+19 ms = 2.1 s saved against the same ~5.0 s build = net slower per process.  At 1024x1792 / 1920x1024
+the per-forward saving (0.77 / 0.89 s) swamps the one-time cost completely.
+
+7. QUALITY: THE 2-SLOT MAMBA ALONE, 12 CLIPS, LOSSLESS   (SCORES_DOWN0_12CLIP.txt)
+---------------------------------------------------------------------------------
+scripts/distill/runs/skeptic1/infer_ll_hook.py via the proven stack driver (copy: qual_driver_v1.sh,
+only OUT changed), SK_UNET = the protected deliverable, MAMBA_SELF_ATTN_INCLUDE='down_blocks.0.*',
+gate 1.0, 8 steps, guidance 1.01, LOSSLESS_SBS=1 (FFV1 .mkv), scored with
+scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py.
+clip    origin   2slot    delta    source
+0042    0.4279  0.4311  +0.0033   new
+0052    0.4467  0.4467  +0.0000   prior skeptic1 run (same config, reused)
+0125    0.4799  0.4782  -0.0017   new
+0128    0.4055  0.4061  +0.0006   new
+0141    0.4813  0.4817  +0.0004   new
+0147    0.5269  0.5269  -0.0001   prior skeptic1 run
+0170    0.2517  0.2504  -0.0013   new
+0204    0.2053  0.2042  -0.0011   prior skeptic1 run
+0225    0.2750  0.2752  +0.0002   new
+0251    0.3460  0.3464  +0.0004   new
+0259    0.4376  0.4390  +0.0014   new
+0301    0.4351  0.4310  -0.0041   prior skeptic1 run
+MEAN    0.3933  0.3931  -0.0002   improved 5/12
+origin reproduces the established 12-clip lossless reference 0.3933 exactly, and the 4-clip subset
+reproduces 0.4035 / 0.4022 exactly, so the lane is the established one.  leftPSNR is identical between
+origin and 2-slot on every clip (the lossless-writer invariant).  The 2-slot Mamba alone is therefore
+origin-equivalent on 12 clips (-0.0002, inside the +-0.001 seed floor), i.e. its own baseline is as
+good as the 5-slot's; for the 5-slot only the 4-clip lossless value is on record (0.4001 vs 0.4035).
+Quality does NOT discriminate between the two slot budgets - only speed does.
+
+8. WHAT THIS MEANS FOR THE OPEN DECISION
+----------------------------------------
+(B) is free (0 GPU-hours, already-trained tensors) and keeps the quality win, but it surrenders 60-63 %
+of the published speed win at every resolution, and the deployed-resolution claim collapses from
+-5.4 % to -2.0 % of UNet time.  (A) keeps all five slots and must re-distil the step-distillation
+objective onto the Mamba parameters, 13-35 GPU-hours, with the Mamba-side oracle already showing the
+headroom is there.  The profile says the three up_blocks.3 slots are not a rounding error: they are the
+larger half of the entire speed story, and they get MORE important with resolution, which is the
+direction the project's published hi-res claims point.
+
+OUTPUT FOLDERS (nothing overwritten; previous runs untouched)
+  scripts/distill/runs/slotbudget/                      all scripts, raw RESULT lines, tables, logs
+  scripts/distill/runs/slotbudget/profiles/             30 module_timing JSONs (27 synthetic + 3 deployed)
+  outputs/slotbudget_modprofile/0301_{origin,mamba5,mamba2}/   deployed profile runs (2 chunks, mp4v
+      byproduct videos - NOT usable for quality numbers, see measurement rule (4))
+  outputs/slotbudget_down0_ll/clips/<clip>_mamba_down0_ll/     8 new lossless FFV1 2-slot clips
+  (reused, read-only: outputs/beyond4_lossless/clips/*_origin_ll, outputs/skeptic1_stack/clips/*_mamba_down0_ll)

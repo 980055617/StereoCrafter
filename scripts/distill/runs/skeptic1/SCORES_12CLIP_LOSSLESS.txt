@@ -1,0 +1,85 @@
+clip/config                           offset  leftPSNR    LPIPS    sharp    rPSNR   nf
+--- 0042 GT ---                                          0.0000   0.0070
+0042_origin_ll                     (-12,-12)     40.02   0.4279   0.0088   17.337   38
+ROW clip=0042 tag=0042_origin_ll dy=-12 dx=-12 leftPSNR=40.0232 lpips=0.427856 sharp=0.008799 gtSharp=0.007023 rightPSNR=17.3374 n=38 path=outputs/beyond4_lossless/clips/0042_origin_ll/0042_inpainting_results_sbs.mkv
+0042_s25_ll                        (-12,-12)     40.02   0.4175   0.0097   17.303   38
+ROW clip=0042 tag=0042_s25_ll dy=-12 dx=-12 leftPSNR=40.0232 lpips=0.417468 sharp=0.009738 gtSharp=0.007023 rightPSNR=17.3033 n=38 path=outputs/skeptic1_stack/clips/0042_s25_ll/0042_inpainting_results_sbs.mkv
+0042_student_ll                    (-12,-12)     40.02   0.4184   0.0096   17.318   38
+ROW clip=0042 tag=0042_student_ll dy=-12 dx=-12 leftPSNR=40.0232 lpips=0.418403 sharp=0.009584 gtSharp=0.007023 rightPSNR=17.3175 n=38 path=outputs/skeptic1_stack/clips/0042_student_ll/0042_inpainting_results_sbs.mkv
+--- 0052 GT ---                                          0.0000   0.0099
+0052_origin_ll                     (-12,-12)     40.70   0.4467   0.0130   13.203   38
+ROW clip=0052 tag=0052_origin_ll dy=-12 dx=-12 leftPSNR=40.6982 lpips=0.446689 sharp=0.012979 gtSharp=0.009881 rightPSNR=13.2028 n=38 path=outputs/beyond4_lossless/clips/0052_origin_ll/0052_inpainting_results_sbs.mkv
+0052_s25_ll                        (-12,-12)     40.70   0.4384   0.0137   13.177   38
+ROW clip=0052 tag=0052_s25_ll dy=-12 dx=-12 leftPSNR=40.6982 lpips=0.438371 sharp=0.013702 gtSharp=0.009881 rightPSNR=13.1772 n=38 path=outputs/beyond4_lossless/clips/0052_s25_ll/0052_inpainting_results_sbs.mkv
+0052_student_ll                    (-12,-12)     40.70   0.4397   0.0135   13.205   38
+ROW clip=0052 tag=0052_student_ll dy=-12 dx=-12 leftPSNR=40.6982 lpips=0.439695 sharp=0.013494 gtSharp=0.009881 rightPSNR=13.2051 n=38 path=outputs/skeptic1_stack/clips/0052_student_ll/0052_inpainting_results_sbs.mkv
+--- 0125 GT ---                                          0.0000   0.0114
+0125_origin_ll                     (-12,-12)     40.46   0.4799   0.0094   16.602   38
+ROW clip=0125 tag=0125_origin_ll dy=-12 dx=-12 leftPSNR=40.4643 lpips=0.479943 sharp=0.009408 gtSharp=0.011358 rightPSNR=16.6020 n=38 path=outputs/beyond4_lossless/clips/0125_origin_ll/0125_inpainting_results_sbs.mkv
+0125_s25_ll                        (-12,-12)     40.46   0.4469   0.0107   16.537   38
+ROW clip=0125 tag=0125_s25_ll dy=-12 dx=-12 leftPSNR=40.4643 lpips=0.446941 sharp=0.010749 gtSharp=0.011358 rightPSNR=16.5374 n=38 path=outputs/skeptic1_stack/clips/0125_s25_ll/0125_inpainting_results_sbs.mkv
+0125_student_ll                    (-12,-12)     40.46   0.4551   0.0105   16.562   38
+ROW clip=0125 tag=0125_student_ll dy=-12 dx=-12 leftPSNR=40.4643 lpips=0.455061 sharp=0.010507 gtSharp=0.011358 rightPSNR=16.5624 n=38 path=outputs/skeptic1_stack/clips/0125_student_ll/0125_inpainting_results_sbs.mkv
+--- 0128 GT ---                                          0.0000   0.0105
+0128_origin_ll                     (-12,-12)     39.75   0.4055   0.0135   18.450   38
+ROW clip=0128 tag=0128_origin_ll dy=-12 dx=-12 leftPSNR=39.7484 lpips=0.405492 sharp=0.013506 gtSharp=0.010493 rightPSNR=18.4504 n=38 path=outputs/beyond4_lossless/clips/0128_origin_ll/0128_inpainting_results_sbs.mkv
+0128_s25_ll                        (-12,-12)     39.75   0.3876   0.0157   18.223   38
+ROW clip=0128 tag=0128_s25_ll dy=-12 dx=-12 leftPSNR=39.7484 lpips=0.387646 sharp=0.015669 gtSharp=0.010493 rightPSNR=18.2234 n=38 path=outputs/skeptic1_stack/clips/0128_s25_ll/0128_inpainting_results_sbs.mkv
+0128_student_ll                    (-12,-12)     39.75   0.3897   0.0152   18.285   38
+ROW clip=0128 tag=0128_student_ll dy=-12 dx=-12 leftPSNR=39.7484 lpips=0.389705 sharp=0.015223 gtSharp=0.010493 rightPSNR=18.2848 n=38 path=outputs/skeptic1_stack/clips/0128_student_ll/0128_inpainting_results_sbs.mkv
+--- 0141 GT ---                                          0.0000   0.0036
+0141_origin_ll                     (-12,-12)     40.09   0.4813   0.0049   15.569   38
+ROW clip=0141 tag=0141_origin_ll dy=-12 dx=-12 leftPSNR=40.0934 lpips=0.481324 sharp=0.004912 gtSharp=0.003613 rightPSNR=15.5686 n=38 path=outputs/beyond4_lossless/clips/0141_origin_ll/0141_inpainting_results_sbs.mkv
+0141_s25_ll                        (-12,-12)     40.09   0.4621   0.0057   15.543   38
+ROW clip=0141 tag=0141_s25_ll dy=-12 dx=-12 leftPSNR=40.0934 lpips=0.462095 sharp=0.005664 gtSharp=0.003613 rightPSNR=15.5434 n=38 path=outputs/skeptic1_stack/clips/0141_s25_ll/0141_inpainting_results_sbs.mkv
+0141_student_ll                    (-12,-12)     40.09   0.4664   0.0055   15.540   38
+ROW clip=0141 tag=0141_student_ll dy=-12 dx=-12 leftPSNR=40.0934 lpips=0.466392 sharp=0.005523 gtSharp=0.003613 rightPSNR=15.5401 n=38 path=outputs/skeptic1_stack/clips/0141_student_ll/0141_inpainting_results_sbs.mkv
+--- 0147 GT ---                                          0.0000   0.0039
+0147_origin_ll                     (-12,-12)     40.40   0.5269   0.0062   15.458   38
+ROW clip=0147 tag=0147_origin_ll dy=-12 dx=-12 leftPSNR=40.4039 lpips=0.526938 sharp=0.006179 gtSharp=0.003901 rightPSNR=15.4580 n=38 path=outputs/beyond4_lossless/clips/0147_origin_ll/0147_inpainting_results_sbs.mkv
+0147_s25_ll                        (-12,-12)     40.40   0.5220   0.0067   15.464   38
+ROW clip=0147 tag=0147_s25_ll dy=-12 dx=-12 leftPSNR=40.4039 lpips=0.522009 sharp=0.006690 gtSharp=0.003901 rightPSNR=15.4636 n=38 path=outputs/beyond4_lossless/clips/0147_s25_ll/0147_inpainting_results_sbs.mkv
+0147_student_ll                    (-12,-12)     40.40   0.5239   0.0066   15.452   38
+ROW clip=0147 tag=0147_student_ll dy=-12 dx=-12 leftPSNR=40.4039 lpips=0.523853 sharp=0.006649 gtSharp=0.003901 rightPSNR=15.4525 n=38 path=outputs/skeptic1_stack/clips/0147_student_ll/0147_inpainting_results_sbs.mkv
+--- 0170 GT ---                                          0.0000   0.0323
+0170_origin_ll                       (-28,0)     39.79   0.2517   0.0164   17.168   38
+ROW clip=0170 tag=0170_origin_ll dy=-28 dx=0 leftPSNR=39.7902 lpips=0.251735 sharp=0.016394 gtSharp=0.032309 rightPSNR=17.1683 n=38 path=outputs/beyond4_lossless/clips/0170_origin_ll/0170_inpainting_results_sbs.mkv
+0170_s25_ll                          (-28,0)     39.79   0.2450   0.0175   17.046   38
+ROW clip=0170 tag=0170_s25_ll dy=-28 dx=0 leftPSNR=39.7902 lpips=0.244962 sharp=0.017470 gtSharp=0.032309 rightPSNR=17.0464 n=38 path=outputs/skeptic1_stack/clips/0170_s25_ll/0170_inpainting_results_sbs.mkv
+0170_student_ll                      (-28,0)     39.79   0.2492   0.0174   17.048   38
+ROW clip=0170 tag=0170_student_ll dy=-28 dx=0 leftPSNR=39.7902 lpips=0.249160 sharp=0.017355 gtSharp=0.032309 rightPSNR=17.0477 n=38 path=outputs/skeptic1_stack/clips/0170_student_ll/0170_inpainting_results_sbs.mkv
+--- 0204 GT ---                                          0.0000   0.0116
+0204_origin_ll                       (-28,0)     41.16   0.2053   0.0065   19.896   38
+ROW clip=0204 tag=0204_origin_ll dy=-28 dx=0 leftPSNR=41.1620 lpips=0.205310 sharp=0.006527 gtSharp=0.011577 rightPSNR=19.8959 n=38 path=outputs/beyond4_lossless/clips/0204_origin_ll/0204_inpainting_results_sbs.mkv
+0204_s25_ll                          (-28,0)     41.16   0.1897   0.0076   19.548   38
+ROW clip=0204 tag=0204_s25_ll dy=-28 dx=0 leftPSNR=41.1620 lpips=0.189684 sharp=0.007608 gtSharp=0.011577 rightPSNR=19.5481 n=38 path=outputs/beyond4_lossless/clips/0204_s25_ll/0204_inpainting_results_sbs.mkv
+0204_student_ll                      (-28,0)     41.16   0.1883   0.0076   19.529   38
+ROW clip=0204 tag=0204_student_ll dy=-28 dx=0 leftPSNR=41.1620 lpips=0.188289 sharp=0.007599 gtSharp=0.011577 rightPSNR=19.5294 n=38 path=outputs/skeptic1_stack/clips/0204_student_ll/0204_inpainting_results_sbs.mkv
+--- 0225 GT ---                                          0.0000   0.0132
+0225_origin_ll                       (-28,0)     40.93   0.2750   0.0118   16.068   38
+ROW clip=0225 tag=0225_origin_ll dy=-28 dx=0 leftPSNR=40.9278 lpips=0.275038 sharp=0.011770 gtSharp=0.013156 rightPSNR=16.0680 n=38 path=outputs/beyond4_lossless/clips/0225_origin_ll/0225_inpainting_results_sbs.mkv
+0225_s25_ll                          (-28,0)     40.93   0.2603   0.0135   15.867   38
+ROW clip=0225 tag=0225_s25_ll dy=-28 dx=0 leftPSNR=40.9278 lpips=0.260343 sharp=0.013474 gtSharp=0.013156 rightPSNR=15.8669 n=38 path=outputs/skeptic1_stack/clips/0225_s25_ll/0225_inpainting_results_sbs.mkv
+0225_student_ll                      (-28,0)     40.93   0.2587   0.0135   15.864   38
+ROW clip=0225 tag=0225_student_ll dy=-28 dx=0 leftPSNR=40.9278 lpips=0.258703 sharp=0.013533 gtSharp=0.013156 rightPSNR=15.8637 n=38 path=outputs/skeptic1_stack/clips/0225_student_ll/0225_inpainting_results_sbs.mkv
+--- 0251 GT ---                                          0.0000   0.0173
+0251_origin_ll                       (-28,0)     41.23   0.3460   0.0083   18.580   38
+ROW clip=0251 tag=0251_origin_ll dy=-28 dx=0 leftPSNR=41.2340 lpips=0.346040 sharp=0.008295 gtSharp=0.017307 rightPSNR=18.5801 n=38 path=outputs/beyond4_lossless/clips/0251_origin_ll/0251_inpainting_results_sbs.mkv
+0251_s25_ll                          (-28,0)     41.23   0.3385   0.0093   18.503   38
+ROW clip=0251 tag=0251_s25_ll dy=-28 dx=0 leftPSNR=41.2340 lpips=0.338475 sharp=0.009320 gtSharp=0.017307 rightPSNR=18.5031 n=38 path=outputs/skeptic1_stack/clips/0251_s25_ll/0251_inpainting_results_sbs.mkv
+0251_student_ll                      (-28,0)     41.23   0.3376   0.0091   18.574   38
+ROW clip=0251 tag=0251_student_ll dy=-28 dx=0 leftPSNR=41.2340 lpips=0.337584 sharp=0.009073 gtSharp=0.017307 rightPSNR=18.5743 n=38 path=outputs/skeptic1_stack/clips/0251_student_ll/0251_inpainting_results_sbs.mkv
+--- 0259 GT ---                                          0.0000   0.0450
+0259_origin_ll                       (-28,0)     40.72   0.4376   0.0312   13.302   38
+ROW clip=0259 tag=0259_origin_ll dy=-28 dx=0 leftPSNR=40.7219 lpips=0.437586 sharp=0.031178 gtSharp=0.044964 rightPSNR=13.3021 n=38 path=outputs/beyond4_lossless/clips/0259_origin_ll/0259_inpainting_results_sbs.mkv
+0259_s25_ll                          (-28,0)     40.72   0.4367   0.0319   13.319   38
+ROW clip=0259 tag=0259_s25_ll dy=-28 dx=0 leftPSNR=40.7219 lpips=0.436699 sharp=0.031920 gtSharp=0.044964 rightPSNR=13.3189 n=38 path=outputs/skeptic1_stack/clips/0259_s25_ll/0259_inpainting_results_sbs.mkv
+0259_student_ll                      (-28,0)     40.72   0.4346   0.0316   13.320   38
+ROW clip=0259 tag=0259_student_ll dy=-28 dx=0 leftPSNR=40.7219 lpips=0.434570 sharp=0.031593 gtSharp=0.044964 rightPSNR=13.3196 n=38 path=outputs/skeptic1_stack/clips/0259_student_ll/0259_inpainting_results_sbs.mkv
+--- 0301 GT ---                                          0.0000   0.0505
+0301_origin_ll                       (-28,0)     40.25   0.4351   0.0235   15.467   38
+ROW clip=0301 tag=0301_origin_ll dy=-28 dx=0 leftPSNR=40.2464 lpips=0.435095 sharp=0.023528 gtSharp=0.050529 rightPSNR=15.4667 n=38 path=outputs/beyond4_lossless/clips/0301_origin_ll/0301_inpainting_results_sbs.mkv
+0301_s25_ll                          (-28,0)     40.25   0.3986   0.0295   15.013   38
+ROW clip=0301 tag=0301_s25_ll dy=-28 dx=0 leftPSNR=40.2464 lpips=0.398593 sharp=0.029482 gtSharp=0.050529 rightPSNR=15.0130 n=38 path=outputs/beyond4_lossless/clips/0301_s25_ll/0301_inpainting_results_sbs.mkv
+0301_student_ll                      (-28,0)     40.25   0.3982   0.0291   15.056   38
+ROW clip=0301 tag=0301_student_ll dy=-28 dx=0 leftPSNR=40.2464 lpips=0.398193 sharp=0.029051 gtSharp=0.050529 rightPSNR=15.0558 n=38 path=outputs/skeptic1_stack/clips/0301_student_ll/0301_inpainting_results_sbs.mkv

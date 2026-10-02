@@ -1,0 +1,271 @@
+{
+  "schema": "master_project.stereocrafter.cuda_module_timing.v1",
+  "patterns": [
+    "down_blocks.0.attentions.0.transformer_blocks.0.attn1",
+    "down_blocks.0.attentions.1.transformer_blocks.0.attn1",
+    "up_blocks.3.attentions.0.transformer_blocks.0.attn1",
+    "up_blocks.3.attentions.1.transformer_blocks.0.attn1",
+    "up_blocks.3.attentions.2.transformer_blocks.0.attn1"
+  ],
+  "metadata": {
+    "label": "mamba2_h1024w1920_r1",
+    "include": "down_blocks.0.*",
+    "exclude": "__nomatch__",
+    "mode": "gated_residual",
+    "H": 1024,
+    "W": 1920,
+    "batch": 2,
+    "frames": 14,
+    "dstate": "128",
+    "expand": "1",
+    "bidir": "fwd",
+    "ckpt": null,
+    "gate": "1.0",
+    "timedForwards": 10,
+    "warmupForwards": 3,
+    "secCleanNoHooks": 3.717648482322693,
+    "secHooked": 3.7169784545898437,
+    "peakMiBAllocated": 17784,
+    "perFwdCalls": {
+      "origin_attn": 0,
+      "mamba_core": 2,
+      "plain_attn1": 14
+    },
+    "slotClasses": {
+      "down_blocks.0.attentions.0.transformer_blocks.0.attn1": "GatedResidualMambaSelfAttention",
+      "down_blocks.0.attentions.1.transformer_blocks.0.attn1": "GatedResidualMambaSelfAttention",
+      "up_blocks.3.attentions.0.transformer_blocks.0.attn1": "Attention",
+      "up_blocks.3.attentions.1.transformer_blocks.0.attn1": "Attention",
+      "up_blocks.3.attentions.2.transformer_blocks.0.attn1": "Attention"
+    },
+    "moduleTimeSemantics": "inclusive forward time of the module named (CUDA events, pre/post forward hook)"
+  },
+  "totalProfiledMs": 6969.296443939209,
+  "modules": [
+    {
+      "name": "up_blocks.3.attentions.0.transformer_blocks.0.attn1",
+      "class": "Attention",
+      "calls": 10,
+      "totalMs": 2104.106918334961,
+      "avgMs": 210.4106918334961,
+      "maxMs": 212.52517700195312,
+      "firstMs": 209.56813049316406,
+      "lastMs": 210.1780548095703,
+      "timingsMs": [
+        209.56813049316406,
+        209.5413818359375,
+        212.22723388671875,
+        211.28294372558594,
+        212.52517700195312,
+        209.71212768554688,
+        209.72543334960938,
+        209.68345642089844,
+        209.66297912597656,
+        210.1780548095703
+      ],
+      "inputShapes": [
+        [
+          [
+            28,
+            30720,
+            320
+          ]
+        ],
+        [
+          [
+            28,
+            30720,
+            320
+          ]
+        ],
+        [
+          [
+            28,
+            30720,
+            320
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "up_blocks.3.attentions.1.transformer_blocks.0.attn1",
+      "class": "Attention",
+      "calls": 10,
+      "totalMs": 2102.1708984375,
+      "avgMs": 210.21708984375,
+      "maxMs": 210.59890747070312,
+      "firstMs": 210.59584045410156,
+      "lastMs": 210.59890747070312,
+      "timingsMs": [
+        210.59584045410156,
+        210.59071350097656,
+        210.2118377685547,
+        210.2118377685547,
+        209.97427368164062,
+        209.94969177246094,
+        209.88723754882812,
+        209.86880493164062,
+        210.28175354003906,
+        210.59890747070312
+      ],
+      "inputShapes": [
+        [
+          [
+            28,
+            30720,
+            320
+          ]
+        ],
+        [
+          [
+            28,
+            30720,
+            320
+          ]
+        ],
+        [
+          [
+            28,
+            30720,
+            320
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "up_blocks.3.attentions.2.transformer_blocks.0.attn1",
+      "class": "Attention",
+      "calls": 10,
+      "totalMs": 2101.3729705810547,
+      "avgMs": 210.13729705810547,
+      "maxMs": 210.63372802734375,
+      "firstMs": 210.63372802734375,
+      "lastMs": 209.87289428710938,
+      "timingsMs": [
+        210.63372802734375,
+        210.0930633544922,
+        210.24050903320312,
+        210.24774169921875,
+        210.0254669189453,
+        209.93125915527344,
+        209.8851776123047,
+        210.20364379882812,
+        210.23948669433594,
+        209.87289428710938
+      ],
+      "inputShapes": [
+        [
+          [
+            28,
+            30720,
+            320
+          ]
+        ],
+        [
+          [
+            28,
+            30720,
+            320
+          ]
+        ],
+        [
+          [
+            28,
+            30720,
+            320
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "down_blocks.0.attentions.0.transformer_blocks.0.attn1",
+      "class": "GatedResidualMambaSelfAttention",
+      "calls": 10,
+      "totalMs": 330.9763488769531,
+      "avgMs": 33.097634887695314,
+      "maxMs": 33.1448974609375,
+      "firstMs": 33.07414245605469,
+      "lastMs": 33.09900665283203,
+      "timingsMs": [
+        33.07414245605469,
+        33.098976135253906,
+        33.11420822143555,
+        33.08393478393555,
+        33.111328125,
+        33.1448974609375,
+        33.102046966552734,
+        33.072608947753906,
+        33.075199127197266,
+        33.09900665283203
+      ],
+      "inputShapes": [
+        [
+          [
+            28,
+            30720,
+            320
+          ]
+        ],
+        [
+          [
+            28,
+            30720,
+            320
+          ]
+        ],
+        [
+          [
+            28,
+            30720,
+            320
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "down_blocks.0.attentions.1.transformer_blocks.0.attn1",
+      "class": "GatedResidualMambaSelfAttention",
+      "calls": 10,
+      "totalMs": 330.66930770874023,
+      "avgMs": 33.06693077087402,
+      "maxMs": 33.098846435546875,
+      "firstMs": 33.098846435546875,
+      "lastMs": 33.071807861328125,
+      "timingsMs": [
+        33.098846435546875,
+        33.062110900878906,
+        33.08787155151367,
+        33.0885124206543,
+        33.05120086669922,
+        33.04518508911133,
+        33.04655838012695,
+        33.06505584716797,
+        33.05215835571289,
+        33.071807861328125
+      ],
+      "inputShapes": [
+        [
+          [
+            28,
+            30720,
+            320
+          ]
+        ],
+        [
+          [
+            28,
+            30720,
+            320
+          ]
+        ],
+        [
+          [
+            28,
+            30720,
+            320
+          ]
+        ]
+      ]
+    }
+  ]
+}

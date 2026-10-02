@@ -1,0 +1,98 @@
+DISOCCLUSION SURVEY -- all 12 TEST clips, deployed 576x1024 window
+=================================================================
+maskFrac  = fraction of the deployed window covered by the splatting video's occlusion-mask
+            quadrant (bottom-left), in RENDER coordinates, averaged over every 4th valid frame.
+            reviewlib.splat_mask asserts the mask window == the GT window, which is also the
+            check that this file's extension of R.OFFSETS to 12 clips is correct.
+gtShift   = integer (ddy,ddx) that registers the REAL right eye to the render grid, estimated
+            against the model's own WARPED right eye (BR quadrant, config-independent), holes
+            excluded -- build_review.py's recipe verbatim.
+drift     = the same estimate repeated on 10 evenly spaced frames.
+
+--- 0042 ---  nvalid=150  window(t0,l0)=(800,576)  quadrant 2200x2200  scorer offset (-12, -12)
+    maskFrac mean=1.4958%  median=1.4223%  max=2.0889% (frame 32)  n_sampled=34
+    gtShift at densest frame = (-1,-36)   PSNR 16.51 -> 23.40 dB
+    drift over 10 frames: ddx -39..-33 (median -36), ddy -1..0
+    drift detail: [(8, -1, -36, 21.8), (23, -1, -36, 22.63), (38, -1, -36, 23.47), (52, -1, -37, 23.58), (67, -1, -38, 23.74), (82, -1, -39, 23.96), (97, -1, -35, 24.14), (111, 0, -34, 24.83), (126, -1, -33, 24.96), (141, -1, -33, 25.63)]
+    ANALYSE: YES
+--- 0052 ---  nvalid=150  window(t0,l0)=(800,576)  quadrant 2200x2200  scorer offset (-12, -12)
+    maskFrac mean=1.0247%  median=1.0004%  max=1.3550% (frame 140)  n_sampled=34
+    gtShift at densest frame = (-1,-42)   PSNR 13.43 -> 18.68 dB
+    drift over 10 frames: ddx -42..-39 (median -40), ddy -1..0
+    drift detail: [(8, 0, -40, 16.96), (23, -1, -39, 17.54), (38, 0, -41, 17.19), (52, -1, -39, 17.5), (67, -1, -40, 17.75), (82, 0, -39, 17.58), (97, -1, -40, 18.22), (111, 0, -41, 17.88), (126, 0, -41, 18.15), (141, -1, -42, 18.78)]
+    ANALYSE: YES
+--- 0125 ---  nvalid=150  window(t0,l0)=(800,576)  quadrant 2200x2200  scorer offset (-12, -12)
+    maskFrac mean=1.2018%  median=1.1841%  max=2.7115% (frame 120)  n_sampled=34
+    gtShift at densest frame = (-1,-28)   PSNR 13.50 -> 16.68 dB
+    drift over 10 frames: ddx -126..-27 (median -33), ddy -1..12
+    drift detail: [(8, 0, -33, 23.6), (23, 0, -32, 21.69), (38, 1, -32, 22.19), (52, 1, -33, 22.08), (67, 12, -109, 23.81), (82, 8, -126, 19.23), (97, -1, -36, 18.07), (111, 0, -33, 16.92), (126, 0, -27, 16.73), (141, 0, -27, 20.13)]
+    ANALYSE: YES
+--- 0128 ---  nvalid=150  window(t0,l0)=(800,576)  quadrant 2200x2200  scorer offset (-12, -12)
+    maskFrac mean=0.5819%  median=0.3242%  max=1.0739% (frame 116)  n_sampled=34
+    gtShift at densest frame = (-1,-34)   PSNR 18.37 -> 21.19 dB
+    drift over 10 frames: ddx -34..-30 (median -31), ddy -1..0
+    drift detail: [(8, -1, -31, 21.98), (23, -1, -31, 21.83), (38, 0, -31, 21.73), (52, 0, -31, 21.87), (67, 0, -31, 21.82), (82, 0, -31, 21.63), (97, 0, -30, 21.15), (111, -1, -34, 21.22), (126, 0, -33, 21.04), (141, 0, -34, 20.62)]
+    ANALYSE: YES
+--- 0141 ---  nvalid=151  window(t0,l0)=(800,576)  quadrant 2200x2200  scorer offset (-12, -12)
+    maskFrac mean=2.9185%  median=3.0134%  max=3.8805% (frame 72)  n_sampled=34
+    gtShift at densest frame = (0,-59)   PSNR 16.00 -> 22.58 dB
+    drift over 10 frames: ddx -67..-59 (median -60), ddy 0..0
+    drift detail: [(8, 0, -67, 22.44), (23, 0, -66, 22.15), (38, 0, -66, 22.31), (53, 0, -64, 22.42), (68, 0, -59, 22.59), (82, 0, -59, 22.51), (97, 0, -59, 22.38), (112, 0, -60, 22.41), (127, 0, -60, 22.44), (142, 0, -60, 22.37)]
+    ANALYSE: YES
+--- 0147 ---  nvalid=150  window(t0,l0)=(800,576)  quadrant 2200x2200  scorer offset (-12, -12)
+    maskFrac mean=1.5857%  median=1.5543%  max=1.8717% (frame 8)  n_sampled=34
+    gtShift at densest frame = (-1,-41)   PSNR 16.06 -> 19.33 dB
+    drift over 10 frames: ddx -46..-41 (median -44), ddy -1..0
+    drift detail: [(8, -1, -41, 19.33), (23, 0, -42, 19.38), (38, 0, -43, 19.34), (52, 0, -43, 19.26), (67, 0, -44, 19.24), (82, 0, -44, 19.26), (97, 0, -45, 19.22), (111, 0, -45, 19.21), (126, 0, -46, 19.19), (141, 0, -45, 19.38)]
+    ANALYSE: YES
+--- 0170 ---  nvalid=151  window(t0,l0)=(224,448)  quadrant 1080x1920  scorer offset (-28, 0)
+    maskFrac mean=0.0553%  median=0.0587%  max=0.1697% (frame 16)  n_sampled=34
+    gtShift at densest frame = (0,-9)   PSNR 16.47 -> 22.32 dB
+    drift over 10 frames: ddx -12..-6 (median -9), ddy -2..0
+    drift detail: [(8, -1, -11, 23.52), (23, -1, -8, 23.03), (38, -2, -9, 23.64), (53, -1, -12, 24.61), (68, -1, -11, 23.91), (82, 0, -9, 23.78), (97, 0, -9, 23.6), (112, -1, -8, 22.63), (127, -1, -6, 21.51), (142, 0, -6, 21.28)]
+    ANALYSE: no (mean mask <= 0.3%)
+--- 0204 ---  nvalid=151  window(t0,l0)=(224,448)  quadrant 1080x1920  scorer offset (-28, 0)
+    maskFrac mean=0.0279%  median=0.0280%  max=0.0332% (frame 64)  n_sampled=34
+    gtShift at densest frame = (-1,-17)   PSNR 19.04 -> 23.56 dB
+    drift over 10 frames: ddx -18..-16 (median -17), ddy -1..-1
+    drift detail: [(8, -1, -17, 23.15), (23, -1, -17, 24.14), (38, -1, -17, 23.29), (53, -1, -18, 24.15), (68, -1, -18, 24.07), (82, -1, -17, 23.76), (97, -1, -17, 24.51), (112, -1, -16, 23.88), (127, -1, -16, 24.2), (142, -1, -16, 24.71)]
+    ANALYSE: no (mean mask <= 0.3%)
+--- 0225 ---  nvalid=150  window(t0,l0)=(224,448)  quadrant 1080x1920  scorer offset (-28, 0)
+    maskFrac mean=0.0000%  median=0.0000%  max=0.0000% (frame 8)  n_sampled=34
+    gtShift at densest frame = (-1,-13)   PSNR 15.58 -> 19.39 dB
+    drift over 10 frames: ddx -16..-13 (median -16), ddy -1..0
+    drift detail: [(8, -1, -13, 19.39), (23, -1, -13, 19.94), (38, -1, -13, 19.56), (52, 0, -14, 18.82), (67, -1, -16, 18.97), (82, -1, -16, 19.41), (97, -1, -16, 18.91), (111, -1, -16, 18.97), (126, -1, -16, 19.22), (141, -1, -16, 19.28)]
+    ANALYSE: no (mean mask <= 0.3%)
+--- 0251 ---  nvalid=150  window(t0,l0)=(224,448)  quadrant 1080x1920  scorer offset (-28, 0)
+    maskFrac mean=1.7454%  median=1.4758%  max=3.8847% (frame 52)  n_sampled=34
+    gtShift at densest frame = (-1,-14)   PSNR 17.51 -> 22.97 dB
+    drift over 10 frames: ddx -19..-14 (median -19), ddy -1..0
+    drift detail: [(8, 0, -19, 26.52), (23, -1, -19, 26.77), (38, -1, -19, 27.02), (52, -1, -14, 22.97), (67, -1, -19, 27.18), (82, -1, -19, 26.95), (97, -1, -19, 25.64), (111, -1, -19, 28.1), (126, -1, -19, 27.08), (141, -1, -19, 27.34)]
+    ANALYSE: YES
+--- 0259 ---  nvalid=151  window(t0,l0)=(224,448)  quadrant 1080x1920  scorer offset (-28, 0)
+    maskFrac mean=1.2935%  median=1.2647%  max=2.1206% (frame 92)  n_sampled=34
+    gtShift at densest frame = (0,-18)   PSNR 12.72 -> 18.42 dB
+    drift over 10 frames: ddx -18..-17 (median -17), ddy -1..0
+    drift detail: [(8, 0, -17, 18.49), (23, 0, -17, 18.19), (38, 0, -17, 18.01), (53, 0, -17, 18.5), (68, 0, -18, 18.15), (82, 0, -18, 18.78), (97, -1, -18, 19.44), (112, 0, -17, 18.56), (127, 0, -17, 18.61), (142, 0, -17, 18.4)]
+    ANALYSE: YES
+--- 0301 ---  nvalid=151  window(t0,l0)=(224,448)  quadrant 1080x1920  scorer offset (-28, 0)
+    maskFrac mean=1.5189%  median=1.1171%  max=3.6040% (frame 40)  n_sampled=34
+    gtShift at densest frame = (1,-15)   PSNR 14.07 -> 17.09 dB
+    drift over 10 frames: ddx -16..-8 (median -12), ddy -1..1
+    drift detail: [(8, 0, -8, 18.68), (23, 0, -14, 17.83), (38, 0, -16, 17.2), (53, 1, -15, 16.87), (68, 0, -12, 17.34), (82, 0, -11, 16.51), (97, 0, -8, 16.4), (112, 0, -8, 15.61), (127, -1, -13, 15.89), (142, 0, -14, 16.95)]
+    ANALYSE: YES
+
+--- RANKED by mean mask fraction ---
+  clip    maskMean%  maskMax%    gtShift  analyse
+  0141       2.9185    3.8805   (0, -59)      YES
+  0251       1.7454    3.8847  (-1, -14)      YES
+  0147       1.5857    1.8717  (-1, -41)      YES
+  0301       1.5189    3.6040   (1, -15)      YES
+  0042       1.4958    2.0889  (-1, -36)      YES
+  0259       1.2935    2.1206   (0, -18)      YES
+  0125       1.2018    2.7115  (-1, -28)      YES
+  0052       1.0247    1.3550  (-1, -42)      YES
+  0128       0.5819    1.0739  (-1, -34)      YES
+  0170       0.0553    0.1697    (0, -9)       no
+  0204       0.0279    0.0332  (-1, -17)       no
+  0225       0.0000    0.0000  (-1, -13)       no

@@ -1,0 +1,702 @@
+STAGE 2: the 0042 disocclusion halo, re-measured over ALL frames and restricted to the holes.
+
+What the review measured (outputs/review_20261001): haloFrac on ONE frame (f32) of ONE 384x384
+window whose mask coverage was 5.93 %, i.e. 94 % of the pixels it averaged were NOT holes.
+Numbers: deliverable 50.9 %, origin 47.0 %, origin+s25 44.3 %.
+
+What this measures, for 6 configs (origin / shipped Mamba / step200 / step400 / step800
+DELIVERABLE / origin+s25):
+
+  A  hole            every frame, haloFrac over GT-top-decile-gradient pixels INSIDE the mask
+  B  hole_dil4       the same over the mask DILATED by 4 px (hole + 4 px surround).  MEASURED:
+                     these holes are 1-3 px wide stripes -- eroding by one pixel deletes 97-99 %
+                     of them -- so there is no hole "interior" to isolate, and the band that can
+                     actually carry a re-drawn rim is the hole plus its immediate surround.
+  C  holecrop384     the review's own 384x384 hole window, UNRESTRICTED -- the direct
+                     all-frames scale-up of the published 50.9 %
+  D  hole_pfshift    variant A with the GT re-registered PER FRAME, to separate a real effect
+                     from residual misregistration (0042 only)
+  E  wholewin        the whole 576x1024 window, every 8th frame -- reproduces
+                     METRICS_WHOLEFRAME.txt's convention as a harness anchor
+
+plus a registration-free cross-check: edge_profiles.py's PLATEAU OVERSHOOT, evaluated on the
+strong step edges of the ORIGIN panel whose centre falls inside the mask.
+
+Metric operators are reviewlib's, which are ringing_metrics.py's verbatim.  Regions are computed
+PER FRAME (n=1 stacks), so the gradient quantile thresholds are per-frame; that shifts absolute
+levels slightly against the published whole-stack tables, but every config in a frame is scored
+against the same thresholds, which is what the config-vs-config claim rests on.
+======================================================================================================================
+clips analysed: ['0042', '0052', '0125', '0128', '0141', '0147', '0251', '0259', '0301']
+
+======================================================================================================================
+### 0042   nframes=150 (ALL valid frames)   mean maskFrac=1.4892%   GT shift used (ddy,ddx)=(-1,-36)
+    per-frame refined shift: ddx -39..-33 (median -36, fixed -36)
+    mask pixels/frame: raw 8783  eroded-1px 112  dilated-4px 42095   -> the holes are 1-3 px wide STRIPES, not areas
+    step edges with centre inside the mask, per frame: mean 266  min 46  max 543   (frames used for overshoot: 150)
+
+  [hole]  n_frames_scored=150
+    config                   haloFrac% mean      sd     min  max(worst) d vs origin | edgeHF/GT flatHF/GT stripeE/GT
+    origin (deployed)                42.081   6.587  24.540      59.186      +0.000 |     0.594     1.432      3.325
+    shipped 5-slot Mamba             43.245   6.145  26.534      59.567      +1.164 |     0.653     1.494      3.327
+    mstudent2 step200                45.875   6.653  28.506      67.084      +3.794 |     0.718     1.735      3.682
+    mstudent2 step400                43.238   6.070  26.840      65.347      +1.157 |     0.698     1.761      3.832
+    step800 DELIVERABLE              44.003   6.148  26.687      66.887      +1.922 |     0.715     1.783      3.842
+    origin+s25 (ceiling)             43.402   6.839  27.972      58.482      +1.321 |     0.616     1.553      3.710
+    GT (real right eye)               0.000                                         |     1.000     1.000      1.000
+    paired vs origin, per frame (fraction of frames with HIGHER halo than origin):
+      shipped 5-slot Mamba     above on  69.3% of frames   mean d  +1.164  sd of d  1.757  worst frame d  +7.041
+      mstudent2 step200        above on  85.3% of frames   mean d  +3.794  sd of d  4.518  worst frame d +19.753
+      mstudent2 step400        above on  66.7% of frames   mean d  +1.157  sd of d  3.261  worst frame d  +9.877
+      step800 DELIVERABLE      above on  70.0% of frames   mean d  +1.922  sd of d  3.301  worst frame d +11.226
+      origin+s25 (ceiling)     above on  66.7% of frames   mean d  +1.321  sd of d  3.816  worst frame d  +9.964
+
+  [hole_dil4]  n_frames_scored=150
+    config                   haloFrac% mean      sd     min  max(worst) d vs origin | edgeHF/GT flatHF/GT stripeE/GT
+    origin (deployed)                41.394   5.218  26.676      55.371      +0.000 |     0.659     1.468      3.865
+    shipped 5-slot Mamba             42.247   5.516  27.195      54.076      +0.853 |     0.716     1.541      3.956
+    mstudent2 step200                47.363   8.008  30.395      67.537      +5.969 |     0.813     1.795      4.347
+    mstudent2 step400                43.380   6.019  28.703      62.026      +1.986 |     0.753     1.746      4.264
+    step800 DELIVERABLE              44.225   6.236  29.373      63.923      +2.831 |     0.774     1.775      4.293
+    origin+s25 (ceiling)             42.219   4.735  29.390      52.777      +0.825 |     0.660     1.544      4.087
+    GT (real right eye)               0.000                                         |     1.000     1.000      1.000
+    paired vs origin, per frame (fraction of frames with HIGHER halo than origin):
+      shipped 5-slot Mamba     above on  67.3% of frames   mean d  +0.853  sd of d  1.579  worst frame d  +5.220
+      mstudent2 step200        above on  94.7% of frames   mean d  +5.969  sd of d  4.804  worst frame d +20.528
+      mstudent2 step400        above on  77.3% of frames   mean d  +1.986  sd of d  2.677  worst frame d  +9.147
+      step800 DELIVERABLE      above on  84.7% of frames   mean d  +2.831  sd of d  2.811  worst frame d +11.203
+      origin+s25 (ceiling)     above on  60.0% of frames   mean d  +0.825  sd of d  3.457  worst frame d  +8.217
+
+  [wholewin]  n_frames_scored=19
+    config                   haloFrac% mean      sd     min  max(worst) d vs origin | edgeHF/GT flatHF/GT stripeE/GT
+    origin (deployed)                29.324   2.046  26.045      33.345      +0.000 |     0.617     1.385      2.913
+    shipped 5-slot Mamba             30.505   2.272  27.153      35.077      +1.181 |     0.661     1.434      3.004
+    mstudent2 step200                35.476   5.890  28.878      49.705      +6.152 |     0.783     1.655      3.555
+    mstudent2 step400                30.575   2.103  26.752      33.446      +1.251 |     0.691     1.650      3.476
+    step800 DELIVERABLE              31.862   2.544  27.555      35.991      +2.538 |     0.723     1.650      3.480
+    origin+s25 (ceiling)             30.362   2.383  26.489      34.116      +1.038 |     0.630     1.525      3.382
+    GT (real right eye)               0.000                                         |     1.000     1.000      1.000
+    paired vs origin, per frame (fraction of frames with HIGHER halo than origin):
+      shipped 5-slot Mamba     above on  89.5% of frames   mean d  +1.181  sd of d  1.273  worst frame d  +5.235
+      mstudent2 step200        above on 100.0% of frames   mean d  +6.152  sd of d  5.173  worst frame d +20.006
+      mstudent2 step400        above on  78.9% of frames   mean d  +1.251  sd of d  1.325  worst frame d  +3.746
+      step800 DELIVERABLE      above on 100.0% of frames   mean d  +2.538  sd of d  1.642  worst frame d  +6.291
+      origin+s25 (ceiling)     above on  68.4% of frames   mean d  +1.038  sd of d  1.767  worst frame d  +4.185
+
+  [holecrop384]  n_frames_scored=150
+    config                   haloFrac% mean      sd     min  max(worst) d vs origin | edgeHF/GT flatHF/GT stripeE/GT
+    origin (deployed)                39.237   3.546  33.488      58.421      +0.000 |     0.693     1.381      2.840
+    shipped 5-slot Mamba             40.979   3.561  33.986      57.432      +1.742 |     0.745     1.432      2.918
+    mstudent2 step200                47.358   7.036  37.963      75.225      +8.120 |     0.895     1.688      3.374
+    mstudent2 step400                41.596   4.070  35.236      66.551      +2.359 |     0.793     1.648      3.282
+    step800 DELIVERABLE              43.111   4.524  36.153      69.196      +3.874 |     0.824     1.666      3.306
+    origin+s25 (ceiling)             39.466   3.232  32.503      47.268      +0.228 |     0.692     1.475      3.143
+    GT (real right eye)               0.000                                         |     1.000     1.000      1.000
+    paired vs origin, per frame (fraction of frames with HIGHER halo than origin):
+      shipped 5-slot Mamba     above on  88.7% of frames   mean d  +1.742  sd of d  1.463  worst frame d  +7.567
+      mstudent2 step200        above on 100.0% of frames   mean d  +8.120  sd of d  5.297  worst frame d +25.219
+      mstudent2 step400        above on  88.7% of frames   mean d  +2.359  sd of d  2.109  worst frame d  +8.461
+      step800 DELIVERABLE      above on  97.3% of frames   mean d  +3.874  sd of d  2.439  worst frame d +11.973
+      origin+s25 (ceiling)     above on  57.3% of frames   mean d  +0.228  sd of d  3.615  worst frame d  +6.707
+
+  [hole_pfshift]  n_frames_scored=150
+    config                   haloFrac% mean      sd     min  max(worst) d vs origin | edgeHF/GT flatHF/GT stripeE/GT
+    origin (deployed)                38.946   8.509  20.934      55.960      +0.000 |     0.628     1.490      3.465
+    shipped 5-slot Mamba             40.211   7.606  23.875      55.604      +1.265 |     0.686     1.562      3.482
+    mstudent2 step200                43.442   7.041  26.466      59.820      +4.497 |     0.747     1.815      3.859
+    mstudent2 step400                40.374   7.426  24.564      53.516      +1.428 |     0.727     1.842      4.013
+    step800 DELIVERABLE              41.302   7.404  25.375      54.725      +2.357 |     0.744     1.866      4.025
+    origin+s25 (ceiling)             40.370   9.349  19.853      56.303      +1.425 |     0.660     1.611      3.874
+    GT (real right eye)               0.000                                         |     1.000     1.000      1.000
+    paired vs origin, per frame (fraction of frames with HIGHER halo than origin):
+      shipped 5-slot Mamba     above on  73.3% of frames   mean d  +1.265  sd of d  1.834  worst frame d  +6.674
+      mstudent2 step200        above on  82.7% of frames   mean d  +4.497  sd of d  5.429  worst frame d +21.441
+      mstudent2 step400        above on  69.3% of frames   mean d  +1.428  sd of d  3.265  worst frame d +10.090
+      step800 DELIVERABLE      above on  74.0% of frames   mean d  +2.357  sd of d  3.454  worst frame d +13.694
+      origin+s25 (ceiling)     above on  66.0% of frames   mean d  +1.425  sd of d  4.085  worst frame d +13.804
+
+  [plateau overshoot, REGISTRATION-FREE, edges with centre inside the mask]
+    config                        mean       sd      min  max(worst)
+    GT (registered)             0.1773   0.1228   0.0487      0.5846
+    origin (deployed)           0.2342   0.1660   0.0349      0.6984
+    shipped 5-slot Mamba        0.2414   0.1739   0.0354      0.7296
+    mstudent2 step200           0.2781   0.2031   0.0384      0.8977
+    mstudent2 step400           0.2643   0.1890   0.0407      0.8843
+    step800 DELIVERABLE         0.2658   0.1905   0.0397      0.8888
+    origin+s25 (ceiling)        0.2420   0.1641   0.0433      0.7140
+    per-frame CSV: /home/kawa/master_project/StereoCrafter/outputs/rung_check_20261001/perframe_0042.csv
+======================================================================================================================
+### 0052   nframes=150 (ALL valid frames)   mean maskFrac=1.0249%   GT shift used (ddy,ddx)=(-1,-42)
+    mask pixels/frame: raw 6045  eroded-1px 13  dilated-4px 39617   -> the holes are 1-3 px wide STRIPES, not areas
+    step edges with centre inside the mask, per frame: mean 41  min 2  max 109   (frames used for overshoot: 69)
+
+  [hole]  n_frames_scored=150
+    config                   haloFrac% mean      sd     min  max(worst) d vs origin | edgeHF/GT flatHF/GT stripeE/GT
+    origin (deployed)                42.543   3.531  34.278      52.566      +0.000 |     0.381     0.979      2.348
+    shipped 5-slot Mamba             42.663   3.509  34.064      51.893      +0.120 |     0.384     0.981      2.381
+    mstudent2 step200                44.381   3.778  35.060      54.743      +1.838 |     0.418     1.079      2.522
+    mstudent2 step400                43.076   3.717  33.466      53.810      +0.533 |     0.420     1.112      2.590
+    step800 DELIVERABLE              43.483   3.795  33.665      54.588      +0.940 |     0.429     1.115      2.577
+    origin+s25 (ceiling)             43.476   3.819  33.968      54.434      +0.933 |     0.412     1.090      2.575
+    GT (real right eye)               0.000                                         |     1.000     1.000      1.000
+    paired vs origin, per frame (fraction of frames with HIGHER halo than origin):
+      shipped 5-slot Mamba     above on  51.3% of frames   mean d  +0.120  sd of d  0.797  worst frame d  +2.162
+      mstudent2 step200        above on  94.0% of frames   mean d  +1.838  sd of d  1.171  worst frame d  +5.042
+      mstudent2 step400        above on  63.3% of frames   mean d  +0.533  sd of d  1.308  worst frame d  +3.400
+      step800 DELIVERABLE      above on  75.3% of frames   mean d  +0.940  sd of d  1.340  worst frame d  +3.956
+      origin+s25 (ceiling)     above on  68.0% of frames   mean d  +0.933  sd of d  2.046  worst frame d  +6.355
+
+  [hole_dil4]  n_frames_scored=150
+    config                   haloFrac% mean      sd     min  max(worst) d vs origin | edgeHF/GT flatHF/GT stripeE/GT
+    origin (deployed)                38.742   2.216  33.773      43.542      +0.000 |     0.434     0.949      2.257
+    shipped 5-slot Mamba             39.167   2.255  33.563      44.258      +0.425 |     0.438     0.953      2.282
+    mstudent2 step200                40.332   2.249  34.651      45.116      +1.590 |     0.468     1.042      2.412
+    mstudent2 step400                39.297   2.273  32.674      44.651      +0.555 |     0.459     1.042      2.394
+    step800 DELIVERABLE              39.706   2.262  33.504      44.687      +0.964 |     0.473     1.054      2.396
+    origin+s25 (ceiling)             39.398   2.254  33.259      44.890      +0.656 |     0.450     1.022      2.393
+    GT (real right eye)               0.000                                         |     1.000     1.000      1.000
+    paired vs origin, per frame (fraction of frames with HIGHER halo than origin):
+      shipped 5-slot Mamba     above on  84.7% of frames   mean d  +0.425  sd of d  0.431  worst frame d  +1.524
+      mstudent2 step200        above on  99.3% of frames   mean d  +1.590  sd of d  0.609  worst frame d  +3.496
+      mstudent2 step400        above on  84.0% of frames   mean d  +0.555  sd of d  0.605  worst frame d  +2.640
+      step800 DELIVERABLE      above on  94.7% of frames   mean d  +0.964  sd of d  0.677  worst frame d  +3.472
+      origin+s25 (ceiling)     above on  73.3% of frames   mean d  +0.656  sd of d  1.020  worst frame d  +3.468
+
+  [wholewin]  n_frames_scored=19
+    config                   haloFrac% mean      sd     min  max(worst) d vs origin | edgeHF/GT flatHF/GT stripeE/GT
+    origin (deployed)                36.993   2.297  31.798      40.898      +0.000 |     0.515     0.883      2.213
+    shipped 5-slot Mamba             37.462   2.312  32.149      41.330      +0.470 |     0.522     0.890      2.239
+    mstudent2 step200                38.373   2.245  33.225      42.302      +1.381 |     0.552     0.989      2.416
+    mstudent2 step400                37.461   2.242  32.454      41.379      +0.468 |     0.534     1.007      2.414
+    step800 DELIVERABLE              37.912   2.225  33.092      41.742      +0.919 |     0.553     1.008      2.406
+    origin+s25 (ceiling)             37.412   2.376  31.663      41.824      +0.419 |     0.524     0.978      2.401
+    GT (real right eye)               0.000                                         |     1.000     1.000      1.000
+    paired vs origin, per frame (fraction of frames with HIGHER halo than origin):
+      shipped 5-slot Mamba     above on  89.5% of frames   mean d  +0.470  sd of d  0.337  worst frame d  +1.092
+      mstudent2 step200        above on 100.0% of frames   mean d  +1.381  sd of d  0.383  worst frame d  +2.139
+      mstudent2 step400        above on  89.5% of frames   mean d  +0.468  sd of d  0.357  worst frame d  +1.159
+      step800 DELIVERABLE      above on 100.0% of frames   mean d  +0.919  sd of d  0.392  worst frame d  +1.885
+      origin+s25 (ceiling)     above on  73.7% of frames   mean d  +0.419  sd of d  0.752  worst frame d  +1.965
+
+  [plateau overshoot, REGISTRATION-FREE, edges with centre inside the mask]
+    config                        mean       sd      min  max(worst)
+    GT (registered)             0.2133   0.0738   0.0809      0.4196
+    origin (deployed)           0.1676   0.1072   0.0304      0.6573
+    shipped 5-slot Mamba        0.1700   0.1095   0.0305      0.6700
+    mstudent2 step200           0.1896   0.1163   0.0409      0.7194
+    mstudent2 step400           0.1850   0.1135   0.0424      0.7084
+    step800 DELIVERABLE         0.1846   0.1139   0.0410      0.7111
+    origin+s25 (ceiling)        0.1695   0.1073   0.0256      0.6484
+    per-frame CSV: /home/kawa/master_project/StereoCrafter/outputs/rung_check_20261001/perframe_0052.csv
+======================================================================================================================
+### 0125   nframes=150 (ALL valid frames)   mean maskFrac=1.1698%   GT shift used (ddy,ddx)=(-1,-28)
+    mask pixels/frame: raw 6900  eroded-1px 665  dilated-4px 28889   -> the holes are 1-3 px wide STRIPES, not areas
+    step edges with centre inside the mask, per frame: mean 187  min 0  max 741   (frames used for overshoot: 119)
+
+  [hole]  n_frames_scored=134
+    config                   haloFrac% mean      sd     min  max(worst) d vs origin | edgeHF/GT flatHF/GT stripeE/GT
+    origin (deployed)                30.526   6.463  16.300      51.327      +0.000 |     0.524     1.406      2.834
+    shipped 5-slot Mamba             31.668   6.932  15.741      53.985      +1.142 |     0.537     1.473      2.918
+    mstudent2 step200                33.706   6.494  18.845      50.643      +3.180 |     0.602     1.701      3.271
+    mstudent2 step400                33.469   6.679  19.722      52.699      +2.943 |     0.628     1.778      3.309
+    step800 DELIVERABLE              34.029   6.672  19.048      53.470      +3.503 |     0.640     1.803      3.316
+    origin+s25 (ceiling)             33.142   7.534  21.111      88.514      +2.616 |     0.580     1.650      3.369
+    GT (real right eye)               0.000                                         |     1.000     1.000      1.000
+    paired vs origin, per frame (fraction of frames with HIGHER halo than origin):
+      shipped 5-slot Mamba     above on  67.9% of frames   mean d  +1.142  sd of d  2.426  worst frame d +11.486
+      mstudent2 step200        above on  83.6% of frames   mean d  +3.180  sd of d  4.223  worst frame d +20.874
+      mstudent2 step400        above on  84.3% of frames   mean d  +2.943  sd of d  3.781  worst frame d +23.786
+      step800 DELIVERABLE      above on  84.3% of frames   mean d  +3.503  sd of d  4.202  worst frame d +26.214
+      origin+s25 (ceiling)     above on  58.2% of frames   mean d  +2.616  sd of d  7.937  worst frame d +62.838
+
+  [hole_dil4]  n_frames_scored=140
+    config                   haloFrac% mean      sd     min  max(worst) d vs origin | edgeHF/GT flatHF/GT stripeE/GT
+    origin (deployed)                30.931   7.564  17.913      55.216      +0.000 |     0.531     1.300      2.497
+    shipped 5-slot Mamba             31.867   7.768  17.450      56.062      +0.936 |     0.543     1.362      2.580
+    mstudent2 step200                33.616   7.409  18.156      54.652      +2.685 |     0.604     1.557      2.885
+    mstudent2 step400                33.221   7.515  18.222      54.558      +2.290 |     0.622     1.615      2.908
+    step800 DELIVERABLE              33.943   7.586  18.773      55.075      +3.012 |     0.637     1.645      2.929
+    origin+s25 (ceiling)             33.143   7.335  21.696      68.299      +2.212 |     0.577     1.488      2.931
+    GT (real right eye)               0.000                                         |     1.000     1.000      1.000
+    paired vs origin, per frame (fraction of frames with HIGHER halo than origin):
+      shipped 5-slot Mamba     above on  65.0% of frames   mean d  +0.936  sd of d  1.962  worst frame d  +6.614
+      mstudent2 step200        above on  86.4% of frames   mean d  +2.685  sd of d  2.942  worst frame d +10.506
+      mstudent2 step400        above on  85.7% of frames   mean d  +2.290  sd of d  2.610  worst frame d +11.217
+      step800 DELIVERABLE      above on  89.3% of frames   mean d  +3.012  sd of d  2.880  worst frame d +13.498
+      origin+s25 (ceiling)     above on  67.9% of frames   mean d  +2.212  sd of d  5.258  worst frame d +43.941
+
+  [wholewin]  n_frames_scored=19
+    config                   haloFrac% mean      sd     min  max(worst) d vs origin | edgeHF/GT flatHF/GT stripeE/GT
+    origin (deployed)                32.406  10.667  20.244      59.959      +0.000 |     0.498     0.848      1.582
+    shipped 5-slot Mamba             33.160  10.665  21.275      60.679      +0.755 |     0.514     0.852      1.596
+    mstudent2 step200                34.054   9.529  22.684      57.987      +1.649 |     0.572     0.973      1.831
+    mstudent2 step400                33.605   9.800  21.925      57.713      +1.199 |     0.572     1.011      1.817
+    step800 DELIVERABLE              34.196   9.724  22.119      57.731      +1.790 |     0.596     1.012      1.822
+    origin+s25 (ceiling)             33.322  10.099  22.237      58.996      +0.916 |     0.512     0.955      1.874
+    GT (real right eye)               0.000                                         |     1.000     1.000      1.000
+    paired vs origin, per frame (fraction of frames with HIGHER halo than origin):
+      shipped 5-slot Mamba     above on  73.7% of frames   mean d  +0.755  sd of d  1.395  worst frame d  +5.339
+      mstudent2 step200        above on  78.9% of frames   mean d  +1.649  sd of d  1.992  worst frame d  +7.106
+      mstudent2 step400        above on  78.9% of frames   mean d  +1.199  sd of d  1.608  worst frame d  +5.081
+      step800 DELIVERABLE      above on  94.7% of frames   mean d  +1.790  sd of d  1.847  worst frame d  +6.232
+      origin+s25 (ceiling)     above on  73.7% of frames   mean d  +0.916  sd of d  1.577  worst frame d  +3.358
+
+  [plateau overshoot, REGISTRATION-FREE, edges with centre inside the mask]
+    config                        mean       sd      min  max(worst)
+    GT (registered)             0.1673   0.0902   0.0191      0.3815
+    origin (deployed)           0.1170   0.0994   0.0046      0.4003
+    shipped 5-slot Mamba        0.1279   0.1165   0.0041      0.4851
+    mstudent2 step200           0.1598   0.1431   0.0060      0.6018
+    mstudent2 step400           0.1566   0.1367   0.0056      0.5541
+    step800 DELIVERABLE         0.1612   0.1437   0.0057      0.5887
+    origin+s25 (ceiling)        0.1385   0.1206   0.0055      0.4425
+    per-frame CSV: /home/kawa/master_project/StereoCrafter/outputs/rung_check_20261001/perframe_0125.csv
+======================================================================================================================
+### 0128   nframes=150 (ALL valid frames)   mean maskFrac=0.5883%   GT shift used (ddy,ddx)=(-1,-34)
+    mask pixels/frame: raw 3470  eroded-1px 71  dilated-4px 20210   -> the holes are 1-3 px wide STRIPES, not areas
+    step edges with centre inside the mask, per frame: mean 60  min 2  max 150   (frames used for overshoot: 115)
+
+  [hole]  n_frames_scored=150
+    config                   haloFrac% mean      sd     min  max(worst) d vs origin | edgeHF/GT flatHF/GT stripeE/GT
+    origin (deployed)                29.096   6.415  13.214      49.286      +0.000 |     0.412     1.128      2.373
+    shipped 5-slot Mamba             30.550   6.733  13.377      52.857      +1.455 |     0.426     1.160      2.488
+    mstudent2 step200                34.038   6.905  17.781      52.143      +4.943 |     0.478     1.277      2.736
+    mstudent2 step400                32.806   6.423  16.803      50.714      +3.711 |     0.506     1.355      2.817
+    step800 DELIVERABLE              33.469   6.510  17.129      51.429      +4.373 |     0.510     1.364      2.853
+    origin+s25 (ceiling)             31.344   6.572  16.639      51.429      +2.249 |     0.470     1.307      2.731
+    GT (real right eye)               0.000                                         |     1.000     1.000      1.000
+    paired vs origin, per frame (fraction of frames with HIGHER halo than origin):
+      shipped 5-slot Mamba     above on  84.0% of frames   mean d  +1.455  sd of d  1.319  worst frame d  +6.716
+      mstudent2 step200        above on  99.3% of frames   mean d  +4.943  sd of d  2.384  worst frame d +11.220
+      mstudent2 step400        above on  92.7% of frames   mean d  +3.711  sd of d  2.242  worst frame d  +9.106
+      step800 DELIVERABLE      above on  95.3% of frames   mean d  +4.373  sd of d  2.391  worst frame d +11.220
+      origin+s25 (ceiling)     above on  75.3% of frames   mean d  +2.249  sd of d  3.260  worst frame d  +9.770
+
+  [hole_dil4]  n_frames_scored=150
+    config                   haloFrac% mean      sd     min  max(worst) d vs origin | edgeHF/GT flatHF/GT stripeE/GT
+    origin (deployed)                37.624   3.561  29.519      46.220      +0.000 |     0.307     1.082      2.334
+    shipped 5-slot Mamba             39.259   3.719  30.737      47.509      +1.635 |     0.319     1.118      2.422
+    mstudent2 step200                42.012   3.857  32.961      52.716      +4.389 |     0.360     1.241      2.695
+    mstudent2 step400                40.576   3.588  32.158      50.272      +2.953 |     0.376     1.279      2.702
+    step800 DELIVERABLE              41.177   3.616  32.650      51.086      +3.554 |     0.378     1.286      2.717
+    origin+s25 (ceiling)             40.025   4.404  28.974      50.601      +2.401 |     0.355     1.228      2.638
+    GT (real right eye)               0.000                                         |     1.000     1.000      1.000
+    paired vs origin, per frame (fraction of frames with HIGHER halo than origin):
+      shipped 5-slot Mamba     above on  99.3% of frames   mean d  +1.635  sd of d  0.692  worst frame d  +4.449
+      mstudent2 step200        above on 100.0% of frames   mean d  +4.389  sd of d  1.213  worst frame d  +8.758
+      mstudent2 step400        above on  98.7% of frames   mean d  +2.953  sd of d  1.149  worst frame d  +6.873
+      step800 DELIVERABLE      above on 100.0% of frames   mean d  +3.554  sd of d  1.206  worst frame d  +7.164
+      origin+s25 (ceiling)     above on  94.7% of frames   mean d  +2.401  sd of d  1.679  worst frame d  +6.673
+
+  [wholewin]  n_frames_scored=19
+    config                   haloFrac% mean      sd     min  max(worst) d vs origin | edgeHF/GT flatHF/GT stripeE/GT
+    origin (deployed)                22.277   1.816  19.267      26.177      +0.000 |     0.438     0.802      1.548
+    shipped 5-slot Mamba             23.300   1.931  19.751      27.500      +1.023 |     0.463     0.835      1.608
+    mstudent2 step200                25.625   2.170  22.076      30.282      +3.348 |     0.517     0.948      1.886
+    mstudent2 step400                24.660   2.057  21.563      28.762      +2.383 |     0.512     0.980      1.888
+    step800 DELIVERABLE              25.103   2.133  21.688      29.410      +2.826 |     0.525     0.987      1.895
+    origin+s25 (ceiling)             24.608   1.671  21.441      27.385      +2.330 |     0.481     0.921      1.829
+    GT (real right eye)               0.000                                         |     1.000     1.000      1.000
+    paired vs origin, per frame (fraction of frames with HIGHER halo than origin):
+      shipped 5-slot Mamba     above on 100.0% of frames   mean d  +1.023  sd of d  0.452  worst frame d  +2.366
+      mstudent2 step200        above on 100.0% of frames   mean d  +3.348  sd of d  1.043  worst frame d  +6.961
+      mstudent2 step400        above on 100.0% of frames   mean d  +2.383  sd of d  0.924  worst frame d  +5.441
+      step800 DELIVERABLE      above on 100.0% of frames   mean d  +2.826  sd of d  0.980  worst frame d  +6.089
+      origin+s25 (ceiling)     above on 100.0% of frames   mean d  +2.330  sd of d  1.284  worst frame d  +5.021
+
+  [holecrop384]  n_frames_scored=150
+    config                   haloFrac% mean      sd     min  max(worst) d vs origin | edgeHF/GT flatHF/GT stripeE/GT
+    origin (deployed)                25.506   1.346  21.220      29.651      +0.000 |     0.416     0.768      1.466
+    shipped 5-slot Mamba             26.643   1.505  22.456      30.448      +1.137 |     0.440     0.800      1.528
+    mstudent2 step200                29.068   1.922  25.263      34.995      +3.562 |     0.491     0.912      1.806
+    mstudent2 step400                27.843   1.693  24.485      33.058      +2.337 |     0.487     0.942      1.802
+    step800 DELIVERABLE              28.369   1.813  24.659      33.848      +2.862 |     0.499     0.948      1.811
+    origin+s25 (ceiling)             27.801   1.847  23.679      33.309      +2.295 |     0.459     0.884      1.737
+    GT (real right eye)               0.000                                         |     1.000     1.000      1.000
+    paired vs origin, per frame (fraction of frames with HIGHER halo than origin):
+      shipped 5-slot Mamba     above on  99.3% of frames   mean d  +1.137  sd of d  0.600  worst frame d  +3.738
+      mstudent2 step200        above on 100.0% of frames   mean d  +3.562  sd of d  1.115  worst frame d  +8.073
+      mstudent2 step400        above on 100.0% of frames   mean d  +2.337  sd of d  0.919  worst frame d  +5.975
+      step800 DELIVERABLE      above on 100.0% of frames   mean d  +2.862  sd of d  1.018  worst frame d  +7.006
+      origin+s25 (ceiling)     above on  92.0% of frames   mean d  +2.295  sd of d  1.439  worst frame d  +6.134
+
+  [plateau overshoot, REGISTRATION-FREE, edges with centre inside the mask]
+    config                        mean       sd      min  max(worst)
+    GT (registered)             0.2555   0.0749   0.1127      0.5403
+    origin (deployed)           0.1279   0.0276   0.0720      0.2076
+    shipped 5-slot Mamba        0.1407   0.0315   0.0793      0.2436
+    mstudent2 step200           0.1781   0.0429   0.1021      0.3235
+    mstudent2 step400           0.1834   0.0453   0.0987      0.3088
+    step800 DELIVERABLE         0.1846   0.0451   0.0966      0.3145
+    origin+s25 (ceiling)        0.1602   0.0339   0.0928      0.3018
+    per-frame CSV: /home/kawa/master_project/StereoCrafter/outputs/rung_check_20261001/perframe_0128.csv
+======================================================================================================================
+### 0141   nframes=151 (ALL valid frames)   mean maskFrac=2.8678%   GT shift used (ddy,ddx)=(0,-59)
+    mask pixels/frame: raw 16915  eroded-1px 1411  dilated-4px 57343   -> the holes are 1-3 px wide STRIPES, not areas
+    step edges with centre inside the mask, per frame: mean 125  min 62  max 211   (frames used for overshoot: 151)
+
+  [hole]  n_frames_scored=151
+    config                   haloFrac% mean      sd     min  max(worst) d vs origin | edgeHF/GT flatHF/GT stripeE/GT
+    origin (deployed)                39.356   3.628  30.507      47.269      +0.000 |     0.274     1.104      2.958
+    shipped 5-slot Mamba             38.770   3.720  29.930      47.269      -0.585 |     0.276     1.138      3.042
+    mstudent2 step200                38.715   3.317  31.057      47.041      -0.641 |     0.319     1.407      3.760
+    mstudent2 step400                38.555   3.550  30.796      46.813      -0.800 |     0.365     1.762      4.367
+    step800 DELIVERABLE              38.585   3.496  30.507      46.965      -0.771 |     0.356     1.694      4.224
+    origin+s25 (ceiling)             41.363   3.224  34.894      49.811      +2.007 |     0.339     1.515      4.009
+    GT (real right eye)               0.000                                         |     1.000     1.000      1.000
+    paired vs origin, per frame (fraction of frames with HIGHER halo than origin):
+      shipped 5-slot Mamba     above on  25.8% of frames   mean d  -0.585  sd of d  0.922  worst frame d  +1.429
+      mstudent2 step200        above on  23.2% of frames   mean d  -0.641  sd of d  1.097  worst frame d  +1.999
+      mstudent2 step400        above on  25.2% of frames   mean d  -0.800  sd of d  1.304  worst frame d  +2.151
+      step800 DELIVERABLE      above on  27.2% of frames   mean d  -0.771  sd of d  1.247  worst frame d  +1.942
+      origin+s25 (ceiling)     above on  75.5% of frames   mean d  +2.007  sd of d  2.898  worst frame d  +7.482
+
+  [hole_dil4]  n_frames_scored=151
+    config                   haloFrac% mean      sd     min  max(worst) d vs origin | edgeHF/GT flatHF/GT stripeE/GT
+    origin (deployed)                45.255   2.591  39.079      51.454      +0.000 |     0.299     1.140      3.127
+    shipped 5-slot Mamba             44.452   2.432  38.599      50.287      -0.803 |     0.301     1.177      3.225
+    mstudent2 step200                44.222   2.287  38.273      50.459      -1.033 |     0.347     1.427      3.865
+    mstudent2 step400                43.875   2.294  38.072      50.134      -1.380 |     0.375     1.656      4.190
+    step800 DELIVERABLE              43.936   2.292  38.258      50.344      -1.319 |     0.371     1.614      4.113
+    origin+s25 (ceiling)             46.415   2.666  39.592      52.123      +1.160 |     0.352     1.442      3.890
+    GT (real right eye)               0.000                                         |     1.000     1.000      1.000
+    paired vs origin, per frame (fraction of frames with HIGHER halo than origin):
+      shipped 5-slot Mamba     above on   0.7% of frames   mean d  -0.803  sd of d  0.384  worst frame d  +0.176
+      mstudent2 step200        above on   7.9% of frames   mean d  -1.033  sd of d  0.658  worst frame d  +0.774
+      mstudent2 step400        above on   2.0% of frames   mean d  -1.380  sd of d  0.695  worst frame d  +0.465
+      step800 DELIVERABLE      above on   2.6% of frames   mean d  -1.319  sd of d  0.708  worst frame d  +0.337
+      origin+s25 (ceiling)     above on  72.8% of frames   mean d  +1.160  sd of d  1.601  worst frame d  +4.566
+
+  [wholewin]  n_frames_scored=19
+    config                   haloFrac% mean      sd     min  max(worst) d vs origin | edgeHF/GT flatHF/GT stripeE/GT
+    origin (deployed)                34.472   2.363  30.881      38.837      +0.000 |     0.531     1.056      3.604
+    shipped 5-slot Mamba             34.390   2.460  30.693      38.825      -0.082 |     0.538     1.092      3.715
+    mstudent2 step200                35.787   2.506  31.656      40.008      +1.315 |     0.608     1.309      4.439
+    mstudent2 step400                35.307   2.447  31.173      39.421      +0.836 |     0.607     1.443      4.617
+    step800 DELIVERABLE              35.528   2.453  31.349      39.744      +1.056 |     0.615     1.411      4.572
+    origin+s25 (ceiling)             35.911   2.243  32.302      39.755      +1.439 |     0.579     1.262      4.312
+    GT (real right eye)               0.000                                         |     1.000     1.000      1.000
+    paired vs origin, per frame (fraction of frames with HIGHER halo than origin):
+      shipped 5-slot Mamba     above on  36.8% of frames   mean d  -0.082  sd of d  0.223  worst frame d  +0.281
+      mstudent2 step200        above on 100.0% of frames   mean d  +1.315  sd of d  0.485  worst frame d  +2.148
+      mstudent2 step400        above on 100.0% of frames   mean d  +0.836  sd of d  0.448  worst frame d  +1.704
+      step800 DELIVERABLE      above on 100.0% of frames   mean d  +1.056  sd of d  0.436  worst frame d  +1.894
+      origin+s25 (ceiling)     above on  94.7% of frames   mean d  +1.439  sd of d  0.700  worst frame d  +2.782
+
+  [holecrop384]  n_frames_scored=151
+    config                   haloFrac% mean      sd     min  max(worst) d vs origin | edgeHF/GT flatHF/GT stripeE/GT
+    origin (deployed)                38.776   1.384  31.554      41.955      +0.000 |     0.528     0.979      2.887
+    shipped 5-slot Mamba             38.826   1.377  31.680      41.751      +0.050 |     0.527     1.006      2.973
+    mstudent2 step200                39.795   1.300  33.876      42.413      +1.019 |     0.579     1.233      3.683
+    mstudent2 step400                39.533   1.355  33.649      42.129      +0.756 |     0.581     1.408      3.908
+    step800 DELIVERABLE              39.734   1.333  33.781      42.332      +0.957 |     0.587     1.362      3.849
+    origin+s25 (ceiling)             39.689   1.409  32.677      42.584      +0.913 |     0.543     1.175      3.541
+    GT (real right eye)               0.000                                         |     1.000     1.000      1.000
+    paired vs origin, per frame (fraction of frames with HIGHER halo than origin):
+      shipped 5-slot Mamba     above on  53.0% of frames   mean d  +0.050  sd of d  0.295  worst frame d  +0.885
+      mstudent2 step200        above on  96.0% of frames   mean d  +1.019  sd of d  0.573  worst frame d  +2.542
+      mstudent2 step400        above on  90.7% of frames   mean d  +0.756  sd of d  0.543  worst frame d  +2.389
+      step800 DELIVERABLE      above on  95.4% of frames   mean d  +0.957  sd of d  0.553  worst frame d  +2.582
+      origin+s25 (ceiling)     above on  96.7% of frames   mean d  +0.913  sd of d  0.605  worst frame d  +2.454
+
+  [plateau overshoot, REGISTRATION-FREE, edges with centre inside the mask]
+    config                        mean       sd      min  max(worst)
+    GT (registered)             0.0801   0.0471   0.0134      0.2239
+    origin (deployed)           0.1773   0.0991   0.0264      0.4511
+    shipped 5-slot Mamba        0.1922   0.1004   0.0406      0.4682
+    mstudent2 step200           0.2569   0.1317   0.0570      0.6383
+    mstudent2 step400           0.3008   0.1708   0.0917      0.7806
+    step800 DELIVERABLE         0.2813   0.1610   0.0798      0.7174
+    origin+s25 (ceiling)        0.1849   0.0979   0.0205      0.4329
+    per-frame CSV: /home/kawa/master_project/StereoCrafter/outputs/rung_check_20261001/perframe_0141.csv
+======================================================================================================================
+### 0147   nframes=150 (ALL valid frames)   mean maskFrac=1.6007%   GT shift used (ddy,ddx)=(-1,-41)
+    mask pixels/frame: raw 9442  eroded-1px 570  dilated-4px 25765   -> the holes are 1-3 px wide STRIPES, not areas
+    step edges with centre inside the mask, per frame: mean 232  min 35  max 487   (frames used for overshoot: 149)
+
+  [hole]  n_frames_scored=150
+    config                   haloFrac% mean      sd     min  max(worst) d vs origin | edgeHF/GT flatHF/GT stripeE/GT
+    origin (deployed)                26.135  11.746   7.802      53.318      +0.000 |     0.639     1.757      7.830
+    shipped 5-slot Mamba             25.856  11.442   7.765      53.768      -0.280 |     0.618     1.719      7.752
+    mstudent2 step200                29.713  10.680  10.309      55.568      +3.578 |     0.763     2.038      8.746
+    mstudent2 step400                28.615  11.277  11.226      56.580      +2.480 |     0.702     2.097      9.056
+    step800 DELIVERABLE              29.199  11.268  10.195      56.468      +3.064 |     0.742     2.126      9.155
+    origin+s25 (ceiling)             29.046  10.804   9.121      55.793      +2.910 |     0.720     2.060      8.840
+    GT (real right eye)               0.000                                         |     1.000     1.000      1.000
+    paired vs origin, per frame (fraction of frames with HIGHER halo than origin):
+      shipped 5-slot Mamba     above on  42.0% of frames   mean d  -0.280  sd of d  1.503  worst frame d  +2.828
+      mstudent2 step200        above on  87.3% of frames   mean d  +3.578  sd of d  3.164  worst frame d +15.279
+      mstudent2 step400        above on  90.0% of frames   mean d  +2.480  sd of d  2.055  worst frame d  +7.175
+      step800 DELIVERABLE      above on  92.7% of frames   mean d  +3.064  sd of d  2.276  worst frame d  +9.378
+      origin+s25 (ceiling)     above on  72.7% of frames   mean d  +2.910  sd of d  5.260  worst frame d +18.554
+
+  [hole_dil4]  n_frames_scored=150
+    config                   haloFrac% mean      sd     min  max(worst) d vs origin | edgeHF/GT flatHF/GT stripeE/GT
+    origin (deployed)                22.861   6.401   8.416      38.414      +0.000 |     0.479     1.483      5.282
+    shipped 5-slot Mamba             22.344   6.263   8.232      38.280      -0.518 |     0.469     1.455      5.239
+    mstudent2 step200                26.250   6.198  11.074      41.697      +3.389 |     0.580     1.749      5.968
+    mstudent2 step400                24.241   5.911   9.856      39.566      +1.380 |     0.532     1.780      6.032
+    step800 DELIVERABLE              25.168   6.105  10.594      40.374      +2.307 |     0.556     1.798      6.089
+    origin+s25 (ceiling)             24.866   6.274  12.145      41.144      +2.005 |     0.548     1.742      5.998
+    GT (real right eye)               0.000                                         |     1.000     1.000      1.000
+    paired vs origin, per frame (fraction of frames with HIGHER halo than origin):
+      shipped 5-slot Mamba     above on  28.7% of frames   mean d  -0.518  sd of d  1.117  worst frame d  +2.274
+      mstudent2 step200        above on  98.0% of frames   mean d  +3.389  sd of d  2.194  worst frame d +12.848
+      mstudent2 step400        above on  82.0% of frames   mean d  +1.380  sd of d  1.550  worst frame d  +7.747
+      step800 DELIVERABLE      above on  92.0% of frames   mean d  +2.307  sd of d  1.675  worst frame d  +9.053
+      origin+s25 (ceiling)     above on  68.7% of frames   mean d  +2.005  sd of d  3.597  worst frame d +13.067
+
+  [wholewin]  n_frames_scored=19
+    config                   haloFrac% mean      sd     min  max(worst) d vs origin | edgeHF/GT flatHF/GT stripeE/GT
+    origin (deployed)                27.620   3.619  18.354      34.292      +0.000 |     0.562     1.399      5.145
+    shipped 5-slot Mamba             27.826   3.691  18.048      34.078      +0.206 |     0.559     1.397      5.156
+    mstudent2 step200                30.426   4.285  19.961      37.665      +2.805 |     0.653     1.683      6.005
+    mstudent2 step400                28.777   3.858  19.467      35.637      +1.157 |     0.603     1.794      6.160
+    step800 DELIVERABLE              29.592   4.079  19.550      36.740      +1.972 |     0.637     1.786      6.177
+    origin+s25 (ceiling)             28.124   3.595  18.962      33.589      +0.504 |     0.588     1.664      5.986
+    GT (real right eye)               0.000                                         |     1.000     1.000      1.000
+    paired vs origin, per frame (fraction of frames with HIGHER halo than origin):
+      shipped 5-slot Mamba     above on  73.7% of frames   mean d  +0.206  sd of d  0.468  worst frame d  +0.737
+      mstudent2 step200        above on 100.0% of frames   mean d  +2.805  sd of d  0.997  worst frame d  +5.284
+      mstudent2 step400        above on  94.7% of frames   mean d  +1.157  sd of d  0.639  worst frame d  +2.092
+      step800 DELIVERABLE      above on 100.0% of frames   mean d  +1.972  sd of d  0.706  worst frame d  +3.511
+      origin+s25 (ceiling)     above on  68.4% of frames   mean d  +0.504  sd of d  0.909  worst frame d  +2.088
+
+  [holecrop384]  n_frames_scored=150
+    config                   haloFrac% mean      sd     min  max(worst) d vs origin | edgeHF/GT flatHF/GT stripeE/GT
+    origin (deployed)                21.802   5.941  10.051      32.517      +0.000 |     0.673     1.035      2.668
+    shipped 5-slot Mamba             22.239   5.979  10.556      32.233      +0.437 |     0.671     1.032      2.692
+    mstudent2 step200                25.293   6.871  12.036      37.060      +3.491 |     0.770     1.231      3.079
+    mstudent2 step400                22.800   6.132  11.302      33.843      +0.998 |     0.702     1.296      3.117
+    step800 DELIVERABLE              24.047   6.552  11.477      36.169      +2.245 |     0.748     1.295      3.132
+    origin+s25 (ceiling)             22.623   5.643  10.526      31.609      +0.820 |     0.687     1.204      3.047
+    GT (real right eye)               0.000                                         |     1.000     1.000      1.000
+    paired vs origin, per frame (fraction of frames with HIGHER halo than origin):
+      shipped 5-slot Mamba     above on  79.3% of frames   mean d  +0.437  sd of d  0.591  worst frame d  +1.962
+      mstudent2 step200        above on 100.0% of frames   mean d  +3.491  sd of d  1.520  worst frame d  +8.927
+      mstudent2 step400        above on  90.0% of frames   mean d  +0.998  sd of d  0.846  worst frame d  +3.502
+      step800 DELIVERABLE      above on 100.0% of frames   mean d  +2.245  sd of d  1.130  worst frame d  +5.832
+      origin+s25 (ceiling)     above on  78.7% of frames   mean d  +0.820  sd of d  1.212  worst frame d  +3.880
+
+  [plateau overshoot, REGISTRATION-FREE, edges with centre inside the mask]
+    config                        mean       sd      min  max(worst)
+    GT (registered)             0.1062   0.0352   0.0500      0.2488
+    origin (deployed)           0.0746   0.0305   0.0205      0.1980
+    shipped 5-slot Mamba        0.0730   0.0318   0.0204      0.2050
+    mstudent2 step200           0.1008   0.0388   0.0357      0.2747
+    mstudent2 step400           0.0931   0.0411   0.0280      0.2923
+    step800 DELIVERABLE         0.0955   0.0412   0.0292      0.2933
+    origin+s25 (ceiling)        0.0920   0.0365   0.0331      0.2455
+    per-frame CSV: /home/kawa/master_project/StereoCrafter/outputs/rung_check_20261001/perframe_0147.csv
+======================================================================================================================
+### 0251   nframes=150 (ALL valid frames)   mean maskFrac=1.7125%   GT shift used (ddy,ddx)=(-1,-14)
+    mask pixels/frame: raw 10100  eroded-1px 1471  dilated-4px 24161   -> the holes are 1-3 px wide STRIPES, not areas
+    step edges with centre inside the mask, per frame: mean 412  min 171  max 1102   (frames used for overshoot: 150)
+
+  [hole]  n_frames_scored=150
+    config                   haloFrac% mean      sd     min  max(worst) d vs origin | edgeHF/GT flatHF/GT stripeE/GT
+    origin (deployed)                26.415   7.145  13.176      52.124      +0.000 |     0.465     1.640      4.418
+    shipped 5-slot Mamba             27.066   7.100  14.930      51.290      +0.651 |     0.479     1.669      4.519
+    mstudent2 step200                29.434   7.453  16.667      55.235      +3.019 |     0.543     1.841      4.971
+    mstudent2 step400                29.371   7.395  16.270      54.021      +2.957 |     0.565     1.986      5.166
+    step800 DELIVERABLE              29.805   7.434  16.799      54.325      +3.390 |     0.572     1.972      5.145
+    origin+s25 (ceiling)             30.365   8.192  13.755      58.801      +3.950 |     0.536     1.885      5.102
+    GT (real right eye)               0.000                                         |     1.000     1.000      1.000
+    paired vs origin, per frame (fraction of frames with HIGHER halo than origin):
+      shipped 5-slot Mamba     above on  68.0% of frames   mean d  +0.651  sd of d  1.232  worst frame d  +3.720
+      mstudent2 step200        above on  97.3% of frames   mean d  +3.019  sd of d  1.949  worst frame d +10.427
+      mstudent2 step400        above on  98.0% of frames   mean d  +2.957  sd of d  2.045  worst frame d +12.245
+      step800 DELIVERABLE      above on  97.3% of frames   mean d  +3.390  sd of d  2.078  worst frame d +11.405
+      origin+s25 (ceiling)     above on  86.7% of frames   mean d  +3.950  sd of d  3.894  worst frame d +15.537
+
+  [hole_dil4]  n_frames_scored=150
+    config                   haloFrac% mean      sd     min  max(worst) d vs origin | edgeHF/GT flatHF/GT stripeE/GT
+    origin (deployed)                32.705   8.606  16.129      55.564      +0.000 |     0.384     1.682      4.283
+    shipped 5-slot Mamba             33.365   8.713  17.519      55.527      +0.660 |     0.397     1.715      4.374
+    mstudent2 step200                35.811   8.656  18.648      58.707      +3.106 |     0.446     1.893      4.866
+    mstudent2 step400                35.195   8.538  19.055      57.659      +2.489 |     0.452     1.968      4.929
+    step800 DELIVERABLE              35.642   8.532  19.711      57.370      +2.937 |     0.460     1.967      4.926
+    origin+s25 (ceiling)             35.346   8.432  18.151      59.176      +2.641 |     0.435     1.878      4.809
+    GT (real right eye)               0.000                                         |     1.000     1.000      1.000
+    paired vs origin, per frame (fraction of frames with HIGHER halo than origin):
+      shipped 5-slot Mamba     above on  73.3% of frames   mean d  +0.660  sd of d  1.056  worst frame d  +3.315
+      mstudent2 step200        above on  98.7% of frames   mean d  +3.106  sd of d  1.813  worst frame d +10.215
+      mstudent2 step400        above on  98.7% of frames   mean d  +2.489  sd of d  1.413  worst frame d  +5.969
+      step800 DELIVERABLE      above on  99.3% of frames   mean d  +2.937  sd of d  1.568  worst frame d  +7.648
+      origin+s25 (ceiling)     above on  90.0% of frames   mean d  +2.641  sd of d  2.130  worst frame d  +8.861
+
+  [wholewin]  n_frames_scored=19
+    config                   haloFrac% mean      sd     min  max(worst) d vs origin | edgeHF/GT flatHF/GT stripeE/GT
+    origin (deployed)                25.489   4.864  18.818      35.213      +0.000 |     0.416     0.870      1.890
+    shipped 5-slot Mamba             26.100   4.871  19.059      34.818      +0.610 |     0.436     0.870      1.901
+    mstudent2 step200                28.107   5.082  20.138      37.178      +2.618 |     0.474     0.995      2.223
+    mstudent2 step400                26.899   4.918  19.092      35.793      +1.409 |     0.458     1.060      2.284
+    step800 DELIVERABLE              27.505   5.080  19.665      36.796      +2.016 |     0.476     1.037      2.250
+    origin+s25 (ceiling)             27.068   4.359  20.168      34.872      +1.579 |     0.429     1.013      2.253
+    GT (real right eye)               0.000                                         |     1.000     1.000      1.000
+    paired vs origin, per frame (fraction of frames with HIGHER halo than origin):
+      shipped 5-slot Mamba     above on  84.2% of frames   mean d  +0.610  sd of d  0.729  worst frame d  +2.156
+      mstudent2 step200        above on 100.0% of frames   mean d  +2.618  sd of d  1.047  worst frame d  +4.693
+      mstudent2 step400        above on 100.0% of frames   mean d  +1.409  sd of d  0.675  worst frame d  +2.324
+      step800 DELIVERABLE      above on 100.0% of frames   mean d  +2.016  sd of d  0.787  worst frame d  +3.191
+      origin+s25 (ceiling)     above on  89.5% of frames   mean d  +1.579  sd of d  1.122  worst frame d  +3.415
+
+  [plateau overshoot, REGISTRATION-FREE, edges with centre inside the mask]
+    config                        mean       sd      min  max(worst)
+    GT (registered)             0.2009   0.0658   0.1105      0.3653
+    origin (deployed)           0.2783   0.0828   0.0759      0.4723
+    shipped 5-slot Mamba        0.2941   0.0893   0.0777      0.5128
+    mstudent2 step200           0.3557   0.1072   0.0952      0.6213
+    mstudent2 step400           0.3376   0.0998   0.0923      0.6014
+    step800 DELIVERABLE         0.3423   0.1024   0.0959      0.6212
+    origin+s25 (ceiling)        0.3054   0.0850   0.0770      0.5535
+    per-frame CSV: /home/kawa/master_project/StereoCrafter/outputs/rung_check_20261001/perframe_0251.csv
+======================================================================================================================
+### 0259   nframes=151 (ALL valid frames)   mean maskFrac=1.2875%   GT shift used (ddy,ddx)=(0,-18)
+    mask pixels/frame: raw 7594  eroded-1px 1590  dilated-4px 17462   -> the holes are 1-3 px wide STRIPES, not areas
+    step edges with centre inside the mask, per frame: mean 20  min 0  max 45   (frames used for overshoot: 5)
+
+  [hole]  n_frames_scored=151
+    config                   haloFrac% mean      sd     min  max(worst) d vs origin | edgeHF/GT flatHF/GT stripeE/GT
+    origin (deployed)                28.626  11.767   7.349      53.473      +0.000 |     0.415     0.729      1.287
+    shipped 5-slot Mamba             28.877  11.307   8.357      52.979      +0.251 |     0.440     0.751      1.334
+    mstudent2 step200                32.438  12.039  10.845      57.161      +3.812 |     0.446     0.819      1.526
+    mstudent2 step400                34.096  12.207  11.831      56.645      +5.470 |     0.536     1.187      1.943
+    step800 DELIVERABLE              33.736  11.844  12.254      57.658      +5.110 |     0.526     1.139      1.892
+    origin+s25 (ceiling)             34.385  10.532  14.006      55.851      +5.758 |     0.531     1.120      1.845
+    GT (real right eye)               0.000                                         |     1.000     1.000      1.000
+    paired vs origin, per frame (fraction of frames with HIGHER halo than origin):
+      shipped 5-slot Mamba     above on  54.3% of frames   mean d  +0.251  sd of d  1.634  worst frame d  +4.571
+      mstudent2 step200        above on  96.7% of frames   mean d  +3.812  sd of d  2.003  worst frame d  +8.552
+      mstudent2 step400        above on  98.0% of frames   mean d  +5.470  sd of d  2.688  worst frame d +13.190
+      step800 DELIVERABLE      above on  95.4% of frames   mean d  +5.110  sd of d  2.782  worst frame d +12.382
+      origin+s25 (ceiling)     above on  80.8% of frames   mean d  +5.758  sd of d  6.429  worst frame d +15.871
+
+  [hole_dil4]  n_frames_scored=151
+    config                   haloFrac% mean      sd     min  max(worst) d vs origin | edgeHF/GT flatHF/GT stripeE/GT
+    origin (deployed)                25.236  10.165   8.313      44.737      +0.000 |     0.488     0.701      1.236
+    shipped 5-slot Mamba             26.599  10.273   8.871      47.001      +1.362 |     0.531     0.731      1.289
+    mstudent2 step200                29.117  10.962  10.811      48.898      +3.880 |     0.523     0.790      1.468
+    mstudent2 step400                28.946  10.762  10.870      47.491      +3.710 |     0.547     1.050      1.731
+    step800 DELIVERABLE              29.070  10.673  11.340      47.430      +3.834 |     0.553     1.019      1.703
+    origin+s25 (ceiling)             28.673   9.062  10.898      49.204      +3.437 |     0.527     0.992      1.681
+    GT (real right eye)               0.000                                         |     1.000     1.000      1.000
+    paired vs origin, per frame (fraction of frames with HIGHER halo than origin):
+      shipped 5-slot Mamba     above on  88.7% of frames   mean d  +1.362  sd of d  1.200  worst frame d  +4.398
+      mstudent2 step200        above on  99.3% of frames   mean d  +3.880  sd of d  1.826  worst frame d  +8.998
+      mstudent2 step400        above on  98.7% of frames   mean d  +3.710  sd of d  1.851  worst frame d  +8.797
+      step800 DELIVERABLE      above on  98.7% of frames   mean d  +3.834  sd of d  2.053  worst frame d  +9.314
+      origin+s25 (ceiling)     above on  82.1% of frames   mean d  +3.437  sd of d  4.384  worst frame d +10.594
+
+  [wholewin]  n_frames_scored=19
+    config                   haloFrac% mean      sd     min  max(worst) d vs origin | edgeHF/GT flatHF/GT stripeE/GT
+    origin (deployed)                25.814  14.503   9.415      48.342      +0.000 |     0.561     0.840      1.254
+    shipped 5-slot Mamba             28.018  15.255  10.142      50.120      +2.204 |     0.621     0.914      1.336
+    mstudent2 step200                29.140  15.973  10.527      51.474      +3.327 |     0.583     0.916      1.422
+    mstudent2 step400                26.219  14.276   9.569      46.154      +0.406 |     0.533     0.899      1.389
+    step800 DELIVERABLE              27.193  14.722  10.165      48.306      +1.380 |     0.555     0.915      1.394
+    origin+s25 (ceiling)             24.789  12.614  10.753      48.557      -1.024 |     0.502     0.847      1.354
+    GT (real right eye)               0.000                                         |     1.000     1.000      1.000
+    paired vs origin, per frame (fraction of frames with HIGHER halo than origin):
+      shipped 5-slot Mamba     above on 100.0% of frames   mean d  +2.204  sd of d  1.569  worst frame d  +5.413
+      mstudent2 step200        above on 100.0% of frames   mean d  +3.327  sd of d  2.758  worst frame d  +9.546
+      mstudent2 step400        above on  63.2% of frames   mean d  +0.406  sd of d  1.714  worst frame d  +4.386
+      step800 DELIVERABLE      above on  89.5% of frames   mean d  +1.380  sd of d  1.861  worst frame d  +5.718
+      origin+s25 (ceiling)     above on  42.1% of frames   mean d  -1.024  sd of d  3.421  worst frame d  +3.602
+
+  [plateau overshoot, REGISTRATION-FREE, edges with centre inside the mask]
+    config                        mean       sd      min  max(worst)
+    GT (registered)             0.4115   0.1206   0.3036      0.6098
+    origin (deployed)           0.2755   0.0136   0.2605      0.2971
+    shipped 5-slot Mamba        0.3244   0.0403   0.2765      0.3762
+    mstudent2 step200           0.3991   0.0713   0.3267      0.4993
+    mstudent2 step400           0.4300   0.1010   0.3091      0.5489
+    step800 DELIVERABLE         0.4477   0.1095   0.3205      0.5712
+    origin+s25 (ceiling)        0.4544   0.0817   0.3723      0.5888
+    per-frame CSV: /home/kawa/master_project/StereoCrafter/outputs/rung_check_20261001/perframe_0259.csv
+======================================================================================================================
+### 0301   nframes=151 (ALL valid frames)   mean maskFrac=1.4438%   GT shift used (ddy,ddx)=(1,-15)
+    mask pixels/frame: raw 8516  eroded-1px 196  dilated-4px 49415   -> the holes are 1-3 px wide STRIPES, not areas
+    step edges with centre inside the mask, per frame: mean 23  min 0  max 112   (frames used for overshoot: 25)
+
+  [hole]  n_frames_scored=151
+    config                   haloFrac% mean      sd     min  max(worst) d vs origin | edgeHF/GT flatHF/GT stripeE/GT
+    origin (deployed)                25.591   5.172   8.824      38.240      +0.000 |     0.209     0.876      1.460
+    shipped 5-slot Mamba             26.739   5.315  11.438      39.245      +1.148 |     0.214     0.882      1.510
+    mstudent2 step200                29.031   5.307  14.379      42.978      +3.440 |     0.243     1.035      1.813
+    mstudent2 step400                29.029   5.374  14.052      45.347      +3.437 |     0.260     1.122      1.908
+    step800 DELIVERABLE              29.128   5.445  13.725      46.531      +3.537 |     0.261     1.114      1.889
+    origin+s25 (ceiling)             30.275   5.194  15.000      44.089      +4.684 |     0.265     1.175      2.053
+    GT (real right eye)               0.000                                         |     1.000     1.000      1.000
+    paired vs origin, per frame (fraction of frames with HIGHER halo than origin):
+      shipped 5-slot Mamba     above on  84.8% of frames   mean d  +1.148  sd of d  1.109  worst frame d  +5.098
+      mstudent2 step200        above on  99.3% of frames   mean d  +3.440  sd of d  1.604  worst frame d  +9.962
+      mstudent2 step400        above on  98.0% of frames   mean d  +3.437  sd of d  1.828  worst frame d +10.902
+      step800 DELIVERABLE      above on  98.7% of frames   mean d  +3.537  sd of d  1.828  worst frame d +10.714
+      origin+s25 (ceiling)     above on  93.4% of frames   mean d  +4.684  sd of d  3.462  worst frame d +15.913
+
+  [hole_dil4]  n_frames_scored=151
+    config                   haloFrac% mean      sd     min  max(worst) d vs origin | edgeHF/GT flatHF/GT stripeE/GT
+    origin (deployed)                23.702   3.538  13.316      32.910      +0.000 |     0.211     0.682      1.176
+    shipped 5-slot Mamba             24.961   3.780  13.956      35.386      +1.259 |     0.220     0.701      1.236
+    mstudent2 step200                26.855   3.755  15.877      36.396      +3.153 |     0.243     0.805      1.451
+    mstudent2 step400                26.813   3.725  15.877      37.068      +3.111 |     0.254     0.853      1.500
+    step800 DELIVERABLE              27.000   3.757  16.005      37.510      +3.298 |     0.256     0.851      1.489
+    origin+s25 (ceiling)             27.877   3.442  15.493      37.276      +4.175 |     0.256     0.883      1.608
+    GT (real right eye)               0.000                                         |     1.000     1.000      1.000
+    paired vs origin, per frame (fraction of frames with HIGHER halo than origin):
+      shipped 5-slot Mamba     above on  99.3% of frames   mean d  +1.259  sd of d  0.577  worst frame d  +2.964
+      mstudent2 step200        above on 100.0% of frames   mean d  +3.153  sd of d  1.032  worst frame d  +5.850
+      mstudent2 step400        above on  99.3% of frames   mean d  +3.111  sd of d  1.086  worst frame d  +6.202
+      step800 DELIVERABLE      above on 100.0% of frames   mean d  +3.298  sd of d  1.084  worst frame d  +6.375
+      origin+s25 (ceiling)     above on  99.3% of frames   mean d  +4.175  sd of d  2.104  worst frame d +12.357
+
+  [wholewin]  n_frames_scored=19
+    config                   haloFrac% mean      sd     min  max(worst) d vs origin | edgeHF/GT flatHF/GT stripeE/GT
+    origin (deployed)                19.089   3.061  15.416      26.051      +0.000 |     0.247     0.487      0.777
+    shipped 5-slot Mamba             20.240   3.410  16.012      27.545      +1.151 |     0.258     0.505      0.822
+    mstudent2 step200                21.653   3.380  17.437      29.282      +2.564 |     0.275     0.561      0.952
+    mstudent2 step400                21.359   3.223  17.368      28.172      +2.271 |     0.276     0.575      0.962
+    step800 DELIVERABLE              21.682   3.232  17.690      28.636      +2.593 |     0.281     0.579      0.963
+    origin+s25 (ceiling)             21.895   3.010  17.292      28.843      +2.807 |     0.265     0.568      1.006
+    GT (real right eye)               0.000                                         |     1.000     1.000      1.000
+    paired vs origin, per frame (fraction of frames with HIGHER halo than origin):
+      shipped 5-slot Mamba     above on 100.0% of frames   mean d  +1.151  sd of d  0.501  worst frame d  +2.104
+      mstudent2 step200        above on 100.0% of frames   mean d  +2.564  sd of d  0.694  worst frame d  +3.904
+      mstudent2 step400        above on 100.0% of frames   mean d  +2.271  sd of d  0.529  worst frame d  +3.240
+      step800 DELIVERABLE      above on 100.0% of frames   mean d  +2.593  sd of d  0.505  worst frame d  +3.567
+      origin+s25 (ceiling)     above on 100.0% of frames   mean d  +2.807  sd of d  1.278  worst frame d  +5.967
+
+  [holecrop384]  n_frames_scored=151
+    config                   haloFrac% mean      sd     min  max(worst) d vs origin | edgeHF/GT flatHF/GT stripeE/GT
+    origin (deployed)                24.461   3.887  16.557      34.985      +0.000 |     0.182     0.481      0.810
+    shipped 5-slot Mamba             25.795   4.172  17.895      37.663      +1.334 |     0.192     0.502      0.869
+    mstudent2 step200                27.026   4.072  19.089      39.052      +2.565 |     0.211     0.563      1.013
+    mstudent2 step400                27.136   3.960  19.093      37.981      +2.675 |     0.221     0.594      1.044
+    step800 DELIVERABLE              27.370   3.954  19.431      38.408      +2.909 |     0.224     0.596      1.044
+    origin+s25 (ceiling)             28.148   3.780  19.330      37.480      +3.687 |     0.222     0.607      1.117
+    GT (real right eye)               0.000                                         |     1.000     1.000      1.000
+    paired vs origin, per frame (fraction of frames with HIGHER halo than origin):
+      shipped 5-slot Mamba     above on 100.0% of frames   mean d  +1.334  sd of d  0.521  worst frame d  +2.678
+      mstudent2 step200        above on 100.0% of frames   mean d  +2.565  sd of d  0.820  worst frame d  +5.386
+      mstudent2 step400        above on  99.3% of frames   mean d  +2.675  sd of d  0.915  worst frame d  +4.758
+      step800 DELIVERABLE      above on 100.0% of frames   mean d  +2.909  sd of d  0.918  worst frame d  +5.336
+      origin+s25 (ceiling)     above on 100.0% of frames   mean d  +3.687  sd of d  1.802  worst frame d +12.342
+
+  [plateau overshoot, REGISTRATION-FREE, edges with centre inside the mask]
+    config                        mean       sd      min  max(worst)
+    GT (registered)             0.4918   0.2171   0.2816      1.3543
+    origin (deployed)           0.4075   0.2578   0.0702      1.1699
+    shipped 5-slot Mamba        0.4377   0.2886   0.0655      1.3460
+    mstudent2 step200           0.5416   0.3263   0.0736      1.4888
+    mstudent2 step400           0.5533   0.3280   0.0796      1.4216
+    step800 DELIVERABLE         0.5534   0.3331   0.0769      1.4368
+    origin+s25 (ceiling)        0.4242   0.2534   0.1110      1.1654
+    per-frame CSV: /home/kawa/master_project/StereoCrafter/outputs/rung_check_20261001/perframe_0301.csv
+
+  haloFrac% = % of GT-edge pixels whose value falls outside the GT's own 3x3 [min,max] by >0.04 (halo/ringing)
+  flatHF    = mean |Laplacian| inside GT-flat regions (noise / amplified splatting texture)   <- ARTEFACT
+  edgeHF    = mean |Laplacian| inside the GT's top-decile gradient regions (detail at edges)  <- DETAIL
+  stripeE   = mean |horizontal difference| inside GT-flat regions (splatting-stripe energy)   <- ARTEFACT
+  definitions verbatim from scripts/distill/runs/fulldata_v2/beyond4/ringing_metrics.py
+  prior 4-clip whole-frame version: scripts/distill/runs/skeptic1/RINGING_STUDENT.txt

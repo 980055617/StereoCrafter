@@ -1,0 +1,10 @@
+deployed 0301, 576x1024 bf16, 8 steps x 2 chunks = 16 calls per slot
+config   down.0.a0 down.0.a1 up.3.a0 up.3.a1 up.3.a2     sum5   class
+origin       20.214     20.219     20.275     20.352     20.356  101.416   Attention
+mamba5       10.712     10.740     10.733     10.739     10.732   53.655   GatedResidualM
+           first-call outliers (one-time Mamba kernel build, no warmup on this path): down_blocks.0.a0=5068 ms
+mamba2       10.714     10.740     20.306     20.384     20.388   82.533   Attention/GatedResidualM
+           first-call outliers (one-time Mamba kernel build, no warmup on this path): down_blocks.0.a0=4977 ms
+
+attn1 saving per forward (deployed, steady state): down0=18.98 ms  up3=28.78 ms  total=47.76 ms  -> up3 = 60.3% , down0 = 39.7%
+2-slot build on the deployed path: down0 saving=18.98 ms, up3 slots unchanged (61.08 vs origin 60.98 ms)

@@ -1,0 +1,12 @@
+0042 mstudent2_step400_ll scripts/distill/runs/beyond_distil_mamba_scaled/mstudent2/step400.pt
+0052 mstudent2_step400_ll scripts/distill/runs/beyond_distil_mamba_scaled/mstudent2/step400.pt
+0125 mstudent2_step400_ll scripts/distill/runs/beyond_distil_mamba_scaled/mstudent2/step400.pt
+0128 mstudent2_step400_ll scripts/distill/runs/beyond_distil_mamba_scaled/mstudent2/step400.pt
+0141 mstudent2_step400_ll scripts/distill/runs/beyond_distil_mamba_scaled/mstudent2/step400.pt
+0147 mstudent2_step400_ll scripts/distill/runs/beyond_distil_mamba_scaled/mstudent2/step400.pt
+0170 mstudent2_step400_ll scripts/distill/runs/beyond_distil_mamba_scaled/mstudent2/step400.pt
+0204 mstudent2_step400_ll scripts/distill/runs/beyond_distil_mamba_scaled/mstudent2/step400.pt
+0225 mstudent2_step400_ll scripts/distill/runs/beyond_distil_mamba_scaled/mstudent2/step400.pt
+0251 mstudent2_step400_ll scripts/distill/runs/beyond_distil_mamba_scaled/mstudent2/step400.pt
+0259 mstudent2_step400_ll scripts/distill/runs/beyond_distil_mamba_scaled/mstudent2/step400.pt
+0301 mstudent2_step400_ll scripts/distill/runs/beyond_distil_mamba_scaled/mstudent2/step400.pt

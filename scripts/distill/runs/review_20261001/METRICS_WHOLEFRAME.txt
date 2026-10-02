@@ -1,0 +1,103 @@
+
+=== 0147  WHOLE 576x1024 WINDOW, n=19 frames (step 8), GT regions = DISPARITY-REGISTERED ===
+label                     haloFrac%  haloMean    flatHF  flatHF/GT    edgeHF  edgeHF/GT   stripeE  stripeE/GT
+GT                            0.000   0.00000   0.00324      1.000   0.04225      1.000   0.00062       1.000
+origin (deployed)            27.423   0.04319   0.00438      1.350   0.02376      0.562   0.00283       4.572
+shipped 5-slot Mamba         27.626   0.04340   0.00437      1.348   0.02360      0.559   0.00284       4.583
+THIS DELIVERABLE             29.388   0.04557   0.00558      1.720   0.02695      0.638   0.00339       5.476
+origin+s25 (ceiling)         27.922   0.04384   0.00521      1.606   0.02485      0.588   0.00329       5.313
+
+=== 0147  WHOLE 576x1024 WINDOW, n=19 frames (step 8), GT regions = SCORER WINDOW (unregistered) ===
+label                     haloFrac%  haloMean    flatHF  flatHF/GT    edgeHF  edgeHF/GT   stripeE  stripeE/GT
+GT                            0.000   0.00000   0.00323      1.000   0.04258      1.000   0.00062       1.000
+origin (deployed)            52.819   0.08590   0.00675      2.088   0.00995      0.234   0.00514       8.273
+shipped 5-slot Mamba         52.878   0.08601   0.00672      2.077   0.00990      0.232   0.00517       8.318
+THIS DELIVERABLE             53.717   0.08757   0.00819      2.534   0.01178      0.277   0.00584       9.403
+origin+s25 (ceiling)         53.170   0.08664   0.00763      2.359   0.01096      0.257   0.00563       9.068
+
+=== 0141  WHOLE 576x1024 WINDOW, n=19 frames (step 8), GT regions = DISPARITY-REGISTERED ===
+label                     haloFrac%  haloMean    flatHF  flatHF/GT    edgeHF  edgeHF/GT   stripeE  stripeE/GT
+GT                            0.000   0.00000   0.00475      1.000   0.03874      1.000   0.00083       1.000
+origin (deployed)            34.472   0.05863   0.00511      1.077   0.02057      0.531   0.00333       4.026
+shipped 5-slot Mamba         34.388   0.05850   0.00529      1.114   0.02083      0.538   0.00343       4.150
+THIS DELIVERABLE             35.520   0.05964   0.00684      1.440   0.02382      0.615   0.00423       5.111
+origin+s25 (ceiling)         35.918   0.06051   0.00612      1.289   0.02246      0.580   0.00399       4.824
+
+=== 0141  WHOLE 576x1024 WINDOW, n=19 frames (step 8), GT regions = SCORER WINDOW (unregistered) ===
+label                     haloFrac%  haloMean    flatHF  flatHF/GT    edgeHF  edgeHF/GT   stripeE  stripeE/GT
+GT                            0.000   0.00000   0.00475      1.000   0.03885      1.000   0.00083       1.000
+origin (deployed)            51.330   0.10943   0.00623      1.312   0.01346      0.347   0.00403       4.880
+shipped 5-slot Mamba         50.881   0.10860   0.00643      1.353   0.01368      0.352   0.00415       5.025
+THIS DELIVERABLE             50.765   0.10835   0.00807      1.700   0.01613      0.415   0.00496       6.008
+origin+s25 (ceiling)         52.271   0.11095   0.00730      1.537   0.01499      0.386   0.00473       5.726
+
+=== 0042  WHOLE 576x1024 WINDOW, n=19 frames (step 8), GT regions = DISPARITY-REGISTERED ===
+label                     haloFrac%  haloMean    flatHF  flatHF/GT    edgeHF  edgeHF/GT   stripeE  stripeE/GT
+GT                            0.000   0.00000   0.00740      1.000   0.05804      1.000   0.00173       1.000
+origin (deployed)            29.218   0.03719   0.01036      1.400   0.03587      0.618   0.00540       3.118
+shipped 5-slot Mamba         30.345   0.03885   0.01071      1.448   0.03842      0.662   0.00557       3.214
+THIS DELIVERABLE             31.723   0.04065   0.01234      1.668   0.04206      0.725   0.00645       3.722
+origin+s25 (ceiling)         30.255   0.03852   0.01140      1.542   0.03665      0.631   0.00627       3.618
+
+=== 0042  WHOLE 576x1024 WINDOW, n=19 frames (step 8), GT regions = SCORER WINDOW (unregistered) ===
+label                     haloFrac%  haloMean    flatHF  flatHF/GT    edgeHF  edgeHF/GT   stripeE  stripeE/GT
+GT                            0.000   0.00000   0.00732      1.000   0.05813      1.000   0.00171       1.000
+origin (deployed)            44.232   0.07456   0.01355      1.852   0.02219      0.382   0.00801       4.684
+shipped 5-slot Mamba         45.072   0.07627   0.01418      1.937   0.02345      0.403   0.00831       4.855
+THIS DELIVERABLE             45.566   0.07738   0.01601      2.188   0.02644      0.455   0.00933       5.451
+origin+s25 (ceiling)         44.822   0.07548   0.01454      1.987   0.02351      0.404   0.00896       5.237
+
+=== 0128  WHOLE 576x1024 WINDOW, n=19 frames (step 8), GT regions = DISPARITY-REGISTERED ===
+label                     haloFrac%  haloMean    flatHF  flatHF/GT    edgeHF  edgeHF/GT   stripeE  stripeE/GT
+GT                            0.000   0.00000   0.01861      1.000   0.07235      1.000   0.00630       1.000
+origin (deployed)            22.165   0.02440   0.01499      0.806   0.03160      0.437   0.00987       1.566
+shipped 5-slot Mamba         23.174   0.02569   0.01561      0.839   0.03341      0.462   0.01026       1.627
+THIS DELIVERABLE             24.975   0.02788   0.01846      0.992   0.03786      0.523   0.01209       1.917
+origin+s25 (ceiling)         24.502   0.02718   0.01721      0.925   0.03474      0.480   0.01166       1.849
+
+=== 0128  WHOLE 576x1024 WINDOW, n=19 frames (step 8), GT regions = SCORER WINDOW (unregistered) ===
+label                     haloFrac%  haloMean    flatHF  flatHF/GT    edgeHF  edgeHF/GT   stripeE  stripeE/GT
+GT                            0.000   0.00000   0.01865      1.000   0.07238      1.000   0.00629       1.000
+origin (deployed)            32.836   0.03851   0.01765      0.946   0.02375      0.328   0.01169       1.860
+shipped 5-slot Mamba         33.914   0.04007   0.01846      0.990   0.02498      0.345   0.01218       1.937
+THIS DELIVERABLE             35.137   0.04173   0.02162      1.159   0.02879      0.398   0.01421       2.259
+origin+s25 (ceiling)         34.704   0.04110   0.02006      1.076   0.02655      0.367   0.01366       2.172
+
+=== 0301  WHOLE 576x1024 WINDOW, n=19 frames (step 8), GT regions = DISPARITY-REGISTERED ===
+label                     haloFrac%  haloMean    flatHF  flatHF/GT    edgeHF  edgeHF/GT   stripeE  stripeE/GT
+GT                            0.000   0.00000   0.06323      1.000   0.31472      1.000   0.02115       1.000
+origin (deployed)            19.024   0.02679   0.03126      0.494   0.07743      0.246   0.01686       0.797
+shipped 5-slot Mamba         20.140   0.02881   0.03250      0.514   0.08088      0.257   0.01785       0.844
+THIS DELIVERABLE             21.601   0.03138   0.03746      0.592   0.08775      0.279   0.02101       0.993
+origin+s25 (ceiling)         21.880   0.03193   0.03646      0.577   0.08322      0.264   0.02183       1.032
+
+=== 0301  WHOLE 576x1024 WINDOW, n=19 frames (step 8), GT regions = SCORER WINDOW (unregistered) ===
+label                     haloFrac%  haloMean    flatHF  flatHF/GT    edgeHF  edgeHF/GT   stripeE  stripeE/GT
+GT                            0.000   0.00000   0.06380      1.000   0.31590      1.000   0.02133       1.000
+origin (deployed)            22.768   0.03319   0.03469      0.544   0.06534      0.207   0.01843       0.864
+shipped 5-slot Mamba         24.220   0.03582   0.03629      0.569   0.06776      0.214   0.01959       0.919
+THIS DELIVERABLE             25.519   0.03833   0.04112      0.645   0.07523      0.238   0.02278       1.068
+origin+s25 (ceiling)         25.554   0.03849   0.03959      0.621   0.07218      0.228   0.02341       1.098
+
+=== 0204  WHOLE 576x1024 WINDOW, n=19 frames (step 8), GT regions = DISPARITY-REGISTERED ===
+label                     haloFrac%  haloMean    flatHF  flatHF/GT    edgeHF  edgeHF/GT   stripeE  stripeE/GT
+GT                            0.000   0.00000   0.00812      1.000   0.28831      1.000   0.00103       1.000
+origin (deployed)             6.028   0.00830   0.00694      0.855   0.16596      0.576   0.00199       1.925
+shipped 5-slot Mamba          6.511   0.00885   0.00723      0.891   0.17341      0.601   0.00204       1.977
+THIS DELIVERABLE              9.471   0.01207   0.00938      1.156   0.19677      0.682   0.00255       2.467
+origin+s25 (ceiling)          8.876   0.01142   0.00903      1.112   0.18784      0.652   0.00254       2.464
+
+=== 0204  WHOLE 576x1024 WINDOW, n=19 frames (step 8), GT regions = SCORER WINDOW (unregistered) ===
+label                     haloFrac%  haloMean    flatHF  flatHF/GT    edgeHF  edgeHF/GT   stripeE  stripeE/GT
+GT                            0.000   0.00000   0.00840      1.000   0.29146      1.000   0.00110       1.000
+origin (deployed)            15.004   0.02139   0.00972      1.158   0.13674      0.469   0.00284       2.593
+shipped 5-slot Mamba         15.848   0.02245   0.01003      1.194   0.14405      0.494   0.00290       2.643
+THIS DELIVERABLE             19.689   0.02714   0.01253      1.492   0.16643      0.571   0.00350       3.188
+origin+s25 (ceiling)         18.574   0.02583   0.01204      1.434   0.15790      0.542   0.00347       3.168
+
+  haloFrac% = % of GT-edge pixels whose value falls outside the GT's own 3x3 [min,max] by >0.04 (halo/ringing)
+  flatHF    = mean |Laplacian| inside GT-flat regions (noise / amplified splatting texture)   <- ARTEFACT
+  edgeHF    = mean |Laplacian| inside the GT's top-decile gradient regions (detail at edges)  <- DETAIL
+  stripeE   = mean |horizontal difference| inside GT-flat regions (splatting-stripe energy)   <- ARTEFACT
+  definitions verbatim from scripts/distill/runs/fulldata_v2/beyond4/ringing_metrics.py
+  prior 4-clip whole-frame version: scripts/distill/runs/skeptic1/RINGING_STUDENT.txt

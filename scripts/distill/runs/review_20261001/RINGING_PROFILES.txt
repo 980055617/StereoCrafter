@@ -1,0 +1,53 @@
+REGISTRATION-FREE RINGING TEST -- plateau overshoot across strong edges
+=====================================================================
+For every strong, locally monotone vertical step edge in the ORIGIN render (gradient in the
+top 2%, isolated, with flat plateaus 6-14 px either side), each panel's scanline is read over
++-16 px.  overshoot = max excursion BEYOND the panel's own two plateau levels, in units of the
+edge's own contrast, averaged over all such edges.  Ringing/halo shows up as a positive
+overshoot that grows with sharpening; genuine detail does not push past the plateaus.
+All panels are pixel-registered by construction (same window of the same render grid), so no
+GT alignment enters this number.
+
+0147  n_edges=58  plateau overshoot / origin edge contrast   (mean | median | p90):
+    GT (registered)           0.0835 |  0.0329 |  0.2308
+    origin (deployed)         0.0695 |  0.0148 |  0.1822
+    shipped 5-slot Mamba      0.0699 |  0.0183 |  0.1746
+    THIS DELIVERABLE          0.0795 |  0.0246 |  0.2072
+    origin+s25 (ceiling)      0.0739 |  0.0277 |  0.1980
+0141  n_edges=36  plateau overshoot / origin edge contrast   (mean | median | p90):
+    GT (registered)           0.1018 |  0.0259 |  0.2634
+    origin (deployed)         0.0706 |  0.0045 |  0.1741
+    shipped 5-slot Mamba      0.0805 |  0.0045 |  0.2282
+    THIS DELIVERABLE          0.0994 |  0.0110 |  0.2609
+    origin+s25 (ceiling)      0.0831 |  0.0113 |  0.2125
+0042  n_edges=12  plateau overshoot / origin edge contrast   (mean | median | p90):
+    GT (registered)           0.1916 |  0.1440 |  0.4100
+    origin (deployed)         0.1774 |  0.1039 |  0.4632
+    shipped 5-slot Mamba      0.1757 |  0.0887 |  0.4857
+    THIS DELIVERABLE          0.1938 |  0.1129 |  0.4554
+    origin+s25 (ceiling)      0.1691 |  0.1089 |  0.4073
+0128  n_edges=50  plateau overshoot / origin edge contrast   (mean | median | p90):
+    GT (registered)           0.4735 |  0.3679 |  1.1598
+    origin (deployed)         0.2552 |  0.1365 |  0.6652
+    shipped 5-slot Mamba      0.2859 |  0.1845 |  0.7607
+    THIS DELIVERABLE          0.3192 |  0.2163 |  0.8227
+    origin+s25 (ceiling)      0.2979 |  0.1707 |  0.8442
+0301  n_edges=37  plateau overshoot / origin edge contrast   (mean | median | p90):
+    GT (registered)           1.0794 |  0.7625 |  3.0005
+    origin (deployed)         0.6337 |  0.2561 |  1.4936
+    shipped 5-slot Mamba      0.7022 |  0.2911 |  1.6690
+    THIS DELIVERABLE          0.7381 |  0.2712 |  1.8222
+    origin+s25 (ceiling)      0.6804 |  0.4342 |  1.6281
+0204  n_edges=56  plateau overshoot / origin edge contrast   (mean | median | p90):
+    GT (registered)           0.2416 |  0.1366 |  0.6209
+    origin (deployed)         0.1496 |  0.0773 |  0.3199
+    shipped 5-slot Mamba      0.1581 |  0.0797 |  0.3803
+    THIS DELIVERABLE          0.2078 |  0.1297 |  0.5208
+    origin+s25 (ceiling)      0.1603 |  0.1059 |  0.3031
+
+NOTE: the GT row is NOT a ringing measure -- the plateaus are chosen for flatness in the
+ORIGIN render, and real GT grain/texture inside them registers as overshoot.  It is an upper
+reference for how much excursion the real right eye itself carries there.
+
+INTERPRETATION: if THIS DELIVERABLE's overshoot is at or below origin+s25's, its extra
+sharpness is not ringing; if it is materially above origin's AND above s25's, it is.

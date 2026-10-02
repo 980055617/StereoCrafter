@@ -1,0 +1,17 @@
+--- 0204 ---
+[shape] mkv frames=(151, 576, 2048, 3)
+CLAIM1 writer-is-lossless: pre-encode md5=e5c5fba479a64801b686f28ba656064f  decoded md5=e5c5fba479a64801b686f28ba656064f  MATCH=True
+CLAIM2 left-half-passthrough: source=video_data/splatting/0204_splatting_results.mp4 crop=(224,448) size=576x1024 BIT_IDENTICAL=True maxabs=0 nonzero=0/267190272
+CLAIM3 lossless-vs-mp4v (n=151 frames of outputs/fulldata_v2/clips/0204_origin/0204_inpainting_results_sbs.mp4):
+   right-half PSNR = 37.83 dB   maxabs=60
+   left-half  PSNR = 40.34 dB   maxabs=30
+   sharp(right): lossless=0.00653  mp4v=0.00626   ratio=1.0434
+--- 0147 ---
+[shape] mkv frames=(172, 576, 2048, 3)
+CLAIM1 writer-is-lossless: pre-encode md5=90637b7ea7521ff0b5358a60bef029ce  decoded md5=90637b7ea7521ff0b5358a60bef029ce  MATCH=True
+CLAIM2 left-half-passthrough: source=video_data/splatting/0147_splatting_results.mp4 crop=(800,576) size=576x1024 BIT_IDENTICAL=True maxabs=0 nonzero=0/304349184
+CLAIM3 lossless-vs-mp4v (n=172 frames of outputs/fulldata_v2/clips/0147_origin/0147_inpainting_results_sbs.mp4):
+   right-half PSNR = 38.57 dB   maxabs=52
+   left-half  PSNR = 39.86 dB   maxabs=34
+   sharp(right): lossless=0.00620  mp4v=0.00668   ratio=0.9278
+DONE

@@ -1,0 +1,4 @@
+DRIVER EQUIVALENCE CONTROL -- dev clip 0040, rung step200
+  published dev-ladder render (run_driver_v3.sh): a8956b39897929113623bb1b07945507
+  this run's driver            (run_driver_rc.sh): a8956b39897929113623bb1b07945507
+  RESULT: IDENTICAL pre-encode pixels -- the driver copy is equivalent.

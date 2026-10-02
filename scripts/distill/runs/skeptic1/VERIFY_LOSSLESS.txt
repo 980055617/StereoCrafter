@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "/home/kawa/master_project/StereoCrafter/scripts/distill/runs/skeptic1/verify_ll_v1.py", line 11, in <module>
+    clip, mkv, exp = sys.argv[1], sys.argv[2], sys.argv[3]
+                                               ~~~~~~~~^^^
+IndexError: list index out of range
+Traceback (most recent call last):
+  File "/home/kawa/master_project/StereoCrafter/scripts/distill/runs/skeptic1/verify_ll_v1.py", line 11, in <module>
+    clip, mkv, exp = sys.argv[1], sys.argv[2], sys.argv[3]
+                                               ~~~~~~~~^^^
+IndexError: list index out of range
+Traceback (most recent call last):
+  File "/home/kawa/master_project/StereoCrafter/scripts/distill/runs/skeptic1/verify_ll_v1.py", line 11, in <module>
+    clip, mkv, exp = sys.argv[1], sys.argv[2], sys.argv[3]
+                                               ~~~~~~~~^^^
+IndexError: list index out of range
+DONE

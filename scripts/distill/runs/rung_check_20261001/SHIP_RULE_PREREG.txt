@@ -1,0 +1,47 @@
+PRE-REGISTERED SHIP RULE -- written BEFORE any 12-test-clip number for step200/step400 existed.
+Recorded at: 2026-10-01T16:47:17+09:00
+
+QUESTION 1. TABLE_DEV_SELECTION.txt prints SELECTED_STEP=200 (literal tie-break); step800 was
+shipped. Nobody has rendered step200/step400 on the 12 TEST clips. This run renders them and
+decides on test evidence.
+
+DECISION RULE, fixed in advance:
+  (R1) PRIMARY = 12-clip mean lossless real-GT LPIPS at the deployed config (8 steps, g 1.01),
+       SCORE_STEP=4, scorer scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py.
+  (R2) Ship a CONSERVATIVE rung (step200 or step400) only if BOTH hold:
+         (a) its 12-clip mean is within +0.0005 of step800's, AND
+         (b) it measurably reduces the 0042 in-hole halo statistic of Task 2
+             (i.e. closer to origin than step800 is, by more than the per-frame spread).
+  (R3) If a conservative rung gives up MORE than +0.0020 of the -0.0128 win, step800 stands
+       regardless of what Task 2 shows.
+  (R4) Between +0.0005 and +0.0020 of give-up: step800 stands unless Task 2 shows the halo
+       effect is a REAL GENERAL tendency (present on >=2 clips with disocclusion >0.3%), in
+       which case the cheapest rung that removes it and stays inside +0.0020 is preferred.
+  (R5) "clips improved vs origin" must not fall below 12/12 for any rung we would ship.
+
+SECONDARY READOUT, pre-specified because it is the tie-break's own stated PURPOSE:
+  the tie-break existed to avoid shipping an over-sharpened checkpoint. So report test-set
+  mean sh/GT per rung (mean of per-clip ratios, which is how 1.071 was published). If step200's
+  test sh/GT is materially closer to 1.0 than step800's 1.071 while costing little LPIPS, the
+  rule was right (for a reason dev could not see). If step200's test sh/GT is ~1.07 too, the
+  tie-break has no purchase on test either and the author's call is vindicated with data.
+
+QUESTION 2. The 0042 in-hole halo. Pre-specified analysis:
+  - region = the splatting video's mask quadrant, in RENDER coordinates, per frame.
+  - statistic = ringing_metrics.py's haloFrac over GT-top-decile-gradient pixels, RESTRICTED to
+    mask pixels (plus an eroded-mask variant so a hole-boundary seam cannot carry the effect),
+    computed PER FRAME over ALL valid frames, then mean / sd / per-frame worst.
+  - GT registration: the review's clip-global shift, re-estimated on ~10 frames to test drift.
+  - verdict (a) real general tendency / (b) 0042-specific / (c) not reproducible at scale,
+    decided by whether the step800-minus-origin in-hole halo gap is positive and outside the
+    per-frame spread on 0042 AND on the other clips with mean mask fraction >0.3%.
+  - PRIOR TO BE CHECKED, from METRICS_WHOLEFRAME.txt (0042, registered, whole 576x1024 window):
+    halo origin 29.218, deliverable 31.723, origin+s25 30.255 -- at whole-frame scale s25 is
+    ABOVE origin, so the review's "the ceiling helps here" pattern already fails outside the
+    384x384 hole crop. If s25 < origin does not survive mask-restriction, the durable negative
+    is "both sharpened configs raise in-hole halo, the deliverable most", a weaker claim.
+  - also check MONOTONICITY in rung (step200 <= step400 <= step800). If the halo is flat across
+    rungs, a conservative rung does NOT address it and that will be said plainly.
+
+NOTHING SHIPPED IS CHANGED BY THIS RUN. No tracked file is modified, no existing output
+directory is overwritten, no checkpoint is written or touched.

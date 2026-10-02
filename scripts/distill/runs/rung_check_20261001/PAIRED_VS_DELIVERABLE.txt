@@ -1,0 +1,52 @@
+==============================================================================================================================
+PAIRED PER-FRAME COMPARISON AGAINST THE DELIVERABLE (step800), in-hole haloFrac%
+Paired by frame, so the between-frame variance that inflates the raw sd is removed.
+Negative mean d = that config has LESS in-hole halo than the deliverable.
+==============================================================================================================================
+
+  [variant hole]
+    clip    nfr |               Mamba             step200             step400            (ceiling
+    0042    150 |  -0.758( 61%less)  +1.872( 25%less)  -0.765( 86%less)  -0.601( 51%less) 
+    0052    150 |  -0.820( 71%less)  +0.898( 13%less)  -0.406( 75%less)  -0.007( 49%less) 
+    0125    134 |  -2.361( 80%less)  -0.322( 61%less)  -0.560( 72%less)  -0.887( 63%less) 
+    0128    150 |  -2.919( 84%less)  +0.570( 32%less)  -0.662( 70%less)  -2.124( 69%less) 
+    0141    151 |  +0.185( 26%less)  +0.130( 32%less)  -0.030( 50%less)  +2.778( 17%less) 
+    0147    150 |  -3.344( 95%less)  +0.514( 45%less)  -0.584( 78%less)  -0.154( 54%less) 
+    0251    150 |  -2.740( 97%less)  -0.371( 55%less)  -0.434( 68%less)  +0.559( 44%less) 
+    0259    151 |  -4.859(100%less)  -1.298( 74%less)  +0.360( 38%less)  +0.649( 40%less) 
+    0301    151 |  -2.389( 95%less)  -0.097( 52%less)  -0.100( 48%less)  +1.147( 32%less) 
+    POOLED      |  -2.221( 79%less)   +0.216( 43%less)   -0.350( 65%less)   +0.167( 46%less) 
+      shipped 5-slot Mamba     pooled mean d  -2.221  sd  2.611  se  0.071  mean/sd 0.851  n=1337
+      mstudent2 step200        pooled mean d  +0.216  sd  1.787  se  0.049  mean/sd 0.121  n=1337
+      mstudent2 step400        pooled mean d  -0.350  sd  0.823  se  0.023  mean/sd 0.425  n=1337
+      origin+s25 (ceiling)     pooled mean d  +0.167  sd  5.032  se  0.138  mean/sd 0.033  n=1337
+
+  [variant hole_dil4]
+    clip    nfr |               Mamba             step200             step400            (ceiling
+    0042    150 |  -1.978( 82%less)  +3.138(  5%less)  -0.845( 97%less)  -2.006( 63%less) 
+    0052    150 |  -0.539( 80%less)  +0.626(  7%less)  -0.409( 96%less)  -0.308( 59%less) 
+    0125    140 |  -2.076( 88%less)  -0.327( 65%less)  -0.721( 91%less)  -0.799( 61%less) 
+    0128    150 |  -1.918( 97%less)  +0.835(  8%less)  -0.601( 91%less)  -1.153( 71%less) 
+    0141    151 |  +0.516( 17%less)  +0.286( 14%less)  -0.061( 60%less)  +2.479(  8%less) 
+    0147    150 |  -2.825( 98%less)  +1.082(  9%less)  -0.927( 98%less)  -0.302( 56%less) 
+    0251    150 |  -2.277( 97%less)  +0.169( 38%less)  -0.447( 81%less)  -0.296( 52%less) 
+    0259    151 |  -2.471( 99%less)  +0.046( 50%less)  -0.124( 62%less)  -0.397( 42%less) 
+    0301    151 |  -2.039( 99%less)  -0.145( 59%less)  -0.188( 78%less)  +0.877( 32%less) 
+    POOLED      |  -1.731( 84%less)   +0.640( 28%less)   -0.478( 84%less)   -0.205( 49%less) 
+      shipped 5-slot Mamba     pooled mean d  -1.731  sd  1.745  se  0.048  mean/sd 0.992  n=1343
+      mstudent2 step200        pooled mean d  +0.640  sd  1.578  se  0.043  mean/sd 0.406  n=1343
+      mstudent2 step400        pooled mean d  -0.478  sd  0.540  se  0.015  mean/sd 0.884  n=1343
+      origin+s25 (ceiling)     pooled mean d  -0.205  sd  3.643  se  0.099  mean/sd 0.056  n=1343
+
+  [variant holecrop384]
+    clip    nfr |               Mamba             step200             step400            (ceiling
+    0042    150 |  -2.132( 93%less)  +4.247(  3%less)  -1.515(100%less)  -3.645( 76%less) 
+    0128    150 |  -1.725(100%less)  +0.699(  3%less)  -0.525( 97%less)  -0.567( 61%less) 
+    0141    151 |  -0.908( 99%less)  +0.062( 40%less)  -0.201( 97%less)  -0.044( 57%less) 
+    0147    150 |  -1.808( 99%less)  +1.246(  0%less)  -1.247(100%less)  -1.425( 84%less) 
+    0301    151 |  -1.575( 93%less)  -0.344( 83%less)  -0.234( 93%less)  +0.779( 33%less) 
+    POOLED      |  -1.628( 97%less)   +1.178( 26%less)   -0.743( 97%less)   -0.977( 62%less) 
+      shipped 5-slot Mamba     pooled mean d  -1.628  sd  1.220  se  0.044  mean/sd 1.335  n=752
+      mstudent2 step200        pooled mean d  +1.178  sd  2.394  se  0.087  mean/sd 0.492  n=752
+      mstudent2 step400        pooled mean d  -0.743  sd  0.692  se  0.025  mean/sd 1.074  n=752
+      origin+s25 (ceiling)     pooled mean d  -0.977  sd  3.012  se  0.110  mean/sd 0.324  n=752

@@ -1,0 +1,8 @@
+0042 mamba_down0_ll 8 1.01 mamba_down0 none
+0125 mamba_down0_ll 8 1.01 mamba_down0 none
+0128 mamba_down0_ll 8 1.01 mamba_down0 none
+0141 mamba_down0_ll 8 1.01 mamba_down0 none
+0170 mamba_down0_ll 8 1.01 mamba_down0 none
+0225 mamba_down0_ll 8 1.01 mamba_down0 none
+0251 mamba_down0_ll 8 1.01 mamba_down0 none
+0259 mamba_down0_ll 8 1.01 mamba_down0 none

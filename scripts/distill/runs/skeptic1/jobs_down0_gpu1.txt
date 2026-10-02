@@ -1,0 +1,4 @@
+0204 mamba_down0_ll 8 1.01 mamba_down0 none
+0204 mamba_down0_student_ll 8 1.01 mamba_down0 student
+0147 mamba_down0_ll 8 1.01 mamba_down0 none
+0147 mamba_down0_student_ll 8 1.01 mamba_down0 student

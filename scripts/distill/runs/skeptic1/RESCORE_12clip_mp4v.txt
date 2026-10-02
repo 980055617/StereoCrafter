@@ -1,0 +1,126 @@
+clip/config                           offset  leftPSNR    LPIPS    sharp    rPSNR   nf
+--- 0042 GT ---                                          0.0000   0.0070
+0042_origin                        (-12,-12)     51.62   0.4337   0.0080   17.311   38
+ROW clip=0042 tag=0042_origin dy=-12 dx=-12 leftPSNR=51.6236 lpips=0.433705 sharp=0.007998 gtSharp=0.007023 rightPSNR=17.3108 n=38 path=outputs/fulldata_v2/clips/0042_origin/0042_inpainting_results_sbs.mp4
+0042_origin_s25                    (-12,-12)     51.62   0.4182   0.0093   17.285   38
+ROW clip=0042 tag=0042_origin_s25 dy=-12 dx=-12 leftPSNR=51.6236 lpips=0.418236 sharp=0.009294 gtSharp=0.007023 rightPSNR=17.2851 n=38 path=outputs/fulldata_v2/clips/0042_origin_s25/0042_inpainting_results_sbs.mp4
+0042_all_8k_v2                     (-12,-12)     51.62   0.4353   0.0083   17.262   38
+ROW clip=0042 tag=0042_all_8k_v2 dy=-12 dx=-12 leftPSNR=51.6236 lpips=0.435280 sharp=0.008326 gtSharp=0.007023 rightPSNR=17.2622 n=38 path=outputs/fulldata_v2/clips/0042_all_8k_v2/0042_inpainting_results_sbs.mp4
+0042_heldout_s800rest              (-12,-12)     51.62   0.4208   0.0091   17.288   38
+ROW clip=0042 tag=0042_heldout_s800rest dy=-12 dx=-12 leftPSNR=51.6236 lpips=0.420841 sharp=0.009088 gtSharp=0.007023 rightPSNR=17.2883 n=38 path=outputs/beyond_distil/0042_heldout_s800rest/0042_inpainting_results_sbs.mp4
+--- 0052 GT ---                                          0.0000   0.0099
+0052_origin                        (-12,-12)     52.06   0.4432   0.0136   13.223   38
+ROW clip=0052 tag=0052_origin dy=-12 dx=-12 leftPSNR=52.0576 lpips=0.443221 sharp=0.013563 gtSharp=0.009881 rightPSNR=13.2231 n=38 path=outputs/fulldata_v2/clips/0052_origin/0052_inpainting_results_sbs.mp4
+0052_origin_s25                    (-12,-12)     52.06   0.4368   0.0142   13.200   38
+ROW clip=0052 tag=0052_origin_s25 dy=-12 dx=-12 leftPSNR=52.0576 lpips=0.436806 sharp=0.014231 gtSharp=0.009881 rightPSNR=13.1996 n=38 path=outputs/fulldata_v2/clips/0052_origin_s25/0052_inpainting_results_sbs.mp4
+0052_all_8k_v2                     (-12,-12)     52.06   0.4434   0.0137   13.198   38
+ROW clip=0052 tag=0052_all_8k_v2 dy=-12 dx=-12 leftPSNR=52.0576 lpips=0.443359 sharp=0.013733 gtSharp=0.009881 rightPSNR=13.1981 n=38 path=outputs/fulldata_v2/clips/0052_all_8k_v2/0052_inpainting_results_sbs.mp4
+0052_heldout_smoke1s800            (-12,-12)     52.06   0.4379   0.0140   13.228   38
+ROW clip=0052 tag=0052_heldout_smoke1s800 dy=-12 dx=-12 leftPSNR=52.0576 lpips=0.437910 sharp=0.014028 gtSharp=0.009881 rightPSNR=13.2278 n=38 path=outputs/beyond_distil/0052_heldout_smoke1s800/0052_inpainting_results_sbs.mp4
+--- 0125 GT ---                                          0.0000   0.0114
+0125_origin                        (-12,-12)     50.56   0.4768   0.0094   16.581   38
+ROW clip=0125 tag=0125_origin dy=-12 dx=-12 leftPSNR=50.5631 lpips=0.476789 sharp=0.009384 gtSharp=0.011358 rightPSNR=16.5812 n=38 path=outputs/fulldata_v2/clips/0125_origin/0125_inpainting_results_sbs.mp4
+0125_origin_s25                    (-12,-12)     50.56   0.4506   0.0108   16.523   38
+ROW clip=0125 tag=0125_origin_s25 dy=-12 dx=-12 leftPSNR=50.5631 lpips=0.450577 sharp=0.010790 gtSharp=0.011358 rightPSNR=16.5232 n=38 path=outputs/fulldata_v2/clips/0125_origin_s25/0125_inpainting_results_sbs.mp4
+0125_all_8k_v2                     (-12,-12)     50.56   0.4757   0.0096   16.534   38
+ROW clip=0125 tag=0125_all_8k_v2 dy=-12 dx=-12 leftPSNR=50.5631 lpips=0.475743 sharp=0.009576 gtSharp=0.011358 rightPSNR=16.5342 n=38 path=outputs/fulldata_v2/clips/0125_all_8k_v2/0125_inpainting_results_sbs.mp4
+0125_heldout_smoke1s800            (-12,-12)     50.56   0.4577   0.0105   16.560   38
+ROW clip=0125 tag=0125_heldout_smoke1s800 dy=-12 dx=-12 leftPSNR=50.5631 lpips=0.457662 sharp=0.010491 gtSharp=0.011358 rightPSNR=16.5602 n=38 path=outputs/beyond_distil/0125_heldout_smoke1s800/0125_inpainting_results_sbs.mp4
+--- 0128 GT ---                                          0.0000   0.0105
+0128_origin                        (-12,-12)     50.04   0.4146   0.0136   18.444   38
+ROW clip=0128 tag=0128_origin dy=-12 dx=-12 leftPSNR=50.0389 lpips=0.414630 sharp=0.013605 gtSharp=0.010493 rightPSNR=18.4438 n=38 path=outputs/fulldata_v2/clips/0128_origin/0128_inpainting_results_sbs.mp4
+0128_origin_s25                    (-12,-12)     50.04   0.3928   0.0159   18.222   38
+ROW clip=0128 tag=0128_origin_s25 dy=-12 dx=-12 leftPSNR=50.0389 lpips=0.392773 sharp=0.015922 gtSharp=0.010493 rightPSNR=18.2223 n=38 path=outputs/fulldata_v2/clips/0128_origin_s25/0128_inpainting_results_sbs.mp4
+0128_all_8k_v2                     (-12,-12)     50.04   0.4133   0.0142   18.333   38
+ROW clip=0128 tag=0128_all_8k_v2 dy=-12 dx=-12 leftPSNR=50.0389 lpips=0.413345 sharp=0.014154 gtSharp=0.010493 rightPSNR=18.3333 n=38 path=outputs/fulldata_v2/clips/0128_all_8k_v2/0128_inpainting_results_sbs.mp4
+0128_heldout_smoke1s800            (-12,-12)     50.04   0.3959   0.0155   18.281   38
+ROW clip=0128 tag=0128_heldout_smoke1s800 dy=-12 dx=-12 leftPSNR=50.0389 lpips=0.395905 sharp=0.015467 gtSharp=0.010493 rightPSNR=18.2813 n=38 path=outputs/beyond_distil/0128_heldout_smoke1s800/0128_inpainting_results_sbs.mp4
+--- 0141 GT ---                                          0.0000   0.0036
+0141_origin                        (-12,-12)     55.14   0.4709   0.0049   15.581   38
+ROW clip=0141 tag=0141_origin dy=-12 dx=-12 leftPSNR=55.1408 lpips=0.470853 sharp=0.004891 gtSharp=0.003613 rightPSNR=15.5812 n=38 path=outputs/fulldata_v2/clips/0141_origin/0141_inpainting_results_sbs.mp4
+0141_origin_s25                    (-12,-12)     55.14   0.4612   0.0055   15.556   38
+ROW clip=0141 tag=0141_origin_s25 dy=-12 dx=-12 leftPSNR=55.1408 lpips=0.461237 sharp=0.005543 gtSharp=0.003613 rightPSNR=15.5562 n=38 path=outputs/fulldata_v2/clips/0141_origin_s25/0141_inpainting_results_sbs.mp4
+0141_all_8k_v2                     (-12,-12)     55.14   0.4721   0.0050   15.567   38
+ROW clip=0141 tag=0141_all_8k_v2 dy=-12 dx=-12 leftPSNR=55.1408 lpips=0.472090 sharp=0.004990 gtSharp=0.003613 rightPSNR=15.5671 n=38 path=outputs/fulldata_v2/clips/0141_all_8k_v2/0141_inpainting_results_sbs.mp4
+0141_heldout_s800rest              (-12,-12)     55.14   0.4641   0.0054   15.552   38
+ROW clip=0141 tag=0141_heldout_s800rest dy=-12 dx=-12 leftPSNR=55.1408 lpips=0.464115 sharp=0.005358 gtSharp=0.003613 rightPSNR=15.5516 n=38 path=outputs/beyond_distil/0141_heldout_s800rest/0141_inpainting_results_sbs.mp4
+--- 0147 GT ---                                          0.0000   0.0039
+0147_origin                        (-12,-12)     50.68   0.5183   0.0066   15.486   38
+ROW clip=0147 tag=0147_origin dy=-12 dx=-12 leftPSNR=50.6797 lpips=0.518263 sharp=0.006645 gtSharp=0.003901 rightPSNR=15.4860 n=38 path=outputs/fulldata_v2/clips/0147_origin/0147_inpainting_results_sbs.mp4
+0147_origin_s25                    (-12,-12)     50.68   0.5176   0.0070   15.492   38
+ROW clip=0147 tag=0147_origin_s25 dy=-12 dx=-12 leftPSNR=50.6797 lpips=0.517591 sharp=0.006979 gtSharp=0.003901 rightPSNR=15.4919 n=38 path=outputs/fulldata_v2/clips/0147_origin_s25/0147_inpainting_results_sbs.mp4
+0147_all_8k_v2                     (-12,-12)     50.68   0.5179   0.0067   15.482   38
+ROW clip=0147 tag=0147_all_8k_v2 dy=-12 dx=-12 leftPSNR=50.6797 lpips=0.517858 sharp=0.006652 gtSharp=0.003901 rightPSNR=15.4824 n=38 path=outputs/fulldata_v2/clips/0147_all_8k_v2/0147_inpainting_results_sbs.mp4
+0147_heldout_s800rest              (-12,-12)     50.68   0.5184   0.0069   15.480   38
+ROW clip=0147 tag=0147_heldout_s800rest dy=-12 dx=-12 leftPSNR=50.6797 lpips=0.518405 sharp=0.006932 gtSharp=0.003901 rightPSNR=15.4800 n=38 path=outputs/beyond_distil/0147_heldout_s800rest/0147_inpainting_results_sbs.mp4
+--- 0170 GT ---                                          0.0000   0.0323
+0170_origin                          (-28,0)     47.71   0.2617   0.0164   17.120   38
+ROW clip=0170 tag=0170_origin dy=-28 dx=0 leftPSNR=47.7149 lpips=0.261730 sharp=0.016357 gtSharp=0.032309 rightPSNR=17.1195 n=38 path=outputs/fulldata_v2/clips/0170_origin/0170_inpainting_results_sbs.mp4
+0170_origin_s25                      (-28,0)     47.71   0.2531   0.0176   17.006   38
+ROW clip=0170 tag=0170_origin_s25 dy=-28 dx=0 leftPSNR=47.7149 lpips=0.253092 sharp=0.017592 gtSharp=0.032309 rightPSNR=17.0057 n=38 path=outputs/fulldata_v2/clips/0170_origin_s25/0170_inpainting_results_sbs.mp4
+0170_all_8k_v2                       (-28,0)     47.71   0.2611   0.0167   17.014   38
+ROW clip=0170 tag=0170_all_8k_v2 dy=-28 dx=0 leftPSNR=47.7149 lpips=0.261104 sharp=0.016738 gtSharp=0.032309 rightPSNR=17.0143 n=38 path=outputs/fulldata_v2/clips/0170_all_8k_v2/0170_inpainting_results_sbs.mp4
+0170_heldout_smoke1s800              (-28,0)     47.71   0.2566   0.0175   17.002   38
+ROW clip=0170 tag=0170_heldout_smoke1s800 dy=-28 dx=0 leftPSNR=47.7149 lpips=0.256582 sharp=0.017502 gtSharp=0.032309 rightPSNR=17.0016 n=38 path=outputs/beyond_distil/0170_heldout_smoke1s800/0170_inpainting_results_sbs.mp4
+--- 0204 GT ---                                          0.0000   0.0116
+0204_origin                          (-28,0)     48.90   0.2122   0.0062   19.785   38
+ROW clip=0204 tag=0204_origin dy=-28 dx=0 leftPSNR=48.9016 lpips=0.212174 sharp=0.006173 gtSharp=0.011577 rightPSNR=19.7849 n=38 path=outputs/fulldata_v2/clips/0204_origin/0204_inpainting_results_sbs.mp4
+0204_origin_s25                      (-28,0)     48.90   0.1950   0.0074   19.449   38
+ROW clip=0204 tag=0204_origin_s25 dy=-28 dx=0 leftPSNR=48.9016 lpips=0.194998 sharp=0.007384 gtSharp=0.011577 rightPSNR=19.4491 n=38 path=outputs/fulldata_v2/clips/0204_origin_s25/0204_inpainting_results_sbs.mp4
+0204_all_8k_v2                       (-28,0)     48.90   0.2092   0.0063   19.625   38
+ROW clip=0204 tag=0204_all_8k_v2 dy=-28 dx=0 leftPSNR=48.9016 lpips=0.209231 sharp=0.006284 gtSharp=0.011577 rightPSNR=19.6252 n=38 path=outputs/fulldata_v2/clips/0204_all_8k_v2/0204_inpainting_results_sbs.mp4
+0204_smoke1_step800                  (-28,0)     48.90   0.1938   0.0074   19.429   38
+ROW clip=0204 tag=0204_smoke1_step800 dy=-28 dx=0 leftPSNR=48.9016 lpips=0.193752 sharp=0.007382 gtSharp=0.011577 rightPSNR=19.4290 n=38 path=outputs/beyond_distil/0204_smoke1_step800/0204_inpainting_results_sbs.mp4
+--- 0225 GT ---                                          0.0000   0.0132
+0225_origin                          (-28,0)     45.24   0.2837   0.0113   16.175   38
+ROW clip=0225 tag=0225_origin dy=-28 dx=0 leftPSNR=45.2365 lpips=0.283672 sharp=0.011251 gtSharp=0.013156 rightPSNR=16.1748 n=38 path=outputs/fulldata_v2/clips/0225_origin/0225_inpainting_results_sbs.mp4
+0225_origin_s25                      (-28,0)     45.24   0.2681   0.0131   15.965   38
+ROW clip=0225 tag=0225_origin_s25 dy=-28 dx=0 leftPSNR=45.2365 lpips=0.268101 sharp=0.013142 gtSharp=0.013156 rightPSNR=15.9655 n=38 path=outputs/fulldata_v2/clips/0225_origin_s25/0225_inpainting_results_sbs.mp4
+0225_all_8k_v2                       (-28,0)     45.24   0.2829   0.0114   16.133   38
+ROW clip=0225 tag=0225_all_8k_v2 dy=-28 dx=0 leftPSNR=45.2365 lpips=0.282863 sharp=0.011415 gtSharp=0.013156 rightPSNR=16.1326 n=38 path=outputs/fulldata_v2/clips/0225_all_8k_v2/0225_inpainting_results_sbs.mp4
+0225_heldout_s800rest                (-28,0)     45.24   0.2662   0.0132   15.967   38
+ROW clip=0225 tag=0225_heldout_s800rest dy=-28 dx=0 leftPSNR=45.2365 lpips=0.266187 sharp=0.013217 gtSharp=0.013156 rightPSNR=15.9666 n=38 path=outputs/beyond_distil/0225_heldout_s800rest/0225_inpainting_results_sbs.mp4
+--- 0251 GT ---                                          0.0000   0.0173
+0251_origin                          (-28,0)     50.90   0.3505   0.0084   18.511   38
+ROW clip=0251 tag=0251_origin dy=-28 dx=0 leftPSNR=50.9028 lpips=0.350473 sharp=0.008366 gtSharp=0.017307 rightPSNR=18.5111 n=38 path=outputs/fulldata_v2/clips/0251_origin/0251_inpainting_results_sbs.mp4
+0251_origin_s25                      (-28,0)     50.90   0.3418   0.0093   18.440   38
+ROW clip=0251 tag=0251_origin_s25 dy=-28 dx=0 leftPSNR=50.9028 lpips=0.341809 sharp=0.009347 gtSharp=0.017307 rightPSNR=18.4403 n=38 path=outputs/fulldata_v2/clips/0251_origin_s25/0251_inpainting_results_sbs.mp4
+0251_all_8k_v2                       (-28,0)     50.90   0.3506   0.0086   18.454   38
+ROW clip=0251 tag=0251_all_8k_v2 dy=-28 dx=0 leftPSNR=50.9028 lpips=0.350593 sharp=0.008579 gtSharp=0.017307 rightPSNR=18.4539 n=38 path=outputs/fulldata_v2/clips/0251_all_8k_v2/0251_inpainting_results_sbs.mp4
+0251_heldout_s800rest                (-28,0)     50.90   0.3419   0.0091   18.508   38
+ROW clip=0251 tag=0251_heldout_s800rest dy=-28 dx=0 leftPSNR=50.9028 lpips=0.341935 sharp=0.009100 gtSharp=0.017307 rightPSNR=18.5079 n=38 path=outputs/beyond_distil/0251_heldout_s800rest/0251_inpainting_results_sbs.mp4
+--- 0259 GT ---                                          0.0000   0.0450
+0259_origin                          (-28,0)     45.92   0.4397   0.0311   13.282   38
+ROW clip=0259 tag=0259_origin dy=-28 dx=0 leftPSNR=45.9174 lpips=0.439682 sharp=0.031064 gtSharp=0.044964 rightPSNR=13.2820 n=38 path=outputs/fulldata_v2/clips/0259_origin/0259_inpainting_results_sbs.mp4
+0259_origin_s25                      (-28,0)     45.92   0.4406   0.0319   13.304   38
+ROW clip=0259 tag=0259_origin_s25 dy=-28 dx=0 leftPSNR=45.9174 lpips=0.440643 sharp=0.031947 gtSharp=0.044964 rightPSNR=13.3038 n=38 path=outputs/fulldata_v2/clips/0259_origin_s25/0259_inpainting_results_sbs.mp4
+0259_all_8k_v2                       (-28,0)     45.92   0.4417   0.0334   13.098   38
+ROW clip=0259 tag=0259_all_8k_v2 dy=-28 dx=0 leftPSNR=45.9174 lpips=0.441656 sharp=0.033423 gtSharp=0.044964 rightPSNR=13.0983 n=38 path=outputs/fulldata_v2/clips/0259_all_8k_v2/0259_inpainting_results_sbs.mp4
+0259_heldout_s800rest                (-28,0)     45.92   0.4377   0.0316   13.300   38
+ROW clip=0259 tag=0259_heldout_s800rest dy=-28 dx=0 leftPSNR=45.9174 lpips=0.437683 sharp=0.031600 gtSharp=0.044964 rightPSNR=13.2998 n=38 path=outputs/beyond_distil/0259_heldout_s800rest/0259_inpainting_results_sbs.mp4
+--- 0301 GT ---                                          0.0000   0.0505
+0301_origin                          (-28,0)     46.77   0.4445   0.0235   15.503   38
+ROW clip=0301 tag=0301_origin dy=-28 dx=0 leftPSNR=46.7682 lpips=0.444495 sharp=0.023487 gtSharp=0.050529 rightPSNR=15.5033 n=38 path=outputs/fulldata_v2/clips/0301_origin/0301_inpainting_results_sbs.mp4
+0301_origin_s25                      (-28,0)     46.77   0.4083   0.0296   15.056   38
+ROW clip=0301 tag=0301_origin_s25 dy=-28 dx=0 leftPSNR=46.7682 lpips=0.408347 sharp=0.029585 gtSharp=0.050529 rightPSNR=15.0557 n=38 path=outputs/fulldata_v2/clips/0301_origin_s25/0301_inpainting_results_sbs.mp4
+0301_all_8k_v2                       (-28,0)     46.77   0.4340   0.0250   15.310   38
+ROW clip=0301 tag=0301_all_8k_v2 dy=-28 dx=0 leftPSNR=46.7682 lpips=0.433960 sharp=0.025018 gtSharp=0.050529 rightPSNR=15.3098 n=38 path=outputs/fulldata_v2/clips/0301_all_8k_v2/0301_inpainting_results_sbs.mp4
+0301_smoke1_step800                  (-28,0)     46.77   0.4083   0.0291   15.105   38
+ROW clip=0301 tag=0301_smoke1_step800 dy=-28 dx=0 leftPSNR=46.7682 lpips=0.408331 sharp=0.029132 gtSharp=0.050529 rightPSNR=15.1046 n=38 path=outputs/beyond_distil/0301_smoke1_step800/0301_inpainting_results_sbs.mp4
+0301_oracle_m4                       (-28,0)     46.77   0.4064   0.0304   14.998   38
+ROW clip=0301 tag=0301_oracle_m4 dy=-28 dx=0 leftPSNR=46.7682 lpips=0.406413 sharp=0.030435 gtSharp=0.050529 rightPSNR=14.9983 n=38 path=outputs/beyond_distil/0301_oracle_m4/0301_inpainting_results_sbs.mp4
+0301_oracle_m4_456                   (-28,0)     46.77   0.4059   0.0305   14.990   38
+ROW clip=0301 tag=0301_oracle_m4_456 dy=-28 dx=0 leftPSNR=46.7682 lpips=0.405927 sharp=0.030451 gtSharp=0.050529 rightPSNR=14.9900 n=38 path=outputs/beyond_distil/0301_oracle_m4_456/0301_inpainting_results_sbs.mp4
+0301_rescale456                      (-28,0)     46.77   0.4294   0.0267   15.194   38
+ROW clip=0301 tag=0301_rescale456 dy=-28 dx=0 leftPSNR=46.7682 lpips=0.429423 sharp=0.026737 gtSharp=0.050529 rightPSNR=15.1941 n=38 path=outputs/beyond_distil/0301_rescale456/0301_inpainting_results_sbs.mp4
+0301_onpolicy2_step400               (-28,0)     46.77   0.4182   0.0329   14.781   38
+ROW clip=0301 tag=0301_onpolicy2_step400 dy=-28 dx=0 leftPSNR=46.7682 lpips=0.418200 sharp=0.032896 gtSharp=0.050529 rightPSNR=14.7810 n=38 path=outputs/beyond_distil/0301_onpolicy2_step400/0301_inpainting_results_sbs.mp4
+--- 0204 GT ---                                          0.0000   0.0116
+0204_oracle_m4                       (-28,0)     48.90   0.1948   0.0076   19.370   38
+ROW clip=0204 tag=0204_oracle_m4 dy=-28 dx=0 leftPSNR=48.9016 lpips=0.194751 sharp=0.007623 gtSharp=0.011577 rightPSNR=19.3702 n=38 path=outputs/beyond_distil/0204_oracle_m4/0204_inpainting_results_sbs.mp4
+0204_oracle_m4_456                   (-28,0)     48.90   0.1949   0.0075   19.405   38
+ROW clip=0204 tag=0204_oracle_m4_456 dy=-28 dx=0 leftPSNR=48.9016 lpips=0.194949 sharp=0.007549 gtSharp=0.011577 rightPSNR=19.4052 n=38 path=outputs/beyond_distil/0204_oracle_m4_456/0204_inpainting_results_sbs.mp4
+0204_rescale456                      (-28,0)     48.90   0.2272   0.0076   19.718   38
+ROW clip=0204 tag=0204_rescale456 dy=-28 dx=0 leftPSNR=48.9016 lpips=0.227240 sharp=0.007613 gtSharp=0.011577 rightPSNR=19.7184 n=38 path=outputs/beyond_distil/0204_rescale456/0204_inpainting_results_sbs.mp4
+0204_onpolicy2_step400               (-28,0)     48.90   0.1973   0.0082   19.247   38
+ROW clip=0204 tag=0204_onpolicy2_step400 dy=-28 dx=0 leftPSNR=48.9016 lpips=0.197284 sharp=0.008219 gtSharp=0.011577 rightPSNR=19.2474 n=38 path=outputs/beyond_distil/0204_onpolicy2_step400/0204_inpainting_results_sbs.mp4

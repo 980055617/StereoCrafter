@@ -1,0 +1,72 @@
+==============================================================================================================================================
+TASK 1 -- THE CONSERVATIVE RUNGS ON THE 12 TEST CLIPS
+12 TEST clips, LOSSLESS FFV1 (never the cv2 mp4v writer), real-GT LPIPS, DEPLOYED CONFIG:
+8 sampler steps, EulerDiscrete Karras, guidance 1.01, 14-frame windows overlap 3, 576x1024 centre crop.
+scorer scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py  SCORE_STEP=4   (ROW lines parsed: 72)
+step200/step400 were rendered by this run through scripts/distill/runs/skeptic1/infer_ll_hook.py with
+SK_UNET=<the shipped 5-slot Mamba> and SK_CK=<rung>.pt -- the identical path the dev ladder used, and
+the path RESULTS.txt section 6 proved bit-identical to the merged deliverable file on all 1518 params.
+==============================================================================================================================================
+
+--- PER CLIP: LPIPS (lower is better) ---
+  row                             0042    0052    0125    0128    0141    0147    0170    0204    0225    0251    0259    0301
+  GT sharpness                  0.0070  0.0099  0.0114  0.0105  0.0036  0.0039  0.0323  0.0116  0.0132  0.0173  0.0450  0.0505
+  origin (deployed 8 steps)     0.4279  0.4467  0.4799  0.4055  0.4813  0.5269  0.2517  0.2053  0.2750  0.3460  0.4376  0.4351
+  mamba 5-slot (SHIPPED)        0.4305  0.4467  0.4797  0.4054  0.4825  0.5264  0.2516  0.2022  0.2738  0.3466  0.4412  0.4253
+  mstudent2 step200             0.4225  0.4389  0.4590  0.3894  0.4699  0.5259  0.2467  0.1889  0.2635  0.3354  0.4427  0.4004
+  mstudent2 step400             0.4216  0.4396  0.4664  0.3898  0.4684  0.5238  0.2427  0.1867  0.2571  0.3357  0.4376  0.3990
+  step800 = THE DELIVERABLE     0.4218  0.4395  0.4655  0.3882  0.4681  0.5244  0.2446  0.1867  0.2587  0.3355  0.4357  0.3965
+  origin + s25 (2.4x cost)      0.4175  0.4384  0.4469  0.3876  0.4621  0.5220  0.2450  0.1897  0.2603  0.3385  0.4367  0.3986
+
+--- PER CLIP: delta vs deployed ORIGIN (negative = better) ---
+  mamba 5-slot (SHIPPED)       +0.0026 -0.0000 -0.0002 -0.0001 +0.0012 -0.0005 -0.0001 -0.0031 -0.0013 +0.0006 +0.0036 -0.0098
+  mstudent2 step200            -0.0054 -0.0078 -0.0210 -0.0161 -0.0115 -0.0010 -0.0050 -0.0164 -0.0116 -0.0106 +0.0052 -0.0347
+  mstudent2 step400            -0.0063 -0.0071 -0.0135 -0.0157 -0.0129 -0.0031 -0.0091 -0.0186 -0.0179 -0.0103 +0.0000 -0.0361
+  step800 = THE DELIVERABLE    -0.0061 -0.0072 -0.0144 -0.0173 -0.0133 -0.0025 -0.0071 -0.0186 -0.0164 -0.0105 -0.0019 -0.0386
+  origin + s25 (2.4x cost)     -0.0104 -0.0083 -0.0330 -0.0178 -0.0192 -0.0049 -0.0068 -0.0156 -0.0147 -0.0076 -0.0009 -0.0365
+
+--- PER CLIP: sharpness / GT sharpness (1.0 = matches the real right eye) ---
+  origin (deployed 8 steps)      1.253   1.314   0.828   1.287   1.360   1.584   0.507   0.564   0.895   0.479   0.693   0.466
+  mamba 5-slot (SHIPPED)         1.298   1.332   0.842   1.337   1.393   1.589   0.518   0.572   0.902   0.491   0.743   0.493
+  mstudent2 step200              1.509   1.408   0.939   1.548   1.614   1.781   0.554   0.665   1.011   0.563   0.765   0.558
+  mstudent2 step400              1.445   1.384   0.927   1.533   1.654   1.753   0.552   0.676   1.034   0.554   0.732   0.563
+  step800 = THE DELIVERABLE      1.458   1.394   0.939   1.546   1.644   1.778   0.547   0.667   1.016   0.557   0.739   0.565
+  origin + s25 (2.4x cost)       1.387   1.387   0.946   1.493   1.568   1.715   0.541   0.657   1.024   0.539   0.710   0.583
+
+==============================================================================================================================================
+MEANS over n=12 (all test clips).  step200/step400/step800 trained only on TRAIN-split clips,
+so all three are fully held out here; origin / mamba / s25 involve no student at all.
+==============================================================================================================================================
+  row                           meanLPIPS d vs origin d vs mamba  improved  d vs s800   sh/GT  sh/mamba         worst clip   rPSNR      ref
+  origin (deployed 8 steps)        0.3933     +0.0000    +0.0006      0/12    +0.0128   0.936    0.9735       0042 +0.0000  16.425   0.3933
+  mamba 5-slot (SHIPPED)           0.3927     -0.0006    +0.0000      8/12    +0.0122   0.959    1.0000       0259 +0.0036  16.344   0.3927
+  mstudent2 step200                0.3819     -0.0113    -0.0107     11/12    +0.0015   1.076    1.1194       0259 +0.0052  16.188        -
+  mstudent2 step400                0.3807     -0.0125    -0.0119     11/12    +0.0003   1.067    1.1117       0259 +0.0000  16.264        -
+  step800 = THE DELIVERABLE        0.3804     -0.0128    -0.0122     12/12    +0.0000   1.071    1.1136       0259 -0.0019  16.229   0.3804
+  origin + s25 (2.4x cost)         0.3786     -0.0146    -0.0140     12/12    -0.0018   1.046    1.0933       0259 -0.0009  16.295   0.3786
+
+HARNESS ANCHOR -- the four reused rows were RE-SCORED, not transcribed:
+  origin_ll                      re-scored 0.39325   published 0.3933   diff -0.00005   OK
+  mamba_ll                       re-scored 0.39265   published 0.3927   diff -0.00005   OK
+  mstudent2_step800_deliv_ll     re-scored 0.38043   published 0.3804   diff +0.00003   OK
+  s25_ll                         re-scored 0.37861   published 0.3786   diff +0.00001   OK
+
+--- RANK by 12-clip mean LPIPS ---
+  1. origin + s25 (2.4x cost)     0.3786   d vs origin -0.0146   improved 12/12   sh/GT 1.046
+  2. step800 = THE DELIVERABLE    0.3804   d vs origin -0.0128   improved 12/12   sh/GT 1.071
+  3. mstudent2 step400            0.3807   d vs origin -0.0125   improved 11/12   sh/GT 1.067
+  4. mstudent2 step200            0.3819   d vs origin -0.0113   improved 11/12   sh/GT 1.076
+  5. mamba 5-slot (SHIPPED)       0.3927   d vs origin -0.0006   improved 8/12   sh/GT 0.959
+  6. origin (deployed 8 steps)    0.3933   d vs origin +0.0000   improved 0/12   sh/GT 0.936
+
+--- THE PRE-REGISTERED RULE APPLIED (outputs/rung_check_20261001/SHIP_RULE_PREREG.txt) ---
+  mstudent2 step200      gives up +0.0015 LPIPS vs step800  -> R4 band (+0.0005..+0.0020)   improved 11/12 (R5 FAIL)
+  mstudent2 step400      gives up +0.0003 LPIPS vs step800  -> R2(a) PASS (<=+0.0005)   improved 11/12 (R5 FAIL)
+
+--- RENDER PROVENANCE ---
+  origin (deployed 8 steps)    label=origin_ll                    roots=['outputs/beyond4_lossless/clips']
+  mamba 5-slot (SHIPPED)       label=mamba_ll                     roots=['outputs/beyond_distil_mamba/clips', 'outputs/skeptic1_stack/clips']
+  mstudent2 step200            label=mstudent2_step200_ll         roots=['outputs/rung_check_20261001/clips']
+  mstudent2 step400            label=mstudent2_step400_ll         roots=['outputs/rung_check_20261001/clips']
+  step800 = THE DELIVERABLE    label=mstudent2_step800_deliv_ll   roots=['outputs/beyond_distil_mamba_scaled/clips']
+  origin + s25 (2.4x cost)     label=s25_ll                       roots=['outputs/beyond4_lossless/clips', 'outputs/skeptic1_stack/clips']

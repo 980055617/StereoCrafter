@@ -1,0 +1,13 @@
+expected_md5=2e533d7755c950d2fc95043f6fb0a51d
+[0301] CLAIM_A decord(outputs/beyond4_lossless/clips/0301_origin_ll/0301_inpainting_results_sbs.mkv) md5=2e533d7755c950d2fc95043f6fb0a51d expected=2e533d7755c950d2fc95043f6fb0a51d MATCH=True shape=(151, 576, 2048, 3)
+[0301] splatting tile shape=(151, 2160, 3840, 3)
+[0301] CLAIM_B left-half vs splatting top-left: bytesdiff=264241371/267190272 maxabs=255 DIFFERS
+expected_md5=302ff6642b506396547d3b818c143e4d
+[0052] CLAIM_A decord(outputs/beyond4_lossless/clips/0052_origin_ll/0052_inpainting_results_sbs.mkv) md5=302ff6642b506396547d3b818c143e4d expected=302ff6642b506396547d3b818c143e4d MATCH=True shape=(168, 576, 2048, 3)
+[0052] splatting tile shape=(168, 4400, 4400, 3)
+[0052] CLAIM_B left-half vs splatting top-left: bytesdiff=284273307/297271296 maxabs=234 DIFFERS
+expected_md5=90637b7ea7521ff0b5358a60bef029ce
+[0147] CLAIM_A decord(outputs/beyond4_lossless/clips/0147_origin_ll/0147_inpainting_results_sbs.mkv) md5=90637b7ea7521ff0b5358a60bef029ce expected=90637b7ea7521ff0b5358a60bef029ce MATCH=True shape=(172, 576, 2048, 3)
+[0147] splatting tile shape=(172, 4400, 4400, 3)
+[0147] CLAIM_B left-half vs splatting top-left: bytesdiff=271282702/304349184 maxabs=233 DIFFERS
+DONE

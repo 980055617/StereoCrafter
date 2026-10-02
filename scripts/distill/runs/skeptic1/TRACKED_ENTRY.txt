@@ -1,0 +1,6 @@
+=== does the tracked entry point load the 15-tensor deliverable and give the same pixels as the hook? ===
+Thu Oct  1 07:41:22 JST 2026
+[info] Partial UNet state load: missing=1413 unexpected=0. This is expected for hybrid replacement presets that leave some attention modules on the base reference weights.
+-- pre-encode array md5: tracked entry vs my hook run --
+1b669bbf38c4161e983bbea2670624f9 (151, 576, 2048, 3) uint8 0301_inpainting_results_sbs.mp4
+1b669bbf38c4161e983bbea2670624f9  (151, 576, 2048, 3)  fps=29.970000

@@ -1,0 +1,202 @@
+================================================================================================
+CLOSING THE LAST TWO OPEN ITEMS ON THE 2026-10-01 StereoCrafter DELIVERABLE        2026-10-01
+  deliverable under test:
+  /mnt/ssd_data/stereocrafter_weights/_distill_injected/mamba5slot_plus_stepdistil_up3_train10clip_step800_20261001.pt
+NOTHING SHIPPED WAS CHANGED BY THIS RUN.  No tracked file edited, no checkpoint written or
+touched, no existing output directory overwritten.  Protected md5 e9c232878319d041680e7fb3be74bf10
+re-verified before use.
+================================================================================================
+
+OUTPUT DIRECTORIES (all new)
+  outputs/rung_check_20261001/                       everything below
+  outputs/rung_check_20261001/clips/                 24 new lossless FFV1 renders
+                                                     (step200 x12 + step400 x12 test clips)
+                                                     + 0040_mstudent2_step200_ll (driver control)
+  scripts/distill/runs/rung_check_20261001/          the scripts (all new, nothing tracked edited)
+
+PRE-REGISTRATION: SHIP_RULE_PREREG.txt, written before any 12-test-clip number for step200/400
+existed.  Its rules R1-R5 are applied verbatim at the end of this file.
+
+================================================================================================
+PROVENANCE CONTROLS -- all passed
+================================================================================================
+1. DRIVER EQUIVALENCE (DRIVER_EQUIVALENCE.txt).  run_driver_rc.sh is run_driver_v3.sh with a new
+   OUT root and SK_UNET pinned instead of inherited.  Re-rendering DEV clip 0040 at rung step200
+   through the new driver reproduces the published dev-ladder render's PRE-ENCODE digest exactly:
+     published (run_driver_v3.sh) a8956b39897929113623bb1b07945507
+     this run  (run_driver_rc.sh) a8956b39897929113623bb1b07945507   IDENTICAL
+2. RENDER PATH.  step200/step400 were rendered through scripts/distill/runs/skeptic1/
+   infer_ll_hook.py with SK_UNET=<shipped 5-slot Mamba> and SK_CK=<rung>.pt -- the identical path
+   the dev ladder used, and the path RESULTS.txt section 6 proved bit-identical to the merged
+   deliverable file across all 1518 parameters and 5 buffers.  Every one of the 24 runs logged
+   "swap mapping: 30 direct, 0 remapped to origin_attn.*, 0 NOT FOUND" and "tensors that differed
+   from the loaded model: 18/30".  All 24 rc=0.  No failures of any kind occurred in this run.
+3. THE THREE RUNGS ARE DISTINCT.  Checkpoint md5s 9c2501049e62e8eea7198a63d43cafbb (step200),
+   e2a30b96f7a4b5f404189190522b169d (step400), c45c2e41ef9762d4b72691ff8b29769b (step800), and
+   the per-clip pre-encode SBS digests are 3/3 distinct on every clip checked.
+4. SCORER HARNESS ANCHOR.  The four reused rows were RE-SCORED, not transcribed:
+     origin  0.39325 vs published 0.3933 (-0.00005)   mamba 0.39265 vs 0.3927 (-0.00005)
+     step800 0.38043 vs published 0.3804 (+0.00003)   s25   0.37861 vs 0.3786 (+0.00001)
+5. GEOMETRY ANCHOR (MASK_SURVEY.txt).  This run's independent re-estimate of the per-clip GT
+   disparity registration reproduces GEOMETRY.txt exactly on all six review clips
+   (0147 -41, 0141 -59, 0042 -36, 0128 -34, 0204 -17, 0301 -15) and the mean mask fractions to
+   four decimals.  reviewlib's CORRECTED right-eye geometry tile[t0:t0+h, W+l0 : W+l0+w] is used
+   throughout; R.OFFSETS was extended from 6 to all 12 test clips from the scorer's own ROW lines
+   and splat_mask's mask-window==GT-window assert passed on all 12.
+
+================================================================================================
+TASK 1 -- THE SELECTION DISCREPANCY, RESOLVED ON THE 12 TEST CLIPS
+  full table: TABLE_RUNGS_12CLIP.txt      raw scores: scores_laneA.txt scores_laneB.txt
+================================================================================================
+  row                           meanLPIPS d vs origin d vs s800  improved   sh/GT   worst clip
+  origin (deployed 8 steps)        0.3933     +0.0000   +0.0128      0/12   0.936   0042 +0.0000
+  mamba 5-slot (SHIPPED)           0.3927     -0.0006   +0.0122      8/12   0.959   0259 +0.0036
+  mstudent2 step200                0.3819     -0.0113   +0.0015     11/12   1.076   0259 +0.0052
+  mstudent2 step400                0.3807     -0.0125   +0.0003     11/12   1.067   0259 +0.0000
+  step800 = THE DELIVERABLE        0.3804     -0.0128   +0.0000     12/12   1.071   0259 -0.0019
+  origin + s25 (2.4x cost)         0.3786     -0.0146   -0.0018     12/12   1.046   0259 -0.0009
+
+FOUR FINDINGS.
+(1) step800 WINS on the primary criterion.  0.3804 < 0.3807 < 0.3819.  It is also the ONLY rung
+    with no clip on which it loses (12/12).  step200's single regression is 0259 +0.005158, a real
+    loss; step400's is 0259 +0.000037, a numerical tie.
+(2) THE DEV ORDERING OF THESE THREE RUNGS WAS NOT CONTRADICTED BY TEST.  Dev said 800 (0.5464) <
+    400 (0.5467) < 200 (0.5472); test says 800 (0.3804) < 400 (0.3807) < 200 (0.3819) -- the same
+    order.  This is a point in the dev split's favour, but it is NOT a vindication of it: three
+    ordered points agreeing is weak evidence, the test gaps being decided are +0.0003 and +0.0015
+    against a dev span of 0.0008 in total, and RESULTS.txt section 3 has the counter-case on
+    record (dev and test rank mstudent1's 600 vs 800 differently).  The documented caution that
+    "0.0008 of spread cannot resolve a ladder" stands; it simply did not misfire here.
+(3) THE LITERAL TIE-BREAK WOULD HAVE SHIPPED THE WORST OF THE THREE RUNGS, AND ITS OWN STATED
+    PURPOSE WOULD HAVE BEEN DEFEATED.  The rule existed to avoid shipping an over-sharpened
+    checkpoint.  On the TEST set step200 is the MOST over-sharpened row in the whole table:
+    sh/GT 1.076 against step800's 1.071, step400's 1.067 and even origin+s25's 1.046.  On the
+    four low-GT-sharpness clips it is at or above step800 everywhere (0147 1.781, 0141 1.614,
+    0128 1.548, 0042 1.509).  The dev-split ordering (step200 1.310 "gentler" than step800 1.316)
+    INVERTS on test.  So the author's decision not to apply the tie-break was right, and for a
+    stronger reason than they gave: not merely that the 0.5 % sharpness difference was inside
+    noise, but that its sign is wrong on the set that matters.
+(4) The headline claim is unaffected: the deliverable is -0.0128 vs origin, 12/12 improved, and
+    reaches 88 % of the 25-step ceiling's gain (-0.0128 of -0.0146) at the shipped Mamba's speed.
+
+================================================================================================
+TASK 2 -- THE 0042 DISOCCLUSION HALO, RE-MEASURED PROPERLY
+  full tables: INHOLE_HALO.txt   paired test: PAIRED_VS_DELIVERABLE.txt   per-frame: perframe_*.csv
+================================================================================================
+GEOMETRY.  GT shift used for 0042: the review's clip-global (ddy,ddx) = (-1,-36), independently
+re-derived here (PSNR 16.51 -> 23.40 dB vs the review's 16.45 -> 23.34).  Re-estimated on all 150
+frames it drifts only ddx -39..-33, median -36; re-running the whole analysis with a PER-FRAME
+shift changes no conclusion (variant hole_pfshift), so the effect is not registration.
+
+A STRUCTURAL FACT THE REVIEW DID NOT STATE.  These disocclusion holes are 1-3 px wide STRIPES,
+not areas: on 0042 the mean mask is 8783 px/frame, and eroding it by a single pixel leaves 112.
+There is therefore no hole "interior" to measure, and the band that can carry a re-drawn rim is
+the hole plus a few pixels of surround (variant hole_dil4, 42095 px/frame).
+
+0042, ALL 150 FRAMES, in-hole haloFrac%, mean (sd) and delta vs origin:
+  variant         origin    mamba   step200   step400   step800*       s25
+  hole            42.081   +1.164    +3.794    +1.157    +1.922     +1.321
+  hole_dil4       41.394   +0.853    +5.969    +1.986    +2.831     +0.825
+  holecrop384     39.237   +1.742    +8.120    +2.359    +3.874     +0.228
+  wholewin        29.324   +1.181    +6.152    +1.251    +2.538     +1.038
+  hole_pfshift    38.946   +1.265    +4.497    +1.428    +2.357     +1.425
+  step800 per-frame spread: sd 4.2-6.2 pt; worst single frame 66.9 (hole) / 69.2 (holecrop384);
+  worst per-frame delta vs origin +11.2 (hole) / +12.0 (holecrop384); above origin on 70 % (hole)
+  / 85 % (dil4) / 97 % (holecrop384) of frames.
+
+THE DELIVERABLE'S RISE REPRODUCES; THE REASON IT WAS CALLED DURABLE DOES NOT.
+  - On the review's OWN 384x384 window, the deliverable's rise over origin at 150 frames is
+    +3.874, essentially the +3.9 the review measured on frame 32 (50.9 vs 47.0).  That half of
+    the finding is solid and reproducible at scale.
+  - BUT the distinguishing claim -- "origin+s25 IMPROVES halo to 44.3 % while the deliverable
+    hurts, the only crop where the ceiling helps" -- REVERSES.  Over 150 frames on that same
+    window origin+s25 is +0.228 ABOVE origin and above it on 57 % of frames.  The review's own
+    whole-frame table already hinted at this (0042 registered: origin 29.218, deliverable 31.723,
+    s25 30.255 -- s25 above origin).  The "ceiling helps here" result was a single-frame
+    fluctuation, exactly like the "0042 passes GT at edges" result the review itself discounted.
+
+IS IT GENERAL?  Nine of the twelve test clips have mean disocclusion above 0.3 % and were all
+analysed over ALL their frames (0170 0.055 %, 0204 0.028 %, 0225 0.000 % were excluded).
+  in-hole haloFrac% delta vs origin, mean over the 9 clips:
+    variant        mamba   step200   step400   step800*       s25     clips worse than origin
+    hole          +0.563    +2.996    +2.432    +2.785     +2.936     7/9  8/9 8/9 8/9  9/9
+    hole_dil4     +0.646    +3.014    +1.899    +2.380     +2.168     7/9  8/9 8/9 8/9  9/9
+
+VERDICT: (a) -- A REAL, GENERAL TENDENCY, BUT OF SHARPENING, NOT OF THE DELIVERABLE.
+  - It is NOT specific to 0042 (answer (b) is wrong): the deliverable raises in-hole halo on 8 of
+    9 clips with real disocclusion.
+  - It IS reproducible at scale (answer (c) is wrong).
+  - But it is NOT a property that distinguishes the deliverable.  origin+s25 -- the project's own
+    2.4x-cost quality ceiling, which it is trying to approach -- raises in-hole halo by +2.94
+    (9-clip mean), MORE than the deliverable's +2.79, and is worse than origin on 9/9 clips
+    against the deliverable's 8/9.  Paired per frame across all 9 clips, origin+s25 vs the
+    deliverable is a wash: +0.167 (hole) / -0.205 (dil4).  0042 is not even the deliverable's
+    worst clip for this; 0259 (+5.110), 0128 (+4.373), 0125 (+3.503), 0301 (+3.537) and 0251
+    (+3.390) are all worse than 0042's +1.922.
+  - Registration-free cross-check (plateau overshoot on step edges inside the mask) agrees and
+    adds one honest caveat: INSIDE HOLES the overshoot of every render exceeds the real right
+    eye's on most clips (0042: GT 0.1773, origin 0.2342, step800 0.2658, s25 0.2420), so the
+    review's "stays inside what the GT itself carries" does NOT hold in holes.  It fails for
+    origin too, so this is a property of the warp-plus-inpaint in holes, not of the student.
+    The deliverable adds +0.032 over origin there; step200 adds +0.044; origin+s25 adds +0.008.
+
+DOES A CONSERVATIVE RUNG FIX IT?  Partly, and only step400 -- never step200.
+  Paired per frame against step800 (PAIRED_VS_DELIVERABLE.txt), pooled over the 9 clips:
+    step200  hole +0.216  dil4 +0.640  holecrop384 +1.178   -> WORSE, on 0042 by +1.9 to +4.2
+    step400  hole -0.350  dil4 -0.478  holecrop384 -0.743   -> consistently BETTER
+             (lower on 65 % / 84 % / 97 % of frames; on 0042 alone 86 % / 97 % / 100 %)
+  So step400 removes roughly 20-25 % of the in-hole halo rise for +0.0003 LPIPS.  It cannot
+  remove the rest, because the rest is what sharpening costs in holes -- origin+s25 pays it too.
+  step200 is DOMINATED on every axis measured: worse LPIPS (0.3819), worse over-sharpening
+  (sh/GT 1.076, the highest in the table), worse in-hole halo (+3.00), and a real 0259 loss.
+
+================================================================================================
+THE PRE-REGISTERED RULE, APPLIED
+================================================================================================
+  step200: R2(a) fails (+0.0015 > +0.0005); R2(b) fails (halo WORSE); R5 fails (11/12, real loss
+           on 0259).  REJECTED on every clause.
+  step400: R2(a) PASSES (+0.0003).  R2(b) PASSES in the paired sense (lower on 86-100 % of 0042's
+           frames).  R5 DOES NOT DISCRIMINATE, and I am calling that rather than letting the rule
+           fire on noise: step400's only non-improving clip is 0259 at +0.000037, which is BELOW
+           the 5e-5 scorer reproducibility this run measured in its own harness anchor.  Within
+           measurement step400 is 12/12, so R5 separates nothing here.  (Letting a literal
+           threshold decide a 3.7e-5 difference would repeat exactly the mistake finding (3)
+           criticises, in the opposite direction.)
+  R4's condition ("the halo effect is a REAL GENERAL tendency") is met, so step400 is a live
+  option rather than a rejected one, and the decision rests on R1 alone.
+
+RECOMMENDATION: SHIP WHAT IS ALREADY SHIPPED -- step800.  No change.
+  The decision rests on R1, the primary criterion, because R5 cannot separate step800 from step400
+  at 3.7e-5.  On R1 step800 wins, 0.3804 vs 0.3807, and step400's 20-25 % in-hole halo reduction
+  is the counterweight to that 0.0003 -- a real trade, which I resolve in favour of the measured
+  quality win for reasons 2 and 3 below.
+  1. It wins the primary criterion outright, and is the only rung that loses on no clip even
+     before the measurement-floor argument is applied.
+  2. The negative that motivated looking at a conservative rung is a cost of sharpening that the
+     project's own 25-step quality ceiling pays more of, not a defect peculiar to this file.
+  3. The rung the literal tie-break named, step200, is the worst of the three on every axis --
+     including the very over-sharpening the tie-break existed to prevent.
+  THE HONEST ALTERNATIVE, named precisely: if the project decides that ~20-25 % less in-hole halo
+  is worth +0.0003 LPIPS and dropping from 12/12 to 11/12 (by 3.7e-5 on 0259), the rung to take
+  is step400 -- NOT step200.  That would need a merged 95-tensor file built from
+  mstudent2/step400.pt the same way make_deliverable_v1.py built step800's, because the tracked
+  entry point takes one --unet_state_path.  It is a deliberate trade, not a correction.
+
+THE SWAP, IF THE EVIDENCE IS READ AS FAVOURING step400.  This run deliberately built and wrote NO
+checkpoint, so there is no step400 file to point at yet; the honest one-liner is therefore the
+BUILD, not a link.  make_deliverable_v1.py takes two POSITIONAL arguments
+(<student_ckpt.pt> <out_name>, a bare name landing in _distill_injected), re-checks the protected
+file's md5 before and after, and writes a .json sidecar -- it is the same command that produced the
+shipped step800 file (sidecar records student=.../mstudent2/step800.pt, n_substituted=18):
+
+  python scripts/distill/runs/beyond_distil_mamba_scaled/make_deliverable_v1.py \
+    scripts/distill/runs/beyond_distil_mamba_scaled/mstudent2/step400.pt \
+    mamba5slot_plus_stepdistil_up3_train10clip_step400_20261001.pt
+
+Then the swap itself is one assignment: point RESULTS.txt section 7's
+  DELIV=/mnt/ssd_data/stereocrafter_weights/_distill_injected/mamba5slot_plus_stepdistil_up3_train10clip_step400_20261001.pt
+and re-run verify_deliverable_v1.py on it.  Nothing in the repo reads a CURRENT.pt symlink, so do
+not create one.
+
+GPU COST OF THIS RUN: 24 renders x ~180 s over two 4090s = 1.2 GPU-h, plus 72 scoring rows
+(~0.3 GPU-h) and ~22 min of CPU-only analysis.  No failures.

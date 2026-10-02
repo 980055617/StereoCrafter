@@ -1,0 +1,7 @@
+0301 mamba_ll 8 1.01 mamba none
+0301 mamba_student_ll 8 1.01 mamba student
+0301 student_ll 8 1.01 none student
+0301 mamba_s25_ll 25 1.01 mamba none
+0204 mamba_ll 8 1.01 mamba none
+0204 student_ll 8 1.01 none student
+0204 mamba_s25_ll 25 1.01 mamba none

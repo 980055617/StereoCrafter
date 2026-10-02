@@ -1,0 +1,105 @@
+========================================================================================================
+TABLE 2  STACKING THE WINNER ON THE SHIPPED MAMBA DELIVERABLE -- ALL LOSSLESS (FFV1), real-GT LPIPS
+========================================================================================================
+--- 0301  regime=under  GT sharp 0.0505 ---
+  row                 LPIPS  d vs orig    sharp  sh/orig  leftPSNR   nf    offset
+  origin             0.4351    +0.0000   0.0235   1.0000     40.25   38  (-28, 0)
+  origin+s25         0.3986    -0.0365   0.0295   1.2531     40.25   38  (-28, 0)
+  mamba              0.4253    -0.0098   0.0249   1.0590     40.25   38  (-28, 0)
+  mamba+s25          0.3978    -0.0373   0.0305   1.2948     40.25   38  (-28, 0)
+  origin+student     0.3982    -0.0369   0.0291   1.2347     40.25   38  (-28, 0)
+  mamba+student      0.4253    -0.0098   0.0249   1.0590     40.25   38  (-28, 0)
+--- 0204  regime=under  GT sharp 0.0116 ---
+  row                 LPIPS  d vs orig    sharp  sh/orig  leftPSNR   nf    offset
+  origin             0.2053    +0.0000   0.0065   1.0000     41.16   38  (-28, 0)
+  origin+s25         0.1897    -0.0156   0.0076   1.1656     41.16   38  (-28, 0)
+  mamba              0.2022    -0.0031   0.0066   1.0139     41.16   38  (-28, 0)
+  mamba+s25          0.1884    -0.0169   0.0078   1.1880     41.16   38  (-28, 0)
+  origin+student     0.1883    -0.0170   0.0076   1.1642     41.16   38  (-28, 0)
+--- 0052  regime=over  GT sharp 0.0099 ---
+  row                 LPIPS  d vs orig    sharp  sh/orig  leftPSNR   nf    offset
+  origin             0.4467    +0.0000   0.0130   1.0000     40.70   38 (-12, -12)
+  origin+s25         0.4384    -0.0083   0.0137   1.0557     40.70   38 (-12, -12)
+  mamba              0.4467    -0.0000   0.0132   1.0141     40.70   38 (-12, -12)
+  mamba+s25          0.4375    -0.0092   0.0138   1.0647     40.70   38 (-12, -12)
+  origin+student     0.4397    -0.0070   0.0135   1.0397     40.70   38 (-12, -12)
+--- 0147  regime=over  GT sharp 0.0039 ---
+  row                 LPIPS  d vs orig    sharp  sh/orig  leftPSNR   nf    offset
+  origin             0.5269    +0.0000   0.0062   1.0000     40.40   38 (-12, -12)
+  origin+s25         0.5220    -0.0049   0.0067   1.0827     40.40   38 (-12, -12)
+  mamba              0.5264    -0.0005   0.0062   1.0034     40.40   38 (-12, -12)
+  mamba+s25          0.5206    -0.0063   0.0067   1.0767     40.40   38 (-12, -12)
+  origin+student     0.5239    -0.0031   0.0066   1.0761     40.40   38 (-12, -12)
+
+  COMPOSITION TEST  (measurement floor ~0.0010; runs are bit-deterministic)
+  clip   mamba cost @8st  mamba cost @s25  difference  s25 gain on orig  s25 gain on mamba   verdict
+  0301           -0.0098          -0.0008     +0.0090           -0.0365            -0.0275      REAL
+  0204           -0.0031          -0.0013     +0.0018           -0.0156            -0.0138      REAL
+  0052           -0.0000          -0.0009     -0.0009           -0.0083            -0.0092      NULL
+  0147           -0.0005          -0.0014     -0.0009           -0.0049            -0.0058      NULL
+  MEAN           -0.0034          -0.0011     +0.0023           -0.0163            -0.0141
+
+  4-CLIP MEANS:
+    origin           0.4035   delta vs origin +0.0000
+    origin+s25       0.3872   delta vs origin -0.0163
+    mamba            0.4001   delta vs origin -0.0034
+    mamba+s25        0.3861   delta vs origin -0.0174
+    origin+student   0.3875   delta vs origin -0.0160
+    mamba+student    (only 1/4 clips: 0.4253)
+
+========================================================================================================
+TABLE 3  THE MEASUREMENT NEITHER LANE MADE: 12-clip LOSSLESS origin / s25 / student
+========================================================================================================
+clip    origin      s25  student |    d_s25   d_stud    frac |  shR stu regime   nf  left=
+0042    0.4279   0.4175   0.4184 |  -0.0104  -0.0095   91.0% |   1.0892   over   38    yes
+0052    0.4467   0.4384   0.4397 |  -0.0083  -0.0070   84.1% |   1.0397   over   38    yes
+0125    0.4799   0.4469   0.4551 |  -0.0330  -0.0249   75.4% |   1.1168  under   38    yes
+0128    0.4055   0.3876   0.3897 |  -0.0178  -0.0158   88.5% |   1.1271   over   38    yes
+0141    0.4813   0.4621   0.4664 |  -0.0192  -0.0149   77.7% |   1.1244   over   38    yes
+0147    0.5269   0.5220   0.5239 |  -0.0049  -0.0031   62.6% |   1.0761   over   38    yes
+0170    0.2517   0.2450   0.2492 |  -0.0068  -0.0026   38.0% |   1.0586  under   38    yes
+0204    0.2053   0.1897   0.1883 |  -0.0156  -0.0170  108.9% |   1.1642  under   38    yes
+0225    0.2750   0.2603   0.2587 |  -0.0147  -0.0163  111.2% |   1.1498  under   38    yes
+0251    0.3460   0.3385   0.3376 |  -0.0076  -0.0085  111.8% |   1.0938  under   38    yes
+0259    0.4376   0.4367   0.4346 |  -0.0009  -0.0030  340.0% |   1.0133  under   38    yes
+0301    0.4351   0.3986   0.3982 |  -0.0365  -0.0369  101.1% |   1.2347  under   38    yes
+MEAN    0.3933   0.3786   0.3800 |  -0.0146  -0.0133   90.7%
+  n=12  s25 improved 12/12, student improved 12/12; student worst -0.0026, s25 worst -0.0009
+  HELD-OUT ONLY (n=10): origin 0.40786 s25 0.39550 student 0.39731 => d_s25 -0.01236 d_student -0.01055 frac 85.3%
+  regime under (n=7): d_s25 -0.01644 d_student -0.01560 frac 94.9%
+  regime over  (n=5): d_s25 -0.01214 d_student -0.01005 frac 82.8%
+
+========================================================================================================
+TABLE 4  CAN THE TWO WINS COEXIST?  2-slot Mamba (down_blocks.0 only) + the distilled up3 tensors
+========================================================================================================
+--- 0301 regime=under ---
+  origin             0.4351    +0.0000 sharp 0.0235 nf 38
+  origin+student     0.3982    -0.0369 sharp 0.0291 nf 38
+  mamba 5-slot       0.4253    -0.0098 sharp 0.0249 nf 38
+  mamba 2-slot       0.4310    -0.0041 sharp 0.0239 nf 38
+  mamba2+student     0.4005    -0.0346 sharp 0.0289 nf 38
+--- 0204 regime=under ---
+  origin             0.2053    +0.0000 sharp 0.0065 nf 38
+  origin+student     0.1883    -0.0170 sharp 0.0076 nf 38
+  mamba 5-slot       0.2022    -0.0031 sharp 0.0066 nf 38
+  mamba 2-slot       0.2042    -0.0011 sharp 0.0066 nf 38
+  mamba2+student     0.1879    -0.0174 sharp 0.0077 nf 38
+--- 0052 regime=over ---
+  origin             0.4467    +0.0000 sharp 0.0130 nf 38
+  origin+student     0.4397    -0.0070 sharp 0.0135 nf 38
+  mamba 5-slot       0.4467    -0.0000 sharp 0.0132 nf 38
+  mamba 2-slot       0.4467    +0.0000 sharp 0.0132 nf 38
+  mamba2+student     0.4392    -0.0075 sharp 0.0137 nf 38
+--- 0147 regime=over ---
+  origin             0.5269    +0.0000 sharp 0.0062 nf 38
+  origin+student     0.5239    -0.0031 sharp 0.0066 nf 38
+  mamba 5-slot       0.5264    -0.0005 sharp 0.0062 nf 38
+  mamba 2-slot       0.5269    -0.0001 sharp 0.0062 nf 38
+  mamba2+student     0.5234    -0.0035 sharp 0.0067 nf 38
+
+  4-CLIP MEANS:
+    origin           0.4035   delta vs origin +0.0000
+    origin+student   0.3875   delta vs origin -0.0160
+    mamba 5-slot     0.4001   delta vs origin -0.0034
+    mamba 2-slot     0.4022   delta vs origin -0.0013
+    mamba2+student   0.3877   delta vs origin -0.0158

@@ -1,0 +1,2 @@
+[0301] (a) cv2-mp4v write + decord read on IDENTICAL pixels: mean 0.33030 -> 0.32205 = -2.104/255   std gain 1.0007   PSNR 36.90 dB
+[0301] (b) splatting input vs train-GT left quadrant, same crop, NO MODEL: mean 0.34205 vs 0.33542 = +1.690/255   PSNR 14.00 dB

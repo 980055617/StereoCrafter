@@ -1,0 +1,29 @@
+### mp4v era (remaining clips)
+[0147] ref=outputs/fulldata_v2/clips/0147_origin/0147_inpainting_results_sbs.mp4
+[0147] ref frames=172 shape=(172, 576, 2048, 3) leftmd5=bfe9d08ee09435fa6ff490e1856054b1
+[0147] s25                    frames= 172 shape=(576, 2048, 3) leftmd5=17b21c8dde331e116a6973a59ae9552b LEFT: bytesdiff=9395802/304349184 maxabs=24 psnr=56.70 | RIGHT: psnr=34.82  LEFT_DIFFERS
+[0147] mamba_all8kv2          frames= 172 shape=(576, 2048, 3) leftmd5=68baf41528e459f9d987ca352c768b4a LEFT: bytesdiff=6829426/304349184 maxabs=24 psnr=58.30 | RIGHT: psnr=41.39  LEFT_DIFFERS
+[0147] student                frames= 172 shape=(576, 2048, 3) leftmd5=203f1c9ba9c6164a0df9707ed8537ccf LEFT: bytesdiff=8761656/304349184 maxabs=24 psnr=57.13 | RIGHT: psnr=40.41  LEFT_DIFFERS
+[0259] ref=outputs/fulldata_v2/clips/0259_origin/0259_inpainting_results_sbs.mp4
+[0259] ref frames=151 shape=(151, 576, 2048, 3) leftmd5=df55f9b7248b3bb72dd42d00823bbe4a
+[0259] s25                    frames= 151 shape=(576, 2048, 3) leftmd5=0883cfd99f1bd2dafe8217456eebfb2a LEFT: bytesdiff=1280289/267190272 maxabs=34 psnr=62.33 | RIGHT: psnr=24.37  LEFT_DIFFERS
+[0259] mamba_all8kv2          frames= 151 shape=(576, 2048, 3) leftmd5=aafb95edfe8d41fda6eb96c04ed757d0 LEFT: bytesdiff=1303071/267190272 maxabs=24 psnr=63.23 | RIGHT: psnr=33.79  LEFT_DIFFERS
+[0259] student                frames= 151 shape=(576, 2048, 3) leftmd5=164c9e3f2535f59576535553a458f7b5 LEFT: bytesdiff=1074788/267190272 maxabs=32 psnr=63.59 | RIGHT: psnr=29.51  LEFT_DIFFERS
+### LOSSLESS era (beyond4) -- expect LEFT_BIT_IDENTICAL
+[0301] ref=outputs/beyond4_lossless/clips/0301_origin_ll/0301_inpainting_results_sbs.mkv
+[0301] ref frames=151 shape=(151, 576, 2048, 3) leftmd5=7ca2a3ff1c13c342c8662191d82a9141
+[0301] s25_ll                 frames= 151 shape=(576, 2048, 3) leftmd5=7ca2a3ff1c13c342c8662191d82a9141 LEFT: bytesdiff=0/267190272 maxabs=0 psnr=inf | RIGHT: psnr=22.75  LEFT_BIT_IDENTICAL
+[0301] g125_ll                frames= 151 shape=(576, 2048, 3) leftmd5=7ca2a3ff1c13c342c8662191d82a9141 LEFT: bytesdiff=0/267190272 maxabs=0 psnr=inf | RIGHT: psnr=27.19  LEFT_BIT_IDENTICAL
+[0052] ref=outputs/beyond4_lossless/clips/0052_origin_ll/0052_inpainting_results_sbs.mkv
+[0052] ref frames=168 shape=(168, 576, 2048, 3) leftmd5=0f969d30cc63354f7bfdcf4d5f6bcfc7
+[0052] s25_ll                 frames= 168 shape=(576, 2048, 3) leftmd5=0f969d30cc63354f7bfdcf4d5f6bcfc7 LEFT: bytesdiff=0/297271296 maxabs=0 psnr=inf | RIGHT: psnr=32.25  LEFT_BIT_IDENTICAL
+[0052] g125_ll                frames= 168 shape=(576, 2048, 3) leftmd5=0f969d30cc63354f7bfdcf4d5f6bcfc7 LEFT: bytesdiff=0/297271296 maxabs=0 psnr=inf | RIGHT: psnr=37.12  LEFT_BIT_IDENTICAL
+[0147] ref=outputs/beyond4_lossless/clips/0147_origin_ll/0147_inpainting_results_sbs.mkv
+[0147] ref frames=172 shape=(172, 576, 2048, 3) leftmd5=06033ea9d37e1f8efa7551d5e17377f4
+[0147] s25_ll                 frames= 172 shape=(576, 2048, 3) leftmd5=06033ea9d37e1f8efa7551d5e17377f4 LEFT: bytesdiff=0/304349184 maxabs=0 psnr=inf | RIGHT: psnr=35.20  LEFT_BIT_IDENTICAL
+[0147] g125_ll                frames= 172 shape=(576, 2048, 3) leftmd5=06033ea9d37e1f8efa7551d5e17377f4 LEFT: bytesdiff=0/304349184 maxabs=0 psnr=inf | RIGHT: psnr=41.05  LEFT_BIT_IDENTICAL
+[0204] ref=outputs/beyond4_lossless/clips/0204_origin_ll/0204_inpainting_results_sbs.mkv
+[0204] ref frames=151 shape=(151, 576, 2048, 3) leftmd5=102dc53f7289ce923ad663bdb025f3a6
+[0204] s25_ll                 frames= 151 shape=(576, 2048, 3) leftmd5=102dc53f7289ce923ad663bdb025f3a6 LEFT: bytesdiff=0/267190272 maxabs=0 psnr=inf | RIGHT: psnr=28.58  LEFT_BIT_IDENTICAL
+[0204] g125_ll                frames= 151 shape=(576, 2048, 3) leftmd5=102dc53f7289ce923ad663bdb025f3a6 LEFT: bytesdiff=0/267190272 maxabs=0 psnr=inf | RIGHT: psnr=32.98  LEFT_BIT_IDENTICAL
+DONE

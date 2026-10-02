@@ -1,0 +1,49 @@
+=== PASS A: total UNet forward, bench2.py protocol (batch 2, 14 frames, 3 warmup + 10 timed, exclusive GPU 0) ===
+res(HxW)     config    n   sec/step   +-half   delta%  peakMiB  dVRAM%  checks
+h576w1024    origin    5     0.9641   0.0040    +0.00     7396   +0.00  calls={'origin_attn': 0, 'mamba_core': 0, 'plain_attn1': 16} gates=[]
+h576w1024    mamba5    5     0.9119   0.0010    -5.41     7404   +0.11  calls={'origin_attn': 0, 'mamba_core': 5, 'plain_attn1': 11} gates=[1.0]
+h576w1024    mamba2    5     0.9448   0.0006    -2.00     7400   +0.05  calls={'origin_attn': 0, 'mamba_core': 2, 'plain_attn1': 14} gates=[1.0]
+h1024w1792   origin    3     3.7251   0.0139    +0.00    16790   +0.00  calls={'origin_attn': 0, 'mamba_core': 0, 'plain_attn1': 16} gates=[]
+h1024w1792   mamba5    3     2.9592   0.0018   -20.56    16798   +0.05  calls={'origin_attn': 0, 'mamba_core': 5, 'plain_attn1': 11} gates=[1.0]
+h1024w1792   mamba2    3     3.4212   0.0022    -8.16    16793   +0.02  calls={'origin_attn': 0, 'mamba_core': 2, 'plain_attn1': 14} gates=[1.0]
+h1024w1920   origin    3     4.0745   0.0076    +0.00    17783   +0.00  calls={'origin_attn': 0, 'mamba_core': 0, 'plain_attn1': 16} gates=[]
+h1024w1920   mamba5    3     3.1835   0.0028   -21.87    17788   +0.03  calls={'origin_attn': 0, 'mamba_core': 5, 'plain_attn1': 11} gates=[1.0]
+h1024w1920   mamba2    3     3.7156   0.0025    -8.81    17784   +0.01  calls={'origin_attn': 0, 'mamba_core': 2, 'plain_attn1': 14} gates=[1.0]
+
+=== THE NUMBER: marginal decomposition of the shipped 5-slot win (pass A totals) ===
+res(HxW)       win5(s)   win5%   win2(s)   win2%    up3(s)  up3%ofwin  down0%ofwin  spreadband
+h576w1024       0.0522   +5.41    0.0193   +2.00    0.0329       63.0         37.0      0.0056
+h1024w1792      0.7659  +20.56    0.3039   +8.16    0.4620       60.3         39.7      0.0179
+h1024w1920      0.8910  +21.87    0.3589   +8.81    0.5321       59.7         40.3      0.0129
+
+=== PASS B: per-slot inclusive attn1 time (ms/forward), CUDA-event hooks on the 5 level-0 spatial slots ===
+-- h576w1024
+config    n   down0.a0   down0.a1     up3.a0     up3.a1     up3.a2      sum                              class  secClean  secHook
+origin    3     20.324     20.350     20.581     20.576     20.593  102.424                          Attention    0.9659   0.9677
+                 0.035      0.041      0.041      0.019      0.013   (half-spread)
+mamba5    3     10.006     10.012     10.034     10.017     10.010   50.080                     GatedResidualM    0.9121   0.9132
+                 0.001      0.001      0.004      0.007      0.003   (half-spread)
+mamba2    3     10.015     10.024     20.562     20.588     20.573   81.761           Attention/GatedResidualM    0.9449   0.9470
+                 0.002      0.010      0.063      0.055      0.024   (half-spread)
+   attributed saving ms/forward: down0=20.656 up3=31.688 total=52.345 -> up3 = 60.5% of the attn1-level saving, down0 = 39.5%
+   2-slot build: down0 saving=20.635 ms, up3 slots unchanged (61.722 vs origin 61.750 ms)
+-- h1024w1792
+config    n   down0.a0   down0.a1     up3.a0     up3.a1     up3.a2      sum                              class  secClean  secHook
+origin    3    184.536    190.177    183.207    183.350    183.382  924.653                          Attention    3.7416   3.7355
+                 0.774      0.894      0.070      0.046      0.079   (half-spread)
+mamba5    3     30.903     30.916     30.942     30.917     30.909  154.586                     GatedResidualM    2.9653   2.9639
+                 0.004      0.007      0.004      0.005      0.010   (half-spread)
+mamba2    3     30.926     30.924    183.789    183.469    183.514  612.622           Attention/GatedResidualM    3.4258   3.4229
+                 0.005      0.017      0.287      0.047      0.057   (half-spread)
+   attributed saving ms/forward: down0=312.895 up3=457.172 total=770.067 -> up3 = 59.4% of the attn1-level saving, down0 = 40.6%
+   2-slot build: down0 saving=312.864 ms, up3 slots unchanged (550.772 vs origin 549.939 ms)
+-- h1024w1920
+config    n   down0.a0   down0.a1     up3.a0     up3.a1     up3.a2      sum                              class  secClean  secHook
+origin    3    212.977    219.910    209.918    210.062    210.080 1062.947                          Attention    4.0851   4.0854
+                 0.995      1.418      0.037      0.031      0.040   (half-spread)
+mamba5    3     33.087     33.076     33.090     33.081     33.101  165.436                     GatedResidualM    3.1870   3.1863
+                 0.004      0.003      0.019      0.007      0.008   (half-spread)
+mamba2    3     33.100     33.070    210.518    210.175    210.122  696.985           Attention/GatedResidualM    3.7193   3.7180
+                 0.003      0.003      0.971      0.088      0.021   (half-spread)
+   attributed saving ms/forward: down0=366.724 up3=530.787 total=897.511 -> up3 = 59.1% of the attn1-level saving, down0 = 40.9%
+   2-slot build: down0 saving=366.718 ms, up3 slots unchanged (630.815 vs origin 630.060 ms)

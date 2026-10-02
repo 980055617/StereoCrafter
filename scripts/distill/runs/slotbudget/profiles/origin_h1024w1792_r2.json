@@ -1,0 +1,271 @@
+{
+  "schema": "master_project.stereocrafter.cuda_module_timing.v1",
+  "patterns": [
+    "down_blocks.0.attentions.0.transformer_blocks.0.attn1",
+    "down_blocks.0.attentions.1.transformer_blocks.0.attn1",
+    "up_blocks.3.attentions.0.transformer_blocks.0.attn1",
+    "up_blocks.3.attentions.1.transformer_blocks.0.attn1",
+    "up_blocks.3.attentions.2.transformer_blocks.0.attn1"
+  ],
+  "metadata": {
+    "label": "origin_h1024w1792_r2",
+    "include": "__nomatch__",
+    "exclude": "__nomatch__",
+    "mode": "gated_residual",
+    "H": 1024,
+    "W": 1792,
+    "batch": 2,
+    "frames": 14,
+    "dstate": "128",
+    "expand": "1",
+    "bidir": "fwd",
+    "ckpt": null,
+    "gate": "1.0",
+    "timedForwards": 10,
+    "warmupForwards": 3,
+    "secCleanNoHooks": 3.746828317642212,
+    "secHooked": 3.7347707033157347,
+    "peakMiBAllocated": 16790,
+    "perFwdCalls": {
+      "origin_attn": 0,
+      "mamba_core": 0,
+      "plain_attn1": 16
+    },
+    "slotClasses": {
+      "down_blocks.0.attentions.0.transformer_blocks.0.attn1": "Attention",
+      "down_blocks.0.attentions.1.transformer_blocks.0.attn1": "Attention",
+      "up_blocks.3.attentions.0.transformer_blocks.0.attn1": "Attention",
+      "up_blocks.3.attentions.1.transformer_blocks.0.attn1": "Attention",
+      "up_blocks.3.attentions.2.transformer_blocks.0.attn1": "Attention"
+    },
+    "moduleTimeSemantics": "inclusive forward time of the module named (CUDA events, pre/post forward hook)"
+  },
+  "totalProfiledMs": 9237.17465209961,
+  "modules": [
+    {
+      "name": "down_blocks.0.attentions.1.transformer_blocks.0.attn1",
+      "class": "Attention",
+      "calls": 10,
+      "totalMs": 1892.9992370605469,
+      "avgMs": 189.2999237060547,
+      "maxMs": 191.37161254882812,
+      "firstMs": 188.76620483398438,
+      "lastMs": 189.69906616210938,
+      "timingsMs": [
+        188.76620483398438,
+        189.50656127929688,
+        190.10867309570312,
+        185.18118286132812,
+        189.18194580078125,
+        190.99417114257812,
+        187.58860778808594,
+        191.37161254882812,
+        190.60121154785156,
+        189.69906616210938
+      ],
+      "inputShapes": [
+        [
+          [
+            28,
+            28672,
+            320
+          ]
+        ],
+        [
+          [
+            28,
+            28672,
+            320
+          ]
+        ],
+        [
+          [
+            28,
+            28672,
+            320
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "down_blocks.0.attentions.0.transformer_blocks.0.attn1",
+      "class": "Attention",
+      "calls": 10,
+      "totalMs": 1846.2198638916016,
+      "avgMs": 184.62198638916016,
+      "maxMs": 186.03109741210938,
+      "firstMs": 183.08746337890625,
+      "lastMs": 184.99154663085938,
+      "timingsMs": [
+        183.08746337890625,
+        185.01670837402344,
+        185.44613647460938,
+        183.16595458984375,
+        184.79718017578125,
+        185.19552612304688,
+        183.33363342285156,
+        186.03109741210938,
+        185.1546173095703,
+        184.99154663085938
+      ],
+      "inputShapes": [
+        [
+          [
+            28,
+            28672,
+            320
+          ]
+        ],
+        [
+          [
+            28,
+            28672,
+            320
+          ]
+        ],
+        [
+          [
+            28,
+            28672,
+            320
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "up_blocks.3.attentions.1.transformer_blocks.0.attn1",
+      "class": "Attention",
+      "calls": 10,
+      "totalMs": 1833.4248504638672,
+      "avgMs": 183.3424850463867,
+      "maxMs": 183.53868103027344,
+      "firstMs": 183.52537536621094,
+      "lastMs": 183.39926147460938,
+      "timingsMs": [
+        183.52537536621094,
+        183.20037841796875,
+        183.2078094482422,
+        183.52639770507812,
+        183.32569885253906,
+        183.2058868408203,
+        183.53868103027344,
+        183.2710418701172,
+        183.2243194580078,
+        183.39926147460938
+      ],
+      "inputShapes": [
+        [
+          [
+            28,
+            28672,
+            320
+          ]
+        ],
+        [
+          [
+            28,
+            28672,
+            320
+          ]
+        ],
+        [
+          [
+            28,
+            28672,
+            320
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "up_blocks.3.attentions.2.transformer_blocks.0.attn1",
+      "class": "Attention",
+      "calls": 10,
+      "totalMs": 1833.096176147461,
+      "avgMs": 183.3096176147461,
+      "maxMs": 183.57069396972656,
+      "firstMs": 183.24684143066406,
+      "lastMs": 183.36483764648438,
+      "timingsMs": [
+        183.24684143066406,
+        183.24070739746094,
+        183.25914001464844,
+        183.3359375,
+        183.35743713378906,
+        183.25184631347656,
+        183.57069396972656,
+        183.2314910888672,
+        183.23724365234375,
+        183.36483764648438
+      ],
+      "inputShapes": [
+        [
+          [
+            28,
+            28672,
+            320
+          ]
+        ],
+        [
+          [
+            28,
+            28672,
+            320
+          ]
+        ],
+        [
+          [
+            28,
+            28672,
+            320
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "up_blocks.3.attentions.0.transformer_blocks.0.attn1",
+      "class": "Attention",
+      "calls": 10,
+      "totalMs": 1831.4345245361328,
+      "avgMs": 183.1434524536133,
+      "maxMs": 183.35232543945312,
+      "firstMs": 183.2123260498047,
+      "lastMs": 183.1372833251953,
+      "timingsMs": [
+        183.2123260498047,
+        183.01747131347656,
+        183.07174682617188,
+        183.35232543945312,
+        183.0891571044922,
+        183.14341735839844,
+        183.30931091308594,
+        183.08912658691406,
+        183.01235961914062,
+        183.1372833251953
+      ],
+      "inputShapes": [
+        [
+          [
+            28,
+            28672,
+            320
+          ]
+        ],
+        [
+          [
+            28,
+            28672,
+            320
+          ]
+        ],
+        [
+          [
+            28,
+            28672,
+            320
+          ]
+        ]
+      ]
+    }
+  ]
+}
