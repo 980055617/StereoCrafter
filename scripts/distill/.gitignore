@@ -1,2 +1,10 @@
 runs/**/*.pt
 runs/**/*.log
+# Inference renders and visual strips produced by the run lanes (2.2 GB as of 2026-10-01).
+# The numbers they back are committed as .txt/.json/.csv next to them.
+runs/**/*.mp4
+runs/**/*.mkv
+runs/**/*.png
+# Local link farms into video_data/ (machine-specific absolute symlinks; rebuild from the
+# split JSON, e.g. train_gt27 = video_data/train_gt28 minus 0358).
+splits/train_gt*/
