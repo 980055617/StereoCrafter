@@ -5,6 +5,8 @@
 # =============================================
 
 import os
+import sys
+from pathlib import Path
 from typing import Optional
 
 import cv2
@@ -16,13 +18,15 @@ from dependency.DepthCrafter.depthcrafter.utils import vis_sequence_depth
 from utils.pose3d_export import export_pose_annotations_3d, decode_coco_rle
 from depth_splatting_inference import ForwardWarpStereo, _to_float32_unit_range
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from scripts.bundle_common.depth_io import load_depth_npz  # noqa: E402
+
 
 def _load_depth_array(depth_path: str) -> np.ndarray:
+    # depth_io handles both the legacy float16/float32 npz and the uint16
+    # fixed-point format (2026-09-17); either way this is float32 in [0, 1].
     if depth_path.endswith(".npz"):
-        payload = np.load(depth_path)
-        if "depth" not in payload:
-            raise KeyError(f"{depth_path} does not contain key 'depth'")
-        return np.asarray(payload["depth"])
+        return load_depth_npz(depth_path).depth
     return np.asarray(np.load(depth_path))
 
 
@@ -142,6 +146,17 @@ def reconstruct_2x2(
         depth_array = smoothed
     fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
+    # D5 (audit 2026-09-17): the loop below used to stop at min(video, depth)
+    # frames, so a short depth npz silently shortened the whole stereo chain.
+    if frame_count <= 0:
+        cap.release()
+        raise ValueError(f"Could not read the frame count of {left_video_path}")
+    if len(depth_array) != frame_count:
+        cap.release()
+        raise ValueError(
+            f"Depth/video frame count mismatch: {depth_path} has {len(depth_array)} frames "
+            f"but {left_video_path} has {frame_count}"
+        )
 
     ret, first = cap.read()
     if not ret:
@@ -184,72 +199,91 @@ def reconstruct_2x2(
                 target_width=w,
             )
 
+    def _flush_batch() -> None:
+        if not left_frames:
+            return
+        batch_frames = _to_float32_unit_range(np.asarray(left_frames))
+        batch_depth = np.asarray(depth_list, dtype=np.float32)
+        batch_depth = _resize_depth_batch(
+            batch_depth,
+            target_height=h,
+            target_width=w,
+        )
+
+        left_video = torch.from_numpy(batch_frames).permute(0, 3, 1, 2).float().cuda()
+        disp_map = torch.from_numpy(batch_depth).unsqueeze(1).float().cuda()
+        disp_map = disp_map * 2.0 - 1.0
+        disp_map = disp_map * max_disp
+
+        with torch.no_grad():
+            right_video, occlusion_mask = stereo_projector(left_video, disp_map)
+
+        right_video = right_video.cpu().permute(0, 2, 3, 1).numpy()
+        occlusion_mask = (
+            occlusion_mask.cpu().permute(0, 2, 3, 1).numpy().repeat(3, axis=-1)
+        )
+        np.clip(right_video, 0.0, 1.0, out=right_video)
+        np.clip(occlusion_mask, 0.0, 1.0, out=occlusion_mask)
+
+        depth_vis = vis_sequence_depth(batch_depth)
+        depth_vis = np.multiply(depth_vis, 255.0, out=depth_vis).astype(np.uint8)
+        left_frames_uint8 = np.multiply(batch_frames, 255.0, out=batch_frames).astype(np.uint8)
+        right_video_uint8 = np.multiply(right_video, 255.0, out=right_video).astype(np.uint8)
+        occlusion_mask_uint8 = np.multiply(occlusion_mask, 255.0, out=occlusion_mask).astype(np.uint8)
+
+        for j in range(len(left_frames_uint8)):
+            if frame_union_masks and j < len(frame_ids):
+                fid = frame_ids[j]
+                fm = frame_union_masks.get(fid)
+                if fm is not None:
+                    if fm.shape != occlusion_mask_uint8[j].shape[:2]:
+                        fm = cv2.resize(
+                            fm.astype(np.uint8),
+                            (occlusion_mask_uint8[j].shape[1], occlusion_mask_uint8[j].shape[0]),
+                            interpolation=cv2.INTER_NEAREST,
+                        ).astype(bool)
+                    # Left-bottom: occlusion mask in white
+                    occlusion_mask_uint8[j][fm] = 255
+                    # Right-bottom: black-out the masked region in right view
+                    right_video_uint8[j][fm] = 0
+
+            top = np.concatenate([left_frames_uint8[j], depth_vis[j]], axis=1)
+            bottom = np.concatenate([occlusion_mask_uint8[j], right_video_uint8[j]], axis=1)
+            grid = np.concatenate([top, bottom], axis=0)
+            grid_bgr = cv2.cvtColor(grid, cv2.COLOR_RGB2BGR)
+            writer.write(grid_bgr)
+
+        left_frames.clear()
+        depth_list.clear()
+        frame_ids.clear()
+        torch.cuda.empty_cache()
+
     idx = 0
     while True:
         ok, frame = cap.read()
-        if not ok or idx >= len(depth_array):
+        if not ok:
             break
+        if idx >= len(depth_array):
+            cap.release()
+            writer.release()
+            raise ValueError(
+                f"{left_video_path} decoded more than the {len(depth_array)} frames the depth covers"
+            )
         left_frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
         depth_list.append(depth_array[idx])
         frame_ids.append(idx)
         idx += 1
-
-        if len(left_frames) >= batch_size or idx == frame_count or idx == len(depth_array):
-            batch_frames = _to_float32_unit_range(np.asarray(left_frames))
-            batch_depth = np.asarray(depth_list, dtype=np.float32)
-            batch_depth = _resize_depth_batch(
-                batch_depth,
-                target_height=h,
-                target_width=w,
-            )
-
-            left_video = torch.from_numpy(batch_frames).permute(0, 3, 1, 2).float().cuda()
-            disp_map = torch.from_numpy(batch_depth).unsqueeze(1).float().cuda()
-            disp_map = disp_map * 2.0 - 1.0
-            disp_map = disp_map * max_disp
-
-            with torch.no_grad():
-                right_video, occlusion_mask = stereo_projector(left_video, disp_map)
-
-            right_video = right_video.cpu().permute(0, 2, 3, 1).numpy()
-            occlusion_mask = (
-                occlusion_mask.cpu().permute(0, 2, 3, 1).numpy().repeat(3, axis=-1)
-            )
-            np.clip(right_video, 0.0, 1.0, out=right_video)
-            np.clip(occlusion_mask, 0.0, 1.0, out=occlusion_mask)
-
-            depth_vis = vis_sequence_depth(batch_depth)
-            depth_vis = np.multiply(depth_vis, 255.0, out=depth_vis).astype(np.uint8)
-            left_frames_uint8 = np.multiply(batch_frames, 255.0, out=batch_frames).astype(np.uint8)
-            right_video_uint8 = np.multiply(right_video, 255.0, out=right_video).astype(np.uint8)
-            occlusion_mask_uint8 = np.multiply(occlusion_mask, 255.0, out=occlusion_mask).astype(np.uint8)
-
-            for j in range(len(left_frames_uint8)):
-                if frame_union_masks and j < len(frame_ids):
-                    fid = frame_ids[j]
-                    fm = frame_union_masks.get(fid)
-                    if fm is not None:
-                        if fm.shape != occlusion_mask_uint8[j].shape[:2]:
-                            fm = cv2.resize(
-                                fm.astype(np.uint8),
-                                (occlusion_mask_uint8[j].shape[1], occlusion_mask_uint8[j].shape[0]),
-                                interpolation=cv2.INTER_NEAREST,
-                            ).astype(bool)
-                        # Left-bottom: occlusion mask in white
-                        occlusion_mask_uint8[j][fm] = 255
-                        # Right-bottom: black-out the masked region in right view
-                        right_video_uint8[j][fm] = 0
-
-                top = np.concatenate([left_frames_uint8[j], depth_vis[j]], axis=1)
-                bottom = np.concatenate([occlusion_mask_uint8[j], right_video_uint8[j]], axis=1)
-                grid = np.concatenate([top, bottom], axis=0)
-                grid_bgr = cv2.cvtColor(grid, cv2.COLOR_RGB2BGR)
-                writer.write(grid_bgr)
-
-            left_frames.clear()
-            depth_list.clear()
-            frame_ids.clear()
-            torch.cuda.empty_cache()
+        if len(left_frames) >= batch_size:
+            _flush_batch()
+    # The last batch is shorter than batch_size unless T is a multiple of
+    # it; it used to be flushed only when cv2's frame count was exact.
+    _flush_batch()
+    if idx != len(depth_array):
+        cap.release()
+        writer.release()
+        raise ValueError(
+            f"{left_video_path} decoded {idx} frames but the depth has {len(depth_array)}"
+        )
     cap.release()
     writer.release()
     os.replace(partial_output, output_2x2_video)

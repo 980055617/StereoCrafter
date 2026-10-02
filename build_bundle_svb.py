@@ -6,14 +6,23 @@ import os
 import shutil
 import struct
 import subprocess
+import sys
 import tempfile
 import zipfile
 from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 import zlib
+
+# scripts/bundle_common is shared with the sidecar scripts (repo root on
+# sys.path; the orchestrator runs this file with cwd=StereoCrafter).
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+from scripts.bundle_common.depth_io import load_depth_npz  # noqa: E402
 
 try:
     import lz4.frame as lz4f  # type: ignore
@@ -27,6 +36,34 @@ except Exception:
 
 MAGIC = b"SVB1"
 VERSION = 2
+
+# Axis conventions of pose.keypoints3d in the sidecar (pose.cameraAxes or
+# pose.coordinateSystem) and of the joints written to meta.bin.
+#
+# BUNDLE_JOINT_AXES is what Unity consumes and must not move. Evidence: the
+# shipped human/animal bundles were built with --pose_keypoints3d_flip_y 1
+# applied to HMR2/AniMer joints, which both engines emit in the OpenCV frame
+# (+y down); negating y once gives +y up, the manifest's camera_axes /
+# pose_keypoints3d_policy.output_axes = x_right_y_up_z_forward, and
+# camera_xyz_from_uv_depth (the anchor_xyz that camera_xyz_absolute joints are
+# added to) uses y_ndc = 0.5 - v/h, i.e. y up. So meta.bin joints are
+# root-relative offsets in x_right_y_up_z_forward.
+#
+# Source labels:
+# - AXES_Y_DOWN: root and joints in ONE OpenCV frame (scripts/bundle_common/
+#   geometry.py AXIS_CONVENTION, sidecars from 2026-09-17 on). Flip once for
+#   the bundle; the root re-projects with the OpenCV formula.
+# - AXES_Y_UP_LEGACY: the label the sidecar scripts wrote before 2026-09-17
+#   while the joint offsets were still engine-native (+y down) and only the
+#   animal root (project_animal_keypoints_to_camera.py) was genuinely +y up.
+#   Flow-audit E1: trusting the label and flipping the whole array put the
+#   root into +y down and the y-up re-projection then MIRRORED anchor_v about
+#   the eye centre. Handled as what those files actually are: joints flipped
+#   (unchanged for Unity), root treated as +y up.
+# - no label: engine-native, same as AXES_Y_DOWN.
+AXES_Y_DOWN = "x_right_y_down_z_forward"
+AXES_Y_UP_LEGACY = "x_right_y_up_z_forward"
+BUNDLE_JOINT_AXES = "x_right_y_up_z_forward"
 
 TYPE_OTHER = 0
 TYPE_PERSON = 1
@@ -94,6 +131,21 @@ class TrackState:
     last_good_anchor_source: Optional[str] = None
     placement_low_streak: int = 0
     last_seen_frame: Optional[int] = None
+
+    def reset(self) -> None:
+        """Cold start: forget every smoothed/held quantity. Applied at a shot's
+        first frame, after any in-shot track gap and across a shot change
+        (flow-audit B1/B2) -- the EMA and the last-good hold gate must never
+        compare a fresh observation against a value from before the gap."""
+        self.anchor_z = None
+        self.joints_rel = None
+        self.joints_abs = None
+        self.bbox_area = None
+        self.last_good_anchor_u = None
+        self.last_good_anchor_v = None
+        self.last_good_anchor_z = None
+        self.last_good_anchor_source = None
+        self.placement_low_streak = 0
 
 
 def parse_args() -> argparse.Namespace:
@@ -280,12 +332,17 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--pose_keypoints3d_flip_y",
-        type=int,
-        choices=[0, 1],
-        default=1,
+        choices=["auto", "0", "1"],
+        default="auto",
         help=(
-            "Flip pose.keypoints3d Y before writing bundle joints. This normalizes "
-            "pose-engine output to bundle camera axes x_right_y_up_z_forward."
+            "auto (default): derive the Y flip per object from the sidecar's axis "
+            "label (pose.cameraAxes / pose.coordinateSystem: x_right_y_down_z_forward "
+            "or the legacy x_right_y_up_z_forward) so that meta.bin joints are always "
+            "x_right_y_up_z_forward and the animal root re-projects to the pixel it "
+            "was lifted from. 0/1: the pre-2026-09-17 blind flag (whole array, root "
+            "re-projected on the eye canvas with the y-up formula), kept only to "
+            "reproduce old bundles bit-for-bit -- it mirrors anchor_v for the legacy "
+            "animal sidecars (flow-audit E1)."
         ),
     )
     parser.add_argument(
@@ -315,7 +372,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--transcode_crf", type=int, default=18)
     parser.add_argument("--transcode_preset", type=str, default="veryfast")
     parser.add_argument("--transcode_profile", choices=["baseline", "main"], default="main")
-    parser.add_argument("--transcode_level", type=str, default="4.1")
+    parser.add_argument(
+        "--transcode_level",
+        type=str,
+        default="auto",
+        help=(
+            "H.264 level for the Quest transcode. auto derives it from the video's "
+            "macroblocks per frame and per second (4.1 when both fit, else 5.1, else "
+            "5.2) instead of stamping 4.1 on a 60 fps or 1080p-tall SBS video (D6)."
+        ),
+    )
     parser.add_argument("--transcode_audio_bitrate", type=str, default="128k")
     parser.add_argument("--transcode_audio_rate", type=int, default=48000)
     parser.add_argument("--debug_meta", type=int, choices=[0, 1], default=0)
@@ -472,6 +538,34 @@ def probe_ffprobe_has_audio(path: str) -> bool:
     return bool(streams)
 
 
+# H.264 level limits (Table A-1): max macroblocks per frame, per second.
+H264_LEVEL_LIMITS = [
+    ("4.1", 8192, 245760),
+    ("5.1", 36864, 983040),
+    ("5.2", 36864, 2073600),
+]
+
+
+def select_h264_level(width: int, height: int, fps: float) -> str:
+    """Smallest level in H264_LEVEL_LIMITS whose frame-size and throughput
+    limits the video fits; the last one when nothing fits."""
+    mb_per_frame = math.ceil(max(1, width) / 16.0) * math.ceil(max(1, height) / 16.0)
+    mb_per_sec = mb_per_frame * max(0.0, float(fps))
+    for level, max_mb_frame, max_mb_sec in H264_LEVEL_LIMITS:
+        if mb_per_frame <= max_mb_frame and mb_per_sec <= max_mb_sec:
+            return level
+    return H264_LEVEL_LIMITS[-1][0]
+
+
+def resolve_transcode_level(args: argparse.Namespace, input_path: str, fps: float) -> str:
+    if str(args.transcode_level).lower() != "auto":
+        return str(args.transcode_level)
+    meta = probe_ffprobe(input_path) or probe_cv2(input_path)
+    if meta is None or meta.width <= 0 or meta.height <= 0:
+        raise RuntimeError(f"Cannot derive the H.264 level: failed to probe {input_path}.")
+    return select_h264_level(meta.width, meta.height, fps)
+
+
 def transcode_for_quest(
     input_path: str, output_path: str, fps: float, args: argparse.Namespace
 ) -> Dict[str, Any]:
@@ -480,6 +574,7 @@ def transcode_for_quest(
         raise RuntimeError("Invalid FPS for transcoding.")
     encoder = select_h264_encoder()
     profile = map_profile_for_encoder(encoder, args.transcode_profile)
+    level = resolve_transcode_level(args, input_path, fps)
     level_applied: Optional[str] = None
     preset_applied: Optional[str] = None
     crf_applied: Optional[int] = None
@@ -495,14 +590,14 @@ def transcode_for_quest(
         video_opts.extend(
             [
                 "-level",
-                args.transcode_level,
+                level,
                 "-preset",
                 args.transcode_preset,
                 "-crf",
                 str(args.transcode_crf),
             ]
         )
-        level_applied = args.transcode_level
+        level_applied = level
         preset_applied = args.transcode_preset
         crf_applied = args.transcode_crf
     cmd = [
@@ -542,6 +637,7 @@ def transcode_for_quest(
     return {
         "encoder": encoder,
         "profile_applied": profile,
+        "level": level,
         "level_applied": level_applied,
         "preset_applied": preset_applied,
         "crf_applied": crf_applied,
@@ -659,22 +755,12 @@ def load_depth_with_disp_range(
 ) -> Tuple[np.ndarray, Optional[float], Optional[float]]:
     """Load the (T,H,W) depth array plus the optional pre-normalization
     (disp_min, disp_max) written by depth_splatting_inference.py. Older depth
-    npz files without those keys yield (None, None).
+    npz files without those keys yield (None, None). Both the legacy float
+    npz and the uint16_fixed format are read by the shared
+    scripts/bundle_common/depth_io.py reader, so the two never diverge here.
     """
-    with np.load(path) as data:
-        if not data.files:
-            raise RuntimeError(f"No arrays found in depth npz: {path}")
-        depth_key = "depth" if "depth" in data.files else data.files[0]
-        depth = np.asarray(data[depth_key])
-        disp_min = float(data["disp_min"]) if "disp_min" in data.files else None
-        disp_max = float(data["disp_max"]) if "disp_max" in data.files else None
-    if depth.ndim == 4 and depth.shape[-1] == 1:
-        depth = depth[..., 0]
-    if depth.ndim == 2:
-        depth = depth[np.newaxis, :, :]
-    if depth.ndim != 3:
-        raise RuntimeError(f"Unsupported depth shape {depth.shape}; expected (T,H,W).")
-    return depth.astype(np.float32), disp_min, disp_max
+    loaded = load_depth_npz(path)
+    return loaded.depth, loaded.disp_min, loaded.disp_max
 
 
 def normalize_conf(value: Any) -> float:
@@ -1194,12 +1280,33 @@ def parse_keypoints(
     return None, [], 0
 
 
+def pose_keypoints2d_units(obj: Dict[str, Any]) -> Optional[str]:
+    """The sidecar's explicit pose.keypoints2dUnits ("pixels" or
+    "crop_normalized"), or None for files written before the key existed."""
+    pose = obj.get("pose")
+    if not isinstance(pose, dict):
+        return None
+    units = pose.get("keypoints2dUnits")
+    if not isinstance(units, str) or not units:
+        return None
+    units = units.lower()
+    if units in ("pixels", "px", "pixel"):
+        return "pixels"
+    if "normal" in units:
+        return "crop_normalized"
+    return None
+
+
 def keypoints_look_like_pixels(
     keypoints: Optional[List[Tuple[float, float, float]]],
     kp_vis: Sequence[int],
     width: int,
     height: int,
 ) -> bool:
+    """Heuristic for sidecars without pose.keypoints2dUnits. width/height
+    must be the SOURCE canvas the keypoints were measured on (flow-audit B5:
+    passing the depth-plane size discarded valid keypoints in the right/
+    bottom 20% of the frame)."""
     if keypoints is None:
         return False
     visible: List[Tuple[float, float]] = []
@@ -1514,6 +1621,24 @@ def adjust_left_eye(value: float, w_eye: int, width: int, left_eye_origin: str) 
     return value
 
 
+def source_is_full_sbs(source_w: int, video_w: int, w_eye: int, left_eye_origin: str) -> bool:
+    """True when the object's coordinates live on the full side-by-side
+    canvas, i.e. the condition under which source_canvas_size shifts the
+    origin and adjust_left_eye is meaningful."""
+    return left_eye_origin == "full" and source_w == video_w and video_w == w_eye * 2
+
+
+def shift_left_eye_if_full_sbs(value: float, w_eye: int, width: int, is_full_sbs: bool) -> float:
+    """adjust_left_eye only for a full-SBS source canvas. On a single-eye
+    source a pose keypoint extrapolated past the right edge used to be shifted
+    by w_eye onto mid-frame with its confidence intact (flow-audit B6); now it
+    is left where it is and the crop test downstream (meta_to_eye_point ->
+    None -> vis 0) drops it exactly like a keypoint past any other edge."""
+    if is_full_sbs:
+        return adjust_left_eye(value, w_eye, width, "full")
+    return value
+
+
 def compute_crop_params(meta_w: int, meta_h: int, align128: int, crop_mode: str) -> Tuple[int, int, int, int]:
     crop_x0 = 0
     crop_y0 = 0
@@ -1529,6 +1654,61 @@ def compute_crop_params(meta_w: int, meta_h: int, align128: int, crop_mode: str)
         crop_w = meta_w
         crop_h = meta_h
     return crop_x0, crop_y0, crop_w, crop_h
+
+
+def check_crop_fraction(
+    *,
+    crop_w: int,
+    crop_h: int,
+    full_meta_w: int,
+    full_meta_h: int,
+    w_eye: int,
+    height: int,
+    source_w: int,
+    source_h: int,
+    align128: int,
+    tolerance: float = 0.005,
+) -> Dict[str, float]:
+    """The one invariant the source -> depth plane -> crop -> eye mapping
+    relies on: the fraction of the depth plane the crop keeps must equal the
+    fraction of the source frame the eye keeps, per axis. --align128 1
+    satisfies it at 1280x720 by coincidence (512/576 == 640/720) and
+    silently stretches every other size (1920x1080: 1.067x); an uncropped
+    eye with --align128 1 fails it too. Raises SystemExit on violation so a
+    mismatch introduced by any stage is a hard failure, never a stretch."""
+    frac_w_meta = float(crop_w) / float(full_meta_w)
+    frac_h_meta = float(crop_h) / float(full_meta_h)
+    frac_w_eye = float(w_eye) / float(source_w)
+    frac_h_eye = float(height) / float(source_h)
+    result = {
+        "crop_w_fraction": frac_w_meta,
+        "crop_h_fraction": frac_h_meta,
+        "eye_w_fraction": frac_w_eye,
+        "eye_h_fraction": frac_h_eye,
+    }
+    if abs(frac_w_meta - frac_w_eye) <= tolerance and abs(frac_h_meta - frac_h_eye) <= tolerance:
+        return result
+    who = (
+        f"build_bundle_svb.py --align128 {align128} cropped the depth plane to "
+        f"{crop_w}x{crop_h} of {full_meta_w}x{full_meta_h}"
+        if (crop_w != full_meta_w or crop_h != full_meta_h)
+        else "build_bundle_svb.py kept the whole depth plane"
+    )
+    eye_note = (
+        f"the stereo stage kept an eye of {w_eye}x{height} out of a {source_w}x{source_h} source"
+        if (w_eye != source_w or height != source_h)
+        else f"the eye {w_eye}x{height} is the full {source_w}x{source_h} source frame"
+    )
+    raise SystemExit(
+        "Crop fraction mismatch: the metadata plane and the eye video do not cover the "
+        f"same part of the frame. {who}, i.e. {frac_w_meta:.4f} x {frac_h_meta:.4f} of it, "
+        f"while {eye_note}, i.e. {frac_w_eye:.4f} x {frac_h_eye:.4f}. Every anchor and bbox "
+        f"would be stretched by {frac_w_eye / frac_w_meta:.3f} x {frac_h_eye / frac_h_meta:.3f} "
+        "with no warning (the 2026-09-16 car job lost the bottom 80 rows this way). "
+        "The supported configuration is --align128 0 with a full-frame eye "
+        "(StereoCrafter/inpainting_inference_padded.py); with --align128 1 the eye "
+        "must be cropped to the same 128-multiple fraction, which only 1280x720 does."
+    )
 
 
 def intersect_bbox_with_crop(
@@ -2282,11 +2462,12 @@ def compute_fixed_box_disparity_series(
     box_crop_px: Tuple[int, int, int, int],
 ) -> np.ndarray:
     """Per-frame median raw disparity within a fixed rectangular box, given
-    in crop-space pixels (x0, y0, x1, y1) -- the same coordinate space as
-    tracked objects' bboxX/bboxY in the bundle. `depth` must already be the
+    in crop-space pixels (x0, y0, x1, y1) of the depth plane -- NOT the eye
+    pixels that tracked objects' bboxX/bboxY use in the bundle (the two
+    differ by eye_w/crop_w, eye_h/crop_h). `depth` must already be the
     crop-applied array (post the `depth[:, crop_y0:crop_y0+crop_h,
-    crop_x0:crop_x0+crop_w]` slice in main()), so no further scaling is
-    needed: crop-space and this array's indices are 1:1.
+    crop_x0:crop_x0+crop_w]` slice in build_bundle()), so no further scaling
+    is needed: crop-space and this array's indices are 1:1.
     """
     n = depth.shape[0]
     x0, y0, x1, y1 = box_crop_px
@@ -2474,7 +2655,11 @@ def evaluate_placement_observation(
         anchor_jump_px = None
 
     if (
-        state.last_good_anchor_z is not None
+        # placement_conf_depth_jump is a step in normalized disparity; the
+        # animal root is AniMer camera-space Z on its own scale, already
+        # median-filtered and smoothed by project_animal_keypoints_to_camera.py.
+        anchor_source != "animal_camera_root"
+        and state.last_good_anchor_z is not None
         and anchor_z_raw is not None
         and math.isfinite(float(anchor_z_raw))
         and abs(float(anchor_z_raw) - float(state.last_good_anchor_z)) > float(args.placement_conf_depth_jump)
@@ -2501,6 +2686,125 @@ def evaluate_placement_observation(
             "p10": depth_stats.get("p10"),
             "p90": depth_stats.get("p90"),
         },
+    }
+
+
+def frame_shot_indices(shots: Sequence[Tuple[int, int]], num_frames: int) -> np.ndarray:
+    """shot index per frame from the [start, end) list load_shots_for_bundle
+    validated (contiguous, covering [0, num_frames))."""
+    out = np.zeros(num_frames, dtype=np.int64)
+    for idx, (start, end) in enumerate(shots):
+        out[max(0, start) : min(num_frames, end)] = idx
+    return out
+
+
+def reset_track_state_if_discontinuous(
+    state: TrackState, frame_idx: int, frame_shot: np.ndarray
+) -> Optional[str]:
+    """Cold-start the track unless it was seen on the previous frame of the
+    same shot. Returns why it was reset ("cold_start", "gap", "shot") or None.
+
+    A hard cut makes a real camera-distance jump legitimate, not sensor
+    noise -- carrying pre-cut EMA/last-good-anchor state across it would
+    smear or gate-hold a stale placement into the new shot. The same holds
+    for a track that re-enters after a gap: flow-audit B1 measured train
+    track 3 coming back at raw z 0.388 but used z 0.759 (0.8*stale + 0.2*raw)
+    and a hold gate comparing against a last-good from 400 frames earlier.
+    B2: a track absent on the cut frame itself and back k frames later must
+    also not keep pre-cut state, hence the shot-index comparison rather than
+    a "frame_idx is a shot start" test.
+    """
+    last = state.last_seen_frame
+    if last is None:
+        reason = "cold_start"
+    elif last != frame_idx - 1:
+        reason = "gap"
+    elif int(frame_shot[last]) != int(frame_shot[frame_idx]):
+        reason = "shot"
+    else:
+        return None
+    state.reset()
+    return reason
+
+
+def resolve_track_anchor(
+    *,
+    state: TrackState,
+    placement_eval: Dict[str, Any],
+    anchor_u: float,
+    anchor_v: float,
+    anchor_z_raw: Optional[float],
+    anchor_source: str,
+    frame_idx: int,
+    args: argparse.Namespace,
+) -> Dict[str, Any]:
+    """Turn one raw observation into the anchor written to meta.bin (hold,
+    EMA) and advance the track state. `skipped` is True when there is nothing
+    to write: no raw depth, no EMA value and no last-good anchor (flow-audit
+    B7 -- the old code wrote anchor_z=0.0 and let the EMA ramp up from it)."""
+    placement_held = False
+    hold_source = None
+    anchor_z: Optional[float] = None
+    if (
+        placement_eval["status"] == "low"
+        and state.last_good_anchor_u is not None
+        and state.last_good_anchor_v is not None
+        and state.last_good_anchor_z is not None
+    ):
+        anchor_u = float(state.last_good_anchor_u)
+        anchor_v = float(state.last_good_anchor_v)
+        anchor_z = float(state.last_good_anchor_z)
+        anchor_source = "held_previous_high_conf"
+        placement_held = True
+        hold_source = state.last_good_anchor_source
+    elif anchor_z_raw is None and state.anchor_z is None:
+        # Cold start without depth: state.anchor_z stays None so the next
+        # frame with a real sample starts the EMA from that sample.
+        if state.last_good_anchor_z is not None:
+            anchor_u = float(state.last_good_anchor_u)
+            anchor_v = float(state.last_good_anchor_v)
+            anchor_z = float(state.last_good_anchor_z)
+            anchor_source = "held_previous_high_conf"
+            placement_held = True
+            hold_source = state.last_good_anchor_source
+        else:
+            state.bbox_area = float(placement_eval["area"])
+            state.placement_low_streak += 1
+            state.last_seen_frame = frame_idx
+            return {
+                "skipped": True,
+                "anchor_u": float(anchor_u),
+                "anchor_v": float(anchor_v),
+                "anchor_z": None,
+                "anchor_source": anchor_source,
+                "placement_held": False,
+                "hold_source": None,
+            }
+    else:
+        if anchor_source == "animal_camera_root":
+            anchor_z = float(anchor_z_raw) if anchor_z_raw is not None else smooth_value(state.anchor_z, None, args.ema_alpha)
+        else:
+            anchor_z = smooth_value(state.anchor_z, anchor_z_raw, args.ema_alpha)
+        state.anchor_z = anchor_z
+        if placement_eval["status"] == "high":
+            state.last_good_anchor_u = float(anchor_u)
+            state.last_good_anchor_v = float(anchor_v)
+            state.last_good_anchor_z = float(anchor_z)
+            state.last_good_anchor_source = str(anchor_source)
+    state.bbox_area = float(placement_eval["area"])
+    if placement_eval["status"] == "low":
+        state.placement_low_streak += 1
+    else:
+        state.placement_low_streak = 0
+    state.last_seen_frame = frame_idx
+    return {
+        "skipped": False,
+        "anchor_u": float(anchor_u),
+        "anchor_v": float(anchor_v),
+        "anchor_z": float(anchor_z),
+        "anchor_source": anchor_source,
+        "placement_held": placement_held,
+        "hold_source": hold_source,
     }
 
 
@@ -2540,6 +2844,67 @@ def camera_xyz_from_uv_depth(
     x_ndc = (float(u) / float(w_eye) - 0.5) * 2.0
     y_ndc = (0.5 - float(v) / float(height)) * 2.0
     return np.asarray([x_ndc * z / fx, y_ndc * z / fy, z], dtype=np.float32)
+
+
+def pose_source_axes(pose: Any) -> Optional[str]:
+    """AXES_Y_DOWN / AXES_Y_UP_LEGACY from pose.cameraAxes or
+    pose.coordinateSystem (whichever names the axes), None when unlabelled."""
+    if not isinstance(pose, dict):
+        return None
+    for key in ("cameraAxes", "coordinateSystem"):
+        text = str(pose.get(key) or "").lower()
+        if "y_down" in text:
+            return AXES_Y_DOWN
+        if "y_up" in text:
+            return AXES_Y_UP_LEGACY
+    return None
+
+
+def pose_is_camera_absolute(pose: Any) -> bool:
+    """Does pose.keypoints3d carry an absolute camera-space root (the animal
+    lift in project_animal_keypoints_to_camera.py) rather than engine-local
+    joints? Read from coordinateSystem, or from the lift's own keys when a
+    sidecar uses coordinateSystem for the axis label instead."""
+    if not isinstance(pose, dict):
+        return False
+    if "camera_xyz_absolute" in str(pose.get("coordinateSystem") or "").lower():
+        return True
+    bbox3d = pose.get("bbox3d")
+    if isinstance(bbox3d, dict) and "absolute" in str(bbox3d.get("coord_system") or "").lower():
+        return True
+    return pose.get("skeletonRoot3d") is not None and pose.get("rootSource") is not None
+
+
+def resolve_pose_flip_y(args: argparse.Namespace, source_axes: Optional[str]) -> bool:
+    """Whether pose.keypoints3d Y is negated before it becomes meta.bin joints
+    (BUNDLE_JOINT_AXES). In auto mode every label leads to a flip -- y_down
+    is the OpenCV frame the engines emit, and the legacy y_up label was put
+    on those same engine-native offsets -- but the reason is recorded per
+    label rather than assumed (see the AXES_* comment)."""
+    override = str(args.pose_keypoints3d_flip_y).lower()
+    if override in ("0", "1"):
+        return override == "1"
+    return source_axes in (AXES_Y_DOWN, AXES_Y_UP_LEGACY, None)
+
+
+def camera_xyz_to_pixel_ydown(
+    xyz: Sequence[float], width: int, height: int, fovx_deg: float
+) -> Optional[Tuple[float, float]]:
+    """Project an OpenCV-frame (+y down) camera point onto a width x height
+    canvas with horizontal FOV fovx_deg -- the inverse of the lift in
+    project_animal_keypoints_to_camera.py. Same formula as
+    scripts/bundle_common/geometry.py camera_xyz_to_pixel; kept local so the
+    builder imports nothing that may not exist yet."""
+    x, y, z = (float(xyz[0]), float(xyz[1]), float(xyz[2]))
+    if not (math.isfinite(x) and math.isfinite(y) and math.isfinite(z)) or z <= 0.0:
+        return None
+    if width <= 0 or height <= 0:
+        return None
+    tan_x = math.tan(math.radians(float(fovx_deg)) * 0.5)
+    tan_y = tan_x * (float(height) / float(width))
+    half_w = float(width) * 0.5
+    half_h = float(height) * 0.5
+    return half_w + (x / (tan_x * z)) * half_w, half_h + (y / (tan_y * z)) * half_h
 
 
 def pose_joint_scale(args: argparse.Namespace, coordinate_system: Optional[str], engine: Optional[str]) -> float:
@@ -2769,13 +3134,32 @@ def animal_camera_root_anchor(
     args: argparse.Namespace,
     w_eye: int,
     height: int,
+    *,
+    full_meta_w: Optional[int] = None,
+    full_meta_h: Optional[int] = None,
+    crop_x0: int = 0,
+    crop_y0: int = 0,
+    crop_w: Optional[int] = None,
+    crop_h: Optional[int] = None,
 ) -> Optional[Tuple[float, float, float, np.ndarray]]:
-    """Return an AniMer camera-space root anchor as (u, v, z, xyz)."""
+    """Return an AniMer camera-space root anchor as (u, v, z, xyz), with u/v
+    in eye pixels and xyz in BUNDLE_JOINT_AXES.
+
+    The root was lifted on the SOURCE canvas (obj source_w x source_h, the
+    work video) by project_animal_keypoints_to_camera.py, so it is projected
+    back onto that canvas with the inverse of that lift and then taken
+    source -> depth plane -> crop -> eye like every other source pixel. When
+    the depth-plane/crop arguments are omitted the source canvas is taken to
+    be the eye (tests, or a full-frame eye). With --pose_keypoints3d_flip_y
+    0/1 the pre-2026-09-17 path is reproduced exactly (whole-array flip,
+    y-up re-projection straight onto the eye canvas).
+    """
     if int(obj.get("category_id", TYPE_OTHER)) != TYPE_ANIMAL:
         return None
-    coord_system = str(obj.get("source_coord_system") or "").lower()
-    if "camera_xyz_absolute" not in coord_system:
-        return None
+    if not bool(obj.get("source_is_camera_absolute", False)):
+        coord_system = str(obj.get("source_coord_system") or "").lower()
+        if "camera_xyz_absolute" not in coord_system:
+            return None
     source_joints3d = obj.get("source_joints3d")
     if source_joints3d is None:
         return None
@@ -2790,8 +3174,6 @@ def animal_camera_root_anchor(
         obj.get("source_coord_system"),
         obj.get("source_engine"),
     )
-    if bool(args.pose_keypoints3d_flip_y):
-        joints[:, 1] *= -1.0
     source_valid = obj.get("source_joints_valid")
     if source_valid is None:
         valid = np.ones((joints.shape[0],), dtype=bool)
@@ -2802,18 +3184,53 @@ def animal_camera_root_anchor(
     valid &= np.all(np.isfinite(joints), axis=1)
     if not np.any(valid):
         return None
+
+    override = str(args.pose_keypoints3d_flip_y).lower()
+    if override in ("0", "1"):
+        if override == "1":
+            joints[:, 1] *= -1.0
+        root = compute_root(joints, valid, obj.get("root_indices", []))
+        if not np.all(np.isfinite(root)) or float(root[2]) <= 0.0:
+            return None
+        uv, uv_valid = invert_camera_xyz_to_uv(root.reshape(1, 3), w_eye, height, args.fovx_deg)
+        if not bool(uv_valid[0]):
+            return None
+        u, v = float(uv[0, 0]), float(uv[0, 1])
+        if not (math.isfinite(u) and math.isfinite(v)):
+            return None
+        if u < 0.0 or u >= float(w_eye) or v < 0.0 or v >= float(height):
+            return None
+        return u, v, float(root[2]), root.astype(np.float32)
+
     root = compute_root(joints, valid, obj.get("root_indices", []))
     if not np.all(np.isfinite(root)) or float(root[2]) <= 0.0:
         return None
-    uv, uv_valid = invert_camera_xyz_to_uv(root.reshape(1, 3), w_eye, height, args.fovx_deg)
-    if not bool(uv_valid[0]):
+    source_axes = obj.get("source_axes")
+    root_ydown = root.astype(np.float64).copy()
+    if source_axes == AXES_Y_UP_LEGACY:
+        # Legacy label: the root itself really is +y up (see AXES_* comment).
+        root_ydown[1] *= -1.0
+    source_w = int(obj.get("source_w") or w_eye)
+    source_h = int(obj.get("source_h") or height)
+    uv_source = camera_xyz_to_pixel_ydown(root_ydown, source_w, source_h, args.fovx_deg)
+    if uv_source is None:
         return None
-    u, v = float(uv[0, 0]), float(uv[0, 1])
+    u_src, v_src = uv_source
+    if full_meta_w is None or full_meta_h is None or crop_w is None or crop_h is None:
+        u, v = u_src, v_src
+    else:
+        u_meta, v_meta = source_to_metadata_point(u_src, v_src, source_w, source_h, full_meta_w, full_meta_h)
+        uv_eye = meta_to_eye_point(u_meta, v_meta, crop_x0, crop_y0, crop_w, crop_h, w_eye, height)
+        if uv_eye is None:
+            return None
+        u, v = uv_eye
     if not (math.isfinite(u) and math.isfinite(v)):
         return None
     if u < 0.0 or u >= float(w_eye) or v < 0.0 or v >= float(height):
         return None
-    return u, v, float(root[2]), root.astype(np.float32)
+    root_bundle = root_ydown.copy()
+    root_bundle[1] *= -1.0  # BUNDLE_JOINT_AXES is +y up
+    return float(u), float(v), float(root[2]), root_bundle.astype(np.float32)
 
 
 def compute_joints_rel(
@@ -2902,7 +3319,10 @@ def choose_compression(name: str) -> Tuple[int, Any, str]:
     if name == "lz4":
         if lz4f is not None:
             return 2, lambda data: lz4f.compress(data), "lz4"
-        print("lz4 not available, falling back to zlib.")
+        print(
+            "Warning: --frame_compress lz4 requested but python-lz4 is not installed in "
+            "this env; falling back to zlib (manifest frame_compress will say zlib)."
+        )
         return 1, lambda data: zlib.compress(data), "zlib"
     return 1, lambda data: zlib.compress(data), "zlib"
 
@@ -3292,7 +3712,9 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
     fps = video_meta.fps
     w_eye = width // 2
 
-    depth, depth_disp_min, depth_disp_max = load_depth_with_disp_range(args.depth_npz)
+    depth_npz = load_depth_npz(args.depth_npz)
+    depth = depth_npz.depth
+    depth_disp_min, depth_disp_max = depth_npz.disp_min, depth_npz.disp_max
     full_meta_h, full_meta_w = depth.shape[1], depth.shape[2]
     with open(args.metadata_json, "r", encoding="utf-8") as handle:
         metadata = json.load(handle)
@@ -3320,7 +3742,7 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
         raise RuntimeError("No frames to process after aligning depth/metadata/video.")
 
     shots = load_shots_for_bundle(args.shots_json, num_frames)
-    shot_start_frames = {s for s, _ in shots if s > 0}
+    frame_shot = frame_shot_indices(shots, num_frames)
 
     if t_depth != num_frames or t_meta != num_frames or (t_video is not None and t_video != num_frames):
         print(
@@ -3444,6 +3866,11 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
     next_track_id = 1
     prev_objects: List[Dict[str, Any]] = []
     placement_observation_frames: List[Dict[str, Any]] = []
+    crop_fraction: Optional[Dict[str, float]] = None
+    track_reset_counts: Dict[str, int] = {"cold_start": 0, "gap": 0, "shot": 0}
+    skipped_no_depth = 0
+    pose_axes_seen: Dict[str, int] = {}
+    pose_flip_y_seen: Dict[str, int] = {}
 
     out_dir = os.path.dirname(os.path.abspath(args.out_bundle)) or "."
     os.makedirs(out_dir, exist_ok=True)
@@ -3511,15 +3938,28 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                     if bbox is None:
                         continue
                     x, y, w, h = bbox
-                    source_w, source_h = source_image_size(raw_obj, full_meta_w, full_meta_h)
+                    raw_source_w, raw_source_h = source_image_size(raw_obj, full_meta_w, full_meta_h)
+                    is_full_sbs = source_is_full_sbs(raw_source_w, width, w_eye, args.left_eye_origin)
                     source_w, source_h = source_canvas_size(
-                        source_w,
-                        source_h,
+                        raw_source_w,
+                        raw_source_h,
                         width,
                         w_eye,
                         args.left_eye_origin,
                     )
-                    x = adjust_left_eye(x, w_eye, width, args.left_eye_origin)
+                    if crop_fraction is None:
+                        crop_fraction = check_crop_fraction(
+                            crop_w=crop_w,
+                            crop_h=crop_h,
+                            full_meta_w=full_meta_w,
+                            full_meta_h=full_meta_h,
+                            w_eye=w_eye,
+                            height=height,
+                            source_w=source_w,
+                            source_h=source_h,
+                            align128=int(args.align128),
+                        )
+                    x = shift_left_eye_if_full_sbs(x, w_eye, width, is_full_sbs)
                     x, y, w, h = source_to_metadata_bbox(
                         (x, y, w, h),
                         source_w,
@@ -3559,19 +3999,24 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                     cat_spec = cat_specs.get(category_id, cat_specs.get(TYPE_OTHER, {}))
                     expected_kp = int(cat_spec.get("kp_count", 0))
                     keypoints, kp_vis, kp_given = parse_keypoints(raw_obj, expected_kp)
-                    if keypoints is not None and not keypoints_look_like_pixels(
-                        keypoints,
-                        kp_vis,
-                        full_meta_w,
-                        full_meta_h,
-                    ):
+                    # Keypoints are measured on the source canvas, so the pixel test
+                    # uses source_w/source_h (flow-audit B5); the sidecar's explicit
+                    # keypoints2dUnits wins over the magnitude heuristic when present.
+                    kp2d_units = pose_keypoints2d_units(raw_obj)
+                    if kp2d_units == "pixels":
+                        kp_in_pixels = keypoints is not None
+                    elif kp2d_units == "crop_normalized":
+                        kp_in_pixels = False
+                    else:
+                        kp_in_pixels = keypoints_look_like_pixels(keypoints, kp_vis, source_w, source_h)
+                    if keypoints is not None and not kp_in_pixels:
                         denorm_keypoints = (
                             denormalize_pose_keypoints2d_from_source_box(
                                 raw_obj,
                                 keypoints,
                                 kp_vis,
-                                full_meta_w,
-                                full_meta_h,
+                                source_w,
+                                source_h,
                             )
                             if category_id == TYPE_PERSON
                             else None
@@ -3595,7 +4040,7 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                                 if idx < len(kp_vis):
                                     kp_vis[idx] = 0
                                 continue
-                            u = adjust_left_eye(u, w_eye, width, args.left_eye_origin)
+                            u = shift_left_eye_if_full_sbs(u, w_eye, width, is_full_sbs)
                             u, v = source_to_metadata_point(
                                 u,
                                 v,
@@ -3619,6 +4064,9 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                     source_joints3d, source_joints_valid, source_coord_system, source_engine, source_keypoint_format = (
                         parse_pose_keypoints3d(raw_obj, expected_kp)
                     )
+                    raw_pose = raw_obj.get("pose")
+                    source_axes = pose_source_axes(raw_pose)
+                    source_is_camera_absolute = pose_is_camera_absolute(raw_pose)
                     smpl_payload = parse_smpl_payload(raw_obj)
                     smal_payload = parse_smal_payload(raw_obj)
                     use_pose_keypoints3d = (
@@ -3668,8 +4116,11 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                             "source_joints3d": source_joints3d if use_pose_keypoints3d else None,
                             "source_joints_valid": source_joints_valid if use_pose_keypoints3d else None,
                             "source_coord_system": source_coord_system,
+                            "source_axes": source_axes,
+                            "source_is_camera_absolute": source_is_camera_absolute,
                             "source_engine": source_engine,
                             "source_keypoint_format": source_keypoint_format,
+                            "is_full_sbs": is_full_sbs,
                             "smpl_payload": smpl_payload,
                             "smal_payload": smal_payload,
                         }
@@ -3678,8 +4129,10 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                 objects, next_track_id = assign_track_ids(objects, prev_objects, next_track_id)
                 prev_objects = objects
 
+                # Object records go into `payload`; the count is prepended after the
+                # loop because an object without any usable depth is skipped (B7).
                 payload = bytearray()
-                payload.extend(struct.pack("<H", len(objects)))
+                written_objects = 0
                 depth_frame = depth[frame_idx]
                 frame_placement_observations: List[Dict[str, Any]] = []
 
@@ -3687,9 +4140,23 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                     track_id = int(obj["track_id"])
                     category_id = int(obj["category_id"])
                     bbox_x, bbox_y, bbox_w, bbox_h = obj["bbox"]
+                    if obj.get("source_joints3d") is not None:
+                        axes_key = str(obj.get("source_axes") or "unlabelled")
+                        pose_axes_seen[axes_key] = pose_axes_seen.get(axes_key, 0) + 1
 
                     anchor_source = "depth_sample"
-                    animal_root_anchor = animal_camera_root_anchor(obj, args, w_eye, height)
+                    animal_root_anchor = animal_camera_root_anchor(
+                        obj,
+                        args,
+                        w_eye,
+                        height,
+                        full_meta_w=full_meta_w,
+                        full_meta_h=full_meta_h,
+                        crop_x0=crop_x0,
+                        crop_y0=crop_y0,
+                        crop_w=crop_w,
+                        crop_h=crop_h,
+                    )
                     anchor_depth_stats: Dict[str, float] = {}
                     if animal_root_anchor is not None:
                         anchor_u, anchor_v, anchor_z_raw, _animal_root_xyz = animal_root_anchor
@@ -3722,8 +4189,8 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                             if anchor_uv_source is not None:
                                 anchor_uv_from_mask = True
                                 anchor_u_meta, anchor_v_meta = anchor_uv_source
-                                anchor_u_meta = adjust_left_eye(
-                                    anchor_u_meta, w_eye, width, args.left_eye_origin
+                                anchor_u_meta = shift_left_eye_if_full_sbs(
+                                    anchor_u_meta, w_eye, width, bool(obj.get("is_full_sbs"))
                                 )
                                 anchor_u_meta, anchor_v_meta = source_to_metadata_point(
                                     anchor_u_meta,
@@ -3811,23 +4278,9 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                             anchor_z_raw = disparity_to_camera_z(anchor_z_raw)
 
                     state = track_state.setdefault(track_id, TrackState())
-                    if state.last_seen_frame is None or state.last_seen_frame != frame_idx - 1:
-                        state.bbox_area = None
-                        state.placement_low_streak = 0
-                    if frame_idx in shot_start_frames:
-                        # A hard cut makes a real camera-distance jump legitimate, not
-                        # sensor noise -- carrying pre-cut EMA/last-good-anchor state
-                        # across it would smear or gate-hold a stale placement into the
-                        # new shot. Treat the shot's first frame as a cold start.
-                        state.bbox_area = None
-                        state.placement_low_streak = 0
-                        state.anchor_z = None
-                        state.last_good_anchor_u = None
-                        state.last_good_anchor_v = None
-                        state.last_good_anchor_z = None
-                        state.last_good_anchor_source = None
-                        state.joints_rel = None
-                        state.joints_abs = None
+                    reset_reason = reset_track_state_if_discontinuous(state, frame_idx, frame_shot)
+                    if reset_reason is not None:
+                        track_reset_counts[reset_reason] = track_reset_counts.get(reset_reason, 0) + 1
                     placement_eval = evaluate_placement_observation(
                         bbox=(bbox_x, bbox_y, bbox_w, bbox_h),
                         anchor_u=anchor_u,
@@ -3844,37 +4297,53 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                     raw_anchor_v = float(anchor_v)
                     raw_anchor_z = float(anchor_z_raw) if anchor_z_raw is not None else None
                     raw_anchor_source = str(anchor_source)
-                    placement_held = False
-                    hold_source = None
-                    if (
-                        placement_eval["status"] == "low"
-                        and state.last_good_anchor_u is not None
-                        and state.last_good_anchor_v is not None
-                        and state.last_good_anchor_z is not None
-                    ):
-                        anchor_u = float(state.last_good_anchor_u)
-                        anchor_v = float(state.last_good_anchor_v)
-                        anchor_z = float(state.last_good_anchor_z)
-                        anchor_source = "held_previous_high_conf"
-                        placement_held = True
-                        hold_source = state.last_good_anchor_source
-                    else:
-                        if anchor_source == "animal_camera_root":
-                            anchor_z = float(anchor_z_raw) if anchor_z_raw is not None else smooth_value(state.anchor_z, None, args.ema_alpha)
-                        else:
-                            anchor_z = smooth_value(state.anchor_z, anchor_z_raw, args.ema_alpha)
-                        state.anchor_z = anchor_z
-                        if placement_eval["status"] == "high":
-                            state.last_good_anchor_u = float(anchor_u)
-                            state.last_good_anchor_v = float(anchor_v)
-                            state.last_good_anchor_z = float(anchor_z)
-                            state.last_good_anchor_source = str(anchor_source)
-                    state.bbox_area = float(placement_eval["area"])
-                    if placement_eval["status"] == "low":
-                        state.placement_low_streak += 1
-                    else:
-                        state.placement_low_streak = 0
-                    state.last_seen_frame = frame_idx
+                    resolved = resolve_track_anchor(
+                        state=state,
+                        placement_eval=placement_eval,
+                        anchor_u=anchor_u,
+                        anchor_v=anchor_v,
+                        anchor_z_raw=anchor_z_raw,
+                        anchor_source=anchor_source,
+                        frame_idx=frame_idx,
+                        args=args,
+                    )
+                    if resolved["skipped"]:
+                        skipped_no_depth += 1
+                        print(
+                            f"Warning: frame {frame_idx} track {track_id} has no usable anchor depth "
+                            f"({raw_anchor_source}) and no previous anchor to carry; object not "
+                            "written to meta.bin for this frame."
+                        )
+                        frame_placement_observations.append(
+                            {
+                                "trackId": track_id,
+                                "categoryId": category_id,
+                                "category": cat_name_map.get(category_id, f"cat_{category_id}"),
+                                "bbox": [float(bbox_x), float(bbox_y), float(bbox_w), float(bbox_h)],
+                                "rawAnchor": {
+                                    "u": raw_anchor_u,
+                                    "v": raw_anchor_v,
+                                    "z": None,
+                                    "source": raw_anchor_source,
+                                },
+                                "usedAnchor": None,
+                                "skipped": True,
+                                "skipReason": "no_anchor_depth_at_cold_start",
+                                "placementConfidence": float(placement_eval["confidence"]),
+                                "placementStatus": placement_eval["status"],
+                                "placementHeld": False,
+                                "holdSource": None,
+                                "reasons": placement_eval["reasons"],
+                                "resetReason": reset_reason,
+                            }
+                        )
+                        continue
+                    anchor_u = resolved["anchor_u"]
+                    anchor_v = resolved["anchor_v"]
+                    anchor_z = resolved["anchor_z"]
+                    anchor_source = resolved["anchor_source"]
+                    placement_held = resolved["placement_held"]
+                    hold_source = resolved["hold_source"]
 
                     anchor_z_q = int(round(float(anchor_z) / args.quant_pos_scale))
                     if not -32768 <= anchor_z_q <= 32767:
@@ -3918,6 +4387,7 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                             "placementHeld": placement_held,
                             "holdSource": hold_source,
                             "reasons": placement_eval["reasons"],
+                            "resetReason": reset_reason,
                             "areaRatioFromPrevious": placement_eval["areaRatioFromPrevious"],
                             "anchorJumpPx": placement_eval["anchorJumpPx"],
                             "edgeTouch": placement_eval["edgeTouch"],
@@ -3941,18 +4411,17 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                     joints_rel_q_local = None
                     encoded_skeleton = False
 
+                    written_objects += 1
                     payload.extend(struct.pack("<I", track_id))
                     payload.extend(struct.pack("<B", category_id))
                     payload.extend(struct.pack("<B", flags))
-                    payload.extend(
-                        struct.pack(
-                            "<HHHH",
-                            int(round(bbox_x)),
-                            int(round(bbox_y)),
-                            int(round(bbox_w)),
-                            int(round(bbox_h)),
-                        )
-                    )
+                    # Round the corners, then derive w/h, so x0+w is the rounded x1
+                    # (rounding x and w independently could be off by one).
+                    bbox_x0_q = int(round(bbox_x))
+                    bbox_y0_q = int(round(bbox_y))
+                    bbox_w_q = max(0, int(round(bbox_x + bbox_w)) - bbox_x0_q)
+                    bbox_h_q = max(0, int(round(bbox_y + bbox_h)) - bbox_y0_q)
+                    payload.extend(struct.pack("<HHHH", bbox_x0_q, bbox_y0_q, bbox_w_q, bbox_h_q))
                     payload.extend(struct.pack("<HH", int(round(anchor_u)), int(round(anchor_v))))
                     payload.extend(struct.pack("<h", anchor_z_q))
                     payload.extend(struct.pack("<H", anchor_scale_q))
@@ -3980,6 +4449,9 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                             state.joints_rel = None
                             state.joints_abs = None
                             state.kp_count = kp_expected
+                        flip_y = resolve_pose_flip_y(args, obj.get("source_axes"))
+                        flip_key = f"{obj.get('source_axes') or 'unlabelled'}->flip_y={int(flip_y)}"
+                        pose_flip_y_seen[flip_key] = pose_flip_y_seen.get(flip_key, 0) + 1
                         joints_out, joints_rel, joints_valid, root_raw = compute_pose_keypoints3d_for_bundle(
                             source_joints3d=source_joints3d,
                             source_valid=source_valid,
@@ -3987,7 +4459,7 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                             anchor_xyz=anchor_xyz,
                             joints_space=args.joints_space,
                             joint_scale=joint_scale,
-                            flip_y=bool(args.pose_keypoints3d_flip_y),
+                            flip_y=flip_y,
                             prev_joints_rel=state.joints_rel,
                             ema_alpha=args.ema_alpha if args.joints_space == "camera_xyz_root_relative" else 0.0,
                         )
@@ -4016,7 +4488,7 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                                 f"root=({root_raw[0]:.4f},{root_raw[1]:.4f},{root_raw[2]:.4f}) "
                                 f"valid={int(np.count_nonzero(joints_valid))}/{kp_expected} "
                                 f"joints_space={args.joints_space} "
-                                f"pose_keypoints3d_flip_y={int(args.pose_keypoints3d_flip_y)}"
+                                f"pose_keypoints3d_flip_y={int(flip_y)} ({args.pose_keypoints3d_flip_y})"
                             )
 
                     if has_skeleton and keypoints is not None and not encoded_skeleton:
@@ -4216,6 +4688,7 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                         "objects": frame_placement_observations,
                     }
                 )
+                payload = bytearray(struct.pack("<H", written_objects)) + payload
                 compressed = compress_fn(bytes(payload))
                 offset = meta_f.tell()
                 if debug_frame:
@@ -4224,7 +4697,7 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                         offset,
                         len(payload),
                         len(compressed),
-                        len(objects),
+                        written_objects,
                         debug_objects,
                         args,
                     )
@@ -4279,6 +4752,14 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
             if args.debug_meta_decode_after:
                 verify_meta_bin(meta_path, debug_first_frames)
 
+        print(
+            "Track state resets: "
+            f"cold_start={track_reset_counts.get('cold_start', 0)} "
+            f"gap={track_reset_counts.get('gap', 0)} shot={track_reset_counts.get('shot', 0)}; "
+            f"objects skipped for lack of depth: {skipped_no_depth}; "
+            f"pose axes seen: {pose_axes_seen or 'none'}"
+        )
+
         joints_smoothing_manifest = (
             f"ema_alpha={args.ema_alpha}"
             if args.joints_space == "camera_xyz_root_relative"
@@ -4289,6 +4770,13 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
         fy_norm = fx_norm * (float(w_eye) / float(height))
         cx = float(w_eye) * 0.5
         cy = float(height) * 0.5
+        # Every CLI argument, paths reduced to basenames, so a bundle can be
+        # rebuilt without consulting recommended_bundles.json (flow-audit B8).
+        path_args = {"video_mp4", "depth_npz", "metadata_json", "out_bundle", "shots_json", "dump_manifest"}
+        build_args = {
+            key: (os.path.basename(str(value)) if key in path_args and value else value)
+            for key, value in vars(args).items()
+        }
         manifest = {
             "width": width,
             "height": height,
@@ -4296,10 +4784,13 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
             "eye_h": height,
             "meta_w": meta_w,
             "meta_h": meta_h,
+            "depth_w": full_meta_w,
+            "depth_h": full_meta_h,
             "crop_x0": crop_x0,
             "crop_y0": crop_y0,
             "crop_w": crop_w,
             "crop_h": crop_h,
+            "crop_fraction": crop_fraction,
             "align128": args.align128,
             "crop_mode": args.crop_mode,
             "fps": fps,
@@ -4314,6 +4805,7 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                 "schema": "master_project.depth_policy.v1",
                 "convention": "depthcrafter_normalized_disparity",
                 "near_far_direction": "depth_npz values: 0.0=far/back, 1.0=near/front",
+                "depth_npz_format": depth_npz.format,
                 "disp_min": depth_disp_min,
                 "disp_max": depth_disp_max,
                 "normalization": "global_minmax_pre_clip",
@@ -4338,6 +4830,12 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                     "affine-invariant, so no per-clip a, b are known."
                 ),
             },
+            # One dict for everything Unity reads about anchor_z: what the number is
+            # (definition/units/quantizer) and which quantity each category holds.
+            # These used to be two literals under the same key, so the first was
+            # silently dropped and requantize_bundle_anchor_z.py then replaced the
+            # survivor wholesale (flow-audit B4); requantize now update()s only
+            # quant_pos_scale/quant_note.
             "anchor_z_policy": {
                 "schema": "master_project.anchor_z_policy.v1",
                 "definition": "anchor_z = max(1 - depth_npz_normalized_disparity, 1e-4)",
@@ -4353,17 +4851,44 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                     "same-frame objects in the far field keep distinct anchor_z steps "
                     "instead of collapsing onto one. Read it from here per bundle -- a "
                     "clip whose anchors are all depth-sampled may ship a finer step. "
-                    "See docs/bundle-shared/D-008-anchor-z-quantization.md."
+                    "See docs/bundle-shared/archive/D-008-anchor-z-quantization.md."
                 ),
+                "person": (
+                    "person_mask_median_depth -- median disparity over the whole SAM2 mask"
+                    if args.person_anchor_mask_median
+                    else "keypoint_depth_sample -- 7x7 window at the pelvis keypoint"
+                ),
+                "animal": "animal_camera_root -- AniMer camera-space root Z. Does not read the depth map at all.",
+                "other": "mask_centroid_depth_sample -- 7x7 window at the SAM2 mask centroid",
+                "person_anchor_mask_median": int(args.person_anchor_mask_median),
+                "meaning": (
+                    "Which quantity anchor_z holds, per category. The three are not "
+                    "interchangeable: the person/other paths are normalized disparity "
+                    "(larger=farther after the flip), the animal path is camera-space Z "
+                    "on AniMer's own scale. See docs/bundle-shared/D-004-anchor-z-accuracy.md."
+                ),
+                "sidecar_field": "rawAnchor.source in source/placement_observations.json is authoritative per frame.",
             },
             "pose_keypoints3d_policy": {
                 "enabled": args.joints_source in ("auto", "pose_keypoints3d"),
                 "meaning": "pose.keypoints3d is treated as skeleton shape. Animal camera_xyz_absolute roots are also used as placement anchors; depth sampling remains the fallback anchor source.",
                 "metrabs_joint_scale": args.metrabs_joint_scale,
                 "animer_joint_scale": args.animer_joint_scale,
-                "flip_y": bool(args.pose_keypoints3d_flip_y),
-                "output_axes": "x_right_y_up_z_forward",
+                "flip_y": args.pose_keypoints3d_flip_y,
+                "flip_y_meaning": (
+                    "auto: the Y flip is derived per object from the sidecar's axis label "
+                    "(pose.cameraAxes / pose.coordinateSystem) so that output_axes holds "
+                    "for every input; 0/1: the pre-2026-09-17 blind flag."
+                ),
+                "source_axes_seen": pose_axes_seen,
+                "flip_y_applied": pose_flip_y_seen,
+                "output_axes": BUNDLE_JOINT_AXES,
                 "animal_camera_root_anchor": True,
+                "animal_root_reprojection": (
+                    "eye_canvas_legacy"
+                    if str(args.pose_keypoints3d_flip_y).lower() in ("0", "1")
+                    else "source_canvas_opencv_then_source_to_eye"
+                ),
             },
             "smpl_meta_policy": {
                 "enabled": True,
@@ -4389,33 +4914,21 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                 "schema": "master_project.placement_observation_policy.v1",
                 "runtime_behavior": (
                     "meta.bin stores the held/smoothed placement anchor. Low-confidence "
-                    "observations hold the previous high-confidence anchor when available."
+                    "observations hold the previous high-confidence anchor when available. "
+                    "Per-track EMA/hold state is reset at every shot change and after any "
+                    "in-shot track gap (resetReason in the sidecar). An object with no "
+                    "usable depth at a cold start is not written for that frame "
+                    "(skipped=true in the sidecar) instead of anchor_z=0."
                 ),
                 "sidecar": "source/placement_observations.json",
+                "track_state_resets": track_reset_counts,
+                "objects_skipped_no_depth": skipped_no_depth,
                 "hold_threshold": float(args.placement_conf_hold_threshold),
                 "edge_margin_px": float(args.placement_conf_edge_margin_px),
                 "area_shrink_ratio": float(args.placement_conf_area_shrink_ratio),
                 "anchor_jump_px": float(args.placement_conf_anchor_jump_px),
                 "depth_jump": float(args.placement_conf_depth_jump),
                 "confidence_meaning": "0.0 low confidence, 1.0 high confidence for placement update only.",
-            },
-            "anchor_z_policy": {
-                "schema": "master_project.anchor_z_policy.v1",
-                "person": (
-                    "person_mask_median_depth -- median disparity over the whole SAM2 mask"
-                    if args.person_anchor_mask_median
-                    else "keypoint_depth_sample -- 7x7 window at the pelvis keypoint"
-                ),
-                "animal": "animal_camera_root -- AniMer camera-space root Z. Does not read the depth map at all.",
-                "other": "mask_centroid_depth_sample -- 7x7 window at the SAM2 mask centroid",
-                "person_anchor_mask_median": int(args.person_anchor_mask_median),
-                "meaning": (
-                    "Which quantity anchor_z holds, per category. The three are not "
-                    "interchangeable: the person/other paths are normalized disparity "
-                    "(larger=farther after the flip), the animal path is camera-space Z "
-                    "on AniMer's own scale. See docs/bundle-shared/D-004-anchor-z-accuracy.md."
-                ),
-                "sidecar_field": "rawAnchor.source in source/placement_observations.json is authoritative per frame.",
             },
             "shots": [[int(s), int(e)] for s, e in shots],
             "depth_scale_calibration": depth_scale_calibration,
@@ -4439,7 +4952,7 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                 ),
                 "single_shot_default": args.shots_json is None,
             },
-            "camera_axes": "x_right_y_up_z_forward",
+            "camera_axes": BUNDLE_JOINT_AXES,
             "uv_origin": "top_left",
             "joints_quant_scale": args.quant_joint_scale,
             "smoothing": joints_smoothing_manifest,
@@ -4448,6 +4961,7 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
             "cx": cx,
             "cy": cy,
             "frame_compress": compress_name,
+            "frame_compress_requested": args.frame_compress,
             "video_transcode": transcode_info,
             "generated_at": datetime.utcnow().isoformat() + "Z",
             "inputs": {
@@ -4456,6 +4970,7 @@ def build_bundle(args: argparse.Namespace, video_mp4_path: str, transcode_info: 
                 "depth_npz": os.path.basename(args.depth_npz),
                 "metadata_json": os.path.basename(args.metadata_json),
             },
+            "build_args": build_args,
         }
         print(
             "[manifest_verify] "
@@ -4523,7 +5038,7 @@ def main() -> None:
             transcode_info.update(
                 {
                     "profile": args.transcode_profile,
-                    "level": args.transcode_level,
+                    "level_requested": args.transcode_level,
                     "pix_fmt": "yuv420p",
                     "fps": fps,
                     "crf": args.transcode_crf,

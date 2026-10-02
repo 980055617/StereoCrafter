@@ -23,6 +23,26 @@ from dependency.DepthCrafter.depthcrafter.utils import vis_sequence_depth, datas
 
 from Forward_Warp import forward_warp
 
+# Pure-numpy chunk schedule / joint affine fit / stitching / normalisation
+# (unit-tested without torch in scripts/test_depth_chunk_alignment.py).
+from depth_chunking import (
+    _blend_depth_overlap,  # noqa: F401  (kept importable under the old names)
+    _concatenate_depth_parts,  # noqa: F401
+    _depth_sample_values,  # noqa: F401
+    _percentile_stats,  # noqa: F401
+    _replace_tail,  # noqa: F401
+    _take_tail,  # noqa: F401
+    depth_chunk_ranges,
+    normalize_depth_inplace,
+    pair_overlaps,
+    save_depth_npz_with_extras,
+    solve_global_chunk_affine,
+    stitch_depth_chunks,
+)
+
+_solve_global_chunk_affine = solve_global_chunk_affine
+_normalize_depth_inplace = normalize_depth_inplace
+
 try:
     from pycocotools import mask as mask_utils
 except ImportError:  # pragma: no cover - optional dependency
@@ -191,11 +211,13 @@ def iterate_video_frame_chunks(
         raise ValueError("No frames available for processing. Check the video file or sampling parameters.")
     LOGGER.info("Total input sequence length T=%d frames for chunked processing", len(frames_idx))
 
-    step = chunk_size - chunk_overlap
+    # D3: the last chunk is pulled back to full length instead of emitting a
+    # trailing chunk that adds no new frames (see depth_chunking).
+    chunk_ranges = depth_chunk_ranges(len(frames_idx), chunk_size, chunk_overlap)
 
     def chunk_generator():
-        for start in range(0, len(frames_idx), step):
-            chunk_indices = frames_idx[start : start + chunk_size]
+        for start, end in chunk_ranges:
+            chunk_indices = frames_idx[start:end]
             processed_frames = resized_reader.get_batch(chunk_indices).asnumpy()
             LOGGER.info(
                 "Prepared chunk frames %d-%d (input sequence T=%d)",
@@ -215,156 +237,10 @@ def iterate_video_frame_chunks(
         "width": width,
         "chunk_size": chunk_size,
         "chunk_overlap": chunk_overlap,
+        "chunk_ranges": chunk_ranges,
     }
 
     return chunk_generator(), metadata
-
-
-def _depth_sample_values(values: np.ndarray, max_samples: int = 200_000) -> np.ndarray:
-    flat = np.asarray(values).reshape(-1)
-    valid = flat[np.isfinite(flat)]
-    if valid.size == 0:
-        return valid.astype(np.float32, copy=False)
-    if valid.size > max_samples:
-        step = int(np.ceil(valid.size / float(max_samples)))
-        valid = valid[::step]
-    return valid.astype(np.float32, copy=False)
-
-
-def _percentile_stats(values: np.ndarray) -> Optional[np.ndarray]:
-    samples = _depth_sample_values(values)
-    if samples.size < 16:
-        return None
-    return np.percentile(samples, [10, 50, 90]).astype(np.float64)
-
-
-def _solve_global_chunk_affine(
-    raw_chunks: List[np.ndarray], chunk_overlap: int
-) -> List[Tuple[float, float]]:
-    """Jointly fit a per-chunk (scale, offset) so every pairwise overlap agrees
-    at once, instead of chaining each chunk onto the previous one. Chaining
-    lets each pairwise fit's error compound into every later chunk; solving
-    all overlaps together as one least-squares system distributes the same
-    residuals instead of accumulating them across the sequence.
-    """
-    n_chunks = len(raw_chunks)
-    if n_chunks <= 1:
-        return [(1.0, 0.0)] * n_chunks
-
-    n_unknowns = 2 * (n_chunks - 1)  # (scale_i, offset_i) for i = 1..n_chunks-1
-
-    def col(idx: int) -> int:
-        return 2 * (idx - 1)
-
-    rows: List[List[float]] = []
-    rhs: List[float] = []
-    for i in range(n_chunks - 1):
-        overlap_n = min(int(chunk_overlap), int(raw_chunks[i].shape[0]), int(raw_chunks[i + 1].shape[0]))
-        if overlap_n <= 0:
-            continue
-        tail = _percentile_stats(raw_chunks[i][-overlap_n:])
-        head = _percentile_stats(raw_chunks[i + 1][:overlap_n])
-        if tail is None or head is None:
-            continue
-        for x_i, x_j in zip(tail.tolist(), head.tolist()):
-            row = [0.0] * n_unknowns
-            b_val = 0.0
-            if i == 0:
-                b_val -= x_i
-            else:
-                row[col(i)] += x_i
-                row[col(i) + 1] += 1.0
-            row[col(i + 1)] -= x_j
-            row[col(i + 1) + 1] -= 1.0
-            rows.append(row)
-            rhs.append(b_val)
-
-    if not rows:
-        return [(1.0, 0.0)] * n_chunks
-
-    solution, *_ = np.linalg.lstsq(
-        np.asarray(rows, dtype=np.float64), np.asarray(rhs, dtype=np.float64), rcond=None
-    )
-    result: List[Tuple[float, float]] = [(1.0, 0.0)]
-    for i in range(1, n_chunks):
-        scale = float(solution[col(i)])
-        offset = float(solution[col(i) + 1])
-        if not np.isfinite(scale) or not np.isfinite(offset):
-            scale, offset = 1.0, 0.0
-        scale = float(np.clip(scale, 0.25, 4.0))
-        result.append((scale, offset))
-    return result
-
-
-def _take_tail(parts: List[np.ndarray], count: int) -> np.ndarray:
-    if count <= 0:
-        raise ValueError("count must be positive")
-    out: List[np.ndarray] = []
-    remaining = count
-    for part in reversed(parts):
-        if remaining <= 0:
-            break
-        take = min(remaining, part.shape[0])
-        out.append(part[-take:])
-        remaining -= take
-    if remaining != 0:
-        raise ValueError("not enough frames in parts")
-    out.reverse()
-    return np.concatenate(out, axis=0) if len(out) > 1 else out[0].copy()
-
-
-def _replace_tail(parts: List[np.ndarray], values: np.ndarray) -> None:
-    remaining = int(values.shape[0])
-    value_end = remaining
-    for index in range(len(parts) - 1, -1, -1):
-        if remaining <= 0:
-            break
-        part = parts[index]
-        take = min(remaining, part.shape[0])
-        value_start = value_end - take
-        part[-take:] = values[value_start:value_end]
-        value_end = value_start
-        remaining -= take
-    if remaining != 0:
-        raise ValueError("not enough frames in parts")
-
-
-def _blend_depth_overlap(previous: np.ndarray, current: np.ndarray) -> np.ndarray:
-    n = int(min(previous.shape[0], current.shape[0]))
-    if n <= 0:
-        return previous
-    weights = (np.arange(n, dtype=np.float32) + 1.0) / float(n + 1)
-    weights = weights[:, None, None]
-    return previous[:n] * (1.0 - weights) + current[:n] * weights
-
-
-def _concatenate_depth_parts(parts: List[np.ndarray]) -> np.ndarray:
-    if not parts:
-        raise ValueError("no depth parts were produced")
-    total = sum(int(part.shape[0]) for part in parts)
-    height, width = parts[0].shape[1:3]
-    out = np.empty((total, height, width), dtype=np.float32)
-    offset = 0
-    for idx, part in enumerate(parts):
-        n = int(part.shape[0])
-        out[offset : offset + n] = part.astype(np.float32, copy=False)
-        offset += n
-        parts[idx] = None  # type: ignore[assignment]
-    return out
-
-
-def _normalize_depth_inplace(depth: np.ndarray) -> Tuple[np.ndarray, float, float]:
-    """Normalize in place to [0, 1] and report the pre-normalization (depth_min,
-    depth_max) so callers can persist them for reversing the normalization later.
-    """
-    depth_min = float(np.nanmin(depth))
-    depth_max = float(np.nanmax(depth))
-    denom = max(depth_max - depth_min, 1e-6)
-    depth -= depth_min
-    depth /= denom
-    np.nan_to_num(depth, copy=False, nan=0.0, posinf=1.0, neginf=0.0)
-    np.clip(depth, 0.0, 1.0, out=depth)
-    return depth, depth_min, depth_max
 
 
 @dataclass(frozen=True)
@@ -515,7 +391,17 @@ class DepthCrafterDemo:
         unet_path: str,
         pre_trained_path: str,
         cpu_offload: Optional[str] = "model",
+        norm_percentile: float = 0.01,
+        affine_min_spread: float = 0.02,
+        affine_ridge: float = 1e-5,
     ):
+        # D7: final [0,1] normalisation clips at p{norm_percentile} /
+        # p{100-norm_percentile}; 0 = absolute min/max (pre-2026-09-17).
+        self.norm_percentile = float(norm_percentile)
+        # D1: joint chunk-affine fit -- overlaps flatter than this (p90-p10)
+        # are ignored, and every chunk is ridged weakly toward (1, 0).
+        self.affine_min_spread = float(affine_min_spread)
+        self.affine_ridge = float(affine_ridge)
         unet = DiffusersUNetSpatioTemporalConditionModelDepthCrafter.from_pretrained(
             unet_path,
             low_cpu_mem_usage=True,
@@ -599,12 +485,9 @@ class DepthCrafterDemo:
         )
         return resized.cpu().numpy()[:, 0, :, :]
 
-    @staticmethod
-    def _normalize_depth(depth: np.ndarray) -> Tuple[np.ndarray, float, float]:
-        depth_min = float(depth.min())
-        depth_max = float(depth.max())
-        denom = max(depth_max - depth_min, 1e-6)
-        return (depth - depth_min) / denom, depth_min, depth_max
+    def _normalize_depth(self, depth: np.ndarray) -> Tuple[np.ndarray, float, float]:
+        depth = np.ascontiguousarray(depth, dtype=np.float32)
+        return normalize_depth_inplace(depth, self.norm_percentile)
 
     def infer(
         self,
@@ -657,11 +540,12 @@ class DepthCrafterDemo:
 
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
         if save_depth:
-            np.savez_compressed(
+            save_depth_npz_with_extras(
                 save_path + ".npz",
-                depth=res,
-                disp_min=self.last_depth_min,
-                disp_max=self.last_depth_max,
+                res,
+                self.last_depth_min,
+                self.last_depth_max,
+                extras={"norm_percentile": self.norm_percentile},
             )
             write_video(save_path + "_depth_vis.mp4", vis*255.0, fps=target_fps, video_codec="h264", options={"crf": "16"})
 
@@ -722,6 +606,10 @@ class DepthCrafterDemo:
             chunk_overlap,
         )
         expected_total = int(metadata["total_frames"])
+        chunk_ranges = list(metadata["chunk_ranges"])
+        # Actual frames shared by consecutive chunks: the nominal overlap,
+        # except for the pulled-back last chunk (D3) where it is wider.
+        overlaps = pair_overlaps(chunk_ranges)
 
         raw_chunks: List[np.ndarray] = []
         for chunk_id, (chunk_indices, frames) in enumerate(chunk_iter):
@@ -748,7 +636,23 @@ class DepthCrafterDemo:
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
 
-        affine_params = _solve_global_chunk_affine(raw_chunks, chunk_overlap)
+        fit_report: List[Dict[str, float]] = []
+        affine_params = solve_global_chunk_affine(
+            raw_chunks,
+            overlaps,
+            min_spread=self.affine_min_spread,
+            ridge=self.affine_ridge,
+            report=fit_report,
+        )
+        for entry in fit_report:
+            LOGGER.info(
+                "Chunk overlap %d-%d: %d frames, p90-p10 spread=%.4f -> %s",
+                int(entry["pair"]),
+                int(entry["pair"]) + 1,
+                int(entry["overlap"]),
+                entry["spread"],
+                "used" if entry["used"] else "FLAT, chunk inherits previous transform",
+            )
         for chunk_id, (scale, offset) in enumerate(affine_params):
             LOGGER.info(
                 "Chunk %d global affine fit: scale=%.6f offset=%.6f",
@@ -758,38 +662,19 @@ class DepthCrafterDemo:
             )
             raw_chunks[chunk_id] = raw_chunks[chunk_id] * scale + offset
 
-        parts: List[np.ndarray] = []
-        unique_frames = 0
-        for chunk_id, chunk_depth in enumerate(raw_chunks):
-            overlap_n = min(int(chunk_overlap), int(chunk_depth.shape[0]), int(unique_frames))
-            if parts and overlap_n > 0:
-                previous_overlap = _take_tail(parts, overlap_n)
-                blended_overlap = _blend_depth_overlap(previous_overlap, chunk_depth[:overlap_n])
-                _replace_tail(parts, blended_overlap.astype(np.float32, copy=False))
-                append_depth = chunk_depth[overlap_n:]
-            else:
-                append_depth = chunk_depth
-
-            if append_depth.shape[0] > 0:
-                parts.append(np.ascontiguousarray(append_depth, dtype=np.float32))
-                unique_frames += int(append_depth.shape[0])
+        def _log_stitch(chunk_id: int, new_frames: int, unique_frames: int) -> None:
             LOGGER.info(
                 "Depth chunk %d accepted %d new frames; stitched T=%d/%d",
                 chunk_id,
-                int(append_depth.shape[0]),
+                new_frames,
                 unique_frames,
                 expected_total,
             )
-            raw_chunks[chunk_id] = None  # type: ignore[call-overload]
 
-        depth = _concatenate_depth_parts(parts)
-        if depth.shape[0] != expected_total:
-            LOGGER.warning(
-                "Chunked depth produced T=%d but expected T=%d",
-                depth.shape[0],
-                expected_total,
-            )
-        depth, self.last_depth_min, self.last_depth_max = _normalize_depth_inplace(depth)
+        depth = stitch_depth_chunks(raw_chunks, overlaps, expected_total, log=_log_stitch)
+        depth, self.last_depth_min, self.last_depth_max = normalize_depth_inplace(
+            depth, self.norm_percentile
+        )
         LOGGER.info(
             "Chunked depth inference produced globally normalized sequence T=%d at %dx%d",
             depth.shape[0],
@@ -984,6 +869,9 @@ def main(
     vae_chunk_size: int = 8,
     cpu_offload: Optional[str] = "model",
     debug_video: bool = False,
+    norm_percentile: float = 0.01,
+    affine_min_spread: float = 0.02,
+    affine_ridge: float = 1e-5,
 ):
     cpu_offload_mode = _parse_cpu_offload_mode(cpu_offload)
     base_dir = os.path.dirname(input_video_path)
@@ -1003,6 +891,9 @@ def main(
         unet_path=unet_path,
         pre_trained_path=pre_trained_path,
         cpu_offload=cpu_offload_mode,
+        norm_percentile=norm_percentile,
+        affine_min_spread=affine_min_spread,
+        affine_ridge=affine_ridge,
     )
 
     video_depth: Optional[np.ndarray] = None
@@ -1053,17 +944,22 @@ def main(
             vae_chunk_size=vae_chunk_size,
         )
 
+    # D7: one on-disk format for both paths (uint16 fixed point via
+    # depth_io) instead of float16 (chunked) / float32 (legacy). disp_min /
+    # disp_max are the lo/hi of the normalisation map, i.e. the
+    # p{norm_percentile}/p{100-norm_percentile} clip points when it is > 0.
     depth_npz_path = os.path.join(base_dir, f"{base_name}_depth.npz")
-    depth_to_save = video_depth.astype(np.float16) if chunk_size > 0 else video_depth
-    np.savez_compressed(
+    save_depth_npz_with_extras(
         depth_npz_path,
-        depth=depth_to_save,
-        disp_min=depthcrafter_demo.last_depth_min,
-        disp_max=depthcrafter_demo.last_depth_max,
+        video_depth,
+        depthcrafter_demo.last_depth_min,
+        depthcrafter_demo.last_depth_max,
+        extras={"norm_percentile": norm_percentile},
     )
     LOGGER.info(
-        "Saved depth npz to %s (pre-normalization disp_min=%.6f disp_max=%.6f)",
+        "Saved depth npz to %s (uint16_fixed; norm_percentile=%g; disp_min=%.6f disp_max=%.6f)",
         depth_npz_path,
+        norm_percentile,
         depthcrafter_demo.last_depth_min,
         depthcrafter_demo.last_depth_max,
     )
