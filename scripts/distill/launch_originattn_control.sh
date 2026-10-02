@@ -11,4 +11,4 @@ conda run -n stereocrafter --no-capture-output deepspeed --num_gpus=2 --master_p
   inpainting_train_gated_residual_mamba_up_only_exclude_up3_attn1.py --config=config/gt_finetune_v2_originattn_control.json \
   --resume_from=/mnt/ssd_data/stereocrafter_weights/_distill_injected/origin_attention_control_e150seed.pt --save_dir=weights/GTfinetune_v2_originattn_control \
   --stage_epochs='[1,2,2]' --include_patterns='__nomatch__' --exclude_patterns='__nomatch__' --mamba_gate_start=1.0 --mamba_gate_end=1.0 --save_interval_epochs=1 > "$LOG" 2>&1
-echo "$LOG"
+rc=$?; echo "$LOG"; exit $rc

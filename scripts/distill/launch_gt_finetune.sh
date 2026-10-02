@@ -11,4 +11,4 @@ conda run -n stereocrafter --no-capture-output deepspeed --num_gpus=2 --master_p
   inpainting_train_gated_residual_mamba_up_only_exclude_up3_attn1.py --config=config/gt_finetune_light40.json \
   --resume_from=/mnt/ssd_data/stereocrafter_weights/_distill_injected/light_lvl0_fulldata333_8k_mamba_only_e150seed.pt --save_dir=weights/GTfinetune_light40 \
   --stage_epochs='[50,150,156]' --include_patterns='down_blocks.0.*,up_blocks.3.*' --exclude_patterns='__nomatch__' --mamba_gate_start=1.0 --mamba_gate_end=1.0 --save_interval_epochs=1 > "$LOG" 2>&1
-echo "$LOG"
+rc=$?; echo "$LOG"; exit $rc

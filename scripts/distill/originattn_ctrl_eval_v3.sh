@@ -5,6 +5,7 @@ set -u; cd /home/kawa/master_project/StereoCrafter; D=scripts/distill; R=$D/runs
 set +u; source "$HOME/miniconda3/etc/profile.d/conda.sh"; conda activate stereocrafter; set -u
 until ! systemctl --user is-active --quiet 'originattn_ctrl3_*'; do sleep 120; done
 W=$(ls -d /mnt/ssd_data/stereocrafter_weights/GTfinetune_v3_originattn_control/MambaCrafter_*/ | tail -1); echo "run dir $W"; RK=$(ls -t logs/*_rank0.log | head -1); grep -oE 'Epoch [0-9]+/2 done \| avg_loss=[0-9.]+' "$RK" | tr '\n' ' '; echo
+[ -n "$W" ] && [ -d "$W" ] || { echo "no run dir found; refusing to continue (the cleanup at the end would run in the repo root)"; exit 1; }
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True; TEST="0042 0052 0125 0128 0141 0147 0170 0204 0225 0251 0259 0301"
 for E in ${EPOCHS:-001 002}; do CK=${W}train_state_epoch000$E.pt; [ -f $CK ] || { echo "missing $CK"; continue; }; L=originattn_v3_e$E
   infer() { C=$1 G=$2; OD=$O/${C}_$L; mkdir -p $OD; [ -f $OD/${C}_inpainting_results_sbs.mp4 ] && return 0
