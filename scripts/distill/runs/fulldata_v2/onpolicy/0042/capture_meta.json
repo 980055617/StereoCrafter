@@ -1,0 +1,15 @@
+{
+ "call": 47,
+ "timestep": -1.553652048110962,
+ "files": 0,
+ "t_none": 0,
+ "t_seen": 240,
+ "elapsed_s": 93.60117053985596,
+ "onpolicy_relmse": {
+  "down_blocks.0.attentions.0.transformer_blocks.0.attn1": 0.056360100067853476,
+  "down_blocks.0.attentions.1.transformer_blocks.0.attn1": 0.14826234855634124,
+  "up_blocks.3.attentions.0.transformer_blocks.0.attn1": 0.01441128709093899,
+  "up_blocks.3.attentions.1.transformer_blocks.0.attn1": 0.0024354135478573736,
+  "up_blocks.3.attentions.2.transformer_blocks.0.attn1": 0.010546678267671795
+ }
+}

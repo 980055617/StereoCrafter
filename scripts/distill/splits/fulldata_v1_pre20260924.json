@@ -1,7 +1,7 @@
 {
- "version": "fulldata_v1_regen20260924",
+ "version": "fulldata_v1",
  "seed": 20260918,
- "inventory_sha256": "32263ae026521326",
+ "inventory_sha256": "044f70f813426424",
  "rules": [
   "Rules",
   "  excluded : 0312 (unreadable), 960x1280 clips (per-eye 480x640 < 576x1024 crop)",
@@ -2862,1801 +2862,1802 @@
   },
   "0160": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0160_splatting_results.mp4"
   },
   "0161": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0161_splatting_results.mp4"
   },
   "0162": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 176,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    165
    ],
    "path": "video_data/splatting/0162_splatting_results.mp4"
   },
   "0163": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    141
    ],
    "path": "video_data/splatting/0163_splatting_results.mp4"
   },
   "0164": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0164_splatting_results.mp4"
   },
   "0165": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0165_splatting_results.mp4"
   },
   "0166": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0166_splatting_results.mp4"
   },
   "0167": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    141
    ],
    "path": "video_data/splatting/0167_splatting_results.mp4"
   },
   "0168": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0168_splatting_results.mp4"
   },
   "0169": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0169_splatting_results.mp4"
   },
   "0170": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "test",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0170_splatting_results.mp4"
   },
   "0171": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0171_splatting_results.mp4"
   },
   "0172": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0172_splatting_results.mp4"
   },
   "0173": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    141
    ],
    "path": "video_data/splatting/0173_splatting_results.mp4"
   },
   "0174": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0174_splatting_results.mp4"
   },
   "0175": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0175_splatting_results.mp4"
   },
   "0176": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0176_splatting_results.mp4"
   },
   "0177": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0177_splatting_results.mp4"
   },
   "0178": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0178_splatting_results.mp4"
   },
   "0179": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0179_splatting_results.mp4"
   },
   "0180": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 154,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    143
    ],
    "path": "video_data/splatting/0180_splatting_results.mp4"
   },
   "0181": {
    "fmt": "2160",
-   "frames": 200,
+   "frames": 202,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    189
+    99,
+    191
    ],
    "path": "video_data/splatting/0181_splatting_results.mp4"
   },
   "0182": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 154,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    143
    ],
    "path": "video_data/splatting/0182_splatting_results.mp4"
   },
   "0183": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 164,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    153
    ],
    "path": "video_data/splatting/0183_splatting_results.mp4"
   },
   "0184": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 173,
    "gt": true,
    "long": false,
    "role": "dev",
    "windows": [
     0,
-    139
+    162
    ],
    "path": "video_data/splatting/0184_splatting_results.mp4"
   },
   "0185": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 173,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    162
    ],
    "path": "video_data/splatting/0185_splatting_results.mp4"
   },
   "0186": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0186_splatting_results.mp4"
   },
   "0187": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 161,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    150
    ],
    "path": "video_data/splatting/0187_splatting_results.mp4"
   },
   "0188": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0188_splatting_results.mp4"
   },
   "0189": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 164,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    153
    ],
    "path": "video_data/splatting/0189_splatting_results.mp4"
   },
   "0190": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0190_splatting_results.mp4"
   },
   "0191": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    141
    ],
    "path": "video_data/splatting/0191_splatting_results.mp4"
   },
   "0192": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 160,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    149
    ],
    "path": "video_data/splatting/0192_splatting_results.mp4"
   },
   "0193": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 154,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    143
    ],
    "path": "video_data/splatting/0193_splatting_results.mp4"
   },
   "0194": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 156,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    145
    ],
    "path": "video_data/splatting/0194_splatting_results.mp4"
   },
   "0195": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0195_splatting_results.mp4"
   },
   "0196": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 153,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    142
    ],
    "path": "video_data/splatting/0196_splatting_results.mp4"
   },
   "0197": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0197_splatting_results.mp4"
   },
   "0198": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 164,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    153
    ],
    "path": "video_data/splatting/0198_splatting_results.mp4"
   },
   "0199": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 153,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    142
    ],
    "path": "video_data/splatting/0199_splatting_results.mp4"
   },
   "0200": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    141
    ],
    "path": "video_data/splatting/0200_splatting_results.mp4"
   },
   "0201": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 176,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    165
    ],
    "path": "video_data/splatting/0201_splatting_results.mp4"
   },
   "0202": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    141
    ],
    "path": "video_data/splatting/0202_splatting_results.mp4"
   },
   "0203": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0203_splatting_results.mp4"
   },
   "0204": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "test",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0204_splatting_results.mp4"
   },
   "0205": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0205_splatting_results.mp4"
   },
   "0206": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0206_splatting_results.mp4"
   },
   "0207": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0207_splatting_results.mp4"
   },
   "0208": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 161,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    150
    ],
    "path": "video_data/splatting/0208_splatting_results.mp4"
   },
   "0209": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0209_splatting_results.mp4"
   },
   "0210": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    141
    ],
    "path": "video_data/splatting/0210_splatting_results.mp4"
   },
   "0211": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 165,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    154
    ],
    "path": "video_data/splatting/0211_splatting_results.mp4"
   },
   "0212": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 154,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    143
    ],
    "path": "video_data/splatting/0212_splatting_results.mp4"
   },
   "0213": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0213_splatting_results.mp4"
   },
   "0214": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 162,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    151
    ],
    "path": "video_data/splatting/0214_splatting_results.mp4"
   },
   "0215": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0215_splatting_results.mp4"
   },
   "0216": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    141
    ],
    "path": "video_data/splatting/0216_splatting_results.mp4"
   },
   "0217": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 159,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    148
    ],
    "path": "video_data/splatting/0217_splatting_results.mp4"
   },
   "0218": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    141
    ],
    "path": "video_data/splatting/0218_splatting_results.mp4"
   },
   "0219": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 154,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    143
    ],
    "path": "video_data/splatting/0219_splatting_results.mp4"
   },
   "0220": {
    "fmt": "2160",
-   "frames": 149,
+   "frames": 156,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    138
+    145
    ],
    "path": "video_data/splatting/0220_splatting_results.mp4"
   },
   "0221": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 154,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    143
    ],
    "path": "video_data/splatting/0221_splatting_results.mp4"
   },
   "0222": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 157,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    143
    ],
    "path": "video_data/splatting/0222_splatting_results.mp4"
   },
   "0223": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0223_splatting_results.mp4"
   },
   "0224": {
    "fmt": "2160",
-   "frames": 149,
+   "frames": 154,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    138
+    143
    ],
    "path": "video_data/splatting/0224_splatting_results.mp4"
   },
   "0225": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "test",
    "windows": [
     0,
-    139
+    141
    ],
    "path": "video_data/splatting/0225_splatting_results.mp4"
   },
   "0226": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0226_splatting_results.mp4"
   },
   "0227": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0227_splatting_results.mp4"
   },
   "0228": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    141
    ],
    "path": "video_data/splatting/0228_splatting_results.mp4"
   },
   "0229": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0229_splatting_results.mp4"
   },
   "0230": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0230_splatting_results.mp4"
   },
   "0231": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0231_splatting_results.mp4"
   },
   "0232": {
    "fmt": "2160",
-   "frames": 149,
+   "frames": 158,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    138
+    147
    ],
    "path": "video_data/splatting/0232_splatting_results.mp4"
   },
   "0233": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0233_splatting_results.mp4"
   },
   "0234": {
    "fmt": "2160",
-   "frames": 149,
+   "frames": 154,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    138
+    143
    ],
    "path": "video_data/splatting/0234_splatting_results.mp4"
   },
   "0235": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    141
    ],
    "path": "video_data/splatting/0235_splatting_results.mp4"
   },
   "0236": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0236_splatting_results.mp4"
   },
   "0237": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    141
    ],
    "path": "video_data/splatting/0237_splatting_results.mp4"
   },
   "0238": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0238_splatting_results.mp4"
   },
   "0239": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0239_splatting_results.mp4"
   },
   "0240": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0240_splatting_results.mp4"
   },
   "0241": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    141
    ],
    "path": "video_data/splatting/0241_splatting_results.mp4"
   },
   "0242": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0242_splatting_results.mp4"
   },
   "0243": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0243_splatting_results.mp4"
   },
   "0244": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0244_splatting_results.mp4"
   },
   "0245": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "dev",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0245_splatting_results.mp4"
   },
   "0246": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0246_splatting_results.mp4"
   },
   "0247": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0247_splatting_results.mp4"
   },
   "0248": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0248_splatting_results.mp4"
   },
   "0249": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    141
    ],
    "path": "video_data/splatting/0249_splatting_results.mp4"
   },
   "0250": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0250_splatting_results.mp4"
   },
   "0251": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "test",
    "windows": [
     0,
-    139
+    141
    ],
    "path": "video_data/splatting/0251_splatting_results.mp4"
   },
   "0252": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 154,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    143
    ],
    "path": "video_data/splatting/0252_splatting_results.mp4"
   },
   "0253": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0253_splatting_results.mp4"
   },
   "0254": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    141
    ],
    "path": "video_data/splatting/0254_splatting_results.mp4"
   },
   "0255": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 157,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    143
    ],
    "path": "video_data/splatting/0255_splatting_results.mp4"
   },
   "0256": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    141
    ],
    "path": "video_data/splatting/0256_splatting_results.mp4"
   },
   "0257": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0257_splatting_results.mp4"
   },
   "0258": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0258_splatting_results.mp4"
   },
   "0259": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "test",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0259_splatting_results.mp4"
   },
   "0260": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0260_splatting_results.mp4"
   },
   "0261": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0261_splatting_results.mp4"
   },
   "0262": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0262_splatting_results.mp4"
   },
   "0263": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 159,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    148
    ],
    "path": "video_data/splatting/0263_splatting_results.mp4"
   },
   "0264": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0264_splatting_results.mp4"
   },
   "0265": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 162,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    151
    ],
    "path": "video_data/splatting/0265_splatting_results.mp4"
   },
   "0266": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 156,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    145
    ],
    "path": "video_data/splatting/0266_splatting_results.mp4"
   },
   "0267": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 158,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    147
    ],
    "path": "video_data/splatting/0267_splatting_results.mp4"
   },
   "0268": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "dev",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0268_splatting_results.mp4"
   },
   "0269": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0269_splatting_results.mp4"
   },
   "0270": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0270_splatting_results.mp4"
   },
   "0271": {
    "fmt": "2160",
-   "frames": 149,
+   "frames": 156,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    138
+    145
    ],
    "path": "video_data/splatting/0271_splatting_results.mp4"
   },
   "0272": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0272_splatting_results.mp4"
   },
   "0273": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    141
    ],
    "path": "video_data/splatting/0273_splatting_results.mp4"
   },
   "0274": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0274_splatting_results.mp4"
   },
   "0275": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0275_splatting_results.mp4"
   },
   "0276": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0276_splatting_results.mp4"
   },
   "0277": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    141
    ],
    "path": "video_data/splatting/0277_splatting_results.mp4"
   },
   "0278": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0278_splatting_results.mp4"
   },
   "0279": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0279_splatting_results.mp4"
   },
   "0280": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0280_splatting_results.mp4"
   },
   "0281": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0281_splatting_results.mp4"
   },
   "0282": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0282_splatting_results.mp4"
   },
   "0283": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0283_splatting_results.mp4"
   },
   "0284": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0284_splatting_results.mp4"
   },
   "0285": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0285_splatting_results.mp4"
   },
   "0286": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0286_splatting_results.mp4"
   },
   "0287": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0287_splatting_results.mp4"
   },
   "0288": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 158,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    147
    ],
    "path": "video_data/splatting/0288_splatting_results.mp4"
   },
   "0289": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0289_splatting_results.mp4"
   },
   "0290": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    141
    ],
    "path": "video_data/splatting/0290_splatting_results.mp4"
   },
   "0291": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0291_splatting_results.mp4"
   },
   "0292": {
    "fmt": "2160",
-   "frames": 150,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    139
+    141
    ],
    "path": "video_data/splatting/0292_splatting_results.mp4"
   },
   "0293": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0293_splatting_results.mp4"
   },
   "0294": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0294_splatting_results.mp4"
   },
   "0295": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0295_splatting_results.mp4"
   },
   "0296": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0296_splatting_results.mp4"
   },
   "0297": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0297_splatting_results.mp4"
   },
   "0298": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0298_splatting_results.mp4"
   },
   "0299": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0299_splatting_results.mp4"
   },
   "0300": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0300_splatting_results.mp4"
   },
   "0301": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "test",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0301_splatting_results.mp4"
   },
   "0302": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0302_splatting_results.mp4"
   },
   "0303": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0303_splatting_results.mp4"
   },
   "0304": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0304_splatting_results.mp4"
   },
   "0305": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0305_splatting_results.mp4"
   },
   "0306": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0306_splatting_results.mp4"
   },
   "0307": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0307_splatting_results.mp4"
   },
   "0308": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0308_splatting_results.mp4"
   },
   "0309": {
    "fmt": "2160",
-   "frames": 151,
+   "frames": 152,
    "gt": true,
    "long": false,
    "role": "train",
    "windows": [
     0,
-    140
+    141
    ],
    "path": "video_data/splatting/0309_splatting_results.mp4"
   },
@@ -5327,6 +5328,5 @@
    ],
    "path": "video_data/splatting/0361_splatting_results.mp4"
   }
- },
- "note": "clip assignments (test/dev/train_order/curve) identical to fulldata_v1 (pre-2026-09-24); frames/windows recomputed from the regenerated splatting (Plan Y); GT tiles are now the real right eye"
+ }
 }
