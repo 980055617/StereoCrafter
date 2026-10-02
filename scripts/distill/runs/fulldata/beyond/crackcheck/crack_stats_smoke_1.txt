@@ -1,0 +1,77 @@
+crack_stats.py  STEP=24  crop 576x1024  hard mask = occl>0.5, partial = 16/255<occl<=0.5, thin crack = |err|>0.15 comps width<=3 len>=8
+err = mean over RGB of |x-GT| in [0,1]; f01 = %% of region pixels with err>0.1; crack_pm = thin-crack pixels per 1000 region pixels; lap = mean Laplacian^2 of gray(x-GT)
+
+[0] clip info
+clip     frames  mask%  part%  align(dy,dx) leftPSNR  pipeL
+0301          7   1.21  15.11      (-28, 0)    40.83  40.45
+
+[A] NON-MASK region (hard mask dilated by D px excluded): MAE and %|err|>0.1, warped-vs-GT (W) and origin-vs-GT (O)
+clip     D=0   reg%   maeW   maeO  f01W  f01O | D=4   reg%   maeW   maeO  f01W  f01O | D=8   reg%   maeW   maeO  f01W  f01O | D=16  reg%   maeW   maeO  f01W  f01O | D=32  reg%   maeW   maeO  f01W  f01O
+0301           98.8 0.1223 0.1085 42.47 37.78 |       92.3 0.1208 0.1071 41.99 37.25 |       85.9 0.1203 0.1066 41.89 37.10 |       73.0 0.1205 0.1069 42.12 37.34 |       53.2 0.1207 0.1070 42.35 37.44
+mean12         98.8 0.1223 0.1085 42.47 37.78 |       92.3 0.1208 0.1071 41.99 37.25 |       85.9 0.1203 0.1066 41.89 37.10 |       73.0 0.1205 0.1069 42.12 37.34 |       53.2 0.1207 0.1070 42.35 37.44
+mean13         98.8 0.1223 0.1085 42.47 37.78 |       92.3 0.1208 0.1071 41.99 37.25 |       85.9 0.1203 0.1066 41.89 37.10 |       73.0 0.1205 0.1069 42.12 37.34 |       53.2 0.1207 0.1070 42.35 37.44
+
+[B1] thin elongated error components (per frame) in the non-mask region; vert% = components with h>=2w; crack_pm = crack pixels per 1000 non-mask px;
+     crW_in_part% = share of warped crack pixels that are partial-coverage pixels; crW/err% = share of warped |err|>0.1 pixels that are thin cracks
+clip         ncW     ncO vertW% vertO%  horW%  horO%  crW_pm  crO_pm crW_in_part% crW/err%
+0301      1276.3  1331.1   20.8   22.4    7.8    8.0  193.50  142.01         16.9     45.6
+mean12    1276.3  1331.1   20.8   22.4    7.8    8.0  193.50  142.01         16.9     45.6
+mean13    1276.3  1331.1   20.8   22.4    7.8    8.0  193.50  142.01         16.9     45.6
+
+[B2] high-pass (Laplacian) energy of (x-GT) in the non-mask region, and crack px per 1000, by dilation D
+clip     D=0     lapW    lapO crW_pm crO_pm | D=4     lapW    lapO crW_pm crO_pm | D=8     lapW    lapO crW_pm crO_pm | D=16    lapW    lapO crW_pm crO_pm | D=32    lapW    lapO crW_pm crO_pm
+0301          0.63183 0.44255 193.50 142.01 |      0.62388 0.44081 190.43 139.09 |      0.62518 0.44198 189.59 138.14 |      0.63776 0.45330 190.76 139.14 |      0.65990 0.47365 191.94 140.57
+mean12        0.63183 0.44255 193.50 142.01 |      0.62388 0.44081 190.43 139.09 |      0.62518 0.44198 189.59 138.14 |      0.63776 0.45330 190.76 139.14 |      0.65990 0.47365 191.94 140.57
+mean13        0.63183 0.44255 193.50 142.01 |      0.62388 0.44081 190.43 139.09 |      0.62518 0.44198 189.59 138.14 |      0.63776 0.45330 190.76 139.14 |      0.65990 0.47365 191.94 140.57
+
+[B3] partial-coverage pixels (16/255<occl<=0.5, NOT in the hard mask) vs fully covered non-mask pixels
+clip      part% maeW@part maeW@full f01W@part f01W@full maeO@part maeO@full f01O@part f01O@full crW_pm@part crW_pm@full
+0301      15.11    0.1339    0.1202     46.40     41.76    0.1194    0.1065     42.28     36.97      214.29      189.74
+mean12    15.11    0.1339    0.1202     46.40     41.76    0.1194    0.1065     42.28     36.97      214.29      189.74
+mean13    15.11    0.1339    0.1202     46.40     41.76    0.1194    0.1065     42.28     36.97      214.29      189.74
+
+[C] non-mask error vs distance (px) to the nearest hard-mask pixel  (reg% = % of frame in bin; part% = partial-coverage share within bin)
+clip       bin   reg%    maeW    maeO   f01W   f01O  crW_pm  crO_pm  part%
+0301       0-4   4.69  0.1465  0.1298  50.20  46.29  244.63  188.63  76.30
+0301       4-8   5.69  0.1333  0.1191  45.38  41.42  211.79  162.42  43.20
+0301      8-16  11.48  0.1202  0.1061  40.92  36.18  185.28  135.37  21.35
+0301     16-32  19.04  0.1190  0.1057  41.11  36.57  186.12  133.70  12.95
+0301       >32  57.89  0.1208  0.1071  42.31  37.45  191.61  140.28   7.18
+mean12     0-4   4.69  0.1465  0.1298  50.20  46.29  244.63  188.63  76.30
+mean12     4-8   5.69  0.1333  0.1191  45.38  41.42  211.79  162.42  43.20
+mean12    8-16  11.48  0.1202  0.1061  40.92  36.18  185.28  135.37  21.35
+mean12   16-32  19.04  0.1190  0.1057  41.11  36.57  186.12  133.70  12.95
+mean12     >32  57.89  0.1208  0.1071  42.31  37.45  191.61  140.28   7.18
+mean13     0-4   4.69  0.1465  0.1298  50.20  46.29  244.63  188.63  76.30
+mean13     4-8   5.69  0.1333  0.1191  45.38  41.42  211.79  162.42  43.20
+mean13    8-16  11.48  0.1202  0.1061  40.92  36.18  185.28  135.37  21.35
+mean13   16-32  19.04  0.1190  0.1057  41.11  36.57  186.12  133.70  12.95
+mean13     >32  57.89  0.1208  0.1071  42.31  37.45  191.61  140.28   7.18
+
+[D] LPIPS vs GT (alex) of the composite = warped outside / origin inside the mask, mask = hard dilated D px, feathered 8 px;
+    aware_Dk = (hard OR partial-coverage) dilated k px, feathered 8.  gen% = % of frame taken from origin.  Also MAE of each variant.
+LPIPS      origin   warped  comp_D0  comp_D4  comp_D8 comp_D16 comp_D32 comp_D64 aware_D0 aware_D2 aware_D4
+0301       0.4523   0.2174   0.2131   0.2305   0.2519   0.2892   0.3369   0.3911   0.2460   0.3092   0.3459
+mean12     0.4523   0.2174   0.2131   0.2305   0.2519   0.2892   0.3369   0.3911   0.2460   0.3092   0.3459
+mean13     0.4523   0.2174   0.2131   0.2305   0.2519   0.2892   0.3369   0.3911   0.2460   0.3092   0.3459
+gen%       origin   warped  comp_D0  comp_D4  comp_D8 comp_D16 comp_D32 comp_D64 aware_D0 aware_D2 aware_D4
+0301            -        -     0.01     0.08     0.14     0.27     0.46     0.69     0.16     0.37     0.49
+mean12          -        -     0.01     0.08     0.14     0.27     0.46     0.69     0.16     0.37     0.49
+mean13          -        -     0.01     0.08     0.14     0.27     0.46     0.69     0.16     0.37     0.49
+MAE        origin   warped  comp_D0  comp_D4  comp_D8 comp_D16 comp_D32 comp_D64 aware_D0 aware_D2 aware_D4
+0301       0.1088   0.1231   0.1224   0.1206   0.1196   0.1178   0.1154   0.1125   0.1180   0.1144   0.1128
+mean12     0.1088   0.1231   0.1224   0.1206   0.1196   0.1178   0.1154   0.1125   0.1180   0.1144   0.1128
+mean13     0.1088   0.1231   0.1224   0.1206   0.1196   0.1178   0.1154   0.1125   0.1180   0.1144   0.1128
+
+[E] depth-derived regions in target coords (non-mask only): stretch = splat gap>=1.5 (crack-prone), dedge = +-4 px of a depth step >=3/255 (not stretch), flat = rest
+    stretch_hard% = share of the stretch region that is hard mask (i.e. already masked)
+clip       region   reg%    maeW    maeO   f01W   f01O  crW_pm  crO_pm  part% str_hard%
+0301      stretch   6.69  0.1361  0.1209  46.85  42.98  219.45  167.40  69.14      14.9
+0301        dedge  22.39  0.1307  0.1152  44.63  39.99  206.12  152.50  22.73          
+0301         flat  69.71  0.1183  0.1051  41.35  36.57  186.95  136.21   7.75          
+mean12    stretch   6.69  0.1361  0.1209  46.85  42.98  219.45  167.40  69.14      14.9
+mean12      dedge  22.39  0.1307  0.1152  44.63  39.99  206.12  152.50  22.73          
+mean12       flat  69.71  0.1183  0.1051  41.35  36.57  186.95  136.21   7.75          
+mean13    stretch   6.69  0.1361  0.1209  46.85  42.98  219.45  167.40  69.14      14.9
+mean13      dedge  22.39  0.1307  0.1152  44.63  39.99  206.12  152.50  22.73          
+mean13       flat  69.71  0.1183  0.1051  41.35  36.57  186.95  136.21   7.75          

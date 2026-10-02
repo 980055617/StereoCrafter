@@ -1,0 +1,120 @@
+{
+ "clip": "0160",
+ "n": 38,
+ "crack_px_total": 56507,
+ "crack_px_per_frame": 1487.0263157894738,
+ "crack_ppm_of_frame": 2521.1356536686767,
+ "inside_hard_mask_pct": 47.54,
+ "inside_dil8_pct": 62.97,
+ "outside_dil8_pct": 37.03,
+ "composite_weight_lt05_pct": 36.83,
+ "composite_weight_lt01_pct": 30.4,
+ "outside_dil8_maskval_bins_pct": {
+  "[0,0.005)": 70.9,
+  "[0.005,0.02)": 11.1,
+  "[0.02,0.1)": 11.8,
+  "[0.1,0.25)": 5.0,
+  "[0.25,0.5)": 1.2,
+  "[0.5,2)": 0.0
+ },
+ "alt_masks": {
+  "thr0.5_dil0": {
+   "covered_pct": 47.54,
+   "mask_area_pct": 1.79
+  },
+  "thr0.5_dil8": {
+   "covered_pct": 62.97,
+   "mask_area_pct": 19.18
+  },
+  "thr0.5_dil16": {
+   "covered_pct": 72.47,
+   "mask_area_pct": 33.57
+  },
+  "thr0.25_dil0": {
+   "covered_pct": 50.12,
+   "mask_area_pct": 4.55
+  },
+  "thr0.25_dil8": {
+   "covered_pct": 72.53,
+   "mask_area_pct": 30.14
+  },
+  "thr0.25_dil16": {
+   "covered_pct": 82.42,
+   "mask_area_pct": 47.57
+  },
+  "thr0.1_dil0": {
+   "covered_pct": 54.72,
+   "mask_area_pct": 9.41
+  },
+  "thr0.1_dil8": {
+   "covered_pct": 78.38,
+   "mask_area_pct": 43.19
+  },
+  "thr0.1_dil16": {
+   "covered_pct": 88.36,
+   "mask_area_pct": 63.03
+  },
+  "thr0.02_dil0": {
+   "covered_pct": 62.24,
+   "mask_area_pct": 22.26
+  },
+  "thr0.02_dil8": {
+   "covered_pct": 89.2,
+   "mask_area_pct": 65.88
+  },
+  "thr0.02_dil16": {
+   "covered_pct": 95.67,
+   "mask_area_pct": 82.17
+  }
+ },
+ "origin_bright_at_crack_pct": 62.1,
+ "warped_err_at_crack": 0.496,
+ "origin_err_at_crack": 0.292,
+ "shipped_crack_px_per_frame": [
+  607,
+  558,
+  504,
+  512,
+  503,
+  545,
+  603,
+  675,
+  684,
+  660,
+  650,
+  711,
+  612,
+  607,
+  607,
+  707,
+  599,
+  588,
+  606,
+  496,
+  520,
+  481,
+  496,
+  500,
+  551,
+  533,
+  492,
+  520,
+  479,
+  476,
+  460,
+  460,
+  462,
+  483,
+  456,
+  500,
+  444,
+  463
+ ],
+ "worst_frame_sample": 11,
+ "worst_frame_components": {
+  "n": 209,
+  "max_size": 136,
+  "ge5px": 28,
+  "ge20px": 3
+ }
+}

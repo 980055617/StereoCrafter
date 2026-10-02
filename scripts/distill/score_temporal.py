@@ -39,9 +39,9 @@ def tlp(R, bs=16):
 @torch.no_grad()
 def flows(G):
     """forward flow t->t+1 and fwd-bwd validity mask on the GT crop, per pair (batched)."""
-    fw, ok = [], []
-    for i in range(0, len(G) - 1, 4):
-        a = G[i:i + 5].to(dev) * 2 - 1; x0, x1 = a[:-1], a[1:]
+    fw, ok = [], []; FB = 4 if G.shape[2] * G.shape[3] <= 600 * 1100 else 1   # RAFT corr volume ~ (hw/64)^2 per pair: 15 GB at 1920x1024 x4
+    for i in range(0, len(G) - 1, FB):
+        a = G[i:i + FB + 1].to(dev) * 2 - 1; x0, x1 = a[:-1], a[1:]
         f = raft(x0, x1)[-1]; b = raft(x1, x0)[-1]
         B, _, h, w = f.shape; yy, xx = torch.meshgrid(torch.arange(h, device=dev), torch.arange(w, device=dev), indexing="ij")
         gx = (xx[None] + f[:, 0]) / (w - 1) * 2 - 1; gy = (yy[None] + f[:, 1]) / (h - 1) * 2 - 1

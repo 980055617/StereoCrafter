@@ -1,0 +1,12 @@
+  self.load_state_dict(torch.load(model_path, map_location='cpu'), strict=False)
+pair                                            n LPIPS(a,b)    PSNR   tLP a   tLP b
+car:student_vs_origin                         231     0.0160   39.45  0.0383  0.0384
+car:origin_seed1_vs_seed1234                  231     0.0430   34.15  0.0382  0.0384
+animal:student_vs_origin                      231     0.0176   40.74  0.0276  0.0278
+animal:origin_seed1_vs_seed1234               231     0.0374   36.43  0.0280  0.0278
+human:student_vs_origin                       231     0.0172   39.23  0.0134  0.0137
+human:origin_seed1_vs_seed1234                231     0.0478   35.94  0.0137  0.0137
+0160:student_vs_origin                        152     0.0195   33.94  0.0430  0.0442
+0160:origin_seed1_vs_seed1234                 152     0.0953   25.21  0.0440  0.0442
+0042:student_vs_origin                        153     0.0180   39.21  0.0567  0.0562
+0042:origin_seed1_vs_seed1234                 153     0.0387   34.89  0.0550  0.0562

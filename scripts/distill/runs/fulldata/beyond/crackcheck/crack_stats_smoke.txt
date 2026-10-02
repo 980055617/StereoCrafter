@@ -1,0 +1,5 @@
+crack_stats.py  STEP=24  crop 576x1024  hard mask = occl>0.5, partial = 16/255<occl<=0.5, thin crack = |err|>0.15 comps width<=3 len>=8
+err = mean over RGB of |x-GT| in [0,1]; f01 = %% of region pixels with err>0.1; crack_pm = thin-crack pixels per 1000 region pixels; lap = mean Laplacian^2 of gray(x-GT)
+
+[0] clip info
+clip     frames  mask%  part%  align(dy,dx) leftPSNR  pipeL
