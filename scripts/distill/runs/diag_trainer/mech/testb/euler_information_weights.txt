@@ -1,0 +1,26 @@
+Exact unrolling of the deployed 8-step Euler recursion  y_{k+1} = r_k*y_k + (1-r_k)*x0hat_k ,  r_k = sigma_{k+1}/sigma_k
+=> y_7 (the latent from which the LAST one-step prediction, i.e. the output, is computed) is the linear mix
+   y_7 = (sigma_7/sigma_0)*y_0 + sum_k  c_k * x0hat_k ,  c_k = (1 - sigma_{k+1}/sigma_k) * sigma_7/sigma_{k+1}
+
+   k    sigma_k          c_k ||x0hat_k||rms      c_k*rms
+   0        700    4.123e-06       0.6711     0.000003
+   1      286.5    1.246e-05       0.6760     0.000008
+   2      102.9    4.509e-05       0.6842     0.000031
+   3      30.99    0.0002103       0.6900     0.000145
+   4      7.276     0.001438       0.6864     0.000987
+   5      1.168      0.01882       0.7101     0.013367
+   6    0.09739       0.9795       0.7186     0.703888
+ y_0        700    2.857e-06     700.6400     0.002002
+
+share of ||y_7|| contributed by each step's one-step prediction (and by the initial noise):
+   x0hat[k=0] (sigma      700):   0.0004%
+   x0hat[k=1] (sigma    286.5):   0.0012%
+   x0hat[k=2] (sigma    102.9):   0.0043%
+   x0hat[k=3] (sigma    30.99):   0.0201%
+   x0hat[k=4] (sigma    7.276):   0.1370%
+   x0hat[k=5] (sigma    1.168):   1.8555%
+   x0hat[k=6] (sigma  0.09739):  97.7037%
+   initial noise y_0          :   0.2779%
+
+=> the first FIVE sampler steps (sigma 700 ... 7.28) together carry 0.163% of y_7.
+   the output is built at k=5 (sigma 1.17), k=6 (sigma 0.097) and the final k=7 prediction.

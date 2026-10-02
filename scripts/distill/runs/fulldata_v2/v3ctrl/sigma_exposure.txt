@@ -1,0 +1,14 @@
+
+=== euler_train_num_steps=8  (v3) ===
+  sigmas: 700, 286.5, 102.9, 30.99, 7.276, 1.168, 0.09739, 0.002
+  band counts: sigma>=7 (damaging, 93% of damage) = 5/8 = 62.5%
+               0.5<=sigma<7 (the 1.17 band, 85% alone) = 1/8 = 12.5%
+               sigma<0.5 (HARMLESS, +0.001) = 2/8 = 25.0%
+  => fraction of training steps landing in a band known to damage: 75.0%
+
+=== euler_train_num_steps=20  (v2) ===
+  sigmas: 700, 510.4, 366.6, 259, 179.7, 122.2, 81.26, 52.68, 33.19, 20.24, 11.89, 6.682, 3.566, 1.789, 0.8325, 0.3526, 0.1324, 0.04237, 0.01086, 0.002
+  band counts: sigma>=7 (damaging, 93% of damage) = 11/20 = 55.0%
+               0.5<=sigma<7 (the 1.17 band, 85% alone) = 4/20 = 20.0%
+               sigma<0.5 (HARMLESS, +0.001) = 5/20 = 25.0%
+  => fraction of training steps landing in a band known to damage: 75.0%

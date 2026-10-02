@@ -1,0 +1,18 @@
+P1 off-trajectory v-target  v = (eps - sigma*x0_fixed)/sqrt(sigma^2+1)  decomposed per deployment sigma
+  deterministic power = sigma^2*E||x0||^2/(sigma^2+1) with E||x0||^2 = 0.6180 (measured VAE latents)
+  stochastic power    = E||eps||^2/(sigma^2+1) = 1/(sigma^2+1)
+
+   k      sigma       E||v||^2  det. fraction noise fraction | P1null loss1 P1null loss2    gn mean
+   0        700         0.6180       0.999997       0.000003 |      0.09568      0.09541     0.1652
+   1      286.5         0.6180       0.999980       0.000020 |      0.09460      0.08961     0.1266
+   2      102.9         0.6180       0.999847       0.000153 |      0.09074      0.08722     0.1290
+   3      30.99         0.6184       0.998318       0.001682 |      0.08801      0.08947     0.1485
+   4      7.276         0.6250       0.970341       0.029659 |      0.08553      0.08460     0.1302
+   5      1.168         0.7796       0.457232       0.542768 |      0.11458      0.11253     0.1723
+   6    0.09739         0.9964       0.005827       0.994173 |      0.67806      0.66306     0.2447
+   7      0.002         1.0000       0.000002       0.999998 |      1.00135      1.00139     0.0697
+
+Reading: the ONLY learnable structure in this objective is the deterministic x0 term.  Its share of the target
+variance is >=97% for sigma>=7.28, 46% at sigma 1.17, 0.58% at 0.097 and 0.00025% at 0.002.
+That is exactly the sigma-bisect result: null_hi5 (sigma 700..7.28) = 93% of the damage, sigma 1.17 alone 85%,
+sigma {0.097,0.002} harmless -- there the target is essentially pure eps and the loss stays pinned at ~1.0.

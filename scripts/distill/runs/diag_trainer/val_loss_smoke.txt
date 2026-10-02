@@ -1,0 +1,104 @@
+# val_loss  clips=0170 windows=2 frames_chunk=2 overlap=1 crop=576x1024 seed=1234 forwards=48 elapsed=0.2 min
+# scaling_factor=0.18215; cond_scale 'trainer' = *0.18215 (inpainting_train.py:979), 'inference' = unscaled (pipeline)
+
+== loss | cond_scale=trainer | sigma_set=inference | mean over 2 windows; d = model - origin; wins = #windows where model < origin ==
+idx     sigma    origin        e1        e2 d(e1):>10 d(e2):>10   wins(e1)   wins(e2)
+  0  700.0000    0.6818    0.6934    0.6891    +0.0116    +0.0073       0/2        1/2 
+  1  286.5388    0.6830    0.6538    0.6629    -0.0292    -0.0201       2/2        2/2 
+all              0.6824    0.6736    0.6760    -0.0088    -0.0064
+
+== loss | cond_scale=trainer | sigma_set=grid | mean over 2 windows; d = model - origin; wins = #windows where model < origin ==
+idx     sigma    origin        e1        e2 d(e1):>10 d(e2):>10   wins(e1)   wins(e2)
+  0  700.0000    0.7587    0.7577    0.7612    -0.0010    +0.0024       1/2        1/2 
+  1  510.3563    0.6268    0.6424    0.6466    +0.0156    +0.0198       0/2        0/2 
+all              0.6928    0.7001    0.7039    +0.0073    +0.0111
+
+== loss | cond_scale=inference | sigma_set=inference | mean over 2 windows; d = model - origin; wins = #windows where model < origin ==
+idx     sigma    origin        e1        e2 d(e1):>10 d(e2):>10   wins(e1)   wins(e2)
+  0  700.0000    0.7734    0.6154    0.6140    -0.1580    -0.1594       2/2        2/2 
+  1  286.5388    0.7908    0.6219    0.6191    -0.1689    -0.1716       2/2        2/2 
+all              0.7821    0.6187    0.6165    -0.1634    -0.1655
+
+== loss | cond_scale=inference | sigma_set=grid | mean over 2 windows; d = model - origin; wins = #windows where model < origin ==
+idx     sigma    origin        e1        e2 d(e1):>10 d(e2):>10   wins(e1)   wins(e2)
+  0  700.0000    0.7830    0.6142    0.6134    -0.1688    -0.1696       2/2        2/2 
+  1  510.3563    0.7850    0.6187    0.6167    -0.1663    -0.1683       2/2        2/2 
+all              0.7840    0.6164    0.6150    -0.1675    -0.1689
+
+== x0_mse | cond_scale=trainer | sigma_set=inference | mean over 2 windows; d = model - origin; wins = #windows where model < origin ==
+idx     sigma    origin        e1        e2 d(e1):>10 d(e2):>10   wins(e1)   wins(e2)
+  0  700.0000    0.6817    0.6933    0.6890    +0.0116    +0.0073       0/2        1/2 
+  1  286.5388    0.6830    0.6538    0.6629    -0.0292    -0.0201       2/2        2/2 
+all              0.6824    0.6735    0.6760    -0.0088    -0.0064
+
+== x0_mse | cond_scale=trainer | sigma_set=grid | mean over 2 windows; d = model - origin; wins = #windows where model < origin ==
+idx     sigma    origin        e1        e2 d(e1):>10 d(e2):>10   wins(e1)   wins(e2)
+  0  700.0000    0.7587    0.7576    0.7611    -0.0011    +0.0024       1/2        1/2 
+  1  510.3563    0.6287    0.6444    0.6486    +0.0157    +0.0198       0/2        0/2 
+all              0.6937    0.7010    0.7048    +0.0073    +0.0111
+
+== x0_mse | cond_scale=inference | sigma_set=inference | mean over 2 windows; d = model - origin; wins = #windows where model < origin ==
+idx     sigma    origin        e1        e2 d(e1):>10 d(e2):>10   wins(e1)   wins(e2)
+  0  700.0000    0.7734    0.6153    0.6139    -0.1580    -0.1595       2/2        2/2 
+  1  286.5388    0.7908    0.6219    0.6191    -0.1689    -0.1716       2/2        2/2 
+all              0.7821    0.6186    0.6165    -0.1634    -0.1656
+
+== x0_mse | cond_scale=inference | sigma_set=grid | mean over 2 windows; d = model - origin; wins = #windows where model < origin ==
+idx     sigma    origin        e1        e2 d(e1):>10 d(e2):>10   wins(e1)   wins(e2)
+  0  700.0000    0.7829    0.6141    0.6133    -0.1688    -0.1696       2/2        2/2 
+  1  510.3563    0.7864    0.6201    0.6181    -0.1663    -0.1682       2/2        2/2 
+all              0.7847    0.6171    0.6157    -0.1675    -0.1689
+
+== loss_masked | cond_scale=trainer | sigma_set=inference | mean over 2 windows; d = model - origin; wins = #windows where model < origin ==
+idx     sigma    origin        e1        e2 d(e1):>10 d(e2):>10   wins(e1)   wins(e2)
+  0  700.0000    0.5175    0.5165    0.5221    -0.0010    +0.0046       1/2        1/2 
+  1  286.5388    0.5902    0.4942    0.5005    -0.0961    -0.0897       2/2        2/2 
+all              0.5539    0.5054    0.5113    -0.0485    -0.0426
+
+== loss_masked | cond_scale=trainer | sigma_set=grid | mean over 2 windows; d = model - origin; wins = #windows where model < origin ==
+idx     sigma    origin        e1        e2 d(e1):>10 d(e2):>10   wins(e1)   wins(e2)
+  0  700.0000    0.5556    0.5266    0.5326    -0.0291    -0.0230       2/2        2/2 
+  1  510.3563    0.4819    0.4953    0.4988    +0.0134    +0.0169       1/2        1/2 
+all              0.5188    0.5109    0.5157    -0.0079    -0.0030
+
+== loss_masked | cond_scale=inference | sigma_set=inference | mean over 2 windows; d = model - origin; wins = #windows where model < origin ==
+idx     sigma    origin        e1        e2 d(e1):>10 d(e2):>10   wins(e1)   wins(e2)
+  0  700.0000    0.5874    0.4952    0.4914    -0.0922    -0.0960       2/2        2/2 
+  1  286.5388    0.5694    0.4970    0.4859    -0.0724    -0.0836       2/2        2/2 
+all              0.5784    0.4961    0.4886    -0.0823    -0.0898
+
+== loss_masked | cond_scale=inference | sigma_set=grid | mean over 2 windows; d = model - origin; wins = #windows where model < origin ==
+idx     sigma    origin        e1        e2 d(e1):>10 d(e2):>10   wins(e1)   wins(e2)
+  0  700.0000    0.5858    0.5007    0.4952    -0.0851    -0.0906       2/2        2/2 
+  1  510.3563    0.5902    0.5015    0.4992    -0.0887    -0.0910       2/2        2/2 
+all              0.5880    0.5011    0.4972    -0.0869    -0.0908
+
+== loss_unmasked | cond_scale=trainer | sigma_set=inference | mean over 2 windows; d = model - origin; wins = #windows where model < origin ==
+idx     sigma    origin        e1        e2 d(e1):>10 d(e2):>10   wins(e1)   wins(e2)
+  0  700.0000    0.6819    0.6936    0.6893    +0.0116    +0.0073       0/2        1/2 
+  1  286.5388    0.6831    0.6539    0.6630    -0.0292    -0.0201       2/2        2/2 
+all              0.6825    0.6737    0.6762    -0.0088    -0.0064
+
+== loss_unmasked | cond_scale=trainer | sigma_set=grid | mean over 2 windows; d = model - origin; wins = #windows where model < origin ==
+idx     sigma    origin        e1        e2 d(e1):>10 d(e2):>10   wins(e1)   wins(e2)
+  0  700.0000    0.7590    0.7579    0.7614    -0.0010    +0.0024       1/2        1/2 
+  1  510.3563    0.6269    0.6425    0.6467    +0.0157    +0.0198       0/2        0/2 
+all              0.6929    0.7002    0.7041    +0.0073    +0.0111
+
+== loss_unmasked | cond_scale=inference | sigma_set=inference | mean over 2 windows; d = model - origin; wins = #windows where model < origin ==
+idx     sigma    origin        e1        e2 d(e1):>10 d(e2):>10   wins(e1)   wins(e2)
+  0  700.0000    0.7735    0.6154    0.6140    -0.1580    -0.1595       2/2        2/2 
+  1  286.5388    0.7908    0.6219    0.6191    -0.1689    -0.1717       2/2        2/2 
+all              0.7822    0.6187    0.6166    -0.1635    -0.1656
+
+== loss_unmasked | cond_scale=inference | sigma_set=grid | mean over 2 windows; d = model - origin; wins = #windows where model < origin ==
+idx     sigma    origin        e1        e2 d(e1):>10 d(e2):>10   wins(e1)   wins(e2)
+  0  700.0000    0.7831    0.6142    0.6134    -0.1688    -0.1696       2/2        2/2 
+  1  510.3563    0.7850    0.6187    0.6167    -0.1663    -0.1683       2/2        2/2 
+all              0.7840    0.6165    0.6151    -0.1676    -0.1690
+
+== per-clip mean loss (all sigmas of the set) ==
+cond=trainer   set=inference clip=0170: origin=0.6824 e1=0.6736 e2=0.6760  d(e1)=-0.0088 d(e2)=-0.0064
+cond=trainer   set=grid      clip=0170: origin=0.6928 e1=0.7001 e2=0.7039  d(e1)=+0.0073 d(e2)=+0.0111
+cond=inference set=inference clip=0170: origin=0.7821 e1=0.6187 e2=0.6165  d(e1)=-0.1634 d(e2)=-0.1655
+cond=inference set=grid      clip=0170: origin=0.7840 e1=0.6164 e2=0.6150  d(e1)=-0.1675 d(e2)=-0.1689

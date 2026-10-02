@@ -1,0 +1,13 @@
+[02:21:25] /github/workspace/src/video/video_reader.cc:83: ERROR opening: scripts/distill/runs/diag_trainer/infer/0301_origin_condx0.18215/0301_inpainting_results_sbs.mp4, No such file or directory
+clip/config                           offset  leftPSNR    LPIPS    sharp
+--- 0301 GT ---                                          0.0000   0.0505
+0301_origin                          (-28,0)     46.77   0.4445   0.0235
+0301_originattn_e001                 (-28,0)     46.42   0.7371   0.0109
+0301_e001_condx0.18215               (-28,0)     46.42   0.9144   0.0014
+Traceback (most recent call last):
+    v=load(path); half=v.shape[3]//2
+      ^^^^^^^^^^
+    vr=VideoReader(p,ctx=cpu(0)); f=vr.get_batch(list(range(0,len(vr),step))).asnumpy()
+       ^^^^^^^^^^^^^^^^^^^^^^^^^
+    raise RuntimeError("Error reading " + uri + "...")
+RuntimeError: Error reading scripts/distill/runs/diag_trainer/infer/0301_origin_condx0.18215/0301_inpainting_results_sbs.mp4...

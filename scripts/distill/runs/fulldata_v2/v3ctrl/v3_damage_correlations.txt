@@ -1,0 +1,35 @@
+
+== v2 originattn_e001 (n=12) ==
+  model sharpness: min=0.0027 max=0.0274 mean=0.0079 stdev=0.0066 CV=0.840
+  origin sharpness: min=0.0049 max=0.0311 CV=0.609
+  corr(absolute sharpness LOST, LPIPS gap) = +0.876
+  corr(origin sharpness,        LPIPS gap) = +0.481
+  corr(GT sharpness,            LPIPS gap) = +0.640
+  corr(origin sharpness, model sharpness)  = +0.924   <- ~0 means the output no longer tracks the input's detail level
+
+== v3 originattn_v3_e001 (n=12) ==
+  model sharpness: min=0.0015 max=0.0062 mean=0.0027 stdev=0.0014 CV=0.511
+  origin sharpness: min=0.0049 max=0.0311 CV=0.609
+  corr(absolute sharpness LOST, LPIPS gap) = +0.687
+  corr(origin sharpness,        LPIPS gap) = +0.615
+  corr(GT sharpness,            LPIPS gap) = +0.655
+  corr(origin sharpness, model sharpness)  = +0.853   <- ~0 means the output no longer tracks the input's detail level
+
+== epoch1 -> epoch2 movement, per clip ==
+  0042 o_sharp=0.0080  gap +0.2624 -> +0.2631 (+0.0007)   sharp 0.0018 -> 0.0013
+  0052 o_sharp=0.0136  gap +0.2780 -> +0.2866 (+0.0086)   sharp 0.0035 -> 0.0029
+  0125 o_sharp=0.0094  gap +0.2578 -> +0.2667 (+0.0089)   sharp 0.0024 -> 0.0020
+  0128 o_sharp=0.0136  gap +0.4666 -> +0.4675 (+0.0009)   sharp 0.0021 -> 0.0015
+  0141 o_sharp=0.0049  gap +0.1876 -> +0.1672 (-0.0204)   sharp 0.0018 -> 0.0012
+  0147 o_sharp=0.0066  gap +0.1034 -> +0.0868 (-0.0166)   sharp 0.0027 -> 0.0023
+  0170 o_sharp=0.0164  gap +0.5830 -> +0.5970 (+0.0140)   sharp 0.0015 -> 0.0010
+  0204 o_sharp=0.0062  gap +0.3972 -> +0.3695 (-0.0277)   sharp 0.0015 -> 0.0013
+  0225 o_sharp=0.0113  gap +0.4628 -> +0.4144 (-0.0484)   sharp 0.0023 -> 0.0018
+  0251 o_sharp=0.0084  gap +0.2916 -> +0.2940 (+0.0024)   sharp 0.0024 -> 0.0020
+  0259 o_sharp=0.0311  gap +0.4660 -> +0.4846 (+0.0186)   sharp 0.0062 -> 0.0042
+  0301 o_sharp=0.0235  gap +0.4515 -> +0.4737 (+0.0222)   sharp 0.0045 -> 0.0031
+
+corr(origin sharpness, e1->e2 gap change) = +0.616
+clips that got WORSE in epoch 2: 8/12 ; BETTER: 4/12
+output sharpness mean 0.0027 -> 0.0020 ; every clip fell: True
+output sharpness spread (stdev) 0.0014 -> 0.0009  (origin 0.0078)

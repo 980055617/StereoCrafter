@@ -1,0 +1,13 @@
+{
+ "14": {
+  "loss": 0.6049,
+  "enc_peak_GiB": 5.27,
+  "peak_alloc_GiB": 13.64,
+  "peak_reserved_GiB": 15.12,
+  "fwd_bwd_s": [
+   11.2,
+   11.2,
+   11.2
+  ]
+ }
+}

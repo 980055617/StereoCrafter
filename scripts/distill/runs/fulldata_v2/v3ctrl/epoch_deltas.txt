@@ -1,0 +1,10 @@
+v2 originattn e001     mean=0.5061 gap=+0.1103 sharp_ratio=0.593
+v2 originattn e002     mean=0.5160 gap=+0.1201 sharp_ratio=0.567
+v3 originattn e001     mean=0.7465 gap=+0.3507 sharp_ratio=0.240
+v3 originattn e002     mean=0.7434 gap=+0.3476 sharp_ratio=0.186
+
+v2 e001->e002: LPIPS gap +0.0098   sharp_ratio -0.026   (LR had decayed to 1e-6)
+v3 e001->e002: LPIPS gap -0.0031   sharp_ratio -0.054   (LR constant 1e-5)
+
+v3 train loss   ep1 0.5002 -> ep2 0.4249  (-0.0753)
+v2 train loss   ep1 0.5656 -> ep2 0.5157  (-0.0499)

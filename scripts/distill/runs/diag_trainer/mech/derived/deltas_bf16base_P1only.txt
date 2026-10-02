@@ -1,0 +1,37 @@
+origin safetensors dtype: {'torch.float16'}
+bf16 cast of the 15 tensors: ||W_bf16 - W_fp||/||W|| = 0.001680  (this is the floor every run's 'weight change' inherits when measured against the fp checkpoint)
+
+run             vs fp32 origin  vs bf16 origin  true/reported
+null                  0.002042        0.001160          0.568
+pos                   0.002420        0.001740          0.719
+null_hi5              0.002058        0.001188          0.577
+null_mid1             0.002134        0.001316          0.617
+null_low2             0.002059        0.001191          0.578
+pos_hi5               0.002499        0.001850          0.740
+pos_lognormal         0.002378        0.001683          0.708
+
+pairwise cosine of the TRUE training deltas (w.r.t. the bf16 starting point):
+                        null           pos      null_hi5     null_mid1     null_low2       pos_hi5 pos_lognormal
+null                   1.000        -0.002         0.630         0.506         0.338        -0.040         0.017
+pos                   -0.002         1.000        -0.018         0.005         0.010         0.844         0.742
+null_hi5               0.630        -0.018         1.000         0.365         0.113        -0.015         0.003
+null_mid1              0.506         0.005         0.365         1.000         0.209        -0.024         0.006
+null_low2              0.338         0.010         0.113         0.209         1.000         0.011         0.035
+pos_hi5               -0.040         0.844        -0.015        -0.024         0.011         1.000         0.643
+pos_lognormal          0.017         0.742         0.003         0.006         0.035         0.643         1.000
+
+for comparison, the same cosines measured against the fp32 checkpoint (what analyze_deltas.py printed):
+                        null           pos      null_hi5     null_mid1     null_low2       pos_hi5 pos_lognormal
+null                   1.000         0.571         0.879         0.825         0.783         0.537         0.588
+pos                    0.571         1.000         0.560         0.549         0.571         0.917         0.869
+null_hi5               0.879         0.560         1.000         0.773         0.704         0.543         0.578
+null_mid1              0.825         0.549         0.773         1.000         0.717         0.519         0.559
+null_low2              0.783         0.571         0.704         0.717         1.000         0.553         0.591
+pos_hi5                0.537         0.917         0.543         0.519         0.553         1.000         0.812
+pos_lognormal          0.588         0.869         0.578         0.559         0.591         0.812         1.000
+
+---- the random-perturbation control, re-measured against the bf16 starting point ----
+randpert_matched_null300   vs fp32 origin 0.002042   vs bf16 origin 0.002645
+null            step300    vs fp32 origin 0.002042   vs bf16 origin 0.001160
+=> the control was matched to null's *fp32-baseline* norm, so relative to the weights training actually started
+   from it was 2.28x LARGER than null's true movement -- and it was still harmless (LPIPS 0.4454 vs origin 0.4445).

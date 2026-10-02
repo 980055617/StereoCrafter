@@ -1,0 +1,6 @@
+v2 originattn_e001: n=12 origin=0.3958 model=0.5061 gap=+0.1103 sharp_ratio=0.593 improved=0/12 worst=+0.2926(0301) best=+0.0002(0147)
+   per-clip sharp ratio: 0042=0.54 0052=0.59 0125=0.52 0128=0.45 0141=0.55 0147=0.67 0170=0.55 0204=0.65 0225=0.65 0251=0.61 0259=0.88 0301=0.46
+   offset changed vs origin: none
+v2 originattn_e002: n=12 origin=0.3958 model=0.5160 gap=+0.1201 sharp_ratio=0.567 improved=0/12 worst=+0.3185(0301) best=+0.0005(0147)
+   per-clip sharp ratio: 0042=0.52 0052=0.57 0125=0.50 0128=0.43 0141=0.53 0147=0.65 0170=0.51 0204=0.61 0225=0.60 0251=0.58 0259=0.86 0301=0.42
+   offset changed vs origin: none

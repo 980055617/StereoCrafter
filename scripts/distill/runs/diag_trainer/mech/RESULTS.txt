@@ -1,0 +1,415 @@
+================================================================ TEST B: per-sampler-step x0-hat
+TEST B  clip 0301  windows [0, 33, 66] (mean over windows)  GT sharp 0.0452  cond sharp 0.0336
+--- sharp : rows = sampler step (sigma), cols = config ---
+step      sigma     origin    null300     pos300
+   0   700.0000     0.0173     0.0157     0.0080
+   1   286.5388     0.0181     0.0163     0.0079
+   2   102.9034     0.0194     0.0171     0.0079
+   3    30.9936     0.0203     0.0179     0.0079
+   4     7.2762     0.0197     0.0172     0.0085
+   5     1.1676     0.0217     0.0172     0.0125
+   6     0.0974     0.0231     0.0177     0.0140
+   7     0.0020     0.0231     0.0177     0.0140
+FINAL     0.0000     0.0231     0.0177     0.0140
+
+--- dfin : rows = sampler step (sigma), cols = config ---
+step      sigma     origin    null300     pos300
+   0   700.0000     0.3394     0.2372     0.5507
+   1   286.5388     0.3333     0.2308     0.5465
+   2   102.9034     0.3241     0.2211     0.5380
+   3    30.9936     0.3083     0.2063     0.5127
+   4     7.2762     0.2544     0.1711     0.4185
+   5     1.1676     0.0781     0.0728     0.0999
+   6     0.0974     0.0022     0.0023     0.0023
+   7     0.0020     0.0000     0.0000     0.0000
+FINAL     0.0000          -          -          -
+
+--- oor : rows = sampler step (sigma), cols = config ---
+step      sigma     origin    null300     pos300
+   0   700.0000     0.0001     0.0002     0.0000
+   1   286.5388     0.0001     0.0002     0.0000
+   2   102.9034     0.0001     0.0002     0.0000
+   3    30.9936     0.0001     0.0002     0.0000
+   4     7.2762     0.0001     0.0001     0.0000
+   5     1.1676     0.0001     0.0001     0.0000
+   6     0.0974     0.0001     0.0001     0.0000
+   7     0.0020     0.0001     0.0001     0.0000
+FINAL     0.0000          -          -          -
+
+[origin] final 8-step output sharpness per window: w0=0.0187(u8 0.0187)  w33=0.0230(u8 0.0230)  w66=0.0276(u8 0.0276)
+[null300] final 8-step output sharpness per window: w0=0.0145(u8 0.0144)  w33=0.0171(u8 0.0171)  w66=0.0217(u8 0.0216)
+[pos300] final 8-step output sharpness per window: w0=0.0109(u8 0.0109)  w33=0.0140(u8 0.0140)  w66=0.0171(u8 0.0171)
+
+---------------- derived: where the sampler adds detail
+TEST B derived: per-sampler-step sharpness INCREMENT (mean over windows 0/33/66, clip 0301)
+sigma at step k: 700 286.5 102.9 30.99 7.276 1.168 0.09739 0.002
+
+config     sharp@0  sharp@7 | per-step increment sharp[k]-sharp[k-1] for k=1..7
+origin      0.0173   0.0231 | +0.00080 +0.00123 +0.00091 -0.00061 +0.00204 +0.00140 +0.00001
+null300     0.0157   0.0177 | +0.00062 +0.00083 +0.00073 -0.00063 -0.00006 +0.00054 +0.00001
+pos300      0.0080   0.0140 | -0.00006 -0.00004 +0.00002 +0.00066 +0.00402 +0.00142 +0.00002
+
+share of the total step0->final sharpness gain contributed by each sampler step:
+config       total |     k=1     k=2     k=3     k=4     k=5     k=6     k=7
+origin     0.00578 |   13.8%   21.2%   15.7%  -10.5%   35.3%   24.2%    0.2%
+null300    0.00204 |   30.4%   40.8%   36.0%  -31.1%   -2.8%   26.4%    0.3%
+pos300     0.00603 |   -1.1%   -0.7%    0.3%   10.9%   66.7%   23.5%    0.4%
+
+latent-space one-step prediction energy (RMS of x0hat) and distance-to-final:
+latRMS    |     k=0     k=1     k=2     k=3     k=4     k=5     k=6     k=7
+origin    |   0.671   0.676   0.684   0.690   0.686   0.710   0.719   0.719
+null300   |   0.723   0.726   0.732   0.736   0.734   0.741   0.745   0.745
+pos300    |   0.500   0.505   0.514   0.517   0.518   0.567   0.584   0.584
+dfin      | 
+origin    |  0.3394  0.3333  0.3241  0.3083  0.2544  0.0781  0.0022  0.0000
+null300   |  0.2372  0.2308  0.2211  0.2063  0.1711  0.0728  0.0023  0.0000
+pos300    |  0.5507  0.5465  0.5380  0.5127  0.4185  0.0999  0.0023  0.0000
+
+reference: GT right-eye sharp 0.0452 ; warped cond sharp 0.0336
+
+---------------- derived: exact Euler information weights of the deployed 8-step Karras grid
+Exact unrolling of the deployed 8-step Euler recursion  y_{k+1} = r_k*y_k + (1-r_k)*x0hat_k ,  r_k = sigma_{k+1}/sigma_k
+=> y_7 (the latent from which the LAST one-step prediction, i.e. the output, is computed) is the linear mix
+   y_7 = (sigma_7/sigma_0)*y_0 + sum_k  c_k * x0hat_k ,  c_k = (1 - sigma_{k+1}/sigma_k) * sigma_7/sigma_{k+1}
+
+   k    sigma_k          c_k ||x0hat_k||rms      c_k*rms
+   0        700    4.123e-06       0.6711     0.000003
+   1      286.5    1.246e-05       0.6760     0.000008
+   2      102.9    4.509e-05       0.6842     0.000031
+   3      30.99    0.0002103       0.6900     0.000145
+   4      7.276     0.001438       0.6864     0.000987
+   5      1.168      0.01882       0.7101     0.013367
+   6    0.09739       0.9795       0.7186     0.703888
+ y_0        700    2.857e-06     700.6400     0.002002
+
+share of ||y_7|| contributed by each step's one-step prediction (and by the initial noise):
+   x0hat[k=0] (sigma      700):   0.0004%
+   x0hat[k=1] (sigma    286.5):   0.0012%
+   x0hat[k=2] (sigma    102.9):   0.0043%
+   x0hat[k=3] (sigma    30.99):   0.0201%
+   x0hat[k=4] (sigma    7.276):   0.1370%
+   x0hat[k=5] (sigma    1.168):   1.8555%
+   x0hat[k=6] (sigma  0.09739):  97.7037%
+   initial noise y_0          :   0.2779%
+
+=> the first FIVE sampler steps (sigma 700 ... 7.28) together carry 0.163% of y_7.
+   the output is built at k=5 (sigma 1.17), k=6 (sigma 0.097) and the final k=7 prediction.
+
+================================================================ P1 target decomposition (explains the sigma bisect)
+P1 off-trajectory v-target  v = (eps - sigma*x0_fixed)/sqrt(sigma^2+1)  decomposed per deployment sigma
+  deterministic power = sigma^2*E||x0||^2/(sigma^2+1) with E||x0||^2 = 0.6180 (measured VAE latents)
+  stochastic power    = E||eps||^2/(sigma^2+1) = 1/(sigma^2+1)
+
+   k      sigma       E||v||^2  det. fraction noise fraction | P1null loss1 P1null loss2    gn mean
+   0        700         0.6180       0.999997       0.000003 |      0.09568      0.09541     0.1652
+   1      286.5         0.6180       0.999980       0.000020 |      0.09460      0.08961     0.1266
+   2      102.9         0.6180       0.999847       0.000153 |      0.09074      0.08722     0.1290
+   3      30.99         0.6184       0.998318       0.001682 |      0.08801      0.08947     0.1485
+   4      7.276         0.6250       0.970341       0.029659 |      0.08553      0.08460     0.1302
+   5      1.168         0.7796       0.457232       0.542768 |      0.11458      0.11253     0.1723
+   6    0.09739         0.9964       0.005827       0.994173 |      0.67806      0.66306     0.2447
+   7      0.002         1.0000       0.000002       0.999998 |      1.00135      1.00139     0.0697
+
+Reading: the ONLY learnable structure in this objective is the deterministic x0 term.  Its share of the target
+variance is >=97% for sigma>=7.28, 46% at sigma 1.17, 0.58% at 0.097 and 0.00025% at 0.002.
+That is exactly the sigma-bisect result: null_hi5 (sigma 700..7.28) = 93% of the damage, sigma 1.17 alone 85%,
+sigma {0.097,0.002} harmless -- there the target is essentially pure eps and the loss stays pinned at ~1.0.
+
+================================================================ TEST A: on-trajectory runs
+run          g0_mean   gn_mean  gn_first    gn_max   rel_dW/W   loss_1st50  loss_last50
+a1                 0         0         0         0   0.000000            0            0
+a2              63.9     231.4     1.849      3100   0.002086      23256.6      9679.46
+a2x0           1.277    0.7322     1.848      3.91   0.001914     0.554152     0.390586
+a2_hi5         1.788     1.097     1.849     5.145   0.001900     0.489358      0.33668
+
+--- a1: per-trajectory-step loss and pre-clip grad norm, first half vs second half of the 300 steps ---
+ traj k      sigma    n     loss 1st     loss 2nd     gn 1st     gn 2nd
+      0        700   33            0            0          0          0
+      1      286.5   29            0            0          0          0
+      2      102.9   44            0            0          0          0
+      3      30.99   38            0            0          0          0
+      4      7.276   36            0            0          0          0
+      5      1.168   43            0            0          0          0
+      6    0.09739   38            0            0          0          0
+      7      0.002   39            0            0          0          0
+  pre-training target diagnostics (window 0):
+    step=0  sigma=700  v_teacher_rms=0.71
+    step=1  sigma=286.5  v_teacher_rms=0.7135
+    step=2  sigma=102.9  v_teacher_rms=0.7211
+    step=3  sigma=30.99  v_teacher_rms=0.7259
+    step=4  sigma=7.276  v_teacher_rms=0.7243
+    step=5  sigma=1.168  v_teacher_rms=0.7874
+    step=6  sigma=0.09739  v_teacher_rms=0.5686
+    step=7  sigma=0.002  v_teacher_rms=0.05573
+  numerics floor (rel diff vs the training-context batch-1 forward):
+    w0 step0: repeat 0.000e+00  deployed-context batch-1 0.000e+00  deployed CFG batch-2 cond half 1.205e-02
+    w0 step4: repeat 0.000e+00  deployed-context batch-1 0.000e+00  deployed CFG batch-2 cond half 1.742e-02
+    w0 step7: repeat 0.000e+00  deployed-context batch-1 0.000e+00  deployed CFG batch-2 cond half 1.893e-01
+    w11 step0: repeat 0.000e+00  deployed-context batch-1 0.000e+00  deployed CFG batch-2 cond half 1.362e-02
+    w11 step4: repeat 0.000e+00  deployed-context batch-1 0.000e+00  deployed CFG batch-2 cond half 2.201e-02
+    w11 step7: repeat 0.000e+00  deployed-context batch-1 0.000e+00  deployed CFG batch-2 cond half 1.514e-01
+
+--- a2: per-trajectory-step loss and pre-clip grad norm, first half vs second half of the 300 steps ---
+ traj k      sigma    n     loss 1st     loss 2nd     gn 1st     gn 2nd
+      0        700   33     0.443045     0.365079      1.065     0.7726
+      1      286.5   29     0.383455     0.362878     0.8661     0.7775
+      2      102.9   44     0.429204     0.356298      1.148     0.7923
+      3      30.99   38     0.446755     0.350033      1.291     0.6742
+      4      7.276   36     0.409628     0.369021     0.9615     0.9459
+      5      1.168   43     0.881406     0.654568      2.544      1.079
+      6    0.09739   38      66.2631      64.3186      35.44      35.12
+      7      0.002   39       163904       163004      910.6       2527
+  pre-training target diagnostics (window 0):
+    step=0  sigma=700  v_teacher_rms=0.71  v_gt_rms=0.7817  mse_teacher_vs_gt=0.5632  mse_weighted=0.5632
+    step=1  sigma=286.5  v_teacher_rms=0.7135  v_gt_rms=0.7817  mse_teacher_vs_gt=0.5683  mse_weighted=0.5683
+    step=2  sigma=102.9  v_teacher_rms=0.7211  v_gt_rms=0.7817  mse_teacher_vs_gt=0.5775  mse_weighted=0.5774
+    step=3  sigma=30.99  v_teacher_rms=0.7259  v_gt_rms=0.7824  mse_teacher_vs_gt=0.5819  mse_weighted=0.5813
+    step=4  sigma=7.276  v_teacher_rms=0.7243  v_gt_rms=0.7941  mse_teacher_vs_gt=0.5845  mse_weighted=0.5737
+    step=5  sigma=1.168  v_teacher_rms=0.7874  v_gt_rms=1.118  mse_teacher_vs_gt=1.046  mse_weighted=0.6035
+    step=6  sigma=0.09739  v_teacher_rms=0.5686  v_gt_rms=8.142  mse_teacher_vs_gt=65.7  mse_weighted=0.6172
+    step=7  sigma=0.002  v_teacher_rms=0.05573  v_gt_rms=392.9  mse_teacher_vs_gt=1.543e+05  mse_weighted=0.6174
+  numerics floor (rel diff vs the training-context batch-1 forward):
+    w0 step0: repeat 0.000e+00  deployed-context batch-1 0.000e+00  deployed CFG batch-2 cond half 1.205e-02
+    w0 step4: repeat 0.000e+00  deployed-context batch-1 0.000e+00  deployed CFG batch-2 cond half 1.742e-02
+    w0 step7: repeat 0.000e+00  deployed-context batch-1 0.000e+00  deployed CFG batch-2 cond half 1.893e-01
+    w11 step0: repeat 0.000e+00  deployed-context batch-1 0.000e+00  deployed CFG batch-2 cond half 1.362e-02
+    w11 step4: repeat 0.000e+00  deployed-context batch-1 0.000e+00  deployed CFG batch-2 cond half 2.201e-02
+    w11 step7: repeat 0.000e+00  deployed-context batch-1 0.000e+00  deployed CFG batch-2 cond half 1.514e-01
+
+--- a2x0: per-trajectory-step loss and pre-clip grad norm, first half vs second half of the 300 steps ---
+ traj k      sigma    n     loss 1st     loss 2nd     gn 1st     gn 2nd
+      0        700   33     0.438585     0.358839      1.049     0.6853
+      1      286.5   29     0.379051     0.357052     0.7335     0.8253
+      2      102.9   44     0.425276     0.350552      1.025     0.7421
+      3      30.99   38     0.441466     0.344751      1.342     0.7112
+      4      7.276   36     0.397479     0.356936     0.8433     0.8307
+      5      1.168   43     0.512775     0.382373      1.567       0.69
+      6    0.09739   38     0.632132     0.628077      0.317      0.516
+      7      0.002   39      0.65573     0.652794   0.002513    0.00564
+  pre-training target diagnostics (window 0):
+    step=0  sigma=700  v_teacher_rms=0.71  v_gt_rms=0.7817  mse_teacher_vs_gt=0.5632  mse_weighted=0.5632
+    step=1  sigma=286.5  v_teacher_rms=0.7135  v_gt_rms=0.7817  mse_teacher_vs_gt=0.5683  mse_weighted=0.5683
+    step=2  sigma=102.9  v_teacher_rms=0.7211  v_gt_rms=0.7817  mse_teacher_vs_gt=0.5775  mse_weighted=0.5774
+    step=3  sigma=30.99  v_teacher_rms=0.7259  v_gt_rms=0.7824  mse_teacher_vs_gt=0.5819  mse_weighted=0.5813
+    step=4  sigma=7.276  v_teacher_rms=0.7243  v_gt_rms=0.7941  mse_teacher_vs_gt=0.5845  mse_weighted=0.5737
+    step=5  sigma=1.168  v_teacher_rms=0.7874  v_gt_rms=1.118  mse_teacher_vs_gt=1.046  mse_weighted=0.6035
+    step=6  sigma=0.09739  v_teacher_rms=0.5686  v_gt_rms=8.142  mse_teacher_vs_gt=65.7  mse_weighted=0.6172
+    step=7  sigma=0.002  v_teacher_rms=0.05573  v_gt_rms=392.9  mse_teacher_vs_gt=1.543e+05  mse_weighted=0.6174
+  numerics floor (rel diff vs the training-context batch-1 forward):
+    w0 step0: repeat 0.000e+00  deployed-context batch-1 0.000e+00  deployed CFG batch-2 cond half 1.205e-02
+    w0 step4: repeat 0.000e+00  deployed-context batch-1 0.000e+00  deployed CFG batch-2 cond half 1.742e-02
+    w0 step7: repeat 0.000e+00  deployed-context batch-1 0.000e+00  deployed CFG batch-2 cond half 1.893e-01
+    w11 step0: repeat 0.000e+00  deployed-context batch-1 0.000e+00  deployed CFG batch-2 cond half 1.362e-02
+    w11 step4: repeat 0.000e+00  deployed-context batch-1 0.000e+00  deployed CFG batch-2 cond half 2.201e-02
+    w11 step7: repeat 0.000e+00  deployed-context batch-1 0.000e+00  deployed CFG batch-2 cond half 1.514e-01
+
+--- a2_hi5: per-trajectory-step loss and pre-clip grad norm, first half vs second half of the 300 steps ---
+ traj k      sigma    n     loss 1st     loss 2nd     gn 1st     gn 2nd
+      0        700   64      0.40299     0.340489     0.7902      1.056
+      1      286.5   60     0.412093     0.333319     0.9468       1.11
+      2      102.9   60     0.395915     0.342744     0.9464      1.251
+      3      30.99   50     0.434429     0.342335      1.211      1.479
+      4      7.276   66     0.414509     0.349899     0.9653      1.332
+  pre-training target diagnostics (window 0):
+    step=0  sigma=700  v_teacher_rms=0.71  v_gt_rms=0.7817  mse_teacher_vs_gt=0.5632  mse_weighted=0.5632
+    step=1  sigma=286.5  v_teacher_rms=0.7135  v_gt_rms=0.7817  mse_teacher_vs_gt=0.5683  mse_weighted=0.5683
+    step=2  sigma=102.9  v_teacher_rms=0.7211  v_gt_rms=0.7817  mse_teacher_vs_gt=0.5775  mse_weighted=0.5774
+    step=3  sigma=30.99  v_teacher_rms=0.7259  v_gt_rms=0.7824  mse_teacher_vs_gt=0.5819  mse_weighted=0.5813
+    step=4  sigma=7.276  v_teacher_rms=0.7243  v_gt_rms=0.7941  mse_teacher_vs_gt=0.5845  mse_weighted=0.5737
+    step=5  sigma=1.168  v_teacher_rms=0.7874  v_gt_rms=1.118  mse_teacher_vs_gt=1.046  mse_weighted=0.6035
+    step=6  sigma=0.09739  v_teacher_rms=0.5686  v_gt_rms=8.142  mse_teacher_vs_gt=65.7  mse_weighted=0.6172
+    step=7  sigma=0.002  v_teacher_rms=0.05573  v_gt_rms=392.9  mse_teacher_vs_gt=1.543e+05  mse_weighted=0.6174
+  numerics floor (rel diff vs the training-context batch-1 forward):
+    w0 step0: repeat 0.000e+00  deployed-context batch-1 0.000e+00  deployed CFG batch-2 cond half 1.205e-02
+    w0 step4: repeat 0.000e+00  deployed-context batch-1 0.000e+00  deployed CFG batch-2 cond half 1.742e-02
+    w0 step7: repeat 0.000e+00  deployed-context batch-1 0.000e+00  deployed CFG batch-2 cond half 1.893e-01
+    w11 step0: repeat 0.000e+00  deployed-context batch-1 0.000e+00  deployed CFG batch-2 cond half 1.362e-02
+    w11 step4: repeat 0.000e+00  deployed-context batch-1 0.000e+00  deployed CFG batch-2 cond half 2.201e-02
+    w11 step7: repeat 0.000e+00  deployed-context batch-1 0.000e+00  deployed CFG batch-2 cond half 1.514e-01
+
+---------------- checkpoints vs origin
+checkpoint                          bitwise==origin  #tensors differing  rel||dW||/||W||      max|dW|
+mech/a1/step100.pt                            False                  15       0.00168040    1.562e-02
+mech/a1/step200.pt                            False                  15       0.00168040    1.562e-02
+mech/a1/step300.pt                            False                  15       0.00168040    1.562e-02
+mech/a2/step100.pt                            False                  15       0.00205492    1.594e-02
+mech/a2/step200.pt                            False                  15       0.00234783    1.614e-02
+mech/a2/step300.pt                            False                  15       0.00267787    1.666e-02
+mech/a2x0/step100.pt                          False                  15       0.00202880    1.603e-02
+mech/a2x0/step200.pt                          False                  15       0.00229133    1.632e-02
+mech/a2x0/step300.pt                          False                  15       0.00254706    1.653e-02
+mech/a2_hi5/step100.pt                        False                  15       0.00203864    1.610e-02
+mech/a2_hi5/step200.pt                        False                  15       0.00230910    1.624e-02
+mech/a2_hi5/step300.pt                        False                  15       0.00253715    1.644e-02
+
+---------------- weight-delta magnitude and direction (corrected for the bf16 starting point)
+origin safetensors dtype: {'torch.float16'}
+bf16 cast of the 15 tensors: ||W_bf16 - W_fp||/||W|| = 0.001680  (this is the floor every run's 'weight change' inherits when measured against the fp checkpoint)
+
+run             vs fp32 origin  vs bf16 origin  true/reported
+null                  0.002042        0.001160          0.568
+pos                   0.002420        0.001740          0.719
+null_hi5              0.002058        0.001188          0.577
+null_mid1             0.002134        0.001316          0.617
+null_low2             0.002059        0.001191          0.578
+pos_hi5               0.002499        0.001850          0.740
+pos_lognormal         0.002378        0.001683          0.708
+a2                    0.002678        0.002086          0.779
+a2x0                  0.002547        0.001914          0.751
+a2_hi5                0.002537        0.001900          0.749
+
+pairwise cosine of the TRUE training deltas (w.r.t. the bf16 starting point):
+                        null           pos      null_hi5     null_mid1     null_low2       pos_hi5 pos_lognormal            a2          a2x0        a2_hi5
+null                   1.000        -0.002         0.630         0.506         0.338        -0.040         0.017         0.006         0.001        -0.038
+pos                   -0.002         1.000        -0.018         0.005         0.010         0.844         0.742         0.542         0.695         0.829
+null_hi5               0.630        -0.018         1.000         0.365         0.113        -0.015         0.003        -0.028        -0.028        -0.029
+null_mid1              0.506         0.005         0.365         1.000         0.209        -0.024         0.006         0.008         0.002        -0.018
+null_low2              0.338         0.010         0.113         0.209         1.000         0.011         0.035         0.016         0.033        -0.012
+pos_hi5               -0.040         0.844        -0.015        -0.024         0.011         1.000         0.643         0.549         0.732         0.909
+pos_lognormal          0.017         0.742         0.003         0.006         0.035         0.643         1.000         0.367         0.485         0.599
+a2                     0.006         0.542        -0.028         0.008         0.016         0.549         0.367         1.000         0.770         0.565
+a2x0                   0.001         0.695        -0.028         0.002         0.033         0.732         0.485         0.770         1.000         0.749
+a2_hi5                -0.038         0.829        -0.029        -0.018        -0.012         0.909         0.599         0.565         0.749         1.000
+
+for comparison, the same cosines measured against the fp32 checkpoint (what analyze_deltas.py printed):
+                        null           pos      null_hi5     null_mid1     null_low2       pos_hi5 pos_lognormal            a2          a2x0        a2_hi5
+null                   1.000         0.571         0.879         0.825         0.783         0.537         0.588         0.519         0.543         0.529
+pos                    0.571         1.000         0.560         0.549         0.571         0.917         0.869         0.739         0.834         0.907
+null_hi5               0.879         0.560         1.000         0.773         0.704         0.543         0.578         0.500         0.527         0.529
+null_mid1              0.825         0.549         0.773         1.000         0.717         0.519         0.559         0.498         0.520         0.513
+null_low2              0.783         0.571         0.704         0.717         1.000         0.553         0.591         0.519         0.553         0.536
+pos_hi5                0.537         0.917         0.543         0.519         0.553         1.000         0.812         0.738         0.851         0.950
+pos_lognormal          0.588         0.869         0.578         0.559         0.591         0.812         1.000         0.646         0.724         0.786
+a2                     0.519         0.739         0.500         0.498         0.519         0.738         0.646         1.000         0.864         0.745
+a2x0                   0.543         0.834         0.527         0.520         0.553         0.851         0.724         0.864         1.000         0.859
+a2_hi5                 0.529         0.907         0.529         0.513         0.536         0.950         0.786         0.745         0.859         1.000
+
+---------------- (for reference) the OLD fp32-baseline numbers analyze_deltas.py prints
+/home/kawa/master_project/StereoCrafter/scripts/distill/runs/diag_trainer/minift/analyze_deltas.py:13: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  sd = torch.load(os.path.join(d, f"step{step}.pt"), map_location="cpu"); return torch.cat([(sd[k].float() - orig[k]).flatten() for k in KEYS])
+run               rel||dW||/||W||    cos_vs_null     cos_vs_pos
+null                      0.00204          1.000          0.571
+pos                       0.00242          0.571          1.000
+a2                        0.00268          0.519          0.739
+a2x0                      0.00255          0.543          0.834
+a2_hi5                    0.00254          0.529          0.907
+
+================================================================ sampled LPIPS (score_clip.py, whole clip 0301)
+clip/config                           offset  leftPSNR    LPIPS    sharp
+--- 0301 GT ---                                          0.0000   0.0505
+0301_origin                          (-28,0)     46.77   0.4445   0.0235
+a1_step300_0301                      (-28,0)     46.77   0.4445   0.0235
+a2_step100_0301                      (-28,0)     46.42   0.9369   0.0052
+a2_step200_0301                      (-28,0)     46.42   0.9318   0.0050
+a2_step300_0301                      (-28,0)     46.42   0.9182   0.0051
+a2x0_step100_0301                    (-28,0)     46.42   0.9244   0.0067
+a2x0_step200_0301                    (-28,0)     46.42   0.9195   0.0056
+a2x0_step300_0301                    (-28,0)     46.42   0.9103   0.0055
+a2_hi5_step100_0301                  (-28,0)     46.42   0.7646   0.0118
+a2_hi5_step200_0301                  (-28,0)     46.42   0.7026   0.0141
+a2_hi5_step300_0301                  (-28,0)     46.42   0.7513   0.0128
+origin1step_0301                     (-28,0)     46.77   0.5395   0.0167
+null300_1step_0301                   (-28,0)     46.77   0.5514   0.0160
+pos300_1step_0301                    (-28,0)     46.42   0.8750   0.0054
+
+================================================================================================
+VERDICT (all numbers above; clip 0301, GPU 0, 2026-09-30)
+================================================================================================
+Sampled LPIPS / sharp (score_clip.py, whole clip):     origin 0.4445 / 0.0235   GT 0.0000 / 0.0505
+
+CONTROL A1 (on-trajectory, target = origin's own v at the same point)
+  gradient is EXACTLY 0 at all 24 probed trajectory points (the forward is bitwise deterministic:
+  repeat-forward rel diff 0.000e+00, deployed-context batch-1 vs training-context 0.000e+00),
+  loss and grad stay 0 for all 300 steps, weights never move, and the deployed 8-step inference
+  reproduces origin to 4 decimals: 0.4445 / 0.0235.
+  => the harness replays the deployed trajectory exactly, and 100% of P1-null's pre-clip grad norm
+     0.1485 was manufactured by its fixed-point-target construction.  A1 changed the inputs AND the
+     target at the same time, so A1 alone cannot say which of the two did it; the a2_hi5 vs pos_hi5
+     pair below isolates the TARGET as the operative factor.
+  => A1 cannot test the "Adam marches along flat directions" branch (zero gradient by construction).
+     That branch is refuted by the pre-existing controls instead: null_low2 moved the same distance
+     and was harmless, and randpert (2.28x LARGER than null's true movement once the bf16 baseline
+     is corrected, see below) was harmless.
+
+A2 (on-trajectory, target = v pointing at the real GT x0)        step100 / step200 / step300
+  a2      all 8 trajectory steps            LPIPS 0.9369 / 0.9318 / 0.9182   sharp 0.0052/0.0050/0.0051
+  a2x0    same, x0-space weighted loss      LPIPS 0.9244 / 0.9195 / 0.9103   sharp 0.0067/0.0056/0.0055
+  a2_hi5  only sigma 700..7.28 (well-posed) LPIPS 0.7646 / 0.7026 / 0.7513   sharp 0.0118/0.0141/0.0128
+  P1-pos  OFF-trajectory, same GT target    LPIPS 0.7727 / 0.6736 / 0.7075   sharp 0.0110/0.0145/0.0133
+  pos_hi5 OFF-trajectory, sigma 700..7.28   LPIPS         -  /   -   / 0.6777 sharp 0.0156
+  => ON-TRAJECTORY INPUTS DO NOT RESCUE A DETERMINISTIC POINT TARGET.
+     (a) sigma-matched comparison: a2_hi5 (on-traj, sigma 700..7.28) 0.7513 at step300 vs its matched
+         control pos_hi5 (off-traj, same sigma band) 0.6777 -- same order of damage, a2_hi5 slightly
+         worse; a2_hi5 is non-monotonic across checkpoints (0.7646/0.7026/0.7513) so the two are not
+         claimed equal.  The decisive number is the weight direction:
+             cos(a2_hi5, pos_hi5) = 0.909   cos(a2_hi5, pos) = 0.829   cos(a2_hi5, null) = -0.038
+         on-trajectory and off-trajectory GT-targeting find the SAME direction; the target, not the
+         input distribution, selects it.
+     (b) where the trajectory has already committed (sigma <= 0.1) the GT x0 is simply unreachable and
+         on-trajectory training is STRICTLY WORSE than off-trajectory: a2 (all 8) 0.9182 vs P1-pos
+         (all 8, off-traj) 0.7075.  There ||v_gt||rms goes 0.78 -> 8.1 -> 392.9 across sigma
+         700 -> 0.097 -> 0.002 and MSE(origin_v, v_gt) goes 0.56 -> 65.7 -> 1.54e5.
+         a2x0 removes that magnitude blowup (x0-space loss, per-sigma loss flat at 0.39-0.65) and is
+         equally damaged (0.9103), so it is not a conditioning/step-size artifact.
+
+TEST B (no training) -- what the collapse looks like inside the sampler
+  origin's one-step prediction x0-hat SHARPENS along the trajectory: 0.0173 -> 0.0231 (+33.5%).  CONFIRMED.
+  the null-trained model's x0-hat at sigma 700 is 0.0157, i.e. 9% BLURRIER than origin, not sharper.
+     the stated prediction "it learned to jump, so its high-sigma x0-hat is SHARPER" is FALSE.
+     refuted a second way by the 1-step sampler: origin 0.5395/0.0167 vs null300 0.5514/0.0160 --
+     null does not beat origin at 1 step.
+  what IS true: the null-trained model commits earlier (||x0hat_0 - x0hat_final||/||x0hat_final||
+     0.237 vs origin 0.339) and stops refining -- its total step0->final sharpness gain is 0.00204
+     vs origin's 0.00578, and at k=5 (sigma 1.17) origin adds 35.3% of its total gain while null
+     LOSES 2.8%.
+  the GT-trained model shows the textbook conditional-mean collapse: its x0-hat is FROZEN over the
+     first four steps (0.0062/0.0062/0.0062/0.0062 at window 0) and energy-shrunk (latent RMS 0.500
+     vs origin 0.671, -25%).
+  why a bad high-sigma x0-hat is harmless: unrolling the deployed Euler recursion exactly, the first
+     FIVE steps contribute 0.163% of y_7; x0hat[k=6] contributes 97.7%.  The deployed "8-step"
+     sampler is a 3-step sampler (sigma 1.17, 0.097, 0.002).  That is why the earlier weight-swap
+     "e1high" (trained tensors only at sigma 700/287/103) scored 0.4500 ~ origin.
+  how damage learned at sigmas that do not matter still reaches the output: the 15 trained tensors are
+     SHARED across all sigmas and the timestep enters as a continuous embedding (t = 0.25 ln sigma), so
+     a change fitted where the target is deterministic-and-learnable (sigma >= 7.28: >=97% of the
+     target's variance is the fixed x0 term) drags the sigma ~ 0.1-1 function along with it -- and that
+     is the function that forms the output.  Same reason null_hi5 (trained only at sigma 700..7.28)
+     reproduced 93% of null's damage, and a2_hi5 (same band, GT target) destroys the output at 0.7513.
+  the P1 target decomposition above makes the sigma bisect exact: the deterministic share of the
+     off-trajectory v-target is >=97% for sigma >= 7.28, 46% at 1.17, 0.58% at 0.097, 0.00025% at
+     0.002 -- at the last two the target is essentially pure eps, nothing is learnable (loss pinned at
+     ~1.0 start to finish) and training there is harmless.
+
+MEASUREMENT BUG FOUND IN THE PREVIOUS SESSION'S WEIGHT ANALYSIS
+  weights/StereoCrafter/unet_diffusers/*.safetensors are float16; training loads the UNet as bfloat16
+  and initialises the fp32 AdamW masters from the bf16 parameters.  analyze_deltas.py compared the
+  saved masters against the fp16 checkpoint, so every reported ||dW||/||W|| and every pairwise cosine
+  carried a constant bf16-cast vector of relative norm 0.001680.
+  true movement: null 0.00116 (reported 0.00204), pos 0.00174 (0.00242), null_low2 0.00119 (0.00206).
+  true cosines: cos(null,pos) = -0.002 (reported 0.571 -- that 0.571 was ENTIRELY the shared cast),
+                cos(null_hi5, null_low2) = 0.113 (reported 0.704).
+  => the harmful and the harmless directions are near-orthogonal, not "the same direction".
+  => raw weight-space cosine only discriminates once this baseline is fixed; with it fixed it
+     discriminates perfectly (GT-target runs cluster at 0.64-0.91, null-target runs at 0.11-0.63,
+     across families -0.04..0.03).
+
+SETUP CHOICES THE TASK ASKED TO BE STATED
+  - trajectory CACHED (not recomputed): all 13 windows of the deployed stride-11 grid x 8 sampler
+    steps = 104 points, held in host RAM, 537 MiB (9-ch cond-half UNet input bf16 + unscaled y_k fp32
+    + the captured CFG cond-half v).  13 windows, not "a handful", so the window cycle matches
+    P1-null's exactly.
+  - the TEACHER was RECOMPUTED batch-1 inside the training context rather than reusing the captured
+    batch-2 output, because bf16 batch-shape numerics differ by ~0.01 absolute; recomputing makes the
+    A1 objective exactly self-consistent (loss and gradient identically 0).
+
+FAITHFULNESS CAVEATS
+  - training runs the UNet at batch 1 on the CFG cond branch; deployment runs batch 2 (guidance 1.01
+    => -0.01*v_uncond + 1.01*v_cond).  The captured trajectory is the real batch-2 one; the teacher is
+    recomputed batch-1 in the training context so the A1 floor is exactly 0.
+  - deployed CFG batch-2 cond half vs batch-1: rel diff 1.2e-2 (sigma 700) .. 1.9e-1 (sigma 0.002,
+    small denominator; ~0.01 absolute throughout) -- pure bf16 batch-shape numerics.
+  - the training context adds gradient checkpointing + attention slicing (inherited from minift's
+    configure_unet_memory_features); measured to be BITWISE identical to the deployed context at
+    batch 1, so it is a non-issue.
+  - Test B sharpness is raw float on 3 windows; the published whole-clip numbers go through mp4v
+    (origin 0.0231 vs 0.0235, null300 0.0177 vs 0.0184, pos300 0.0140 vs 0.0133) -- same ordering.

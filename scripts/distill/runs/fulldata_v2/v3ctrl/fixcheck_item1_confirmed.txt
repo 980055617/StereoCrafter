@@ -1,0 +1,67 @@
+rank0 log: logs/20261001004054_rank0.log
+run dir : /mnt/ssd_data/stereocrafter_weights/GTfinetune_v3_originattn_control/MambaCrafter_20261001_004055/
+
+-- F: 8-frame windows (stage-3 override frames_chunk=8) --
+2026-10-01 00:40:55,642 [INFO] inpainting_train: Stage 3/3: 576x1024 576x1024 lr=1.00e-05 epochs=2
+2026-10-01 00:40:57,633 [INFO] inpainting_train: Preflight: checking stage crop 576x1024 on 0011_train.mp4
+2026-10-01 00:41:39,147 [INFO] inpainting_train: [ep 1/2] [vid 1/14] [b 10/10] step=10 loss=1.0068 time=30.897s elapsed=00:30 mem=4443/21064MB
+2026-10-01 00:42:10,885 [INFO] inpainting_train: [ep 1/2] [vid 2/14] [b 10/10] step=20 loss=0.3424 time=31.738s elapsed=01:02 mem=4443/21064MB
+-- F: ff chunking OFF (this line must be ABSENT; v2 had chunk_size=1 -> 14.3 s/step) --
+   occurrences: 0
+   (absent - good)
+-- F: cond_latent_scale = 1.0 (inference feeds cond latents raw) --
+2026-10-01 00:41:00,539 [INFO] inpainting_train: cond_latent_scale=1 (inference feeds the warped-frame latents raw, i.e. 1.0)
+-- F: 8-sigma training grid --
+2026-10-01 00:40:57,444 [INFO] inpainting_train: [sched][train][euler] num_steps=8 timestep_sampling=low_sigma low_sigma_prob=0.000 low_sigma_fraction=0.350 timesteps_head=[1.6377700567245483, 1.41446852684021, 1.1584476232528687, 0.8584452271461487, 0.4961509108543396, 0.03873134404420853, -0.5822638869285583, -1.553652048110962] sigmas_head=[700.0, 286.5388488769531, 102.90337371826172, 30.993608474731445, 7.276163101196289, 1.1675708293914795, 0.09738767892122269, 0.0020000000949949026] init_noise_sigma=tensor(700.0007)
+-- F: gradient_clipping present in the run's ds_config.json --
+   gradient_clipping = 1.0
+   zero_stage = 2 | grad_accum = 1
+-- F: freeze_base = 25 origin attn1 tensors trainable --
+2026-10-01 00:41:00,538 [INFO] inpainting_train: freeze_base: 25 Mamba-side tensors trainable, all other UNet parameters frozen
+   mamba adapters: [MambaAdapter][self-attn] total_replaced=0
+-- F: 27 clips, broken 0358 excluded --
+2026-10-01 00:41:05,004 [INFO] inpainting_train: Using 27 videos matched by scripts/distill/splits/train_gt27/*_train.mp4 (e.g., 0011_train.mp4, 0025_train.mp4, 0031_train.mp4...)
+2026-10-01 00:41:08,216 [INFO] inpainting_train: Balanced chunk assignment across ranks: 140, 130
+-- F: zero-weight rank padding line --
+   (printed at end of epoch)
+-- F: constant LR 1e-5 (scheduler_type none) --
+2026-10-01 00:41:04,977 [INFO] inpainting_train: [LR-AUDIT after restore] groups=[('base', 1e-05)] | scheduler=None last_epoch=None base_lrs=[]
+
+-- KILL CRITERIA: per-step seconds (time= is CUMULATIVE) and reserved MB --
+   step=10 loss=1.0068 cum_time=30.897s per_step=3.09s alloc=4443MB reserved=21064MB
+   step=20 loss=0.3424 cum_time=31.738s per_step=1.59s alloc=4443MB reserved=21064MB
+
+-- epoch summaries --
+   (none yet)
+
+=== KILL-CRITERION ASSESSMENT (recorded at 2026-10-01_00:42:26, step 10) ===
+per-step time : 30.897 s cumulative / 10 steps = 3.09 s/step   LIMIT 15 s  -> PASS (v2 was 14.3 s/step)
+torch reserved: 21064 MiB = 20.57 GiB                          LIMIT 22 GB -> PASS on a GiB reading
+torch peak alloc: 20828.7 MiB = 20.34 GiB, IDENTICAL across batches 1,2,3 (not growing)
+nvidia-smi used: 22192 / 22097 MiB of 24564 MiB = 90.3 % of the card, ~2.4 GB headroom
+JUDGEMENT: not killed. The trainer logs "MB" from bytes/2**20, i.e. MiB, so the reserved figure is
+20.57 GiB, under 22 on the natural reading; it is flat rather than growing; and the crop is a fixed
+576x1024 for every clip regardless of source resolution, so memory is resolution-independent and
+should not rise on the 3840x2160 clips. Reported as NEAR-THRESHOLD rather than silently passed:
+on a decimal-GB reading of the same number it is 22.09 GB, i.e. marginally over. The memory rose
+from v2's 9830-10510 MiB because 8-frame windows with ff chunking off is ~4x the activation of
+v2's 2-frame windows with chunk_size=1 -- i.e. this is the cost of two of the fixes, as intended.
+
+=== CORRECTION to the timing semantics ===
+`time=` on the step line is the wall time for the LAST 10-step log interval, NOT cumulative;
+`elapsed=` is cumulative. (At step 10 the two coincide, which is why v2's step-10 line reads
+time=143.429s elapsed=02:23.) Measured per-step:
+  v3 epoch 1: 140 batches in elapsed 06:50 = 410 s -> 2.93 s/step; interval times 28.7-31.5 s/10 steps
+  v2         : 143.4 s / 10 steps = 14.34 s/step
+  -> 4.7x faster, which is the ff_chunk_size 1 -> 0 fix.
+
+=== rank-padding confirmation (rank1 log, not rank0) ===
+Balanced chunk assignment across ranks: 140, 130  (rank0 14 videos, rank1 13 videos x 10 windows)
+"Rank 1 epoch 1: 10 of 140 steps were zero-weight (rank-padding duplicates / re-fed batches)"
+-> exactly the predicted 10 of 140; v2 duplicated one clip into 17 % of steps at FULL weight.
+
+=== memory, settled ===
+peak ALLOCATED flat at 20828.7 MiB (20.34 GiB) across every batch sampled in both epochs
+reserved 22126 MiB (21.61 GiB) after the epoch-1 checkpoint save
+nvidia-smi 23254 / 23159 MiB of 24564, constant across 6 samples over 30 s -> stable, not leaking
+host RAM 41 of 125 GB used, 83 GB available -> no host-OOM exposure (the hazard the rule guards)

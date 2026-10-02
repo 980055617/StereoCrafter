@@ -1,0 +1,6 @@
+clip/config                           offset  leftPSNR    LPIPS    sharp
+--- 0301 GT ---                                          0.0000   0.0505
+0301_origin                          (-28,0)     46.77   0.4445   0.0235
+null_step300_0301                    (-28,0)     46.77   0.5041   0.0184
+null_step300_0301_e1high             (-28,0)     46.77   0.4472   0.0230
+null_step300_0301_e1low              (-28,0)     46.77   0.5001   0.0187

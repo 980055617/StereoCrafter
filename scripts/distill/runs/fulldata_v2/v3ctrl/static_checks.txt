@@ -1,0 +1,54 @@
+v3 origin-attention control -- STATIC (pre-launch) verification, 2026-09-30_23:54:02
+==========================================================================
+
+## A. Registration fix (F3) verified numerically on BOTH resolution families
+    trainer crop: utils/training_batches.py:411-418 (center crop, computed from
+    _StreamingVideo.spatial_hw) + :101-104 (split at the raw half FIRST, then crop)
+    inference crop: inpainting_inference.py:63-65 (_center_crop_frames), same formula
+
+[0011] train mp4 frames=150 spatial_hw(tile)=(2176, 2176) half=(2200,2200)
+[0011] num windows (frames_chunk=8, overlap=3) = 30  first ranges=[(0, 8), (5, 13), (10, 18), (15, 23)]
+[0011] TRAIN batch  cond=(8, 3, 576, 1024) mask=(8, 1, 576, 1024) target=(8, 3, 576, 1024)
+[0011] INFER pre-crop warped=(161, 3, 2176, 2176)
+[0011] INFER post-crop warped=(161, 3, 576, 1024) mask=(161, 1, 576, 1024)
+[0011] frames compared T=8
+[0011] ALIGNED cond(warped) PSNR = 39.12 dB
+[0011] ALIGNED mask          PSNR = 91.52 dB
+[0011] offset scan (step 8px, +-64px) top5 (psnr, dy, dx): (38.32,0,0), (32.44,0,-8), (32.31,0,8), (29.46,0,-16), (29.34,0,16)
+[0011] psnr at (0,0) = 38.32 dB
+
+[0164] train mp4 frames=151 spatial_hw(tile)=(1024, 1920) half=(1080,1920)
+[0164] num windows (frames_chunk=8, overlap=3) = 30  first ranges=[(0, 8), (5, 13), (10, 18), (15, 23)]
+[0164] TRAIN batch  cond=(8, 3, 576, 1024) mask=(8, 1, 576, 1024) target=(8, 3, 576, 1024)
+[0164] INFER pre-crop warped=(151, 3, 1024, 1920)
+[0164] INFER post-crop warped=(151, 3, 576, 1024) mask=(151, 1, 576, 1024)
+[0164] frames compared T=8
+[0164] ALIGNED cond(warped) PSNR = 39.28 dB
+[0164] ALIGNED mask          PSNR = 44.91 dB
+[0164] offset scan (step 8px, +-64px) top5 (psnr, dy, dx): (38.16,0,0), (17.05,0,8), (17.00,0,-8), (16.47,-8,0), (16.47,8,0)
+[0164] psnr at (0,0) = 38.16 dB
+
+## B. UNFIXED train/inference mismatch: previous-chunk GT leaks into cond
+
+=== 0011 : does the trainer's cond overlap carry GT? ===
+window | PSNR(cond[:3] vs prev GT) | PSNR(cond[:3] vs raw warp) | GT-substituted?
+-- prob=1.0 noise=0 (mechanism)
+   w1           inf dB               25.12 dB        YES (GT leak)
+   w2           inf dB               24.25 dB        YES (GT leak)
+   w3           inf dB               24.56 dB        YES (GT leak)
+   w4           inf dB               23.59 dB        YES (GT leak)
+   w5           inf dB               23.70 dB        YES (GT leak)
+-- prob=1.0 noise=0.01 (config noise)
+   w1         40.01 dB               24.99 dB        YES (GT leak)
+   w2         40.00 dB               24.14 dB        YES (GT leak)
+   w3         40.00 dB               24.44 dB        YES (GT leak)
+   w4         40.01 dB               23.49 dB        YES (GT leak)
+   w5         40.01 dB               23.60 dB        YES (GT leak)
+-- prob=0.3 noise=0.01 (EXACT v3 config)
+   w1         25.12 dB                 inf dB        no (warp kept)
+   w2         24.25 dB                 inf dB        no (warp kept)
+   w3         40.00 dB               24.44 dB        YES (GT leak)
+   w4         23.59 dB                 inf dB        no (warp kept)
+   w5         23.70 dB                 inf dB        no (warp kept)
+
+0011: at the config's overlap_teacher_prob=0.3, 11/29 windows had their first 3 of 8 cond frames replaced by the previous window's real right-eye GT => 14.2% of all conditioned frames carry GT that inference never has.

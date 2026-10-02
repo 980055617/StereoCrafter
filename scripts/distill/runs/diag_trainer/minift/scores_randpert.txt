@@ -1,0 +1,4 @@
+clip/config                           offset  leftPSNR    LPIPS    sharp
+--- 0301 GT ---                                          0.0000   0.0505
+0301_origin                          (-28,0)     46.77   0.4445   0.0235
+randpert_matched_null300_0301        (-28,0)     46.77   0.4454   0.0234

@@ -1,0 +1,2 @@
+REALGT_SUMMARY originattn_v3_e001: n=12 origin=0.3958 model=0.7465 gap=+0.3507 worst=+0.5830 best=+0.1034 improved=0/12 sharp_ratio=0.240 0160=+0.5661
+REALGT_SUMMARY originattn_v3_e002: n=12 origin=0.3958 model=0.7434 gap=+0.3476 worst=+0.5970 best=+0.0868 improved=0/12 sharp_ratio=0.186 0160=+0.5802
