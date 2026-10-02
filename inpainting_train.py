@@ -353,6 +353,9 @@ def _train_main(
     mamba_gate_log_interval: int = 10,
     origin_attn_feature_loss_weight: float = 0.0,
     diffusion_loss_weight: float = 1.0,
+    freeze_base: bool = False,
+    freeze_keep: str = ".attn1.fwd.,.attn1.bwd.,.attn1.time_embed_proj.",   # name substrings kept trainable when freeze_base
+    max_chunks_per_video: int = 0,   # >0: train on a random subset of this many windows per video per epoch   # train ONLY the Mamba attn1 replacements (+time FiLM); everything else stays at its loaded weights
     debug_deepspeed_graph: bool = False,
     debug_deepspeed_param_scan: bool = False,
     mamba_diag_interval: int = 10,
@@ -2016,6 +2019,13 @@ def _train_main(
 
     _materialize_lazy_time_embed_proj_with_preflight()
 
+    if freeze_base:
+        _n_on = 0
+        for _name, _p in pipeline.unet.named_parameters():
+            _keep = any(m in _name for m in [k for k in str(freeze_keep).split(",") if k])
+            _p.requires_grad_(_keep); _n_on += int(_keep)
+        logger.info("freeze_base: %d Mamba-side tensors trainable, all other UNet parameters frozen", _n_on)
+
     # 学習対象パラメータのみ最適化
     trainable_params = [p for p in pipeline.unet.parameters() if p.requires_grad]
     mamba_param_ids: set[int] = set()
@@ -3626,6 +3636,9 @@ def _train_main(
                     teacher_regularization_video_path=teacher_regularization_video_path,
                     teacher_regularization_is_sbs=teacher_regularization_is_sbs,
                 )
+                if max_chunks_per_video and len(train_batches) > max_chunks_per_video:
+                    _sel = random.Random(dataset_split_seed * 1000003 + epoch * 7919 + video_idx).sample(range(len(train_batches)), max_chunks_per_video)
+                    train_batches._ranges = [train_batches._ranges[_i] for _i in sorted(_sel)]   # lazy iterable: subset its window list
                 local_batch_count = len(train_batches)
                 shared_batch_limit = _dist_max(local_batch_count)
                 printer.start_video(video_idx=video_idx, batches_total=shared_batch_limit)
