@@ -1,0 +1,21 @@
+clip     origin      s25    delta  sh_orig   sh_s25    sh_GT  regime
+0042     0.4337   0.4182  -0.0155   0.0080   0.0093   0.0070  origin ALREADY sharper than GT
+0052     0.4432   0.4368  -0.0064   0.0136   0.0142   0.0099  origin ALREADY sharper than GT
+0125     0.4768   0.4506  -0.0262   0.0094   0.0108   0.0114  origin under-sharp
+0128     0.4146   0.3928  -0.0218   0.0136   0.0159   0.0105  origin ALREADY sharper than GT
+0141     0.4709   0.4612  -0.0097   0.0049   0.0055   0.0036  origin ALREADY sharper than GT
+0147     0.5183   0.5176  -0.0007   0.0066   0.0070   0.0039  origin ALREADY sharper than GT
+0170     0.2617   0.2531  -0.0086   0.0164   0.0176   0.0323  origin under-sharp
+0204     0.2122   0.1950  -0.0172   0.0062   0.0074   0.0116  origin under-sharp
+0225     0.2837   0.2681  -0.0156   0.0113   0.0131   0.0132  origin under-sharp
+0251     0.3505   0.3418  -0.0087   0.0084   0.0093   0.0173  origin under-sharp
+0259     0.4397   0.4406  +0.0009   0.0311   0.0319   0.0450  origin under-sharp
+0301     0.4445   0.4083  -0.0362   0.0235   0.0296   0.0505  origin under-sharp
+
+12-clip mean: origin 0.3958 -> s25 0.3820   delta -0.0138
+improved 11/12   worst +0.0009   best -0.0362   mean sharp ratio 1.127
+corr(log2(GT_sharp/origin_sharp), LPIPS delta) = -0.320   (negative = under-sharp clips gain more)
+over-sharp  ['0042', '0052', '0128', '0141', '0147']  mean delta -0.0108
+under-sharp ['0125', '0170', '0204', '0225', '0251', '0259', '0301']  mean delta -0.0159
+
+0160 (13th clip, leftPSNR fell 46.21->42.69 = mp4v codec bleed, treat as contaminated): origin 0.4387 -> s25 0.4426

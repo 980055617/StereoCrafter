@@ -1,0 +1,37 @@
+clip/config                           offset  leftPSNR    LPIPS    sharp    rPSNR   nf
+--- 0042 GT ---                                          0.0000   0.0070
+0042_mstudent2_step800_deliv_ll    (-12,-12)     40.02   0.4218   0.0102   17.180   38
+ROW clip=0042 tag=0042_mstudent2_step800_deliv_ll dy=-12 dx=-12 leftPSNR=40.0232 lpips=0.421762 sharp=0.010242 gtSharp=0.007023 rightPSNR=17.1805 n=38 path=outputs/beyond_distil_mamba_scaled/clips/0042_mstudent2_step800_deliv_ll/0042_inpainting_results_sbs.mkv
+--- 0052 GT ---                                          0.0000   0.0099
+0052_mstudent2_step800_deliv_ll    (-12,-12)     40.70   0.4395   0.0138   13.149   38
+ROW clip=0052 tag=0052_mstudent2_step800_deliv_ll dy=-12 dx=-12 leftPSNR=40.6982 lpips=0.439509 sharp=0.013776 gtSharp=0.009881 rightPSNR=13.1495 n=38 path=outputs/beyond_distil_mamba_scaled/clips/0052_mstudent2_step800_deliv_ll/0052_inpainting_results_sbs.mkv
+--- 0125 GT ---                                          0.0000   0.0114
+0125_mstudent2_step800_deliv_ll    (-12,-12)     40.46   0.4655   0.0107   16.499   38
+ROW clip=0125 tag=0125_mstudent2_step800_deliv_ll dy=-12 dx=-12 leftPSNR=40.4643 lpips=0.465514 sharp=0.010662 gtSharp=0.011358 rightPSNR=16.4987 n=38 path=outputs/beyond_distil_mamba_scaled/clips/0125_mstudent2_step800_deliv_ll/0125_inpainting_results_sbs.mkv
+--- 0128 GT ---                                          0.0000   0.0105
+0128_mstudent2_step800_deliv_ll    (-12,-12)     39.75   0.3882   0.0162   18.137   38
+ROW clip=0128 tag=0128_mstudent2_step800_deliv_ll dy=-12 dx=-12 leftPSNR=39.7484 lpips=0.388215 sharp=0.016223 gtSharp=0.010493 rightPSNR=18.1369 n=38 path=outputs/beyond_distil_mamba_scaled/clips/0128_mstudent2_step800_deliv_ll/0128_inpainting_results_sbs.mkv
+--- 0141 GT ---                                          0.0000   0.0036
+0141_mstudent2_step800_deliv_ll    (-12,-12)     40.09   0.4681   0.0059   15.473   38
+ROW clip=0141 tag=0141_mstudent2_step800_deliv_ll dy=-12 dx=-12 leftPSNR=40.0934 lpips=0.468063 sharp=0.005939 gtSharp=0.003613 rightPSNR=15.4732 n=38 path=outputs/beyond_distil_mamba_scaled/clips/0141_mstudent2_step800_deliv_ll/0141_inpainting_results_sbs.mkv
+--- 0147 GT ---                                          0.0000   0.0039
+0147_mstudent2_step800_deliv_ll    (-12,-12)     40.40   0.5244   0.0069   15.358   38
+ROW clip=0147 tag=0147_mstudent2_step800_deliv_ll dy=-12 dx=-12 leftPSNR=40.4039 lpips=0.524394 sharp=0.006935 gtSharp=0.003901 rightPSNR=15.3577 n=38 path=outputs/beyond_distil_mamba_scaled/clips/0147_mstudent2_step800_deliv_ll/0147_inpainting_results_sbs.mkv
+--- 0170 GT ---                                          0.0000   0.0323
+0170_mstudent2_step800_deliv_ll      (-28,0)     39.79   0.2446   0.0177   16.912   38
+ROW clip=0170 tag=0170_mstudent2_step800_deliv_ll dy=-28 dx=0 leftPSNR=39.7902 lpips=0.244619 sharp=0.017661 gtSharp=0.032309 rightPSNR=16.9118 n=38 path=outputs/beyond_distil_mamba_scaled/clips/0170_mstudent2_step800_deliv_ll/0170_inpainting_results_sbs.mkv
+--- 0204 GT ---                                          0.0000   0.0116
+0204_mstudent2_step800_deliv_ll      (-28,0)     41.16   0.1867   0.0077   19.415   38
+ROW clip=0204 tag=0204_mstudent2_step800_deliv_ll dy=-28 dx=0 leftPSNR=41.1620 lpips=0.186734 sharp=0.007719 gtSharp=0.011577 rightPSNR=19.4154 n=38 path=outputs/beyond_distil_mamba_scaled/clips/0204_mstudent2_step800_deliv_ll/0204_inpainting_results_sbs.mkv
+--- 0225 GT ---                                          0.0000   0.0132
+0225_mstudent2_step800_deliv_ll      (-28,0)     40.93   0.2587   0.0134   15.857   38
+ROW clip=0225 tag=0225_mstudent2_step800_deliv_ll dy=-28 dx=0 leftPSNR=40.9278 lpips=0.258676 sharp=0.013372 gtSharp=0.013156 rightPSNR=15.8566 n=38 path=outputs/beyond_distil_mamba_scaled/clips/0225_mstudent2_step800_deliv_ll/0225_inpainting_results_sbs.mkv
+--- 0251 GT ---                                          0.0000   0.0173
+0251_mstudent2_step800_deliv_ll      (-28,0)     41.23   0.3355   0.0096   18.469   38
+ROW clip=0251 tag=0251_mstudent2_step800_deliv_ll dy=-28 dx=0 leftPSNR=41.2340 lpips=0.335513 sharp=0.009642 gtSharp=0.017307 rightPSNR=18.4686 n=38 path=outputs/beyond_distil_mamba_scaled/clips/0251_mstudent2_step800_deliv_ll/0251_inpainting_results_sbs.mkv
+--- 0259 GT ---                                          0.0000   0.0450
+0259_mstudent2_step800_deliv_ll      (-28,0)     40.72   0.4357   0.0332   13.214   38
+ROW clip=0259 tag=0259_mstudent2_step800_deliv_ll dy=-28 dx=0 leftPSNR=40.7219 lpips=0.435708 sharp=0.033213 gtSharp=0.044964 rightPSNR=13.2143 n=38 path=outputs/beyond_distil_mamba_scaled/clips/0259_mstudent2_step800_deliv_ll/0259_inpainting_results_sbs.mkv
+--- 0301 GT ---                                          0.0000   0.0505
+0301_mstudent2_step800_deliv_ll      (-28,0)     40.25   0.3965   0.0285   15.083   38
+ROW clip=0301 tag=0301_mstudent2_step800_deliv_ll dy=-28 dx=0 leftPSNR=40.2464 lpips=0.396496 sharp=0.028548 gtSharp=0.050529 rightPSNR=15.0831 n=38 path=outputs/beyond_distil_mamba_scaled/clips/0301_mstudent2_step800_deliv_ll/0301_inpainting_results_sbs.mkv

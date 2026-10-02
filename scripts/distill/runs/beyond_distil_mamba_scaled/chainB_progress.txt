@@ -1,0 +1,16 @@
+waiting for pass B (bdm-chain5c) to release GPU 1 ... 12:34:44
+GPU 1 free 13:26:45
+DEV_BASELINES_DONE 14:02:57
+waiting for scripts/distill/runs/beyond_distil_mamba_scaled/mstudent2/step200.pt ... 14:02:57
+RUNG_200_DONE 14:15:07
+waiting for scripts/distill/runs/beyond_distil_mamba_scaled/mstudent2/step400.pt ... 14:15:07
+RUNG_400_DONE 14:27:14
+waiting for scripts/distill/runs/beyond_distil_mamba_scaled/mstudent2/step800.pt ... 14:27:14
+RUNG_800_DONE 14:39:26
+waiting for scripts/distill/runs/beyond_distil_mamba_scaled/mstudent2/step1200.pt ... 14:39:26
+RUNG_1200_DONE 14:51:38
+waiting for scripts/distill/runs/beyond_distil_mamba_scaled/mstudent2/step1600.pt ... 14:51:38
+RUNG_1600_DONE 15:03:41
+waiting for scripts/distill/runs/beyond_distil_mamba_scaled/mstudent2/step2000.pt ... 15:03:41
+RUNG_2000_DONE 15:15:38
+CHAINB_DONE 15:15:38

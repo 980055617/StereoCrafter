@@ -1,0 +1,507 @@
+================================================================================
+MAMBA-SIDE BEYOND-DISTIL -- option (A): keep the shipped 5-slot Mamba and re-run
+the step-distillation objective with the MAMBA blocks' parameters as the
+trainable set.  GPU 1, 2026-10-01.
+================================================================================
+VERDICT: MAMBA-SIDE DISTILLATION WORKS: captured 127.3% of the Mamba+s25 gain
+         (4-clip set 0301/0204/0052/0147, lossless, deployed config)
+
+Sampled at the DEPLOYED config (8 steps, guidance 1.01) the Mamba student
+captures 127.3 % of the Mamba-side s25 headroom on the 4-clip set -- 0.4001 -> 0.3822 against mamba+s25's 0.3861 -- i.e. it does
+not merely reach the 25-step quality, it BEATS it at deployed cost while keeping
+the shipped 5-slot Mamba and therefore the shipped speed.  It also beats the
+origin-side student (0.3875) and deployed origin (0.4035).  All four clips
+improve on the shipped Mamba; both trained clips by far more than the 0.010 bar
+(0301 -0.0422, 0204 -0.0155) and both held-out clips improve (0052 -0.0108,
+0147 -0.0031).  No clip loses sharpness.  OPTION (A) IS NOW THE BETTER
+DELIVERABLE.
+  Deliverable: scripts/distill/runs/beyond_distil_mamba/mstudent1/step600.pt
+  (30 tensors, up_blocks.3.attentions.{0,1,2}.transformer_blocks.0.attn1
+   .{fwd.core.*, time_embed_proj.*}), selected by SAMPLED LPIPS, never by loss.
+  THE ONE CAVEAT, stated up front: on 0147 -- the most over-sharp clip in the
+  suite (origin is already 1.6x GT sharpness) -- step600 over-sharpens and gives
+  back most of the gain (54.4 % of headroom, sharpness 1.144x mamba vs s25's
+  1.073x).  step400 is the conservative alternative there (94.7 %, 1.113x) at a
+  lower 4-clip mean (110.4 %).  Unlike the origin-side student, this one is MORE
+  aggressive than s25 where over-sharpening is the risk, not less.
+  12 CLIPS, step600: 12/12 improve on the shipped Mamba, mean 0.3927 -> 0.3766
+  (-0.0161); HELD-OUT ONLY (n=10, the honest generalisation number)
+  0.40844 -> 0.39493 = -0.01350, which is 1.28x the origin-side student's
+  -0.01055 on the same ten clips.  At deployed 8-step cost this also beats
+  25-STEP ORIGIN SAMPLING (12-clip 0.3786) by -0.0020 at 1/2.4 of its cost.
+  SPEED: option (B) forfeits ~60 % of option (A)'s attn1 saving at every
+  resolution measured (576x1024 -28.8 % for A vs -11.3 % for B; Full-HD
+  1024x1920 -63.7 % vs -26.8 %), so (A) now wins on BOTH axes.
+  FULL-SCALE COST ~35.2 GPU-h for all 333 clips, ~14.3 GPU-h for the
+  recommended 40-clip subsample.
+
+Directory: scripts/distill/runs/beyond_distil_mamba/
+Video outputs: outputs/beyond_distil_mamba/            (one NEW dir per run, nothing overwritten)
+Reused, unmodified: scripts/distill/runs/skeptic1/{infer_ll_hook.py, oracle_mamba_v1.py}
+                    scripts/distill/runs/fulldata_v2/beyond4/{infer_lossless.py, score_clip_ll.py}
+Adapted copies:     bdlib.py (verbatim copy), train_beyond_mamba.py (from beyond_distil/train_beyond.py),
+                    verify_mamba_v1.py (from target_check.py), chain*.sh
+New:                mmlib.py (the Mamba pipe + trainable-set selector)
+
+ALL quality numbers are LOSSLESS (FFV1) real-GT LPIPS from
+scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py with SCORE_STEP=4.
+No mp4v row appears anywhere in this file.
+
+--------------------------------------------------------------------------------
+1. DECISION 1 -- THE TRAINABLE SET
+   scripts/distill/runs/beyond_distil_mamba/verify_0301_2/verify.json
+--------------------------------------------------------------------------------
+The shipped checkpoint light_lvl0_fulldata333_v2_8k_mamba_only.pt (md5
+e9c232878319d041680e7fb3be74bf10, VERIFIED, never written to) carries 95 tensors
+= 8,038,555 params over 5 slots.  Per slot the module actually holds FOUR groups,
+of which only two are ever evaluated at the deployed settings:
+
+  attn1.fwd.core.*        393,935  EVALUATED   (MAMBA_BIDIRECTIONAL_MODE=fwd)
+  attn1.time_embed_proj.* 819,840  EVALUATED   (FiLM gamma/beta on the UNet time embedding)
+  attn1.bwd.core.*        393,935  never evaluated in fwd mode
+  attn1.origin_attn.*     409,920  never evaluated at mamba_gate 1.0
+  attn1.mamba_gate             1   a buffer, not a parameter
+
+CHOSEN: the three up_blocks.3 slots' evaluated tensors = 30 tensors, 3,641,325
+params (fwd.core 1,181,805 + time_embed_proj 2,459,520).  Reasons:
+  * LIKE FOR LIKE.  The origin-side run trained the 15 attn1 tensors of exactly
+    these three slots (1,229,760 params).  Same slots, same steps, same recipe,
+    so the two students are directly comparable.
+  * time_embed_proj is IN ON PURPOSE.  It is a FiLM on the UNet time embedding,
+    i.e. a genuinely PER-STEP knob, and the objective is a different function at
+    every step k.  The origin-side attention had no time input at all and could
+    only learn one sigma-averaged correction; the Mamba block can learn three.
+    Because it is also 2.46M of the 3.64M params and starts far from zero only
+    after the shipped distillation, the ABSOLUTE ||dW|| is reported per group in
+    section 5 -- an all-FiLM solution would sit next to the step-length-rescale
+    family that beyond_distil section F already ruled out (86.6 % off-direction
+    at k=4), so it must be visible rather than hidden in a relative number.
+  * bwd.* and origin_attn.* are EXCLUDED because they are dead at deployment;
+    verify_mamba_v1 control 5 confirms they receive NO gradient (0 tensors with
+    a non-None .grad after a full backward).
+  * MEMORY: measured peak 15.26 GiB for the 3-step accumulated backward with the
+    deployed gradient checkpointing on -- essentially identical to the
+    origin-side run's 15.24 GiB, because down/mid stay outside the autograd
+    graph either way.
+
+--------------------------------------------------------------------------------
+2. DECISION 2 -- SHOULD THE TWO down_blocks.0 SLOTS ALSO BE TRAINED?  NO.
+--------------------------------------------------------------------------------
+Not a quality judgement, a hard constraint.  With trainable parameters in
+up_blocks.3 the backward stops there and the whole down/mid stack never enters
+the autograd graph; that is why both the origin-side run and this one peak at
+~15.25 GiB.  Put trainable parameters in down_blocks.0 and the backward has to
+traverse the ENTIRE UNet, and the 14-frame 576x1024 window then does not fit in
+24 GB: the all-5-slot step-0 backward OOMs (see verify.json slot_grad_all5_error
+and, in a clean process, verify_0301_all5.log / chain3.log).
+
+A gradient-norm-per-slot comparison was deliberately NOT used to make this call:
+AdamW is scale-invariant per parameter, so it normalises away exactly the
+quantity such a comparison would rank, and the norms are confounded by parameter
+count.  The measured constraint is the decision.
+
+--------------------------------------------------------------------------------
+3. PHASE 0 -- THE CONSTRUCTION CONTROLS ON THE MAMBA MODEL.  ALL PASS.
+   log  scripts/distill/runs/beyond_distil_mamba/verify_0301.log
+   json scripts/distill/runs/beyond_distil_mamba/verify_0301_2/verify.json
+--------------------------------------------------------------------------------
+0  FIDELITY of the constructed pipe.  This is the control the origin-side run did
+   not need and this one cannot do without: attn1.time_embed_proj is created
+   LAZILY and ZERO-initialised, and a zero FiLM is the identity, so a silently
+   dropped time_embed_proj yields a different, WEAKER model that still passes
+   every algebra / M=1 / input-reconstruction control, because teacher and
+   student would both be the phantom.  Asserted and passed:
+     ckpt md5                       e9c232878319d041680e7fb3be74bf10
+     gated modules                  5 (down_blocks.0.{0,1}, up_blocks.3.{0,1,2})
+     mamba_gate / reference         1.0 / reference_disabled=True on all five
+     materialized time_embed_proj   5, every one with |w|max > 0
+                                    (0.4375, 0.1758, 0.1494, 0.1777, 0.1221)
+     load_state_dict                95 tensors, 0 unexpected, 0 absent,
+                                    0 mismatched after the fp32->bf16 round trip
+                                    (missing=1428 is the rest of the UNet, which
+                                    correctly keeps the base StereoCrafter weights)
+
+1  PIXEL EQUALITY WITH THE SHIPPED ARTIFACT.  Window 0 of the deployed loop is
+   emitted unblended (i == 0, overlap_prev_weight 0), so the right half of frames
+   0..13 of the shipped lossless run must equal this harness's own decode of its
+   window-0 capture.  It does, BYTE FOR BYTE:
+     0 differing pixels out of 24,772,608   maxabs 0
+     md5 a6e20ef113ea64e7676404687dfb1e0d on both sides
+     ref outputs/skeptic1_stack/clips/0301_mamba_ll/0301_inpainting_results_sbs.mkv
+   So the model this run trains against IS the deployed 5-slot Mamba, not a
+   look-alike.
+
+2  SCHEDULER ALGEBRA against the live Mamba trajectory (clip 0301, window 0):
+     9-ch UNet input rebuilt from y_k alone : max abs diff 0.000e+00  (BIT-EXACT, all 8 steps)
+     x0hat from the CFG-combined v          : 3.98e-3 (k=0) .. 2.3e-4 (k=6) .. 4.7e-7 (k=7)
+     Euler step recomputed vs the next y    : 1.68e-3 at k<=3, 2.2-2.9e-3 at k=4,5
+                                              (the bf16 storage floor; the
+                                              origin-side run quotes 1.7e-3)
+
+3  THE M=1 CONTROL, reported for what it is.  With v0 supplied, fine_step at M=1
+   makes ZERO UNet calls, so this control validates bdlib's x0hat/euler algebra
+   against the live scheduler and NOT the Mamba sub-integration.  It is therefore
+   tighter than the bf16 floor: max |trunc_M1| over k<=6 is 3.9e-7 (exactly 0 at
+   every k except k=4).  What validates the Mamba sub-integration is the FULL
+   ORACLE in section 4.
+   Per-coarse-step truncation error the target removes (clip 0301, window 0):
+     k  sigma      trunc M1    trunc M4    dx0 M4
+     0  700        0.00e+00    1.77e-05    1.22e-02
+     1  286.54     0.00e+00    6.50e-05    1.47e-02
+     2  102.90     0.00e+00    2.68e-04    1.66e-02
+     3   30.99     0.00e+00    2.31e-03    3.05e-02
+     4    7.276    3.91e-07    4.23e-02    9.92e-02
+     5    1.168    0.00e+00    1.23e-01    1.42e-01
+     6    0.0974   0.00e+00    1.70e-02    1.74e-02
+     7    0.002    0.00e+00    1.69e-05    1.69e-05
+   Same shape as the origin-side table (k4 4.7e-2, k5 1.3e-1, k6 1.7e-2): the
+   work is at sigma 7.28 and 1.17, k<=3 is at the floor, k=7 is nothing.  So the
+   step subset {4,5,6} and the MEASURED gains {0.7177, 0.8926, 0.9905} carry over
+   unchanged, as the protocol prescribes -- section D was NOT re-derived.
+
+4  eval() vs train(): identical to the last printed digit (1.373030e-01 both), so
+   the capture (eval) and the trainer (train) see the same function and no part of
+   the residual is a mode artefact.
+
+5  BACKWARD SMOKE with the deployed gradient checkpointing (non-reentrant) on the
+   Mamba2 mem-eff path -- the one thing here with no precedent in the origin-side
+   run.  It works.  Peak 15.26 GiB.  Every one of the 30 trainable tensors
+   receives a gradient; the 40 bwd.* and 25 origin_attn.* tensors receive none.
+
+STEP-0 GRADIENT NORM (pre-update, pre-clip, at the SHIPPED Mamba weights) -- the
+number that must be nonzero because Euler truncation error is exactly what is
+being removed:
+     step 4 (sigma 7.276) : ||g|| 1.64739   (fwd.core 0.2178 / FiLM 1.6329)
+     step 5 (sigma 1.168) : ||g|| 5.34386   (fwd.core 0.6897 / FiLM 5.2992)
+     step 6 (sigma 0.0974): ||g|| 0.15447   (fwd.core 0.0155 / FiLM 0.1537)
+     relative target error at the shipped weights: k4 9.81e-2, k5 1.373e-1, k6 1.74e-2
+(The origin-side references are 0.104196 / 0.156063 / 0.00382336.  The Mamba-side
+norms are ~10-35x larger and the FiLM group carries ~99 % of them.  Gradient norm
+is not movement under AdamW, which is scale-invariant per parameter -- section 5's
+absolute ||dW|| per group is the quantity that says where the solution went.)
+
+--------------------------------------------------------------------------------
+4. THE GATE -- the oracle on the MAMBA model lands on mamba+s25.  PASSED.
+   scores scripts/distill/runs/beyond_distil_mamba/SCORES_4CLIP_mstudent1.txt
+   runs   outputs/beyond_distil_mamba/clips/{0301_mamba_oracleALL_ll,
+          0204_mamba_oracle456_ll, 0147_mamba_oracle456_ll}/
+          + the pre-existing skeptic1 0301/0052 oracle456 rows
+--------------------------------------------------------------------------------
+This is the control that actually validates bdlib.fine_step's repeated MAMBA
+calls at intermediate sigmas; the M=1 control of section 3 makes zero UNet calls
+and cannot.  The FULL oracle (substitute the fine sub-integration at all 8 steps,
+32 UNet calls) was run on 0301 specifically for this:
+
+  clip  mamba 5-slot   mamba+s25   oracle(all 8)   oracle456   UNet calls
+  0301      0.4253       0.3978        0.3960        0.3958     8 / 25 / 32 / 17
+  0204      0.2022       0.1884           --         0.1886
+  0052      0.4467       0.4375           --         0.4372
+  0147      0.5264       0.5206           --         0.5203
+
+The all-8-step oracle lands on 0.3960, i.e. ON mamba+s25 (0.3978) and NOWHERE
+NEAR mamba-deployed (0.4253), and substituting only k=4,5,6 reproduces it to
+0.0002 for 17 UNet calls instead of 32 -- an independent Mamba-side confirmation
+that k<=3 and k=7 contribute nothing, by a different route than the origin-side
+perturbation ablation.  leftPSNR is identical on every row of every clip
+(0301 40.25, 0204 41.16, 0052 40.70, 0147 40.40), so no delta anywhere in this
+file is codec bleed.
+So the headroom the task said was "already measured" is confirmed, and the
+step subset {4,5,6} with gains {0.7177, 0.8926, 0.9905} was reused unchanged --
+section D was NOT re-derived on the Mamba model, as the protocol instructs.
+
+--------------------------------------------------------------------------------
+5. TRAINING
+   dir scripts/distill/runs/beyond_distil_mamba/mstudent1/
+       {meta.json, post.json, train_log.csv, step{100,200,400,600,800}.pt}
+   log scripts/distill/runs/beyond_distil_mamba/train_mstudent1.log
+   code train_beyond_mamba.py  (driver chain1_train.sh)
+--------------------------------------------------------------------------------
+Recipe IDENTICAL to the origin-side smoke1 run, deliberately, so the two
+students are comparable: clips 0301 + 0204, the full deployed stride-11 window
+grid (13 windows each, 26 windows, 78 trajectory points), step subset {4,5,6},
+weights = the MEASURED section-D end-to-end sensitivity {4:0.7177, 5:0.8926,
+6:0.9905}, residual in x0 space, fp32 masters / bf16 forward, AdamW lr 1e-5
+betas (0.9,0.999) wd 0, grad clip 1.0, 800 steps, seed 1234, M=4 Karras
+substeps, batch-1 cond forward with cached frozen uncond (the same 1 % CFG
+approximation), accumulation over ALL of {4,5,6} every optimiser step, and NO
+on-policy refresh.  Only the model and the trainable set differ.
+
+COST (measured): capture + targets 515.6 s for 78 points (19.83 s/window);
+3.0 s/optimiser step in-loop, 3.68 s/step including the pre/post sweeps;
+800 steps in 2947.2 s; PEAK 15.30 GiB (origin-side 15.24 GiB).
+
+MEAN TARGET dx0 / TRUNCATION the target removes, over all 78 points:
+     step 4 sigma 7.27616 : dx0 1.2068e-01   trunc 5.1668e-02
+     step 5 sigma 1.16757 : dx0 1.2883e-01   trunc 1.1213e-01
+     step 6 sigma 0.09739 : dx0 1.6815e-02   trunc 1.6439e-02
+   (origin-side: dx0 1.2939e-01 / 1.3351e-01 / 1.6948e-02 -- the same functional
+    change, so the two runs are solving the same size of problem.)
+
+STEP-0 GRADIENT NORM, mean over the first three windows of each clip, at the
+SHIPPED Mamba weights, pre-update and pre-clip -- NONZERO, as it must be:
+     step 4 (sigma 7.276) : MEAN ||g|| = 2.23018
+     step 5 (sigma 1.168) : MEAN ||g|| = 4.15648
+     step 6 (sigma 0.0974): MEAN ||g|| = 0.120405
+   (origin-side references 0.104196 / 0.156063 / 0.00382336; the self-consistent
+    objective reference is EXACTLY 0.)
+   Per group the FiLM path carries ~99 % of the gradient NORM (k=5: fwd.core
+   0.690 vs time_embed_proj 5.299 on 0301 w0) -- but see ||dW|| below, because
+   gradient norm is not movement under AdamW.
+
+PER-STEP TARGET ERROR ||x0hat_student - x0hat_target||/||x0hat_target||, mean
+over all 78 points, before -> after 800 steps:
+     step 4 sigma 7.27616 : 1.18703e-01 -> 5.62570e-02   ratio 0.4739
+     step 5 sigma 1.16757 : 1.25316e-01 -> 6.62160e-02   ratio 0.5284
+     step 6 sigma 0.09739 : 1.68261e-02 -> 8.51335e-03   ratio 0.5060
+   (origin-side 0.4075 / 0.4812 / 0.5249 -- the Mamba blocks absorb the
+    correction to within a few percent of what the origin attention managed,
+    with 3.64M params instead of 1.23M.)
+
+WHERE THE SOLUTION WENT -- the check the advisor's concern demanded, because an
+all-FiLM answer would sit next to the step-length-rescale family that
+beyond_distil section F experimentally ruled out:
+     ABSOLUTE ||dW||   fwd.core 0.61458   time_embed_proj 0.45357
+     relative ||dW||/||W||   fwd.core 0.00962   time_embed_proj 0.03632
+     overall rel||dW||/||W|| 0.011729   (origin-side 0.002357)
+   The SSM CORE MOVED MORE IN ABSOLUTE TERMS THAN THE FiLM (0.615 vs 0.454)
+   despite carrying ~1 % of the gradient norm, exactly as AdamW's per-parameter
+   scale invariance predicts.  So this is NOT a disguised per-step rescale: the
+   recurrence itself changed.  The FiLM's larger RELATIVE movement (3.6 % vs
+   1.0 %) is a start-point artefact, which is why both numbers are reported.
+
+CHECKPOINT ROUNDING NOTE: the inference log reports "tensors that differed from
+the loaded model: 18/30" (19/30 at step600/800).  The 12 that do not differ are
+the four tiny tensors per slot (dt_bias, A_log, D 5 elements each, and
+norm.weight) whose fp32 update is below half a bf16 ulp.  This is not a loading
+failure: the trainer refreshes the bf16 parameter from the fp32 master after
+every optimiser step, so the model that trained IS the bf16-rounded one and the
+sampled model equals it exactly.
+
+THE LOSS/QUALITY ANTI-CORRELATION, a fifth independent sighting: the training
+loss fell monotonically while sampled LPIPS was NOT monotone -- 0301 got worse
+from step200 (0.3916) to step400 (0.3922) before improving at step600 (0.3831)
+and worsening again at step800 (0.3841), and on 0147 step800 (0.5258) gave back
+almost the entire gain.  Selection was by SAMPLED LPIPS on the 4-clip mean.
+--------------------------------------------------------------------------------
+6. READOUT -- the 4-clip set, every row LOSSLESS, deployed config 8 steps / g 1.01
+   full table scripts/distill/runs/beyond_distil_mamba/TABLE_4CLIP_mstudent1.txt
+   raw scores scripts/distill/runs/beyond_distil_mamba/SCORES_4CLIP_mstudent1.txt
+--------------------------------------------------------------------------------
+ 2 trained clips (0301, 0204) + 2 held out (0052, 0147), directly comparable to
+ the 4-clip numbers in the task brief.
+
+ row                        mean LPIPS   d vs mamba   frac of mamba headroom
+ origin (deployed)              0.4035      +0.0034
+ origin+s25                     0.3872      -0.0130
+ origin+student (reference)     0.3875      -0.0126
+ mamba 5-slot (SHIPPED)         0.4001      +0.0000
+ mamba+s25                      0.3861      -0.0141          100.0%  (the denominator)
+ mamba+oracle456                0.3855      -0.0147          104.3%
+ mamba+mstudent1 step100        0.3896      -0.0106           75.3%
+ mamba+mstudent1 step200        0.3855      -0.0146          103.8%
+ mamba+mstudent1 step400        0.3846      -0.0155          110.4%
+ mamba+mstudent1 step600        0.3822      -0.0179          127.3%   <-- SELECTED
+ mamba+mstudent1 step800        0.3838      -0.0164          116.2%
+ (the task's reference values for this set -- origin 0.4035, mamba 0.4001,
+  mamba+s25 0.3861, origin+student 0.3875, origin+s25 0.3872 -- are reproduced
+  EXACTLY, so the new rows are directly comparable.)
+
+ PER CLIP, step600, against the SHIPPED 5-slot Mamba:
+   clip  regime   mamba   mamba+s25  oracle456  step600   d vs mamba   frac   sharp sh/mamba  GT sharp
+   0301  under   0.4253     0.3978     0.3958    0.3831     -0.0422   153.5%  0.0315  1.264    0.0505
+   0204  under   0.2022     0.1884     0.1886    0.1867     -0.0155   112.5%  0.0081  1.217    0.0116
+   0052  over    0.4467     0.4375     0.4372    0.4359     -0.0108   117.0%  0.0141  1.072    0.0099
+   0147  over    0.5264     0.5206     0.5203    0.5233     -0.0031    54.4%  0.0071  1.144    0.0039
+
+ PASS CRITERIA, as stated in the task:
+   beats the shipped 5-slot Mamba by >= 0.010 on the TRAINED clips
+        0301 -0.0422  and  0204 -0.0155       -> PASS (4.2x and 1.6x the bar)
+   improves on BOTH held-out clips
+        0052 -0.0108  and  0147 -0.0031       -> PASS
+   without losing sharpness
+        sharpness ratio vs mamba 1.264 / 1.217 / 1.072 / 1.144, i.e. UP on all
+        four, none lost                        -> PASS
+   FRACTION OF THE MAMBA-SIDE HEADROOM (mamba 0.4001 -> mamba+s25 0.3861)
+        CAPTURED = 127.3 %.  It does not merely reach the 25-step quality, it
+        exceeds it, and it also exceeds the k=4,5,6 oracle (104.3 %).
+   STEP-0 GRADIENT NORM nonzero: 2.230 / 4.156 / 0.120 at k = 4 / 5 / 6.
+
+ HONEST READING OF THE >100 %.  Beating the oracle means the student is NOT
+ simply imitating the fine trajectory -- the trajectory target is a proxy, and on
+ the two under-sharp clips the student's extra sharpening happens to help real-GT
+ LPIPS more than the trajectory itself does.  The flip side is visible on 0147,
+ the most over-sharp clip in the suite: there the oracle is the ceiling (105.2 %)
+ and the student (54.4 %) over-shoots past it.  So the >100 % is real but it is
+ regime-dependent, and this student is MORE aggressive than s25 exactly where
+ over-sharpening is the risk -- the OPPOSITE of the origin-side student, which was
+ more conservative there.  step400 is the conservative alternative (0147 94.7 %,
+ sharpness 1.113x) at a lower 4-clip mean (110.4 %).
+
+ leftPSNR is IDENTICAL on every row of every clip (0301 40.25, 0204 41.16,
+ 0052 40.70, 0147 40.40), so nothing above is codec bleed.
+
+--------------------------------------------------------------------------------
+7. OPTION (A) vs OPTION (B) -- what B actually gives up, MEASURED
+   scripts/distill/runs/beyond_distil_mamba/PROFILE_ATTN1*.txt
+   runs outputs/beyond_distil_mamba/profile{,2,_fhd}/
+--------------------------------------------------------------------------------
+Wall clock at 576x1024 cannot decide this (origin 165-195 s, 5-slot 173-201 s,
+2-slot 179-210 s), so this uses inpainting_inference.py's own
+--module_profile_json / --module_profile_include '*.attn1' -- the instrument that
+produced the published -5.3 / -20.5 / -21.7 %.
+
+A TRAP WORTH RECORDING.  The RAW totals say Mamba is 2x SLOWER and contradict the
+published numbers.  The cause is that the FIRST call into a Mamba2 block
+JIT-compiles its Triton kernels: measured 4980.3 ms on call 1 at 576x1024 and
+5735 ms at 1024x1792, against 10.8 ms on every call thereafter, while the origin
+attention is a flat ~20.6 ms from call 1.  It is a once-per-process, once-per-
+shape cost.  parse_profile_v2.py drops the first call of every module and prints
+the raw column alongside, so the warmup is visible rather than quietly removed.
+
+attn1 module time, steady state (32 matched modules = 16 spatial + 16 temporal;
+only the 5 spatial level-0 slots are ever replaced), clip 0301:
+  res         origin      B: 2-slot (down0)      A: 5-slot          chunks
+  576x1024    7344.5 ms   6514.2 ms  -11.3 %     5229.2 ms  -28.8 %   5 (clean, profile2)
+  576x1024    7393.6 ms   6516.3 ms  -11.9 %     5227.0 ms  -29.3 %   5 (clean, repeat 2)
+  576x1024    4281.5 ms   3806.3 ms  -11.1 %     3061.6 ms  -28.5 %   3 (first pass, profile)
+  1024x1792  32133.5 ms  23679.2 ms  -26.3 %    12032.4 ms  -62.6 %   3
+  1024x1920  36524.1 ms  26730.7 ms  -26.8 %    13253.9 ms  -63.7 %   3  <- Full-HD
+  (the project labels the Full-HD stage "1920x1024" meaning WIDTH x HEIGHT;
+   clip 0301's source is h=1024 w=1920, so inpainting_inference wants
+   target_height=1024 target_width=1920.  Passing them the other way round is
+   correctly refused by _center_crop_frames -- see chain4.log's rc=1 rows.)
+  REPEATABILITY: the two clean 576x1024 repeats agree to 0.04 % (all5),
+  0.03 % (down0) and 0.67 % (origin), so these deltas are not noise.  The
+  first pass was re-measured because its origin baseline had overlapped the
+  tail of an LPIPS scoring job; it agrees with the clean pass to 0.8 points,
+  i.e. the contention was immaterial.
+  -> what option B FORFEITS = the three up_blocks.3 slots:
+       576x1024  +1285.0 ms = 61 % of option A's entire attn1 saving
+       1024x1792 +11646.8 ms = 58 % of option A's entire attn1 saving
+       1024x1920 +13476.8 ms = 58 % of option A's entire attn1 saving (Full-HD)
+The saving grows steeply with resolution, as expected when attention is quadratic
+in tokens and Mamba linear; that is the same trend as the published
+-5.3 % -> -20.5 % whole-UNet progression (attn1 is a fraction of the UNet, so a
+-28.5 % attn1 saving at 576x1024 is consistent with -5.3 % of the whole UNet if
+attn1 is ~19 % of UNet module time -- stated as a consistency check, not a
+measurement; the whole-UNet figure was not re-measured here).
+
+CONCLUSION.  Option (B) gives up roughly 60 % of the Mamba speed win at all three
+resolutions, and option (A) now ALSO wins on quality: 0.3822 for the Mamba
+student versus 0.3877 for mamba2slot+student and 0.3875 for origin+student on the
+4-clip set.  OPTION (A) IS THE BETTER DELIVERABLE ON BOTH AXES.  Before this run
+the two options were 0.3861 vs 0.3877 -- a tie inside the measurement floor --
+and B was preferred only because A's quality win was hypothetical.  It is not any
+more.
+
+--------------------------------------------------------------------------------
+8. FULL-SCALE COST, from the rates measured in this run
+--------------------------------------------------------------------------------
+ target precompute  4329 windows (333 clips x 13) x 19.83 s   = 23.8 GPU-h
+                    one-time, cacheable, embarrassingly parallel
+ training           8000 optimiser steps x 3.68 s             =  8.2 GPU-h
+ checkpoint scoring 12 clips x 190 s x 5 checkpoints          =  3.2 GPU-h
+ TOTAL                                                        ~ 35.2 GPU-hours
+                                             (~18 h wall on the 2x RTX 4090 box)
+ 40-CLIP SUBSAMPLE: precompute 520 windows = 2.9 GPU-h, total ~ 14.3 GPU-hours.
+ The subsample is the recommended option and this run is the evidence for it:
+ TWO training clips already produced 127.3 % of the headroom with two held-out
+ clips confirming, and the origin-side run reached 85.3 % on ten held-out clips
+ from the same two.  Spending 23.8 GPU-h of precompute to go from 2 clips to 333
+ is not supported by any measurement in either run.
+ NOTE the selection risk at scale: sampled LPIPS was NOT monotone in training
+ step here (step600 best, step800 worse, and on 0147 step800 gave back 95 % of the
+ gain while the loss kept falling), so a full-scale run must budget the 3.2 GPU-h
+ of checkpoint scoring and select on it.  Selecting on loss would have shipped
+ step800.
+
+--------------------------------------------------------------------------------
+9. 12-CLIP EXTENSION -- 12/12 CLIPS IMPROVE.  step600 at the deployed config.
+   table  scripts/distill/runs/beyond_distil_mamba/TABLE_12CLIP_A_mstudent1_step600.txt
+   scores scripts/distill/runs/beyond_distil_mamba/SCORES_12CLIP_A_mstudent1_step600.txt
+   NOTE: eight of the twelve clips (0042 0125 0128 0141 0170 0225 0251 0259) had
+   NO mamba_ll row anywhere in the project, so the shipped-Mamba baseline for
+   them was produced here (outputs/beyond_distil_mamba/clips/*_mamba_ll/).
+--------------------------------------------------------------------------------
+ Only 0301 and 0204 were ever trained on; the other TEN are held out.
+
+ 12-clip means                 LPIPS    d vs mamba
+   origin (deployed)          0.3933       +0.0006
+   mamba 5-slot (SHIPPED)     0.3927       +0.0000
+   origin+student (reference) 0.3800       -0.0127
+   mamba+mstudent1_step600    0.3766       -0.0161     <-- THIS RUN
+ (the established 12-clip references origin 0.3933 and origin+student 0.3800 are
+  reproduced EXACTLY, so this column is comparable to the published table; the
+  established origin+s25 reference on the same 12 clips is 0.3786.)
+
+ SO: at the DEPLOYED 8-step cost the Mamba student (0.3766) beats
+   - the shipped 5-slot Mamba        0.3927   by -0.0161
+   - deployed origin                 0.3933   by -0.0167
+   - the origin-side student         0.3800   by -0.0034
+   - 25-STEP ORIGIN SAMPLING         0.3786   by -0.0020  at 1/2.4 of its cost
+
+ PER CLIP vs the shipped Mamba (regime by whether origin is already sharper
+ than GT; sh/mamba = sharpness ratio, GT sharpness in brackets):
+   clip   mamba   step600   d vs mamba   sh/mamba   [GT sharp]  note
+   0042  0.4305   0.4201     -0.0104      1.123     [0.0070]   held out, over
+   0052  0.4467   0.4359     -0.0108      1.072     [0.0099]   held out, over
+   0125  0.4797   0.4499     -0.0298      1.212     [0.0114]   held out, under
+   0128  0.4054   0.3853     -0.0201      1.192     [0.0105]   held out, over
+   0141  0.4825   0.4657     -0.0168      1.217     [0.0036]   held out, over
+   0147  0.5264   0.5233     -0.0031      1.144     [0.0039]   held out, over
+   0170  0.2516   0.2429     -0.0087      1.080     [0.0323]   held out, under
+   0204  0.2022   0.1867     -0.0155      1.217     [0.0116]   TRAINED,   under
+   0225  0.2738   0.2571     -0.0167      1.172     [0.0132]   held out, under
+   0251  0.3466   0.3325     -0.0141      1.159     [0.0173]   held out, under
+   0259  0.4412   0.4366     -0.0046      1.016     [0.0450]   held out, under
+   0301  0.4253   0.3831     -0.0422      1.264     [0.0505]   TRAINED,   under
+
+ ZERO REGRESSIONS: 12/12 improve, worst case -0.0031 (0147).  Sharpness is UP on
+ every one of the twelve and no clip loses sharpness.  leftPSNR is identical to
+ the shipped Mamba on all 48 rows, so none of this is codec bleed.
+ THE OVER-SHARP CAVEAT, quantified on the full suite: on the two clips where
+ origin is most over-sharp relative to GT (0141 GT 0.0036, 0147 GT 0.0039) the
+ student pushes sharpness to ~1.7-1.8x GT, and those are also the two smallest
+ LPIPS gains among the over-sharp clips.  It still improves both.
+
+ HELD-OUT ONLY (n=10), this project's own convention, because the 12-clip mean
+ mixes in the two trained clips and 0301 alone contributes -0.0422:
+     origin 0.40786   mamba 0.40844   origin+student 0.39731
+     mamba+mstudent1_step600  0.39493   d vs mamba -0.01350
+   That is 1.28x the origin-side student's -0.01055 on the SAME ten clips.
+     trained (n=2)  mamba 0.31374 -> 0.28487   d -0.02887
+     held out (n=10) mamba 0.40844 -> 0.39493  d -0.01350
+   The 2.1x trained/held-out ratio is the same pattern the origin-side run showed
+   (102.2 % trained vs 76.5 % held out), i.e. expected behaviour, not a defect.
+
+ WHAT IT COSTS IN rightPSNR -- asked and answered, because LPIPS improves while
+ rightPSNR falls:
+     12-clip mean  mamba 16.344 dB -> mamba+mstudent 16.239 dB   (-0.105 dB)
+     12-clip mean  origin 16.425 dB -> origin+student 16.313 dB  (-0.112 dB)
+     and s25 has the same signature (0301 origin 15.467 -> s25 15.013)
+   So this is the SAME perception-distortion trade the project already accepted
+   when it made s25 the quality target -- and the Mamba student's mean cost
+   (-0.105 dB) is actually SMALLER than the origin-side student's (-0.112 dB)
+   for a 1.28x larger held-out LPIPS gain.  rightPSNR even IMPROVES on 0042,
+   0251 and 0259.
+
+ NEW DATA THAT REVISES A PUBLISHED CHARACTERISATION.  Eight of the twelve
+ mamba_ll rows did not exist anywhere in the project before this run, and they
+ change the picture of the shipped deliverable's own quality:
+     12-clip  origin 0.39325   mamba 0.39265   d -0.00060
+   not the -0.0034 the 4-clip subset suggested, and the shipped 5-slot Mamba is
+   actually WORSE than deployed origin on 4 of the 12 clips
+   (0042 +0.0026, 0259 +0.0036, 0141 +0.0012, 0251 +0.0006).
+   This is still consistent with the published "quality origin-equivalent", but
+   the small quality EDGE visible on the 4-clip set does not hold on the full
+   suite.  It strengthens this run's result rather than weakening it, because the
+   student's -0.0161 is now measured against a correctly characterised baseline.
+
+ PENDING (chain5c pass B, started 12:11, runs independently of this session):
+ mamba+s25 for the same eight clips, which would give a MEASURED 12-clip headroom
+ DENOMINATOR instead of only the 4-clip one.  Deliberately not waited for: the
+ task defines the headroom fraction on the 4-clip set and that is measured above,
+ and the held-out DELTA is already measured.  No estimate of the missing rows is
+ offered.  Output will land at
+   scripts/distill/runs/beyond_distil_mamba/SCORES_12CLIP_B_mstudent1_step600.txt
+   scripts/distill/runs/beyond_distil_mamba/TABLE_12CLIP_mstudent1_step600.txt

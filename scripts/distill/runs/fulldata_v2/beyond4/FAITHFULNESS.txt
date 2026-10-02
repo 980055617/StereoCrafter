@@ -1,0 +1,61 @@
+=== beyond4 FAITHFULNESS of the lossless path ===  Thu Oct  1 02:25:43 JST 2026
+
+--- CHECK 1: the wrapper's invocation is the shipped one ---
+same wrapper, LOSSLESS_SBS=0 (original mp4v writer), clip 0301, 8 steps guid 1.01:
+6b3879da5e219a95a177bf58cb5145e2  outputs/beyond4_lossless/control/0301_origin_mp4v/0301_inpainting_results_sbs.mp4
+6b3879da5e219a95a177bf58cb5145e2  outputs/fulldata_v2/clips/0301_origin/0301_inpainting_results_sbs.mp4
+6b3879da5e219a95a177bf58cb5145e2  outputs/fulldata_v2/clips/0301_origin_repro8g101/0301_inpainting_results_sbs.mp4
+  -> byte-identical to the shipped baseline and to beyond3's repro8g101.
+
+--- CHECK 2: the monkeypatch does not perturb inference ---
+pre-encode md5 of the array handed to the writer:
+  mp4v control : 2e533d7755c950d2fc95043f6fb0a51d (151, 576, 2048, 3) uint8 0301_inpainting_results_sbs.mp4
+  lossless run : 2e533d7755c950d2fc95043f6fb0a51d  (151, 576, 2048, 3)  fps=29.970000
+  -> identical, so the .mkv holds exactly the pixels the shipped mp4v baseline was encoded from.
+
+--- CHECKS 3 and 4 (verify_lossless.py, full 151-frame clip) ---
+[shape] mkv frames=(151, 576, 2048, 3)
+CLAIM1 writer-is-lossless: pre-encode md5=2e533d7755c950d2fc95043f6fb0a51d  decoded md5=2e533d7755c950d2fc95043f6fb0a51d  MATCH=True
+CLAIM2 left-half-passthrough: source=video_data/splatting/0301_splatting_results.mp4 crop=(224,448) size=576x1024 BIT_IDENTICAL=True maxabs=0 nonzero=0/267190272
+CLAIM3 lossless-vs-mp4v (n=151 frames of outputs/fulldata_v2/clips/0301_origin/0301_inpainting_results_sbs.mp4):
+   right-half PSNR = 35.61 dB   maxabs=63
+   left-half  PSNR = 38.76 dB   maxabs=36
+   sharp(right): lossless=0.02319  mp4v=0.02319   ratio=0.9999
+
+--- 1-chunk smoke of the same three claims (14 frames) ---
+outputs/beyond4_lossless/smoke/0301_ll_chunk1/  : CLAIM1 True, CLAIM2 BIT_IDENTICAL True (0/24772608),
+  CLAIM3 right-half 35.57 dB / left-half 38.37 dB vs mp4v
+
+--- uint8 round-trip inside the tracked pipeline ---
+(k/255.0)*255.0 -> .to(uint8) reproduces k exactly for all k in 0..255 (float32), max float err 0.0,
+so CHECK 4 tests the pipeline's pass-through, not a quantisation artefact.
+
+--- scorer copy validated against the tracked scorer ---
+score_clip_ll.py on outputs/fulldata_v2/clips/0301_origin : offset (-28,0) leftPSNR 46.77 LPIPS 0.4445 sharp 0.0235
+scripts/distill/score_clip.py, same input                 : offset (-28,0) leftPSNR 46.77 LPIPS 0.4445 sharp 0.0235
+rightPSNR 15.503 matches beyond2/SUMMARY_TABLE.txt 0301 origin row (15.503).
+
+=== A SECOND CODEC EFFECT THE MP4V ERA WAS HIDING: a ~2/255 DC offset ===
+
+Removing the codec made the scorer's leftPSNR on 0301 FALL from 46.77 dB to 40.25 dB, on a half
+that is pass-through and now provably bit-identical to its source.  Cause, measured:
+
+  one cv2-mp4v write + decord read, applied to the SAME pixel array:
+      mean 0.29592 -> 0.28750   =  -2.149/255   (std gain 1.0017, PSNR(after,before) 37.06 dB)
+  raw data, no model, same crop, splatting input vs train GT top-left quadrant:
+      mean 0.29463 vs 0.28648   =  +2.079/255   (PSNR 38.92 dB)
+
+The splatting inputs were themselves written by this cv2 mp4v writer, so their decord decode sits
+~+2/255 above the train-GT reference; the output write applied a second -2.1/255, cancelling it to
+within 0.07/255.  The mp4v era's "leftPSNR ~47 dB, constant per clip" was therefore reporting a
+coincidental DC cancellation, not fidelity.  The true input-vs-GT level gap is ~39 dB.
+
+Consequences, and how this lane handles them:
+  * mp4v absolute LPIPS got a free DC correction that lossless output does not get, so
+    lossless-vs-mp4v ABSOLUTE LPIPS is not a like-for-like comparison.  Only within-codec
+    config-vs-config deltas are quoted as results here.
+  * the offset comes from the INPUT, not the sampler, so it is the same for origin / s25 / g125.
+    score_dcmatch.py re-scores with the variant's global mean matched to the GT's as a robustness
+    check on every delta (see DCMATCH section in TABLES.txt).
+  * under lossless writing leftPSNR is now IDENTICAL across configs of a clip (the left half is
+    bit-identical), which is the direct evidence that the shared-bit-budget confound is gone.

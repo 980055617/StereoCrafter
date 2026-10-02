@@ -1,0 +1,62 @@
+==============================================================================================================================
+HEADLINE TABLE -- 12 TEST CLIPS, LOSSLESS FFV1 (never the cv2 mp4v writer), real-GT LPIPS,
+DEPLOYED CONFIG: 8 sampler steps, EulerDiscrete Karras, guidance 1.01, 14-frame windows overlap 3,
+576x1024 centre crop.  scorer scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py SCORE_STEP=4
+==============================================================================================================================
+
+--- PER CLIP: LPIPS (lower is better) ---
+  row                                0042    0052    0125    0128    0141    0147    0170    0204    0225    0251    0259    0301
+  GT sharpness                     0.0070  0.0099  0.0114  0.0105  0.0036  0.0039  0.0323  0.0116  0.0132  0.0173  0.0450  0.0505
+  origin (deployed 8 steps)        0.4279  0.4467  0.4799  0.4055  0.4813  0.5269  0.2517  0.2053  0.2750  0.3460  0.4376  0.4351
+  mamba 5-slot (SHIPPED)           0.4305  0.4467  0.4797  0.4054  0.4825  0.5264  0.2516  0.2022  0.2738  0.3466  0.4412  0.4253
+  origin + s25 (2.4x cost)         0.4175  0.4384  0.4469  0.3876  0.4621  0.5220  0.2450  0.1897  0.2603  0.3385  0.4367  0.3986
+  origin + student                 0.4184  0.4397  0.4551  0.3897  0.4664  0.5239  0.2492  0.1883  0.2587  0.3376  0.4346  0.3982   [trained on 0301+0204]
+  mamba + mstudent1 s600           0.4201  0.4359  0.4499  0.3853  0.4657  0.5233  0.2429  0.1867  0.2571  0.3325  0.4366  0.3831   [trained on 0301+0204]
+  THIS DELIVERABLE (A)             0.4218  0.4395  0.4655  0.3882  0.4681  0.5244  0.2446  0.1867  0.2587  0.3355  0.4357  0.3965   [trained on 10 TRAIN clips]
+
+--- PER CLIP: delta vs deployed ORIGIN (negative = better) ---
+  mamba 5-slot (SHIPPED)          +0.0026 -0.0000 -0.0002 -0.0001 +0.0012 -0.0005 -0.0001 -0.0031 -0.0013 +0.0006 +0.0036 -0.0098
+  origin + s25 (2.4x cost)        -0.0104 -0.0083 -0.0330 -0.0178 -0.0192 -0.0049 -0.0068 -0.0156 -0.0147 -0.0076 -0.0009 -0.0365
+  origin + student                -0.0095 -0.0070 -0.0249 -0.0158 -0.0149 -0.0031 -0.0026 -0.0170 -0.0163 -0.0085 -0.0030 -0.0369
+  mamba + mstudent1 s600          -0.0078 -0.0108 -0.0300 -0.0202 -0.0157 -0.0037 -0.0089 -0.0186 -0.0179 -0.0135 -0.0010 -0.0520
+  THIS DELIVERABLE (A)            -0.0061 -0.0072 -0.0144 -0.0173 -0.0133 -0.0025 -0.0071 -0.0186 -0.0164 -0.0105 -0.0019 -0.0386
+
+--- PER CLIP: sharpness / GT sharpness (1.0 = matches the real right eye) ---
+  origin (deployed 8 steps)         1.253   1.314   0.828   1.287   1.360   1.584   0.507   0.564   0.895   0.479   0.693   0.466
+  mamba 5-slot (SHIPPED)            1.298   1.332   0.842   1.337   1.393   1.589   0.518   0.572   0.902   0.491   0.743   0.493
+  origin + s25 (2.4x cost)          1.387   1.387   0.946   1.493   1.568   1.715   0.541   0.657   1.024   0.539   0.710   0.583
+  origin + student                  1.365   1.366   0.925   1.451   1.529   1.704   0.537   0.656   1.029   0.524   0.703   0.575
+  mamba + mstudent1 s600            1.458   1.428   1.020   1.593   1.696   1.819   0.559   0.696   1.056   0.569   0.755   0.623
+  THIS DELIVERABLE (A)              1.458   1.394   0.939   1.546   1.644   1.778   0.547   0.667   1.016   0.557   0.739   0.565
+
+==============================================================================================================================
+MEANS over n=12 (all test clips) -- rows marked 'trained on 0301+0204' are NOT held out here
+==============================================================================================================================
+  row                            meanLPIPS d vs origin d vs mamba  improved sh/mamba  sh/GT            worst clip   rPSNR
+  origin (deployed 8 steps)         0.3933     +0.0000    +0.0006      0/12   0.9735  0.936          0042 +0.0000  16.425
+  mamba 5-slot (SHIPPED)            0.3927     -0.0006    +0.0000      8/12   1.0000  0.959          0259 +0.0036  16.344
+  origin + s25 (2.4x cost)          0.3786     -0.0146    -0.0140     12/12   1.0933  1.046          0259 -0.0009  16.295
+  origin + student                  0.3800     -0.0133    -0.0127     12/12   1.0780  1.030          0170 -0.0026  16.313   [trained on 0301+0204]
+  mamba + mstudent1 s600            0.3766     -0.0167    -0.0161     12/12   1.1556  1.106          0259 -0.0010  16.239   [trained on 0301+0204]
+  THIS DELIVERABLE (A)              0.3804     -0.0128    -0.0122     12/12   1.1136  1.071          0259 -0.0019  16.229   [trained on 10 TRAIN clips]
+
+==============================================================================================================================
+MEANS over n=10 (test minus 0301,0204) -- the only set on which ALL FIVE ROWS are held out
+==============================================================================================================================
+  row                            meanLPIPS d vs origin d vs mamba  improved sh/mamba  sh/GT            worst clip   rPSNR
+  origin (deployed 8 steps)         0.4079     +0.0000    -0.0006      0/10   0.9752  1.020          0042 +0.0000  16.174
+  mamba 5-slot (SHIPPED)            0.4084     +0.0006    +0.0000      6/10   1.0000  1.044          0259 +0.0036  16.110
+  origin + s25 (2.4x cost)          0.3955     -0.0124    -0.0129     10/10   1.0787  1.131          0259 -0.0009  16.098
+  origin + student                  0.3973     -0.0106    -0.0111     10/10   1.0622  1.113          0170 -0.0026  16.117   [trained on 0301+0204]
+  mamba + mstudent1 s600            0.3949     -0.0129    -0.0135     10/10   1.1386  1.195          0259 -0.0010  16.050   [trained on 0301+0204]
+  THIS DELIVERABLE (A)              0.3982     -0.0097    -0.0102     10/10   1.1052  1.162          0259 -0.0019  16.025   [trained on 10 TRAIN clips]
+
+==============================================================================================================================
+PROVENANCE of every scored file
+==============================================================================================================================
+  origin (deployed 8 steps)      label=origin_ll                          roots=['outputs/beyond4_lossless']
+  mamba 5-slot (SHIPPED)         label=mamba_ll                           roots=['outputs/beyond_distil_mamba', 'outputs/skeptic1_stack']
+  origin + s25 (2.4x cost)       label=s25_ll                             roots=['outputs/beyond4_lossless', 'outputs/skeptic1_stack']
+  origin + student               label=student_ll                         roots=['outputs/skeptic1_stack']
+  mamba + mstudent1 s600         label=mstudent1_step600_ll               roots=['outputs/beyond_distil_mamba']
+  THIS DELIVERABLE (A)           label=mstudent2_step800_deliv_ll         roots=['outputs/beyond_distil_mamba_scaled']

@@ -1,0 +1,83 @@
+=== PART 2: guidance 1.25, 8 steps, ALL 12 TEST CLIPS, LOSSLESS ===
+baseline = deployed origin 8 steps guid 1.01, same lossless writer.  frozen origin UNet.
+real-GT LPIPS, SCORE_STEP=4, GT = video_data/train/<clip>_train.mp4
+
+clip   origin    g125    delta |  sh orig  sh g125   sh GT g125/orig  g125/GT  overshoot GT?  origin was
+0042   0.4279  0.4198  -0.0081 |   0.0088   0.0097  0.0070     1.102    1.386      OVERSHOOT        over
+0052   0.4467  0.4407  -0.0060 |   0.0130   0.0145  0.0099     1.115    1.465      OVERSHOOT        over
+0125   0.4799  0.4580  -0.0219 |   0.0094   0.0115  0.0114     1.223    1.009      OVERSHOOT       under
+0128   0.4055  0.3914  -0.0141 |   0.0135   0.0163  0.0105     1.207    1.552      OVERSHOOT        over
+0141   0.4813  0.4869  +0.0056 |   0.0049   0.0053  0.0036     1.082    1.472      OVERSHOOT        over
+0147   0.5269  0.5304  +0.0035 |   0.0062   0.0065  0.0039     1.048    1.667      OVERSHOOT        over
+0170   0.2517  0.2561  +0.0044 |   0.0164   0.0191  0.0323     1.165    0.591       under-GT       under
+0204   0.2053  0.1942  -0.0111 |   0.0065   0.0073  0.0116     1.123    0.629       under-GT       under
+0225   0.2750  0.2668  -0.0082 |   0.0118   0.0136  0.0132     1.153    1.030      OVERSHOOT       under
+0251   0.3460  0.3416  -0.0044 |   0.0083   0.0093  0.0173     1.120    0.538       under-GT       under
+0259   0.4376  0.4480  +0.0104 |   0.0312   0.0349  0.0450     1.119    0.776       under-GT       under
+0301   0.4351  0.4068  -0.0283 |   0.0235   0.0311  0.0505     1.323    0.616       under-GT       under
+MEAN   0.3932  0.3867  -0.0065
+
+12-clip mean LPIPS delta   -0.0065
+clips improved             8/12
+worst regression           +0.0104  (0259)
+best improvement           -0.0283  (0301)
+regressing clips           ['0141', '0147', '0170', '0259']
+mean sharpness ratio       1.148  (g125 / deployed origin)
+clips whose sharpness OVERSHOOTS GT:  g125 7/12   deployed origin 5/12
+newly overshooting under g125: ['0125', '0225']
+
+--- against the mp4v 3-clip smoke (beyond2/SUMMARY_TABLE.txt), the only prior g125 evidence ---
+  0042: lossless -0.0081   mp4v smoke -0.0101
+  0204: lossless -0.0111   mp4v smoke -0.0130
+  0301: lossless -0.0283   mp4v smoke -0.0305
+  smoke 3-clip mean -0.0179  vs  lossless on the same 3 clips -0.0158  vs  lossless 12-clip -0.0065
+  -> the 3 smoke clips were among the best; at full scale the gain is LESS THAN HALF the smoke's,
+     and 4 of 12 clips regress.
+
+--- reference: s25 (25 steps) ---
+  LIKE-FOR-LIKE (both LOSSLESS, the four regime-spanning clips):  g125 -0.0105  vs  s25 -0.0163.
+  g125 delivers 64% of s25's gain at ~1.0x cost instead of ~2.4x -- but its worst case on those
+  four clips is +0.0035 against s25's -0.0049 (s25 improves all four).
+  ORIENTATION ONLY, NOT like-for-like: s25's published 12-clip figure (-0.0138, improved 11/12,
+  worst +0.0009) is an mp4v-era number (beyond3).  It must NOT be differenced against the lossless
+  g125 -0.0065: CODEC_EFFECT_12CLIP.txt measures a per-clip codec effect spanning 0.0204 with
+  changing sign.  The 12-clip lossless s25 number was not measured in this lane.
+
+--- IMPORTANT CAVEAT ON THE 'OVERSHOOTS GT' COLUMN ---
+That column uses the frame-wide `sharp` statistic (mean |horizontal difference| over the whole
+frame).  VISUAL_READ.txt + ringing_metrics.py show this statistic is inflated by SPLATTING-STRIPE
+ENERGY IN FLAT REGIONS, not by detail: for the deployed origin, stripeE/GT is 2.85x on 0052 and
+4.83x on 0147, while edgeHF/GT (detail at the GT's real edges) is only 0.53 and 0.52.
+In every texture-rich crop inspected, on every clip and frame, the GT is SHARPER than both origin
+and g125.  So "7/12 overshoot GT" means "7 of 12 clips carry more total gradient energy than the
+GT, most of it stripe artefact", NOT "7 of 12 clips look over-sharpened".
+Read it as an artefact-amplification warning, which is what g125 does: stripeE/GT rises
+2.854->3.173 (0052), 4.828->5.012 (0147), 0.975->1.295 (0301).
+
+--- DC-MATCH ROBUSTNESS (four clips) ---
+Guidance DOES shift the output's DC level: shift255 moves from origin to g125 by
+  0052 -3.897 -> -4.762   0147 -3.951 -> -5.196   0204 +3.277 -> +2.675   0301 -2.419 -> -3.956
+i.e. g125 brightens the output by 0.6-1.5/255.  The offset is therefore NOT config-independent.
+But the DC-matched deltas agree with the raw deltas to within 0.0005 on all four clips
+(0052 -0.0060/-0.0060, 0147 +0.0035/+0.0033, 0204 -0.0111/-0.0112, 0301 -0.0283/-0.0288),
+so the brightness shift is not carrying g125's LPIPS gain.  Raw lossless deltas stand.
+
+--- 12-CLIP DC-MATCH ROBUSTNESS (all 12 clips, origin_ll vs g125_ll) ---
+clip   raw delta  dcmatch delta     diff  shift orig  shift g125  d shift
+0042     -0.0081        -0.0081  +0.0000      +1.184      +0.860   -0.324
+0052     -0.0060        -0.0060  -0.0000      -3.897      -4.762   -0.865
+0125     -0.0219        -0.0220  +0.0001      +1.306      +0.137   -1.169
+0128     -0.0141        -0.0141  -0.0000      -0.930      -2.061   -1.131
+0141     +0.0055        +0.0050  +0.0005      -2.514      -3.119   -0.605
+0147     +0.0035        +0.0033  +0.0002      -3.951      -5.196   -1.246
+0170     +0.0043        +0.0040  +0.0003      +3.883      +2.966   -0.917
+0204     -0.0111        -0.0112  +0.0002      +3.277      +2.675   -0.602
+0225     -0.0083        -0.0077  -0.0006      -9.846     -10.652   -0.806
+0251     -0.0044        -0.0041  -0.0004      +3.201      +2.366   -0.835
+0259     +0.0104        +0.0102  +0.0002      +4.353      +3.101   -1.252
+0301     -0.0283        -0.0288  +0.0005      -2.420      -3.956   -1.536
+MEAN     -0.0065        -0.0066  +0.0001
+max |raw - dcmatched| per clip: 0.0006
+Guidance DOES brighten the output (shift moves by up to ~1.5/255), so the DC offset is NOT
+config-independent -- but the DC-matched 12-clip mean differs from the raw one by
+0.0001, so it does not change the verdict.

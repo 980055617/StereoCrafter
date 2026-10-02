@@ -1,0 +1,32 @@
+=== WHAT THE mp4v CODEC ALONE WAS DOING TO THE MEASUREMENT ===
+Identical pixel arrays (proven by the pre-encode md5 chain); only the container differs.
+Deployed origin, 8 steps guid 1.01, SCORE_STEP=4, real GT = video_data/train/<clip>_train.mp4
+
+clip   LPIPS mp4v  LPIPS lossless  codec effect |  sharp mp4v  sharp ll  mp4v/ll  sharp GT |  lPSNR mp4v  lPSNR ll
+0052       0.4432          0.4467       +0.0035 |      0.0136    0.0130    1.046    0.0099 |       52.06     40.70
+0147       0.5183          0.5269       +0.0086 |      0.0066    0.0062    1.065    0.0039 |       50.68     40.40
+0204       0.2122          0.2053       -0.0069 |      0.0062    0.0065    0.954    0.0116 |       48.90     41.16
+0301       0.4445          0.4351       -0.0094 |      0.0235    0.0235    1.000    0.0505 |       46.77     40.25
+
+codec effect on measured LPIPS: min -0.0094  max +0.0086  |max| 0.0094
+  -> CLIP-DEPENDENT IN SIGN and up to 0.0094 in magnitude, i.e. the same order as the whole
+     12-clip s25 gain (-0.0138).  Any beyond-origin headline measured through mp4v carried
+     a per-clip error of this size.
+
+codec effect on the sharpness statistic: mp4v INFLATES sharp by +4.6% (0052) and +6.5% (0147),
+  and is neutral on 0204 (-4.6%, the other way) and 0301 (0.0%).  It is NOT uniformly neutral:
+  the two 4400x4400 clips are the ones mp4v flatters.  The over/under-sharp regime does not
+  flip on any clip -- 0052 still overshoots GT (1.31x lossless vs 1.37x mp4v), 0147 still
+  overshoots (1.59x vs 1.69x) -- but the reported margin was overstated.
+
+leftPSNR: fell ~47 dB -> ~40 dB on every clip.  That is the DC-offset artefact documented in
+  FAITHFULNESS.txt, not a fidelity loss; the lossless left half is bit-identical to its source.
+
+DC-match robustness (score_dcmatch.py, origin_ll): LPIPS raw -> DC-matched
+  0052: 0.4467 -> 0.4471  (shift -3.897/255)   |change| = 0.0004
+  0147: 0.5269 -> 0.5267  (shift -3.951/255)   |change| = 0.0002
+  0204: 0.2053 -> 0.2053  (shift +3.277/255)   |change| = 0.0000
+  0301: 0.4351 -> 0.4345  (shift -2.419/255)   |change| = 0.0006
+  -> max 0.0006.  The DC offset is essentially free in LPIPS; it does not carry the result.
+     (score_dcmatch clamps to [0,1] after the shift, so a clip with large true-black areas
+      gets a marginally pessimistic DC-matched number.)

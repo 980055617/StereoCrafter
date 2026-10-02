@@ -1,0 +1,42 @@
+PRE-REGISTRATION -- written BEFORE any test-clip number for mstudent2 existed.
+Timestamp and the state of the output tree at that moment are recorded below by the shell.
+
+CONFIGURATION CHOSEN: option (A) -- the shipped 5-slot light Mamba with the Mamba blocks' own
+up_blocks.3 parameters re-distilled on the step-distillation objective.
+
+RUNG SELECTED FOR THE HEADLINE ROW: mstudent2 step800.
+Two criteria were specified in advance and they COINCIDE on step800, so one render set is needed:
+  (a) lowest sampled LPIPS on the DEV split (0040 0091 0184 0245), the split fulldata_v1 designates
+      for "model selection / stop rule".  Full ladder, delta vs the shipped Mamba:
+        step200 -0.0016   step400 -0.0021   step800 -0.0023   step1200 -0.0017
+        step1600 -0.0020  step2000 +0.0002
+      -> step800 is the minimum.
+  (b) MATCHED OPTIMISER BUDGET against mstudent1's step800, fixed by the experimental design (not by
+      any score), so that "did more training clips help?" is answered at equal optimiser steps.
+
+THE PRE-REGISTERED SHARPNESS TIE-BREAK WAS INSPECTED AND FOUND INAPPLICABLE.
+The rule was: "if two rungs are within 0.0010 LPIPS of the best, take the one whose mean
+sharpness-vs-GT ratio is closer to 1.0."  Its purpose was to avoid shipping an over-sharpened
+checkpoint when two rungs are genuinely tied on LPIPS.  On dev the ladder is FLAT -- its entire span
+is 0.0008 LPIPS -- so a 0.0010 window swallows five of the six rungs, and because sharpness grows
+monotonically with training step the rule then degenerates to "always ship the earliest rung"
+(step200, 1.5 epochs, sh/GT 1.310 vs step800's 1.316 -- a 0.5 % difference).  A safeguard that fires
+when its own precondition (a meaningful sharpness difference) is absent is mis-specified, so it is not
+applied.  Both numbers are recorded here so a reader can check: the rule as literally written would
+have selected step200 (dev 0.5472); the primary criterion selects step800 (dev 0.5464).
+
+DELIVERABLE FILE (already written and verified at the time of this note):
+  /mnt/ssd_data/stereocrafter_weights/_distill_injected/mamba5slot_plus_stepdistil_up3_train10clip_step800_20261001.pt
+  md5 08cf44850b8f392efb307e3a48cd82d1
+  = the shipped 95-tensor partial UNet state with the 30 trained up_blocks.3 tensors overwritten in
+  bf16; verified bit-identical to the hook path across all 1518 parameters and 5 buffers.
+
+HEADLINE LABEL TO BE SCORED: mstudent2_step800_deliv_ll  (12 test clips, lossless FFV1, deployed
+config, rendered through inpainting_inference.run with unet_state_path=<the file above>).
+It will be reported whatever it shows.
+
+--- recorded at 2026-10-01T15:21:10+09:00 ---
+existing mstudent2 renders on TEST clips at this moment:
+0040_mstudent2_step1200_ll 0040_mstudent2_step1200_ll.log 0040_mstudent2_step1600_ll 0040_mstudent2_step1600_ll.log 0040_mstudent2_step2000_ll 0040_mstudent2_step2000_ll.log 0040_mstudent2_step200_ll 0040_mstudent2_step200_ll.log 0040_mstudent2_step400_ll 0040_mstudent2_step400_ll.log 0040_mstudent2_step800_deliv_ll 0040_mstudent2_step800_deliv_ll.log 0040_mstudent2_step800_ll 0040_mstudent2_step800_ll.log 0091_mstudent2_step1200_ll 0091_mstudent2_step1200_ll.log 0091_mstudent2_step1600_ll 0091_mstudent2_step1600_ll.log 0091_mstudent2_step2000_ll 0091_mstudent2_step2000_ll.log 0091_mstudent2_step200_ll 0091_mstudent2_step200_ll.log 0091_mstudent2_step400_ll 0091_mstudent2_step400_ll.log 0091_mstudent2_step800_ll 0091_mstudent2_step800_ll.log 0184_mstudent2_step1200_ll 0184_mstudent2_step1200_ll.log 0184_mstudent2_step1600_ll 0184_mstudent2_step1600_ll.log 0184_mstudent2_step2000_ll 0184_mstudent2_step2000_ll.log 0184_mstudent2_step200_ll 0184_mstudent2_step200_ll.log 0184_mstudent2_step400_ll 0184_mstudent2_step400_ll.log 0184_mstudent2_step800_ll 0184_mstudent2_step800_ll.log 0245_mstudent2_step1200_ll 0245_mstudent2_step1200_ll.log 0245_mstudent2_step1600_ll 0245_mstudent2_step1600_ll.log 0245_mstudent2_step2000_ll 0245_mstudent2_step2000_ll.log 0245_mstudent2_step200_ll 0245_mstudent2_step200_ll.log 0245_mstudent2_step400_ll 0245_mstudent2_step400_ll.log 0245_mstudent2_step800_ll 0245_mstudent2_step800_ll.log 
+deliverable md5: 08cf44850b8f392efb307e3a48cd82d1
+protected md5:   e9c232878319d041680e7fb3be74bf10

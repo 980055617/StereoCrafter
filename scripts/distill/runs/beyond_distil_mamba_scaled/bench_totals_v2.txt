@@ -1,0 +1,54 @@
+BENCH_V3_START 2026-10-01_15:06:09 gpu=0 cfgs=[origin mamba5ck] deliv=-
+0, NVIDIA GeForce RTX 4090, 111 MiB, 45
+1, NVIDIA GeForce RTX 4090, 10049 MiB, 87
+e9c232878319d041680e7fb3be74bf10  /mnt/ssd_data/stereocrafter_weights/_distill_injected/light_lvl0_fulldata333_v2_8k_mamba_only.pt
+RESULT {"label": "origin_h576w1024_r1", "mode": "gated_residual", "tokens": 9216, "batch": 2, "sec": 0.9604, "peak_MiB": 7396, "per_fwd_calls": {"origin_attn": 0, "mamba_core": 0, "plain_attn1": 16}, "gates": []}
+RESULT {"label": "mamba5ck_h576w1024_r1", "mode": "gated_residual", "tokens": 9216, "batch": 2, "sec": 0.9099, "peak_MiB": 7415, "per_fwd_calls": {"origin_attn": 0, "mamba_core": 5, "plain_attn1": 11}, "gates": [1.0]}
+RESULT {"label": "origin_h1024w1792_r1", "mode": "gated_residual", "tokens": 28672, "batch": 2, "sec": 3.7265, "peak_MiB": 16790, "per_fwd_calls": {"origin_attn": 0, "mamba_core": 0, "plain_attn1": 16}, "gates": []}
+RESULT {"label": "mamba5ck_h1024w1792_r1", "mode": "gated_residual", "tokens": 28672, "batch": 2, "sec": 2.9619, "peak_MiB": 16808, "per_fwd_calls": {"origin_attn": 0, "mamba_core": 5, "plain_attn1": 11}, "gates": [1.0]}
+RESULT {"label": "origin_h1024w1920_r1", "mode": "gated_residual", "tokens": 30720, "batch": 2, "sec": 4.0827, "peak_MiB": 17783, "per_fwd_calls": {"origin_attn": 0, "mamba_core": 0, "plain_attn1": 16}, "gates": []}
+RESULT {"label": "mamba5ck_h1024w1920_r1", "mode": "gated_residual", "tokens": 30720, "batch": 2, "sec": 3.1843, "peak_MiB": 17799, "per_fwd_calls": {"origin_attn": 0, "mamba_core": 5, "plain_attn1": 11}, "gates": [1.0]}
+  rep 1 done 15:10:12
+RESULT {"label": "origin_h576w1024_r2", "mode": "gated_residual", "tokens": 9216, "batch": 2, "sec": 0.967, "peak_MiB": 7396, "per_fwd_calls": {"origin_attn": 0, "mamba_core": 0, "plain_attn1": 16}, "gates": []}
+RESULT {"label": "mamba5ck_h576w1024_r2", "mode": "gated_residual", "tokens": 9216, "batch": 2, "sec": 0.914, "peak_MiB": 7415, "per_fwd_calls": {"origin_attn": 0, "mamba_core": 5, "plain_attn1": 11}, "gates": [1.0]}
+RESULT {"label": "origin_h1024w1792_r2", "mode": "gated_residual", "tokens": 28672, "batch": 2, "sec": 3.7384, "peak_MiB": 16790, "per_fwd_calls": {"origin_attn": 0, "mamba_core": 0, "plain_attn1": 16}, "gates": []}
+RESULT {"label": "mamba5ck_h1024w1792_r2", "mode": "gated_residual", "tokens": 28672, "batch": 2, "sec": 2.9649, "peak_MiB": 16808, "per_fwd_calls": {"origin_attn": 0, "mamba_core": 5, "plain_attn1": 11}, "gates": [1.0]}
+RESULT {"label": "origin_h1024w1920_r2", "mode": "gated_residual", "tokens": 30720, "batch": 2, "sec": 4.0888, "peak_MiB": 17783, "per_fwd_calls": {"origin_attn": 0, "mamba_core": 0, "plain_attn1": 16}, "gates": []}
+RESULT {"label": "mamba5ck_h1024w1920_r2", "mode": "gated_residual", "tokens": 30720, "batch": 2, "sec": 3.1867, "peak_MiB": 17799, "per_fwd_calls": {"origin_attn": 0, "mamba_core": 5, "plain_attn1": 11}, "gates": [1.0]}
+  rep 2 done 15:14:14
+RESULT {"label": "origin_h576w1024_r3", "mode": "gated_residual", "tokens": 9216, "batch": 2, "sec": 0.9668, "peak_MiB": 7396, "per_fwd_calls": {"origin_attn": 0, "mamba_core": 0, "plain_attn1": 16}, "gates": []}
+RESULT {"label": "mamba5ck_h576w1024_r3", "mode": "gated_residual", "tokens": 9216, "batch": 2, "sec": 0.9144, "peak_MiB": 7415, "per_fwd_calls": {"origin_attn": 0, "mamba_core": 5, "plain_attn1": 11}, "gates": [1.0]}
+RESULT {"label": "origin_h1024w1792_r3", "mode": "gated_residual", "tokens": 28672, "batch": 2, "sec": 3.7368, "peak_MiB": 16790, "per_fwd_calls": {"origin_attn": 0, "mamba_core": 0, "plain_attn1": 16}, "gates": []}
+RESULT {"label": "mamba5ck_h1024w1792_r3", "mode": "gated_residual", "tokens": 28672, "batch": 2, "sec": 2.9679, "peak_MiB": 16808, "per_fwd_calls": {"origin_attn": 0, "mamba_core": 5, "plain_attn1": 11}, "gates": [1.0]}
+RESULT {"label": "origin_h1024w1920_r3", "mode": "gated_residual", "tokens": 30720, "batch": 2, "sec": 4.0936, "peak_MiB": 17783, "per_fwd_calls": {"origin_attn": 0, "mamba_core": 0, "plain_attn1": 16}, "gates": []}
+RESULT {"label": "mamba5ck_h1024w1920_r3", "mode": "gated_residual", "tokens": 30720, "batch": 2, "sec": 3.1936, "peak_MiB": 17799, "per_fwd_calls": {"origin_attn": 0, "mamba_core": 5, "plain_attn1": 11}, "gates": [1.0]}
+  rep 3 done 15:18:25
+RESULT {"label": "origin_h576w1024_r4", "mode": "gated_residual", "tokens": 9216, "batch": 2, "sec": 0.9663, "peak_MiB": 7396, "per_fwd_calls": {"origin_attn": 0, "mamba_core": 0, "plain_attn1": 16}, "gates": []}
+RESULT {"label": "mamba5ck_h576w1024_r4", "mode": "gated_residual", "tokens": 9216, "batch": 2, "sec": 0.9152, "peak_MiB": 7415, "per_fwd_calls": {"origin_attn": 0, "mamba_core": 5, "plain_attn1": 11}, "gates": [1.0]}
+  rep 4 (576 only) done 15:19:10
+RESULT {"label": "origin_h576w1024_r5", "mode": "gated_residual", "tokens": 9216, "batch": 2, "sec": 0.9665, "peak_MiB": 7396, "per_fwd_calls": {"origin_attn": 0, "mamba_core": 0, "plain_attn1": 16}, "gates": []}
+RESULT {"label": "mamba5ck_h576w1024_r5", "mode": "gated_residual", "tokens": 9216, "batch": 2, "sec": 0.915, "peak_MiB": 7415, "per_fwd_calls": {"origin_attn": 0, "mamba_core": 5, "plain_attn1": 11}, "gates": [1.0]}
+  rep 5 (576 only) done 15:19:47
+BENCH_V3_DONE 2026-10-01_15:19:47 cfgs=[origin mamba5ck]
+BENCH_V3_START 2026-10-01_15:24:01 gpu=0 cfgs=[mamba5deliv] deliv=/mnt/ssd_data/stereocrafter_weights/_distill_injected/mamba5slot_plus_stepdistil_up3_train10clip_step800_20261001.pt
+0, NVIDIA GeForce RTX 4090, 111 MiB, 40
+1, NVIDIA GeForce RTX 4090, 10047 MiB, 85
+e9c232878319d041680e7fb3be74bf10  /mnt/ssd_data/stereocrafter_weights/_distill_injected/light_lvl0_fulldata333_v2_8k_mamba_only.pt
+08cf44850b8f392efb307e3a48cd82d1  /mnt/ssd_data/stereocrafter_weights/_distill_injected/mamba5slot_plus_stepdistil_up3_train10clip_step800_20261001.pt
+RESULT {"label": "mamba5deliv_h576w1024_r1", "mode": "gated_residual", "tokens": 9216, "batch": 2, "sec": 0.9077, "peak_MiB": 7415, "per_fwd_calls": {"origin_attn": 0, "mamba_core": 5, "plain_attn1": 11}, "gates": [1.0]}
+RESULT {"label": "mamba5deliv_h1024w1792_r1", "mode": "gated_residual", "tokens": 28672, "batch": 2, "sec": 2.951, "peak_MiB": 16808, "per_fwd_calls": {"origin_attn": 0, "mamba_core": 5, "plain_attn1": 11}, "gates": [1.0]}
+RESULT {"label": "mamba5deliv_h1024w1920_r1", "mode": "gated_residual", "tokens": 30720, "batch": 2, "sec": 3.1792, "peak_MiB": 17799, "per_fwd_calls": {"origin_attn": 0, "mamba_core": 5, "plain_attn1": 11}, "gates": [1.0]}
+  rep 1 done 15:26:00
+RESULT {"label": "mamba5deliv_h576w1024_r2", "mode": "gated_residual", "tokens": 9216, "batch": 2, "sec": 0.913, "peak_MiB": 7415, "per_fwd_calls": {"origin_attn": 0, "mamba_core": 5, "plain_attn1": 11}, "gates": [1.0]}
+RESULT {"label": "mamba5deliv_h1024w1792_r2", "mode": "gated_residual", "tokens": 28672, "batch": 2, "sec": 2.9632, "peak_MiB": 16808, "per_fwd_calls": {"origin_attn": 0, "mamba_core": 5, "plain_attn1": 11}, "gates": [1.0]}
+RESULT {"label": "mamba5deliv_h1024w1920_r2", "mode": "gated_residual", "tokens": 30720, "batch": 2, "sec": 3.1853, "peak_MiB": 17799, "per_fwd_calls": {"origin_attn": 0, "mamba_core": 5, "plain_attn1": 11}, "gates": [1.0]}
+  rep 2 done 15:27:59
+RESULT {"label": "mamba5deliv_h576w1024_r3", "mode": "gated_residual", "tokens": 9216, "batch": 2, "sec": 0.9138, "peak_MiB": 7415, "per_fwd_calls": {"origin_attn": 0, "mamba_core": 5, "plain_attn1": 11}, "gates": [1.0]}
+RESULT {"label": "mamba5deliv_h1024w1792_r3", "mode": "gated_residual", "tokens": 28672, "batch": 2, "sec": 2.9638, "peak_MiB": 16808, "per_fwd_calls": {"origin_attn": 0, "mamba_core": 5, "plain_attn1": 11}, "gates": [1.0]}
+RESULT {"label": "mamba5deliv_h1024w1920_r3", "mode": "gated_residual", "tokens": 30720, "batch": 2, "sec": 3.1857, "peak_MiB": 17799, "per_fwd_calls": {"origin_attn": 0, "mamba_core": 5, "plain_attn1": 11}, "gates": [1.0]}
+  rep 3 done 15:29:59
+RESULT {"label": "mamba5deliv_h576w1024_r4", "mode": "gated_residual", "tokens": 9216, "batch": 2, "sec": 0.9134, "peak_MiB": 7415, "per_fwd_calls": {"origin_attn": 0, "mamba_core": 5, "plain_attn1": 11}, "gates": [1.0]}
+  rep 4 (576 only) done 15:30:21
+RESULT {"label": "mamba5deliv_h576w1024_r5", "mode": "gated_residual", "tokens": 9216, "batch": 2, "sec": 0.9136, "peak_MiB": 7415, "per_fwd_calls": {"origin_attn": 0, "mamba_core": 5, "plain_attn1": 11}, "gates": [1.0]}
+  rep 5 (576 only) done 15:30:42
+BENCH_V3_DONE 2026-10-01_15:30:42 cfgs=[mamba5deliv]

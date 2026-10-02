@@ -1,0 +1,13 @@
+8abafd34b55e0e020500dfe5730e5ca7  /home/kawa/master_project/StereoCrafter/outputs/diagnose_0160/clips/0042_origin/0042_inpainting_results_sbs.mp4
+0443ec4836ccff6be200d90a3ccda082  /home/kawa/master_project/StereoCrafter/outputs/fulldata/clips/0052_origin/0052_inpainting_results_sbs.mp4
+a43d3584944fda8c6d39eb44e93850b7  /home/kawa/master_project/StereoCrafter/outputs/fulldata/clips/0125_origin/0125_inpainting_results_sbs.mp4
+d5ba98c078139d670763f04be1630692  /home/kawa/master_project/StereoCrafter/outputs/fulldata/clips/0128_origin/0128_inpainting_results_sbs.mp4
+0c9d96c5a88217aad17ff877d48116d3  /home/kawa/master_project/StereoCrafter/outputs/fulldata/clips/0141_origin/0141_inpainting_results_sbs.mp4
+863bb82af7ff15e75b02351b2c8219ec  /home/kawa/master_project/StereoCrafter/outputs/fulldata/clips/0147_origin/0147_inpainting_results_sbs.mp4
+c1dd22e57ed9f4aca5b0bffc4481bf4a  /home/kawa/master_project/StereoCrafter/outputs/fulldata_v2/clips/0160_origin/0160_inpainting_results_sbs.mp4
+8b13a05ed028382d336f38b31c9ab861  /home/kawa/master_project/StereoCrafter/outputs/fulldata_v2/clips/0170_origin/0170_inpainting_results_sbs.mp4
+3c9c050244cfb556deb41d6cdbb71788  /home/kawa/master_project/StereoCrafter/outputs/fulldata_v2/clips/0204_origin/0204_inpainting_results_sbs.mp4
+86254a4a0759adc7118742ca88503e4a  /home/kawa/master_project/StereoCrafter/outputs/fulldata_v2/clips/0225_origin/0225_inpainting_results_sbs.mp4
+53256f52582bcccdcb583a80b54f5645  /home/kawa/master_project/StereoCrafter/outputs/fulldata_v2/clips/0251_origin/0251_inpainting_results_sbs.mp4
+f290a18c8b6e5503ccd34df19d5981a2  /home/kawa/master_project/StereoCrafter/outputs/fulldata_v2/clips/0259_origin/0259_inpainting_results_sbs.mp4
+6b3879da5e219a95a177bf58cb5145e2  /home/kawa/master_project/StereoCrafter/outputs/fulldata_v2/clips/0301_origin/0301_inpainting_results_sbs.mp4

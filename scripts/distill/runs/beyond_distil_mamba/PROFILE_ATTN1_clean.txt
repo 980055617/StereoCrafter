@@ -1,0 +1,17 @@
+==============================================================================================================
+attn1 UNet-MODULE TIME -- utils/module_timing.py, include '*.attn1' (32 modules: 16 spatial +
+16 temporal; only the 5 SPATIAL level-0 slots are ever replaced), clip 0301, 3 chunks of 14 frames,
+8 steps, guidance 1.01, 24 calls per module.  Same instrument as the published -5.3/-20.5/-21.7 %.
+STEADY STATE = the first call of every module dropped, because the first call into a Mamba2 block
+JIT-compiles its Triton kernels (measured below); the raw column keeps that cost visible.
+==============================================================================================================
+  res        config   steady ms  vs origin    raw ms  max 1st call  ss down0    ss up3
+  576x1024   none        7393.6      +0.0%    7573.7          20.7    1771.8    2518.8
+  576x1024   down0       6516.3     -11.9%   11643.3        4976.9     844.0    2555.8
+  576x1024   all5        5227.0     -29.3%   10326.9        4979.6     843.7    1270.5
+    -> option A (5-slot) -29.30 % of origin's attn1 time; option B (2-slot) -11.87 %.
+       what B GIVES UP = the three up_blocks.3 slots: +1289.4 ms = +17.44 % of origin's attn1 total, i.e. 60 % of option A's whole attn1 saving.
+
+  ('576x1024', 'all5')  outputs/beyond_distil_mamba/profile2/576x1024_all5_r2/module_profile_576x1024_all5.json
+  ('576x1024', 'down0')  outputs/beyond_distil_mamba/profile2/576x1024_down0_r2/module_profile_576x1024_down0.json
+  ('576x1024', 'none')  outputs/beyond_distil_mamba/profile2/576x1024_none_r2/module_profile_576x1024_none.json

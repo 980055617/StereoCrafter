@@ -1,0 +1,110 @@
+[data] video_data/splatting/0301_splatting_results.mp4 151 frames; windows [0, 66]; substep counts [1, 3, 4, 8]; ablation M=4
+[capture] windows [0, 66]; sigmas [700.0, 286.53885, 102.90337, 30.99361, 7.27616, 1.16757, 0.09739, 0.002]; t [1.6378, 1.4145, 1.1584, 0.8584, 0.4962, 0.0387, -0.5823, -1.5537]
+[capture] frame/mask latents verified step-invariant (max abs diff 0.0 across all 8 steps)
+
+=== A. scheduler algebra, verified against the live captured trajectory ===
+   w  k      sigma  inp_recon_maxabs  x0hat_rel  euler_rel  invert_rel
+   0  0  700.00000         0.000e+00   3.89e-03   1.68e-03    1.14e+00
+   0  1  286.53885         0.000e+00   3.78e-03   1.66e-03    3.73e-01
+   0  2  102.90337         0.000e+00   3.64e-03   1.66e-03    1.02e-01
+   0  3   30.99361         0.000e+00   3.09e-03   1.68e-03    2.20e-02
+   0  4    7.27616         0.000e+00   3.45e-03   2.24e-03    5.12e-03
+   0  5    1.16757         0.000e+00   2.53e-03   2.81e-03    3.13e-03
+   0  6    0.09739         0.000e+00   2.34e-04   1.68e-03    1.72e-03
+   0  7    0.00200         0.000e+00   5.87e-07   1.42e-04    1.42e-04
+  66  0  700.00000         0.000e+00   4.89e-03   1.68e-03    1.23e+00
+  66  1  286.53885         0.000e+00   4.57e-03   1.67e-03    4.02e-01
+  66  2  102.90337         0.000e+00   4.10e-03   1.67e-03    1.10e-01
+  66  3   30.99361         0.000e+00   3.14e-03   1.67e-03    2.35e-02
+  66  4    7.27616         0.000e+00   3.59e-03   2.23e-03    5.38e-03
+  66  5    1.16757         0.000e+00   2.65e-03   2.89e-03    3.23e-03
+  66  6    0.09739         0.000e+00   2.52e-04   1.67e-03    1.71e-03
+  66  7    0.00200         0.000e+00   4.90e-07   1.24e-04    1.24e-04
+(all four columns are bf16-rounding residuals: the deployed sampler keeps y_k in bf16 and does the CFG combination in bf16, this check redoes it in fp32)
+
+=== B. Euler information weights re-derived for the deployed 8-step grid ===
+ k      sigma          c_k  share_of_y7     c_out  w_k=c_k*c_out   w_k^2 rel
+ 0  700.00000   4.1227e-06      0.0003%   1.00000    4.12271e-06   1.886e-09
+ 1  286.53885   1.2456e-05      0.0010%   0.99999    1.24558e-05   1.721e-08
+ 2  102.90337   4.5094e-05      0.0038%   0.99995    4.50916e-05   2.256e-07
+ 3   30.99361   2.1034e-04      0.0180%   0.99948    2.10231e-04   4.904e-06
+ 4    7.27616   1.4381e-03      0.1226%   0.99069    1.42470e-03   2.252e-04
+ 5    1.16757   1.8824e-02      1.6502%   0.75951    1.42966e-02   2.268e-02
+ 6    0.09739   9.7946e-01     86.7487%   0.09693    9.49385e-02   1.000e+00
+ 7    0.00200   1.0000e+00         nan%   0.00200    2.00000e-03   4.438e-04
+reference (mech/testb/euler_information_weights.txt): k0-4 together 0.163%, k5 1.8555%, k6 97.7037%
+re-derived: k0-4 together 0.1459%, k5 1.6502%, k6 86.7487%
+
+=== C. per-coarse-step Euler truncation error that the target removes ===
+    trunc = ||x_target(M) - x_{k+1}^Euler|| / ||x_{k+1}^Euler||     (M=1 is the coarse step itself -> must be ~0)
+    dx0   = ||x0hat_target(M) - x0hat_k|| / ||x0hat_k||             (what the student must change)
+  -- window 0 --
+ k      sigma     trunc M1     trunc M3     trunc M4     trunc M8      dx0 M1      dx0 M3      dx0 M4      dx0 M8
+ 0  700.00000   1.6824e-03   1.6824e-03   1.6825e-03   1.6825e-03  3.8939e-03  1.3890e-02  1.4535e-02  1.5923e-02
+ 1  286.53885   1.6640e-03   1.6656e-03   1.6658e-03   1.6661e-03  3.7809e-03  1.6689e-02  1.7818e-02  1.9499e-02
+ 2  102.90337   1.6640e-03   1.6896e-03   1.6944e-03   1.6998e-03  3.6433e-03  1.8391e-02  2.0061e-02  2.1695e-02
+ 3   30.99361   1.6764e-03   2.7276e-03   2.9032e-03   3.2221e-03  3.0920e-03  2.8410e-02  3.1257e-02  3.6241e-02
+ 4    7.27616   2.2408e-03   4.0144e-02   4.6594e-02   5.7287e-02  3.4538e-03  9.1766e-02  1.0654e-01  1.3102e-01
+ 5    1.16757   2.8127e-03   1.1448e-01   1.3160e-01   1.6184e-01  2.5324e-03  1.2744e-01  1.4651e-01  1.8018e-01
+ 6    0.09739   1.6810e-03   1.3986e-02   1.6849e-02   2.1536e-02  2.3362e-04  1.4178e-02  1.7120e-02  2.1924e-02
+ 7    0.00200   1.4157e-04   1.3855e-04   1.3586e-04   1.3124e-04  5.8682e-07  8.6000e-06  1.7239e-05  3.7960e-05
+  -- window 66 --
+ k      sigma     trunc M1     trunc M3     trunc M4     trunc M8      dx0 M1      dx0 M3      dx0 M4      dx0 M8
+ 0  700.00000   1.6836e-03   1.6837e-03   1.6838e-03   1.6838e-03  4.8893e-03  1.6545e-02  1.7610e-02  1.9135e-02
+ 1  286.53885   1.6710e-03   1.6731e-03   1.6734e-03   1.6739e-03  4.5730e-03  2.1444e-02  2.3073e-02  2.5135e-02
+ 2  102.90337   1.6679e-03   1.7041e-03   1.7105e-03   1.7189e-03  4.1002e-03  2.3358e-02  2.5343e-02  2.7695e-02
+ 3   30.99361   1.6738e-03   2.8894e-03   3.0818e-03   3.4110e-03  3.1435e-03  3.3186e-02  3.6441e-02  4.1830e-02
+ 4    7.27616   2.2255e-03   4.2462e-02   4.8969e-02   5.9720e-02  3.5906e-03  1.0268e-01  1.1844e-01  1.4447e-01
+ 5    1.16757   2.8906e-03   1.2303e-01   1.4138e-01   1.7428e-01  2.6512e-03  1.3738e-01  1.5788e-01  1.9462e-01
+ 6    0.09739   1.6743e-03   1.5465e-02   1.8623e-02   2.3832e-02  2.5241e-04  1.5701e-02  1.8941e-02  2.4277e-02
+ 7    0.00200   1.2365e-04   1.2286e-04   1.2256e-04   1.2357e-04  4.9018e-07  8.7586e-06  1.6866e-05  3.5246e-05
+[C] M=1 is the control: it IS the coarse Euler step, so trunc must be ~0 and dx0 must be ~0.
+
+=== D. true end-to-end per-step sensitivity (model live for the remaining steps) ===
+  -- window 0 --  chain fidelity (no substitution vs deployed final) 1.751e-02   all-steps oracle shift ||orc-base||/||base|| 2.1138e-01
+ k      sigma      shift_k  shift_k/shift_all  c_k (frozen-later)
+ 0  700.00000   1.6594e-02             0.0785          4.1227e-06
+ 1  286.53885   1.6914e-02             0.0800          1.2456e-05
+ 2  102.90337   1.6422e-02             0.0777          4.5094e-05
+ 3   30.99361   1.8593e-02             0.0880          2.1034e-04
+ 4    7.27616   7.7086e-02             0.3647          1.4381e-03
+ 5    1.16757   1.3055e-01             0.6176          1.8824e-02
+ 6    0.09739   1.6969e-02             0.0803          9.7946e-01
+ 7    0.00200   2.3181e-05             0.0001          1.0000e+00
+  -- window 66 --  chain fidelity (no substitution vs deployed final) 1.760e-02   all-steps oracle shift ||orc-base||/||base|| 2.3058e-01
+ k      sigma      shift_k  shift_k/shift_all  c_k (frozen-later)
+ 0  700.00000   1.7296e-02             0.0750          4.1227e-06
+ 1  286.53885   1.7461e-02             0.0757          1.2456e-05
+ 2  102.90337   1.7148e-02             0.0744          4.5094e-05
+ 3   30.99361   1.8577e-02             0.0806          2.1034e-04
+ 4    7.27616   8.4325e-02             0.3657          1.4381e-03
+ 5    1.16757   1.4114e-01             0.6121          1.8824e-02
+ 6    0.09739   1.8747e-02             0.0813          9.7946e-01
+ 7    0.00200   1.5897e-05             0.0001          1.0000e+00
+
+=== E. all-steps oracle vs deployed, decoded (raw float, no codec) ===
+  window 0: sharp deployed 0.0187  chain(no subst) 0.0188  ORACLE 0.0234   (window-0 GT 0.0452)
+  window 66: sharp deployed 0.0276  chain(no subst) 0.0277  ORACLE 0.0341   (window-0 GT 0.0452)
+[E] 0301 references: deployed-clip sharp 0.0235, s25 0.0296, GT 0.0505 (score_clip on the mp4, not directly comparable to these per-window raw-decode numbers, but the DIRECTION must match)
+
+=== F. does the correction reduce to rescaling the Euler step? ===
+    dx0hat_k = x0hat_target - x0hat_k ;  basis g_k = x0hat_k - y_k  (the Euler derivative direction)
+   w  k      sigma     alpha*  resid_frac      cos
+   0  0  700.00000 -7.0988e-07      0.9988  -0.0480
+   0  1  286.53885 -2.4111e-06      0.9985  -0.0542
+   0  2  102.90337 -1.2248e-05      0.9962  -0.0869
+   0  3   30.99361 -2.3467e-04      0.9476  -0.3196
+   0  4    7.27616 -5.3319e-03      0.8655  -0.5008
+   0  5    1.16757 -6.1616e-02      0.7844  -0.6203
+   0  6    0.09739 -2.2386e-01      0.2403  -0.9707
+   0  7    0.00200 -4.7950e-02      0.9143  -0.4050
+  66  0  700.00000 -1.0620e-06      0.9980  -0.0638
+  66  1  286.53885 -2.1798e-06      0.9992  -0.0406
+  66  2  102.90337 -1.3144e-05      0.9969  -0.0792
+  66  3   30.99361 -2.1996e-04      0.9614  -0.2753
+  66  4    7.27616 -5.5360e-03      0.8637  -0.5040
+  66  5    1.16757 -6.1845e-02      0.7862  -0.6180
+  66  6    0.09739 -2.3218e-01      0.2078  -0.9782
+  66  7    0.00200 -1.8339e-02      0.9905  -0.1375
+
+TARGETCHECK_DONE 680.7s  peak 8.75 GiB -> scripts/distill/runs/beyond_distil/targetcheck_0301

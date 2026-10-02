@@ -1,0 +1,35 @@
+=== PART 2: WHERE IS THE GUIDANCE OPTIMUM?  four regime-spanning clips, LOSSLESS ===
+8 steps everywhere except s25 (25 steps).  min=max guidance.  delta vs deployed origin (g1.01).
+
+clip     origin      g115      g125      g140       s25   per-clip optimum
+0301     0.4351    0.4077    0.4068    0.4279    0.3986   g125
+0204     0.2053    0.1968    0.1942    0.1936    0.1897   g140
+0052     0.4467    0.4425    0.4407    0.4390    0.4384   g140
+0147     0.5269    0.5295    0.5304    0.5305    0.5220   origin (g1.01)
+MEAN     0.4035    0.3941    0.3930    0.3977    0.3872
+delta   +0.0000   -0.0094   -0.0105   -0.0058   -0.0163
+worst   +0.0000   +0.0026   +0.0035   +0.0036   -0.0049
+
+The 4-clip mean optimum IS near g1.25 (-0.0105), confirming beyond2's 1.25-1.40 estimate and
+refining it downward.  But the PER-CLIP optimum has no common value:
+  0147 : monotonically WORSE with guidance (+0.0026 / +0.0035 / +0.0036) -> wants g1.01, i.e. none
+  0301 : optimum ~1.2 (-0.0283) and COLLAPSES by 1.40 (-0.0072, losing 3/4 of the gain)
+  0204 : FLAT between 1.25 and 1.40 (-0.0111 vs -0.0117; the 0.0006 gap is at the measurement floor)
+  0052 : FLAT-to-slightly-better at 1.40 (-0.0060 vs -0.0077)
+So one clip wants guidance OFF, one peaks at ~1.2 and is on a cliff, two are flat out to 1.4.
+The argument rests on the two large margins, not on the flat ones: 0147 is monotonically worse
+(+0.0026 / +0.0035 / +0.0036) and 0301 collapses -0.0283 -> -0.0072.  Both are an order of
+magnitude above the ~0.0006 floor implied by the DC-match robustness pass.
+There is no single value that is right for this clip set -- which is the structural reason
+guidance cannot be a global deployment default, independent of the size of the mean.
+
+g115 is the SAFER point: 90% of g125's 4-clip mean gain (-0.0094 vs -0.0105) with a smaller
+worst case (+0.0026 vs +0.0035) and less sharpening (4-clip mean sharp 0.0138 vs 0.0148).
+
+Cost (outputs/beyond4_lossless/timing_gpu0.txt, GPU 0, 576x1024):
+  8 steps  g1.01 : 165-195 s/clip      8 steps g1.15/1.25/1.40 : 165-197 s/clip  (~1.0x)
+  25 steps g1.01 : 390-431 s/clip      (~2.4x)
+
+SELECTION BIAS CHECK: on these 4 clips g125 scores -0.0105; over all 12 it is -0.0065.
+The 3 clips of the original mp4v smoke (0042/0204/0301) give -0.0158 lossless.  Any 3-4 clip
+guidance number in this project is optimistic by roughly 1.6-2.4x against the 12-clip truth.

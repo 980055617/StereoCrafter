@@ -1,0 +1,21 @@
+clip/config                           offset  leftPSNR    LPIPS    sharp    rPSNR   nf
+--- 0052 GT ---                                          0.0000   0.0099
+0052_origin                        (-12,-12)     52.06   0.4432   0.0136   13.223   38
+ROW clip=0052 tag=0052_origin dy=-12 dx=-12 leftPSNR=52.0576 lpips=0.443221 sharp=0.013563 gtSharp=0.009881 rightPSNR=13.2231 n=38 path=outputs/fulldata/clips/0052_origin/0052_inpainting_results_sbs.mp4
+0052_origin_ll                     (-12,-12)     40.70   0.4467   0.0130   13.203   38
+ROW clip=0052 tag=0052_origin_ll dy=-12 dx=-12 leftPSNR=40.6982 lpips=0.446689 sharp=0.012979 gtSharp=0.009881 rightPSNR=13.2028 n=38 path=outputs/beyond4_lossless/clips/0052_origin_ll/0052_inpainting_results_sbs.mkv
+--- 0147 GT ---                                          0.0000   0.0039
+0147_origin                        (-12,-12)     50.68   0.5183   0.0066   15.486   38
+ROW clip=0147 tag=0147_origin dy=-12 dx=-12 leftPSNR=50.6797 lpips=0.518263 sharp=0.006645 gtSharp=0.003901 rightPSNR=15.4860 n=38 path=outputs/fulldata/clips/0147_origin/0147_inpainting_results_sbs.mp4
+0147_origin_ll                     (-12,-12)     40.40   0.5269   0.0062   15.458   38
+ROW clip=0147 tag=0147_origin_ll dy=-12 dx=-12 leftPSNR=40.4039 lpips=0.526938 sharp=0.006179 gtSharp=0.003901 rightPSNR=15.4580 n=38 path=outputs/beyond4_lossless/clips/0147_origin_ll/0147_inpainting_results_sbs.mkv
+--- 0204 GT ---                                          0.0000   0.0116
+0204_origin                          (-28,0)     48.90   0.2122   0.0062   19.785   38
+ROW clip=0204 tag=0204_origin dy=-28 dx=0 leftPSNR=48.9016 lpips=0.212174 sharp=0.006173 gtSharp=0.011577 rightPSNR=19.7849 n=38 path=outputs/fulldata_v2/clips/0204_origin/0204_inpainting_results_sbs.mp4
+0204_origin_ll                       (-28,0)     41.16   0.2053   0.0065   19.896   38
+ROW clip=0204 tag=0204_origin_ll dy=-28 dx=0 leftPSNR=41.1620 lpips=0.205310 sharp=0.006527 gtSharp=0.011577 rightPSNR=19.8959 n=38 path=outputs/beyond4_lossless/clips/0204_origin_ll/0204_inpainting_results_sbs.mkv
+--- 0301 GT ---                                          0.0000   0.0505
+0301_origin                          (-28,0)     46.77   0.4445   0.0235   15.503   38
+ROW clip=0301 tag=0301_origin dy=-28 dx=0 leftPSNR=46.7682 lpips=0.444495 sharp=0.023487 gtSharp=0.050529 rightPSNR=15.5033 n=38 path=outputs/fulldata_v2/clips/0301_origin/0301_inpainting_results_sbs.mp4
+0301_origin_ll                       (-28,0)     40.25   0.4351   0.0235   15.467   38
+ROW clip=0301 tag=0301_origin_ll dy=-28 dx=0 leftPSNR=40.2464 lpips=0.435095 sharp=0.023528 gtSharp=0.050529 rightPSNR=15.4667 n=38 path=outputs/beyond4_lossless/clips/0301_origin_ll/0301_inpainting_results_sbs.mkv

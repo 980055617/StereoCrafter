@@ -1,0 +1,10 @@
+BENCH_V2_START 2026-10-01_14:56:40 gpu=0 cfgs=[origin mamba5ck] deliv=-
+0, NVIDIA GeForce RTX 4090, 111 MiB, 47
+1, NVIDIA GeForce RTX 4090, 10049 MiB, 88
+e9c232878319d041680e7fb3be74bf10  /mnt/ssd_data/stereocrafter_weights/_distill_injected/light_lvl0_fulldata333_v2_8k_mamba_only.pt
+  rep 1 done 14:56:51
+  rep 2 done 14:57:02
+  rep 3 done 14:57:13
+  rep 4 (576 only) done 14:57:16
+  rep 5 (576 only) done 14:57:20
+BENCH_V2_DONE 2026-10-01_14:57:20 cfgs=[origin mamba5ck]

@@ -1,0 +1,22 @@
+========================================================================================================
+attn1 UNet-MODULE TIME (utils/module_timing.py, include '*.attn1', clip 0301, 3 chunks of 14 frames,
+8 steps, guidance 1.01).  This is the instrument that produced the published -5.3/-20.5/-21.7 %.
+========================================================================================================
+  res        config    all attn1 ms  vs origin  down0 ms    up3 ms  calls
+  1024x1792  none           33459.2      +0.0%   10621.9   14461.9     24
+  1024x1792  down0          30364.5      -9.2%    7298.9   14608.4     24
+  1024x1792  all5           18240.9     -45.5%    7303.4    2405.0     24
+    -> the three up_blocks.3 slots contribute +12123.6 ms of attn1 time (+36.23 % of origin's attn1 total):
+       option B (2-slot) attn1 30364.5 ms vs option A (5-slot) 18240.9 ms vs origin 33459.2 ms
+  576x1024   none            4461.5      +0.0%    1053.5    1525.4     24
+  576x1024   down0           8936.6    +100.3%    5487.5    1551.1     24
+  576x1024   all5            8161.4     +82.9%    5487.2     779.6     24
+    -> the three up_blocks.3 slots contribute +775.2 ms of attn1 time (+17.37 % of origin's attn1 total):
+       option B (2-slot) attn1 8936.6 ms vs option A (5-slot) 8161.4 ms vs origin 4461.5 ms
+
+  ('1024x1792', 'all5')  outputs/beyond_distil_mamba/profile/1024x1792_all5/module_profile_1024x1792_all5.json
+  ('1024x1792', 'down0')  outputs/beyond_distil_mamba/profile/1024x1792_down0/module_profile_1024x1792_down0.json
+  ('1024x1792', 'none')  outputs/beyond_distil_mamba/profile/1024x1792_none/module_profile_1024x1792_none.json
+  ('576x1024', 'all5')  outputs/beyond_distil_mamba/profile/576x1024_all5/module_profile_576x1024_all5.json
+  ('576x1024', 'down0')  outputs/beyond_distil_mamba/profile/576x1024_down0/module_profile_576x1024_down0.json
+  ('576x1024', 'none')  outputs/beyond_distil_mamba/profile/576x1024_none/module_profile_576x1024_none.json

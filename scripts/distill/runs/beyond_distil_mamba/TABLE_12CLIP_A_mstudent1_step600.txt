@@ -1,0 +1,97 @@
+============================================================================================================
+MAMBA-SIDE BEYOND-DISTIL -- ALL ROWS LOSSLESS (FFV1), real-GT LPIPS, deployed config 8 steps / g 1.01
+scorer scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py  SCORE_STEP=4
+============================================================================================================
+--- 0042  GT sharp 0.0070 ---
+  row                           LPIPS  d vs mamba  frac head    sharp  sh/mamba  leftPSNR    rPSNR   nf
+  origin                       0.4279     -0.0026              0.0088    0.9650     40.02   17.337   38
+  origin+student (ref)         0.4184     -0.0121              0.0096    1.0511     40.02   17.317   38
+  mamba 5-slot (SHIPPED)       0.4305     +0.0000              0.0091    1.0000     40.02   17.278   38
+  mamba+mstudent1_step600      0.4201     -0.0104              0.0102    1.1231     40.02   17.350   38
+
+--- 0052  GT sharp 0.0099 ---
+  row                           LPIPS  d vs mamba  frac head    sharp  sh/mamba  leftPSNR    rPSNR   nf
+  origin                       0.4467     +0.0000              0.0130    0.9861     40.70   13.203   38
+  origin+student (ref)         0.4397     -0.0070              0.0135    1.0252     40.70   13.205   38
+  mamba 5-slot (SHIPPED)       0.4467     +0.0000              0.0132    1.0000     40.70   13.182   38
+  mamba+mstudent1_step600      0.4359     -0.0108              0.0141    1.0717     40.70   13.175   38
+
+--- 0125  GT sharp 0.0114 ---
+  row                           LPIPS  d vs mamba  frac head    sharp  sh/mamba  leftPSNR    rPSNR   nf
+  origin                       0.4799     +0.0002              0.0094    0.9838     40.46   16.602   38
+  origin+student (ref)         0.4551     -0.0247              0.0105    1.0987     40.46   16.562   38
+  mamba 5-slot (SHIPPED)       0.4797     +0.0000              0.0096    1.0000     40.46   16.564   38
+  mamba+mstudent1_step600      0.4499     -0.0298              0.0116    1.2118     40.46   16.532   38
+
+--- 0128  GT sharp 0.0105 ---
+  row                           LPIPS  d vs mamba  frac head    sharp  sh/mamba  leftPSNR    rPSNR   nf
+  origin                       0.4055     +0.0001              0.0135    0.9631     39.75   18.450   38
+  origin+student (ref)         0.3897     -0.0157              0.0152    1.0855     39.75   18.285   38
+  mamba 5-slot (SHIPPED)       0.4054     +0.0000              0.0140    1.0000     39.75   18.346   38
+  mamba+mstudent1_step600      0.3853     -0.0201              0.0167    1.1920     39.75   18.120   38
+
+--- 0141  GT sharp 0.0036 ---
+  row                           LPIPS  d vs mamba  frac head    sharp  sh/mamba  leftPSNR    rPSNR   nf
+  origin                       0.4813     -0.0012              0.0049    0.9760     40.09   15.569   38
+  origin+student (ref)         0.4664     -0.0161              0.0055    1.0974     40.09   15.540   38
+  mamba 5-slot (SHIPPED)       0.4825     +0.0000              0.0050    1.0000     40.09   15.546   38
+  mamba+mstudent1_step600      0.4657     -0.0168              0.0061    1.2174     40.09   15.466   38
+
+--- 0147  GT sharp 0.0039 ---
+  row                           LPIPS  d vs mamba  frac head    sharp  sh/mamba  leftPSNR    rPSNR   nf
+  origin                       0.5269     +0.0005              0.0062    0.9966     40.40   15.458   38
+  origin+student (ref)         0.5239     -0.0026              0.0066    1.0724     40.40   15.453   38
+  mamba 5-slot (SHIPPED)       0.5264     +0.0000              0.0062    1.0000     40.40   15.451   38
+  mamba+mstudent1_step600      0.5233     -0.0031              0.0071    1.1442     40.40   15.390   38
+
+--- 0170  GT sharp 0.0323 ---
+  row                           LPIPS  d vs mamba  frac head    sharp  sh/mamba  leftPSNR    rPSNR   nf
+  origin                       0.2517     +0.0001              0.0164    0.9799     39.79   17.168   38
+  origin+student (ref)         0.2492     -0.0025              0.0174    1.0374     39.79   17.048   38
+  mamba 5-slot (SHIPPED)       0.2516     +0.0000              0.0167    1.0000     39.79   17.073   38
+  mamba+mstudent1_step600      0.2429     -0.0087              0.0181    1.0796     39.79   16.951   38
+
+--- 0204  GT sharp 0.0116 ---
+  row                           LPIPS  d vs mamba  frac head    sharp  sh/mamba  leftPSNR    rPSNR   nf
+  origin                       0.2053     +0.0031              0.0065    0.9862     41.16   19.896   38
+  origin+student (ref)         0.1883     -0.0139              0.0076    1.1482     41.16   19.529   38
+  mamba 5-slot (SHIPPED)       0.2022     +0.0000              0.0066    1.0000     41.16   19.743   38
+  mamba+mstudent1_step600      0.1867     -0.0155              0.0081    1.2174     41.16   19.407   38
+
+--- 0225  GT sharp 0.0132 ---
+  row                           LPIPS  d vs mamba  frac head    sharp  sh/mamba  leftPSNR    rPSNR   nf
+  origin                       0.2750     +0.0013              0.0118    0.9923     40.93   16.068   38
+  origin+student (ref)         0.2587     -0.0151              0.0135    1.1410     40.93   15.864   38
+  mamba 5-slot (SHIPPED)       0.2738     +0.0000              0.0119    1.0000     40.93   16.038   38
+  mamba+mstudent1_step600      0.2571     -0.0167              0.0139    1.1717     40.93   15.780   38
+
+--- 0251  GT sharp 0.0173 ---
+  row                           LPIPS  d vs mamba  frac head    sharp  sh/mamba  leftPSNR    rPSNR   nf
+  origin                       0.3460     -0.0006              0.0083    0.9759     41.23   18.580   38
+  origin+student (ref)         0.3376     -0.0090              0.0091    1.0674     41.23   18.574   38
+  mamba 5-slot (SHIPPED)       0.3466     +0.0000              0.0085    1.0000     41.23   18.509   38
+  mamba+mstudent1_step600      0.3325     -0.0141              0.0098    1.1586     41.23   18.513   38
+
+--- 0259  GT sharp 0.0450 ---
+  row                           LPIPS  d vs mamba  frac head    sharp  sh/mamba  leftPSNR    rPSNR   nf
+  origin                       0.4376     -0.0036              0.0312    0.9332     40.72   13.302   38
+  origin+student (ref)         0.4346     -0.0066              0.0316    0.9456     40.72   13.320   38
+  mamba 5-slot (SHIPPED)       0.4412     +0.0000              0.0334    1.0000     40.72   13.116   38
+  mamba+mstudent1_step600      0.4366     -0.0046              0.0339    1.0161     40.72   13.220   38
+
+--- 0301  GT sharp 0.0505 ---
+  row                           LPIPS  d vs mamba  frac head    sharp  sh/mamba  leftPSNR    rPSNR   nf
+  origin                       0.4351     +0.0098              0.0235    0.9443     40.25   15.467   38
+  origin+student (ref)         0.3982     -0.0271              0.0291    1.1659     40.25   15.056   38
+  mamba 5-slot (SHIPPED)       0.4253     +0.0000              0.0249    1.0000     40.25   15.284   38
+  mamba+mstudent1_step600      0.3831     -0.0422              0.0315    1.2642     40.25   14.968   38
+
+============================================================================================================
+MEANS over 12 clips: ['0042', '0052', '0125', '0128', '0141', '0147', '0170', '0204', '0225', '0251', '0259', '0301']
+============================================================================================================
+  row                        mean LPIPS  d vs mamba  frac of mamba headroom    n
+  origin                         0.3933     +0.0006                           12
+  origin+student (ref)           0.3800     -0.0127                           12
+  mamba 5-slot (SHIPPED)         0.3927     +0.0000                           12
+  mamba+mstudent1_step600        0.3766     -0.0161                           12
+

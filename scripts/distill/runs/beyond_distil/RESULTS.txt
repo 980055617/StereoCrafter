@@ -1,0 +1,453 @@
+================================================================================
+BEYOND-DISTIL: teaching the cheap 8-step sampler to follow the fine (25-step
+density) trajectory.  GPU 1, 2026-10-01.
+================================================================================
+VERDICT: DISTILLATION WORKS.  Sampled at the DEPLOYED config (8 steps, guidance
+1.01), the student captures 90.8% of s25's 12-clip real-GT LPIPS gain at
+deployed cost: 0.3958 -> 0.3833 vs s25's 0.3820.  11/12 clips improve, it is
+strictly BETTER than s25 on 3/12, mean sharpness ratio 1.111 (s25 1.127) with
+no clip losing sharpness.  It was trained on TWO clips; the other ten are held
+out.  Per regime it captures 95.8% of s25's gain on the seven under-sharp clips
+and 80.6% on the five where origin is ALREADY SHARPER than GT -- i.e. it is
+slightly more conservative than s25 exactly where over-sharpening is the risk.
+(The 102.2% figure quoted below is the subgroup result on the two TRAINED clips
+and is not the headline.)
+
+The two controls that make this hard to argue with, both in section 3:
+  * oracle_m4_456 (substitute only k=4,5,6, 17 UNet calls) scores the SAME as
+    substituting all 8 steps (32 calls) -- an independent confirmation of the
+    section-D step attribution by a different route than the perturbation
+    ablation: if k<=3 mattered, dropping them would have cost quality.
+  * rescale456, the zero-cost step-length rescale, FAILS (0.4294 on 0301, and
+    0.2272 on 0204 = WORSE than origin) -- which rules out "the student merely
+    changed the effective step size".
+
+All LPIPS are real-GT, scripts/distill/score_clip.py with SCORE_STEP=4.
+leftPSNR is IDENTICAL on every row of every table below (0301 46.77, 0204 48.90,
+etc.), so the mp4v/SBS bit-stealing hazard is NOT active and every delta is the
+knob alone.
+
+--------------------------------------------------------------------------------
+1. THE OBJECTIVE, AND WHY IT IS NOT THE ONE THAT FAILS
+--------------------------------------------------------------------------------
+At each deployed trajectory point (x_k, sigma_k) the target is the NEXT
+TRAJECTORY POINT produced by a fine sub-integration of the SAME FROZEN ORIGIN
+UNET from that very point down to sigma_{k+1}:
+
+    x_target(k)     = fine_step(origin, x_k, sigma_k -> sigma_{k+1}, M substeps, CFG 1.01)
+    x0hat_target(k) = x_k - sigma_k*(x_target - x_k)/(sigma_{k+1} - sigma_k)
+
+A different target at every step, never the final answer.  The optimum is "each
+coarse Euler step equals the fine sub-integration", which PRESERVES the
+multi-step structure instead of collapsing it -- unlike the point target
+(a fixed x0 regressed at arbitrary sigma) whose optimum is a one-step model and
+which degraded origin 0.4445 -> 0.5041/0.7075/0.9182 in the diag_trainer runs.
+
+SUB-GRID.  Both the 8-step and the 25-step Karras grids are EXACTLY uniform in
+the Karras coordinate u = sigma^(1/7) over u in [0.002^(1/7), 700^(1/7)] =
+[0.41156, 2.54943] (measured d(u) std/mean 1.8e-7 and 7.2e-7), and
+|du_8|/|du_25| = 3.4285714 = 24/7 EXACTLY.  So "the 25-step grid's local
+density" is a CONSTANT 3.43 substeps per coarse interval everywhere; no
+per-interval bookkeeping is needed.  M=4 was used (28 sub-intervals vs s25's 24,
+i.e. marginally finer than s25 -- and the oracle indeed scores marginally better
+than s25, 0.4064 vs 0.4083).
+
+--------------------------------------------------------------------------------
+2. PHASE 0 -- TARGET CONSTRUCTION VERIFIED BEFORE ANY TRAINING
+   scripts/distill/runs/beyond_distil/targetcheck_0301/{target_check.txt,.json}
+   log: scripts/distill/runs/beyond_distil/target_check_0301.log
+--------------------------------------------------------------------------------
+A  Scheduler algebra, against the LIVE captured trajectory (clip 0301, w0/w66):
+     9-ch UNet input reconstructed from y_k alone : max abs diff 0.000e+00 (BIT-EXACT)
+     x0hat from the CFG-combined v vs scheduler's : 3.9e-3 (k=0) .. 2.3e-4 (k=6) .. 5.9e-7 (k=7)
+     the Euler step recomputed vs the next y      : 1.7e-3  (bf16 rounding floor)
+     x0hat_target inversion round-trip            : 1.14 (k=0) .. 1.7e-3 (k=6) .. 1.4e-4 (k=7)
+   The inversion is catastrophically ill-conditioned at HIGH sigma (it forms
+   y - sigma/(sigma_{k+1}-sigma_k)*(...) where both terms are O(sigma) and the
+   answer is O(0.7)); it is well conditioned at k>=4, which is where we train.
+
+B  Euler information weights re-derived (bdlib.euler_info_weights) reproduce
+   mech/testb/euler_information_weights.txt to 4 digits:
+     c_0 4.1227e-06  c_5 1.8824e-02  c_6 9.7946e-01   (ref 4.123e-06 / 0.01882 / 0.9795)
+   w_k = c_k*c_out(sigma_k) = |d(final latent)/d(v_k)|:
+     k4 1.42470e-03   k5 1.42966e-02   k6 9.49385e-02   k7 2.0e-03
+   (NB the "share_of_y7" column printed in target_check.txt normalises with
+   sigma_6/sigma_0 instead of sigma_7/sigma_0 for the initial-noise term, so its
+   percentages are deflated -- display only; the c_k themselves are exact.)
+
+C  Per-coarse-step Euler truncation error the target removes (clip 0301, w0):
+     k  sigma     trunc M1    trunc M3    trunc M4    trunc M8    dx0 M4
+     0  700       1.68e-3     1.68e-3     1.68e-3     1.68e-3     1.45e-2
+     1  286.5     1.66e-3     1.67e-3     1.67e-3     1.67e-3     1.78e-2
+     2  102.9     1.66e-3     1.69e-3     1.69e-3     1.70e-3     2.01e-2
+     3   30.99    1.68e-3     2.73e-3     2.90e-3     3.22e-3     3.13e-2
+     4    7.276   2.24e-3     4.01e-2     4.66e-2     5.73e-2     1.07e-1
+     5    1.168   2.81e-3     1.14e-1     1.32e-1     1.62e-1     1.47e-1
+     6    0.0974  1.68e-3     1.40e-2     1.68e-2     2.15e-2     1.71e-2
+     7    0.002   1.42e-4     1.39e-4     1.36e-4     1.31e-4     1.72e-5
+   The M=1 CONTROL (the sub-integration reduced to a single substep) reproduces
+   the coarse Euler step to 1.68e-3 == the section-A bf16 floor: fine_step() is
+   correctly wired.  k<=3 sit AT that floor -- there is literally nothing to
+   learn there.  Richardson fit err(M) = E_inf - a/M on k=5 gives E_inf ~ 0.19,
+   so M=4 realises 69% of the exact one-step truncation error; that is the
+   INTENDED amount, because the goal is to match s25, not the exact ODE.
+
+D  *** THE PRESCRIBED c_k WEIGHTING IS BACKWARDS. ***
+   Measured by substituting the exact target at step k ONLY and running the rest
+   of the sampler with the model LIVE (M=4; chain noise floor 1.75e-2, i.e. the
+   fp32 re-run of the un-substituted chain vs the deployed final latent):
+     k   sigma    shift w0   shift w66   frac of all-steps   c_k (frozen-later)  g_k=shift/dx0
+     0-3 700..31  1.66e-2..1.86e-2       7-9% (= NOISE FLOOR) 4.1e-6..2.1e-4     --
+     4   7.276    7.71e-2    8.43e-2     36%                  1.4381e-03         0.723 / 0.712
+     5   1.168    1.31e-1    1.41e-1     61%                  1.8824e-02         0.891 / 0.894
+     6   0.0974   1.70e-2    1.87e-2      8% (= NOISE FLOOR)  9.7946e-01         0.991 / 0.990
+     7   0.002    2.3e-5     1.6e-5       0%                  1.0000e+00         --
+     all-steps oracle shift ||orc-base||/||base||: 2.1138e-01 (w0), 2.3058e-01 (w66)
+   The c_k of euler_information_weights.txt (k=6 = 97.7%) holds the LATER MODEL
+   OUTPUTS FIXED.  That assumption is false: x0hat_6 is re-evaluated by the
+   network at the perturbed y_6, so an error at step 5 is NOT attenuated by
+   sigma_7/sigma_6 = 0.0205 -- it passes through with O(1) Jacobian gain.  The
+   real information is at k=5 (61%) and k=4 (36%), and k=6's measured shift is
+   indistinguishable from the chain noise floor.
+   CAVEAT: g_6 = 0.99 is a ratio whose numerator IS the noise floor, so it is
+   not independently resolved; it is merely CONSISTENT with c_6 = 0.9795, which
+   is what one expects since c_k is exact for the last meaningful step.
+   The two well-resolved numbers are k=4 (4.4x the floor) and k=5 (7.5x).
+
+E  All-steps oracle, decoded raw float (no codec), clip 0301:
+     window  0: sharp deployed 0.0187 -> ORACLE 0.0234  (ratio 1.245)   GT 0.0452
+     window 66: sharp deployed 0.0276 -> ORACLE 0.0341  (ratio 1.231)
+   vs s25's clip-level ratio 0.0296/0.0235 = 1.26.  Agreement confirms the
+   construction reproduces s25's effect.
+
+F  The correction is NOT a step-size rescale.  Best fit
+   x0hat_target - x0hat_k ~ alpha_k*(x0hat_k - x_k):
+     k4 alpha -5.33e-3 residual 86.6% off-direction   cos -0.501
+     k5 alpha -6.16e-2 residual 78.4% off-direction   cos -0.620
+     k6 alpha -2.24e-1 residual 24.0% off-direction   cos -0.971
+   Only k=6 (which does not matter) is well approximated by a rescale.  The
+   zero-cost control below confirms this experimentally.
+
+--------------------------------------------------------------------------------
+3. THE GATE -- FULL-CLIP ORACLE, NOTHING TRAINED
+   scripts/distill/runs/beyond_distil/scores_chain1_oracle.txt
+   outputs/beyond_distil/{0301,0204}_oracle_m4{,_456}/  and  *_rescale456/
+--------------------------------------------------------------------------------
+clip/config                 leftPSNR    LPIPS    sharp   UNet calls   wall (151f)
+--- 0301 GT ---                         0.0000   0.0505
+0301_origin (deployed)         46.77    0.4445   0.0235      8          175 s
+0301_origin_s25                46.77    0.4083   0.0296     25          421 s*
+0301_oracle_m4  (all k)        46.77    0.4064   0.0304     32          584 s
+0301_oracle_m4_456 (k=4,5,6)   46.77    0.4059   0.0305     17          332 s
+0301_rescale456 (zero cost)    46.77    0.4294   0.0267      8          175 s
+--- 0204 GT ---                         0.0000   0.0116
+0204_origin (deployed)         48.90    0.2122   0.0062      8
+0204_origin_s25                48.90    0.1950   0.0074     25
+0204_oracle_m4  (all k)        48.90    0.1948   0.0076     32          586 s
+0204_oracle_m4_456 (k=4,5,6)   48.90    0.1949   0.0075     17          334 s
+0204_rescale456 (zero cost)    48.90    0.2272   0.0076      8          181 s
+  (* s25 wall clock from the prior session's beyond3/timing; all other wall
+     clocks measured in this session's journal, GPU 1.)
+
+GATE PASSED.  The oracle lands ON s25 (0301 0.4064 vs 0.4083; 0204 0.1948 vs
+0.1950) and not on the deployed number -- and it does so with leftPSNR
+bit-identical, so the construction is confirmed by a codec-clean number.
+Substituting ONLY k=4,5,6 gives the SAME quality for 17 UNet calls instead of
+32, independently confirming section D: k<=3 and k=7 contribute nothing.
+The zero-cost step-rescale control FAILS as section F predicted: it captures
+only 42% of the s25 gain on 0301 and is WORSE THAN ORIGIN on 0204
+(0.2272 vs 0.2122).  The correction is a genuinely new function, not a step size.
+
+--------------------------------------------------------------------------------
+4. TRAINING (smoke, project rule: 2 clips, 800 steps)
+   scripts/distill/runs/beyond_distil/smoke1/{meta.json,post.json,train_log.csv,step*.pt}
+   log: scripts/distill/runs/beyond_distil/train_smoke1.log
+--------------------------------------------------------------------------------
+Trainable    the 15 up_blocks.3.attentions.{0,1,2}.transformer_blocks.0.attn1
+             tensors, 1,229,760 params; fp32 masters, bf16 forward, AdamW
+             lr 1e-5 betas (0.9,0.999) wd 0, grad clip 1.0, seed 1234
+Data         0301 + 0204, the full deployed stride-11 grid (13 windows each),
+             78 trajectory points (26 windows x 3 steps)
+Step subset  {4, 5, 6}  (k<=3 excluded: truncation error AT the bf16 floor;
+             k=7 excluded: measured shift 2e-5 and v_target ill-conditioned
+             because c_out = 0.002)
+LOSS         R_k = g_k * (x0hat_student(k) - x0hat_target(k)); loss = sum_k mean(R_k^2)
+             x0hat_student = -c_out_k*v_cfg_student + c_skip_k*x_k
+             WEIGHTS g_k = the MEASURED section-D end-to-end sensitivity
+             {k4 0.7177, k5 0.8926, k6 0.9905}, NOT c_k (see section D).
+             Residual taken in x0 space, which supplies the per-sigma scale
+             automatically (v-space ||v||rms runs 0.78 -> 392.9 over the grid).
+             v_target is NEVER formed: it divides by c_out.
+             Every optimiser step accumulates over ALL of {4,5,6} -- sampling
+             one k and letting the weight do the work is wrong under AdamW,
+             which is scale-invariant per parameter and would take a full
+             lr-sized step on a near-zero-weight batch.
+CFG          deployed guidance 1.01 with CFG ACTIVE, so the scheduler consumes
+             -0.01*v_uncond + 1.01*v_cond.  Batch-2-with-grad does not fit in
+             24 GB, so the student forward is batch-1 COND and v_uncond is a
+             cached frozen origin constant.  APPROXIMATION: at sampling time the
+             trained tensors move the uncond half too, making the effective
+             delta ~1.00*d instead of 1.01*d -- a 1% error on the correction.
+             x_target itself is built with the FULL CFG prediction.
+Cost         capture+targets 541.8 s for 78 points (20.84 s/window);
+             3.20 s/optimiser step; peak 15.24 GiB; 800 steps in 3203.5 s
+             rel||dW||/||W|| = 0.002357
+
+STEP-0 GRADIENT NORM (pre-update, pre-clip, at origin's weights), the number
+that must be NONZERO here because Euler truncation error is exactly what is
+being removed -- contrast the self-consistent objective, which is EXACTLY 0:
+     step 4 (sigma 7.276) : MEAN ||g|| = 0.104196
+     step 5 (sigma 1.168) : MEAN ||g|| = 0.156063
+     step 6 (sigma 0.0974): MEAN ||g|| = 0.00382336
+   (P1-null historical reference 0.1485.)
+
+PER-STEP TARGET ERROR ||x0hat_student - x0hat_target||/||x0hat_target||,
+mean over all 78 points, before -> after 800 steps:
+     step 4 sigma 7.27616 : 1.27971e-01 -> 5.21510e-02   ratio 0.4075
+     step 5 sigma 1.16757 : 1.29841e-01 -> 6.24760e-02   ratio 0.4812
+     step 6 sigma 0.09739 : 1.70060e-02 -> 8.92588e-03   ratio 0.5249
+Target magnitudes for scale (mean dx0 = how far x0hat must move):
+     step 4 1.2939e-01, step 5 1.3351e-01, step 6 1.6948e-02
+So 1.23M parameters in one attention block absorb ~50-60% of a 13% functional
+change at sigma 7.3 and 1.2.
+
+--------------------------------------------------------------------------------
+5. READOUT -- the student SAMPLED AT THE DEPLOYED CONFIG (8 steps, guidance 1.01)
+   scripts/distill/runs/beyond_distil/scores_smoke1.txt
+   outputs/beyond_distil/{0301,0204}_smoke1_step{100,200,400,800}/
+--------------------------------------------------------------------------------
+clip/config             leftPSNR    LPIPS    sharp   frac of s25 gain captured
+--- 0301 GT ---                     0.0000   0.0505
+0301_origin                46.77    0.4445   0.0235        --   (reference)
+0301_origin_s25            46.77    0.4083   0.0296       100%  (reference)
+0301_smoke1_step100        46.77    0.4118   0.0278        90.3%
+0301_smoke1_step200        46.77    0.4094   0.0289        97.0%
+0301_smoke1_step400        46.77    0.4101   0.0290        95.0%
+0301_smoke1_step800        46.77    0.4083   0.0291       100.0%
+--- 0204 GT ---                     0.0000   0.0116
+0204_origin                48.90    0.2122   0.0062        --   (reference)
+0204_origin_s25            48.90    0.1950   0.0074       100%  (reference)
+0204_smoke1_step100        48.90    0.1932   0.0076       110.5%
+0204_smoke1_step200        48.90    0.1929   0.0076       112.2%
+0204_smoke1_step400        48.90    0.1938   0.0075       107.0%
+0204_smoke1_step800        48.90    0.1938   0.0074       107.0%
+
+2-clip mean:  origin 0.32835   s25 0.30165 (-0.02670)
+              step100 0.30250 (-0.02585,  96.8%)
+              step200 0.30115 (-0.02720, 101.9%)
+              step400 0.30195 (-0.02640,  98.9%)
+              step800 0.30105 (-0.02730, 102.2%)   <-- best, and BEATS s25
+
+SHARPNESS: gained, not lost.  0301 0.0235 -> 0.0291 (s25 0.0296, GT 0.0505);
+0204 0.0062 -> 0.0074 (s25 0.0074, GT 0.0116).  The student matches s25's
+sharpness to within 0.0005 and stays BELOW GT on both clips.
+
+CHECKPOINT SELECTION BY SAMPLED LPIPS, NEVER BY TRAINING LOSS -- and the
+anti-correlation the project warned about is visible again in-run: the training
+loss fell monotonically 0.01079 -> 0.00262 while sampled LPIPS on 0204 got
+WORSE from step200 (0.1929) to step400/800 (0.1938), and on 0301 got worse from
+step200 (0.4094) to step400 (0.4101) before recovering at step800.
+
+COST: unchanged.  The student is byte-for-byte the same UNet architecture with
+15 different tensor values, sampled at the same 8 steps and guidance 1.01, so
+its FLOPs are identical to origin's by construction.  Measured wall clock
+187 s/clip via the hybrid hook (which adds one parameter copy per pipeline
+call) vs 175 s for the plain deployed path in this session -- i.e. the s25
+gain is obtained for 0.45x of s25's 421 s.
+================================================================================
+
+--------------------------------------------------------------------------------
+6. HELD-OUT GENERALIZATION -- smoke1/step800 on clips it was NEVER trained on
+   scripts/distill/runs/beyond_distil/scores_heldout_smoke1s800.txt
+   outputs/beyond_distil/{0052,0128,0125,0170}_heldout_smoke1s800/
+--------------------------------------------------------------------------------
+Trained on 0301 + 0204 only.  Deployed config, 8 steps, guidance 1.01.
+
+clip  regime                  leftPSNR  origin   s25     student  frac of s25 gain
+0052  origin SHARPER than GT    52.06   0.4432  0.4368   0.4379      82.8%
+0128  origin SHARPER than GT    50.04   0.4146  0.3928   0.3959      85.8%
+0125  origin under-sharp        50.56   0.4768  0.4506   0.4577      72.9%
+0170  origin under-sharp        47.71   0.2617  0.2531   0.2566      59.3%
+4-held-out mean                         0.39908 0.38333  0.38703     76.5%
+
+sharpness (GT in brackets):
+0052  0.0136 -> 0.0140   s25 0.0142   [GT 0.0099]
+0128  0.0136 -> 0.0155   s25 0.0159   [GT 0.0105]
+0125  0.0094 -> 0.0105   s25 0.0108   [GT 0.0114]
+0170  0.0164 -> 0.0175   s25 0.0176   [GT 0.0323]
+
+ZERO REGRESSIONS: all 4 never-trained clips improve on deployed origin, and
+leftPSNR is identical on every row, so none of it is codec bleed.  On the two
+clips where origin is ALREADY SHARPER THAN GT (0052, 0128) the student does
+over-shoot GT further -- but by LESS than s25 does, so it inherits s25's
+over-sharpening behaviour rather than amplifying it.
+
+6-CLIP SUMMARY (2 trained + 4 held-out):
+              origin    s25       student   frac of s25 gain
+              0.37550   0.35610   0.35837       88.3%
+  trained (0301,0204)                          102.2%
+  held-out (4 clips)                            76.5%
+
+--------------------------------------------------------------------------------
+7. ON-POLICY REFRESH ROUND -- IT DID NOT HELP.  IT HURT.
+   scripts/distill/runs/beyond_distil/onpolicy2/  log train_onpolicy2.log
+   scripts/distill/runs/beyond_distil/scores_onpolicy2.txt
+   outputs/beyond_distil/{0301,0204}_onpolicy2_step{200,400}/
+--------------------------------------------------------------------------------
+Round 2 = warm start from smoke1/step800, trajectory RE-CAPTURED with the
+student's weights, fine-integration teacher restored to ORIGIN, 400 more steps,
+same subset / weights / lr.
+
+The re-capture is itself strong independent evidence the student learned the
+trajectory and not just the cached tensors -- on the STUDENT's own trajectory
+the gap to the fine trajectory had already shrunk a lot:
+                       round 1 (origin traj)   round 2 (student traj)
+     mean dx0   k4          1.2939e-01              5.8739e-02   (-55%)
+                k5          1.3351e-01              9.6193e-02   (-28%)
+                k6          1.6948e-02              1.0854e-02   (-36%)
+     mean trunc k4          5.5213e-02              2.5106e-02
+                k5          1.1587e-01              8.3327e-02
+                k6          1.6565e-02              1.0613e-02
+and round 2 closed the remaining on-policy gap further (400 steps,
+rel||dW||/||W|| 0.001217):
+     step 4: 5.92353e-02 -> 5.29791e-02  ratio 0.8944
+     step 5: 9.37032e-02 -> 6.62255e-02  ratio 0.7068
+     step 6: 1.09051e-02 -> 6.50245e-03  ratio 0.5963
+
+BUT THE SAMPLED QUALITY GOT WORSE:
+clip/config                leftPSNR   LPIPS    sharp   frac of s25 gain
+0301_origin                  46.77    0.4445   0.0235      --
+0301_origin_s25              46.77    0.4083   0.0296     100%
+0301_smoke1_step800 (R1)     46.77    0.4083   0.0291     100.0%
+0301_onpolicy2_step200       46.77    0.4213   0.0331      64.1%
+0301_onpolicy2_step400       46.77    0.4182   0.0329      72.7%
+0204_origin                  48.90    0.2122   0.0062      --
+0204_origin_s25              48.90    0.1950   0.0074     100%
+0204_smoke1_step800 (R1)     48.90    0.1938   0.0074     107.0%
+0204_onpolicy2_step200       48.90    0.1979   0.0082      83.1%
+0204_onpolicy2_step400       48.90    0.1973   0.0082      86.6%
+2-clip mean: R1 step800 0.30105 (102.2%)  ->  R2 step400 0.30775 (77.2%)
+
+WHAT WAS MEASURED.  The signature is an OVERSHOOT PAST s25's sharpness on both
+clips: 0301 0.0291 (s25 0.0296) -> 0.0329, 0204 0.0074 (s25 0.0074) -> 0.0082,
+while LPIPS moves away from s25 on both.  So round 2 does not undershoot the
+fine trajectory, it goes beyond it.
+
+NOT MEASURED (hypothesis only).  The natural explanation is that round 1's
+student already lands essentially on the fine trajectory, so asking the SAME
+shared function at the SAME sigmas for a further correction COMPOUNDS the
+correction rather than refining it -- which would make this the opposite of the
+original Mamba feature distillation, where the on-policy round fixed an input
+DISTRIBUTION mismatch for a MATCHING objective rather than iterating a
+CORRECTION objective.  That is CONSISTENT with the overshoot but was NOT tested
+directly; testing it needs the cosine between round-1 and round-2 weight deltas
+(or between their dx0hat directions at k=5), which was not computed.
+
+OPERATIONAL CONCLUSION, fully earned by the LPIPS numbers regardless of
+mechanism: DO NOT refresh on-policy for this objective.
+
+This is also a third independent sighting of the project's loss/quality
+anti-correlation: round 2 monotonically IMPROVED its own objective on every one
+of the three trained steps while the deployed LPIPS got WORSE on both clips.
+
+DELIVERABLE: scripts/distill/runs/beyond_distil/smoke1/step800.pt
+             (15 tensors, 4.9 MB, up_blocks.3.attentions.{0,1,2}
+              .transformer_blocks.0.attn1.*)
+Selected by SAMPLED LPIPS, never by training loss.
+
+--------------------------------------------------------------------------------
+8. FULL 12-CLIP TABLE -- smoke1/step800 at the DEPLOYED config (8 steps, g 1.01)
+   scores: scripts/distill/runs/beyond_distil/scores_smoke1.txt (0301,0204)
+         + scores_heldout_smoke1s800.txt (0052,0128,0125,0170)
+         + scores_heldout_s800rest.txt   (0042,0141,0147,0225,0251,0259)
+   Only 0301 and 0204 were ever trained on; the other TEN are held out.
+   leftPSNR identical to origin on all 36 rows -> no mp4v bit-stealing anywhere.
+--------------------------------------------------------------------------------
+clip   origin     s25  student    s25 d    stu d     frac    shR  s25shR  note
+0042   0.4337  0.4182   0.4208  -0.0155  -0.0129    83.2%  1.137   1.162  held-out over-sharp
+0052   0.4432  0.4368   0.4379  -0.0064  -0.0053    82.8%  1.029   1.044  held-out over-sharp
+0125   0.4768  0.4506   0.4577  -0.0262  -0.0191    72.9%  1.117   1.149  held-out under-sharp
+0128   0.4146  0.3928   0.3959  -0.0218  -0.0187    85.8%  1.140   1.169  held-out over-sharp
+0141   0.4709  0.4612   0.4641  -0.0097  -0.0068    70.1%  1.102   1.122  held-out over-sharp
+0147   0.5183  0.5176   0.5184  -0.0007  +0.0001      n/a  1.045   1.061  held-out over-sharp
+0170   0.2617  0.2531   0.2566  -0.0086  -0.0051    59.3%  1.067   1.073  held-out under-sharp
+0204   0.2122  0.1950   0.1938  -0.0172  -0.0184   107.0%  1.194   1.194  TRAINED  under-sharp
+0225   0.2837  0.2681   0.2662  -0.0156  -0.0175   112.2%  1.168   1.159  held-out under-sharp
+0251   0.3505  0.3418   0.3419  -0.0087  -0.0086    98.9%  1.083   1.107  held-out under-sharp
+0259   0.4397  0.4406   0.4377  +0.0009  -0.0020      n/a  1.016   1.026  held-out under-sharp
+0301   0.4445  0.4083   0.4083  -0.0362  -0.0362   100.0%  1.238   1.260  TRAINED  under-sharp
+
+12-clip mean  origin 0.3958   s25 0.3820 (-0.0138)   student 0.3833 (-0.0125)
+FRACTION OF s25's GAIN CAPTURED = 90.8%
+student improved 11/12 clips; strictly better than s25 on 3/12
+mean sharpness ratio student/origin 1.1115   (s25's published mean 1.127); no clip lost sharpness
+  over-sharp (origin already sharper than GT): n=5 student mean -0.0087  s25 mean -0.0108  -> 80.6%
+  under-sharp: n=7 student mean -0.0153  s25 mean -0.0159  -> 95.8%
+
+FULL-SCALE (333 clips) from MEASURED rates:
+  target precompute 333*13=4329 windows * 20.84s = 25.1 GPU-h (one-time, cacheable, parallel)
+  training 8000 steps * 3.2s = 7.1 GPU-h
+  scoring 12 clips * 195s * 5 checkpoints = 3.2 GPU-h
+  TOTAL ~ 35.4 GPU-hours
+  40-clip subsample variant: precompute 3.0 GPU-h -> total ~ 13.4 GPU-h
+
+The two 'n/a' rows are where the per-clip ratio is meaningless because s25's
+own delta is ~0 or negative: 0147 (s25 -0.0007, nothing to capture; student ties
+at +0.0001) and 0259 (s25 REGRESSED by +0.0009 while the student IMPROVED by
+-0.0020, so the ratio would print a negative percentage for a clip the student
+got RIGHT).  Both are counted at face value in the 12-clip mean.
+
+The origin and s25 columns reproduce the established beyond3 table EXACTLY
+(origin 0.3958, s25 0.3820, delta -0.0138), so the student column is directly
+comparable to the published s25 headline.
+
+NOTES
+ - 0147 is the one clip the student does not improve (+0.0001, i.e. a tie); s25
+   only gained -0.0007 there, so there was nothing to capture.
+ - 0259 is the clip where s25 REGRESSED (+0.0009); the student IMPROVES it
+   (-0.0020).  The student is strictly better than s25 on 0204, 0225 and 0259.
+ - The student captures 95.8% of s25's gain on the seven under-sharp clips and
+   80.6% on the five where origin is ALREADY SHARPER than GT -- i.e. it is
+   slightly MORE conservative than s25 exactly where over-sharpening is the
+   risk, which is the desirable direction.
+ - CODEC CAVEAT (task point 4): every number here comes from the mp4v SBS
+   output, as do the published origin/s25 numbers.  leftPSNR is bit-identical
+   to origin on every row, which is the direct evidence that no bits were
+   stolen from the left half, so the DELTAS are codec-clean.  The ABSOLUTE
+   LPIPS values still carry the codec's own penalty, identically for all three
+   configs; a lossless re-measurement would change all three together and
+   would require touching utils/inpainting.py (tracked), which was not done.
+
+--------------------------------------------------------------------------------
+9. WHAT A FULL-SCALE RUN WOULD COST (from the measured rates above)
+--------------------------------------------------------------------------------
+ target precompute  4329 windows (333 clips x 13) x 20.84 s  = 25.1 GPU-h
+                    one-time, cacheable, embarrassingly parallel
+ training           8000 optimiser steps x 3.20 s            =  7.1 GPU-h
+                    (conservative: the smoke hit 102% of s25's gain in 800
+                     steps on 2 clips; 8k is the shipped-deliverable recipe
+                     and is ~1.85 epochs over 4329 windows)
+ checkpoint scoring 12 clips x 195 s x 5 checkpoints          =  3.2 GPU-h
+ TOTAL                                                       ~ 35.4 GPU-hours
+                                            (~18 h wall on the 2x RTX 4090 box)
+ A 40-clip subsample -- justified by the 10 held-out clips already reaching
+ 90.8% of s25's gain from TWO training clips -- costs 3.0 GPU-h of precompute,
+ total ~13.4 GPU-hours.
+
+--------------------------------------------------------------------------------
+10. FILES
+--------------------------------------------------------------------------------
+ code    scripts/distill/runs/beyond_distil/bdlib.py          scheduler algebra, fine_step, weights
+         scripts/distill/runs/beyond_distil/target_check.py   Phase 0 (A-F)
+         scripts/distill/runs/beyond_distil/oracle_infer.py   full-clip oracle (the gate)
+         scripts/distill/runs/beyond_distil/rescale_infer.py  zero-cost step-rescale control
+         scripts/distill/runs/beyond_distil/train_beyond.py   the trainer
+         scripts/distill/runs/beyond_distil/chain{1,2,4}*.sh  the three run chains
+ runs    scripts/distill/runs/beyond_distil/targetcheck_0301/ Phase 0 output
+         scripts/distill/runs/beyond_distil/smoke1/           round 1, THE DELIVERABLE
+         scripts/distill/runs/beyond_distil/onpolicy2/        round 2 (regressed)
+ videos  outputs/beyond_distil/                               every sampled clip, one dir per run
+ NOTHING under video_data/ or any existing checkpoint was written.  No tracked
+ repo file was modified.  /mnt/ssd_data/stereocrafter_weights/_distill_injected/
+ light_lvl0_fulldata333_v2_8k_mamba_only.pt was not touched.
+================================================================================

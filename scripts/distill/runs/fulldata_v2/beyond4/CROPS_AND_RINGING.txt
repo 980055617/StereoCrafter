@@ -1,0 +1,84 @@
+[0052] frame=40 gt_tile=(4400, 4400, 3) H,W=2200,2200 out=576x1024 crop_at=(800,576)  gtframes=150 vidframes=168
+[0052] texture window y=208 x=448 size=256 meanGrad=16.753
+    GT (real right eye)        cropSharp(h)=0.02970
+    deployed origin 8st g1.01  cropSharp(h)=0.02382
+    g125 8st guid 1.25         cropSharp(h)=0.02657
+[0052] wrote outputs/beyond4_lossless/crops/0052/0052_f40_3way_crop_100pct.png
+[0052] frame=75 gt_tile=(4400, 4400, 3) H,W=2200,2200 out=576x1024 crop_at=(800,576)  gtframes=150 vidframes=168
+[0052] texture window y=160 x=624 size=256 meanGrad=15.423
+    GT (real right eye)        cropSharp(h)=0.02644
+    deployed origin 8st g1.01  cropSharp(h)=0.02209
+    g125 8st guid 1.25         cropSharp(h)=0.02447
+[0052] wrote outputs/beyond4_lossless/crops/0052/0052_f75_3way_crop_100pct.png
+[0052] frame=110 gt_tile=(4400, 4400, 3) H,W=2200,2200 out=576x1024 crop_at=(800,576)  gtframes=150 vidframes=168
+[0052] texture window y=208 x=512 size=256 meanGrad=15.826
+    GT (real right eye)        cropSharp(h)=0.02934
+    deployed origin 8st g1.01  cropSharp(h)=0.02515
+    g125 8st guid 1.25         cropSharp(h)=0.02807
+[0052] wrote outputs/beyond4_lossless/crops/0052/0052_f110_3way_crop_100pct.png
+[0052] n=19 crop=(800,576) 576x1024
+label           haloFrac%  haloMean    flatHF  flatHF/GT    edgeHF  edgeHF/GT   stripeE  stripeE/GT
+GT                  0.000   0.00000   0.00930      1.000   0.08725      1.000   0.00227       1.000
+origin             39.105   0.05863   0.01000      1.075   0.04652      0.533   0.00648       2.854
+g125               41.504   0.06306   0.01089      1.171   0.05064      0.580   0.00721       3.173
+s25                39.699   0.05953   0.01098      1.180   0.04765      0.546   0.00700       3.080
+  haloFrac% = % of GT-edge pixels whose value falls outside the GT's own 3x3 [min,max] by >0.04 (halo/ringing)
+  flatHF    = mean |Laplacian| inside GT-flat regions (noise / amplified splatting texture)
+  edgeHF    = mean |Laplacian| inside the GT's top-decile gradient regions (detail at edges)
+  stripeE   = mean |horizontal difference| inside GT-flat regions (splatting-stripe energy)
+[0147] frame=40 gt_tile=(4400, 4400, 3) H,W=2200,2200 out=576x1024 crop_at=(800,576)  gtframes=150 vidframes=172
+[0147] texture window y=192 x=560 size=256 meanGrad=6.008
+    GT (real right eye)        cropSharp(h)=0.01430
+    deployed origin 8st g1.01  cropSharp(h)=0.01195
+    g125 8st guid 1.25         cropSharp(h)=0.01274
+[0147] wrote outputs/beyond4_lossless/crops/0147/0147_f40_3way_crop_100pct.png
+[0147] frame=75 gt_tile=(4400, 4400, 3) H,W=2200,2200 out=576x1024 crop_at=(800,576)  gtframes=150 vidframes=172
+[0147] texture window y=208 x=608 size=256 meanGrad=6.301
+    GT (real right eye)        cropSharp(h)=0.01493
+    deployed origin 8st g1.01  cropSharp(h)=0.01261
+    g125 8st guid 1.25         cropSharp(h)=0.01318
+[0147] wrote outputs/beyond4_lossless/crops/0147/0147_f75_3way_crop_100pct.png
+[0147] frame=110 gt_tile=(4400, 4400, 3) H,W=2200,2200 out=576x1024 crop_at=(800,576)  gtframes=150 vidframes=172
+[0147] texture window y=208 x=576 size=256 meanGrad=6.272
+    GT (real right eye)        cropSharp(h)=0.01427
+    deployed origin 8st g1.01  cropSharp(h)=0.01167
+    g125 8st guid 1.25         cropSharp(h)=0.01263
+[0147] wrote outputs/beyond4_lossless/crops/0147/0147_f110_3way_crop_100pct.png
+[0147] n=19 crop=(800,576) 576x1024
+label           haloFrac%  haloMean    flatHF  flatHF/GT    edgeHF  edgeHF/GT   stripeE  stripeE/GT
+GT                  0.000   0.00000   0.00322      1.000   0.04589      1.000   0.00057       1.000
+origin             41.727   0.06253   0.00401      1.246   0.02370      0.517   0.00277       4.828
+g125               43.466   0.06500   0.00406      1.262   0.02495      0.544   0.00288       5.012
+s25                42.393   0.06333   0.00484      1.505   0.02460      0.536   0.00321       5.599
+  haloFrac% = % of GT-edge pixels whose value falls outside the GT's own 3x3 [min,max] by >0.04 (halo/ringing)
+  flatHF    = mean |Laplacian| inside GT-flat regions (noise / amplified splatting texture)
+  edgeHF    = mean |Laplacian| inside the GT's top-decile gradient regions (detail at edges)
+  stripeE   = mean |horizontal difference| inside GT-flat regions (splatting-stripe energy)
+[0301] frame=40 gt_tile=(2160, 3840, 3) H,W=1080,1920 out=576x1024 crop_at=(224,448)  gtframes=151 vidframes=151
+[0301] texture window y=0 x=752 size=256 meanGrad=33.685
+    GT (real right eye)        cropSharp(h)=0.06338
+    deployed origin 8st g1.01  cropSharp(h)=0.03241
+    g125 8st guid 1.25         cropSharp(h)=0.04039
+[0301] wrote outputs/beyond4_lossless/crops/0301/0301_f40_3way_crop_100pct.png
+[0301] frame=75 gt_tile=(2160, 3840, 3) H,W=1080,1920 out=576x1024 crop_at=(224,448)  gtframes=151 vidframes=151
+[0301] texture window y=64 x=176 size=256 meanGrad=38.564
+    GT (real right eye)        cropSharp(h)=0.07996
+    deployed origin 8st g1.01  cropSharp(h)=0.03410
+    g125 8st guid 1.25         cropSharp(h)=0.04495
+[0301] wrote outputs/beyond4_lossless/crops/0301/0301_f75_3way_crop_100pct.png
+[0301] frame=110 gt_tile=(2160, 3840, 3) H,W=1080,1920 out=576x1024 crop_at=(224,448)  gtframes=151 vidframes=151
+[0301] texture window y=16 x=432 size=256 meanGrad=32.193
+    GT (real right eye)        cropSharp(h)=0.06010
+    deployed origin 8st g1.01  cropSharp(h)=0.02753
+    g125 8st guid 1.25         cropSharp(h)=0.03379
+[0301] wrote outputs/beyond4_lossless/crops/0301/0301_f110_3way_crop_100pct.png
+[0301] n=19 crop=(224,448) 576x1024
+label           haloFrac%  haloMean    flatHF  flatHF/GT    edgeHF  edgeHF/GT   stripeE  stripeE/GT
+GT                  0.000   0.00000   0.05438      1.000   0.25671      1.000   0.01798       1.000
+origin             24.890   0.03704   0.03288      0.605   0.06977      0.272   0.01753       0.975
+g125               28.945   0.04530   0.03848      0.708   0.08088      0.315   0.02327       1.295
+s25                27.817   0.04257   0.03761      0.692   0.07672      0.299   0.02228       1.239
+  haloFrac% = % of GT-edge pixels whose value falls outside the GT's own 3x3 [min,max] by >0.04 (halo/ringing)
+  flatHF    = mean |Laplacian| inside GT-flat regions (noise / amplified splatting texture)
+  edgeHF    = mean |Laplacian| inside the GT's top-decile gradient regions (detail at edges)
+  stripeE   = mean |horizontal difference| inside GT-flat regions (splatting-stripe energy)

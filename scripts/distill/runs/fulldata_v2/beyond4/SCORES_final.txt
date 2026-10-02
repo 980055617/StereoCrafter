@@ -1,0 +1,85 @@
+clip/config                           offset  leftPSNR    LPIPS    sharp    rPSNR   nf
+--- 0042 GT ---                                          0.0000   0.0070
+0042_origin_ll                     (-12,-12)     40.02   0.4279   0.0088   17.337   38
+ROW clip=0042 tag=0042_origin_ll dy=-12 dx=-12 leftPSNR=40.0232 lpips=0.427856 sharp=0.008799 gtSharp=0.007023 rightPSNR=17.3374 n=38 path=outputs/beyond4_lossless/clips/0042_origin_ll/0042_inpainting_results_sbs.mkv
+0042_g125_ll                       (-12,-12)     40.02   0.4198   0.0097   17.252   38
+ROW clip=0042 tag=0042_g125_ll dy=-12 dx=-12 leftPSNR=40.0232 lpips=0.419802 sharp=0.009657 gtSharp=0.007023 rightPSNR=17.2516 n=38 path=outputs/beyond4_lossless/clips/0042_g125_ll/0042_inpainting_results_sbs.mkv
+--- 0052 GT ---                                          0.0000   0.0099
+0052_origin_ll                     (-12,-12)     40.70   0.4467   0.0130   13.203   38
+ROW clip=0052 tag=0052_origin_ll dy=-12 dx=-12 leftPSNR=40.6982 lpips=0.446689 sharp=0.012979 gtSharp=0.009881 rightPSNR=13.2028 n=38 path=outputs/beyond4_lossless/clips/0052_origin_ll/0052_inpainting_results_sbs.mkv
+0052_g115_ll                       (-12,-12)     40.70   0.4425   0.0140   13.112   38
+ROW clip=0052 tag=0052_g115_ll dy=-12 dx=-12 leftPSNR=40.6982 lpips=0.442458 sharp=0.014008 gtSharp=0.009881 rightPSNR=13.1124 n=38 path=outputs/beyond4_lossless/clips/0052_g115_ll/0052_inpainting_results_sbs.mkv
+0052_g125_ll                       (-12,-12)     40.70   0.4407   0.0145   13.085   38
+ROW clip=0052 tag=0052_g125_ll dy=-12 dx=-12 leftPSNR=40.6982 lpips=0.440718 sharp=0.014530 gtSharp=0.009881 rightPSNR=13.0851 n=38 path=outputs/beyond4_lossless/clips/0052_g125_ll/0052_inpainting_results_sbs.mkv
+0052_g140_ll                       (-12,-12)     40.70   0.4390   0.0150   13.082   38
+ROW clip=0052 tag=0052_g140_ll dy=-12 dx=-12 leftPSNR=40.6982 lpips=0.438967 sharp=0.015015 gtSharp=0.009881 rightPSNR=13.0824 n=38 path=outputs/beyond4_lossless/clips/0052_g140_ll/0052_inpainting_results_sbs.mkv
+0052_s25_ll                        (-12,-12)     40.70   0.4384   0.0137   13.177   38
+ROW clip=0052 tag=0052_s25_ll dy=-12 dx=-12 leftPSNR=40.6982 lpips=0.438371 sharp=0.013702 gtSharp=0.009881 rightPSNR=13.1772 n=38 path=outputs/beyond4_lossless/clips/0052_s25_ll/0052_inpainting_results_sbs.mkv
+--- 0125 GT ---                                          0.0000   0.0114
+0125_origin_ll                     (-12,-12)     40.46   0.4799   0.0094   16.602   38
+ROW clip=0125 tag=0125_origin_ll dy=-12 dx=-12 leftPSNR=40.4643 lpips=0.479943 sharp=0.009408 gtSharp=0.011358 rightPSNR=16.6020 n=38 path=outputs/beyond4_lossless/clips/0125_origin_ll/0125_inpainting_results_sbs.mkv
+0125_g125_ll                       (-12,-12)     40.46   0.4580   0.0115   16.391   38
+ROW clip=0125 tag=0125_g125_ll dy=-12 dx=-12 leftPSNR=40.4643 lpips=0.457994 sharp=0.011501 gtSharp=0.011358 rightPSNR=16.3906 n=38 path=outputs/beyond4_lossless/clips/0125_g125_ll/0125_inpainting_results_sbs.mkv
+--- 0128 GT ---                                          0.0000   0.0105
+0128_origin_ll                     (-12,-12)     39.75   0.4055   0.0135   18.450   38
+ROW clip=0128 tag=0128_origin_ll dy=-12 dx=-12 leftPSNR=39.7484 lpips=0.405492 sharp=0.013506 gtSharp=0.010493 rightPSNR=18.4504 n=38 path=outputs/beyond4_lossless/clips/0128_origin_ll/0128_inpainting_results_sbs.mkv
+0128_g125_ll                       (-12,-12)     39.75   0.3914   0.0163   18.048   38
+ROW clip=0128 tag=0128_g125_ll dy=-12 dx=-12 leftPSNR=39.7484 lpips=0.391393 sharp=0.016349 gtSharp=0.010493 rightPSNR=18.0481 n=38 path=outputs/beyond4_lossless/clips/0128_g125_ll/0128_inpainting_results_sbs.mkv
+--- 0141 GT ---                                          0.0000   0.0036
+0141_origin_ll                     (-12,-12)     40.09   0.4813   0.0049   15.569   38
+ROW clip=0141 tag=0141_origin_ll dy=-12 dx=-12 leftPSNR=40.0934 lpips=0.481324 sharp=0.004912 gtSharp=0.003613 rightPSNR=15.5686 n=38 path=outputs/beyond4_lossless/clips/0141_origin_ll/0141_inpainting_results_sbs.mkv
+0141_g125_ll                       (-12,-12)     40.09   0.4869   0.0053   15.488   38
+ROW clip=0141 tag=0141_g125_ll dy=-12 dx=-12 leftPSNR=40.0934 lpips=0.486856 sharp=0.005335 gtSharp=0.003613 rightPSNR=15.4877 n=38 path=outputs/beyond4_lossless/clips/0141_g125_ll/0141_inpainting_results_sbs.mkv
+--- 0147 GT ---                                          0.0000   0.0039
+0147_origin_ll                     (-12,-12)     40.40   0.5269   0.0062   15.458   38
+ROW clip=0147 tag=0147_origin_ll dy=-12 dx=-12 leftPSNR=40.4039 lpips=0.526938 sharp=0.006179 gtSharp=0.003901 rightPSNR=15.4580 n=38 path=outputs/beyond4_lossless/clips/0147_origin_ll/0147_inpainting_results_sbs.mkv
+0147_g115_ll                       (-12,-12)     40.40   0.5295   0.0064   15.397   38
+ROW clip=0147 tag=0147_g115_ll dy=-12 dx=-12 leftPSNR=40.4039 lpips=0.529498 sharp=0.006418 gtSharp=0.003901 rightPSNR=15.3970 n=38 path=outputs/beyond4_lossless/clips/0147_g115_ll/0147_inpainting_results_sbs.mkv
+0147_g125_ll                       (-12,-12)     40.40   0.5304   0.0065   15.388   38
+ROW clip=0147 tag=0147_g125_ll dy=-12 dx=-12 leftPSNR=40.4039 lpips=0.530392 sharp=0.006514 gtSharp=0.003901 rightPSNR=15.3877 n=38 path=outputs/beyond4_lossless/clips/0147_g125_ll/0147_inpainting_results_sbs.mkv
+0147_g140_ll                       (-12,-12)     40.40   0.5305   0.0066   15.407   38
+ROW clip=0147 tag=0147_g140_ll dy=-12 dx=-12 leftPSNR=40.4039 lpips=0.530535 sharp=0.006557 gtSharp=0.003901 rightPSNR=15.4067 n=38 path=outputs/beyond4_lossless/clips/0147_g140_ll/0147_inpainting_results_sbs.mkv
+0147_s25_ll                        (-12,-12)     40.40   0.5220   0.0067   15.464   38
+ROW clip=0147 tag=0147_s25_ll dy=-12 dx=-12 leftPSNR=40.4039 lpips=0.522009 sharp=0.006690 gtSharp=0.003901 rightPSNR=15.4636 n=38 path=outputs/beyond4_lossless/clips/0147_s25_ll/0147_inpainting_results_sbs.mkv
+--- 0170 GT ---                                          0.0000   0.0323
+0170_origin_ll                       (-28,0)     39.79   0.2517   0.0164   17.168   38
+ROW clip=0170 tag=0170_origin_ll dy=-28 dx=0 leftPSNR=39.7902 lpips=0.251735 sharp=0.016394 gtSharp=0.032309 rightPSNR=17.1683 n=38 path=outputs/beyond4_lossless/clips/0170_origin_ll/0170_inpainting_results_sbs.mkv
+0170_g125_ll                         (-28,0)     39.79   0.2561   0.0191   16.704   38
+ROW clip=0170 tag=0170_g125_ll dy=-28 dx=0 leftPSNR=39.7902 lpips=0.256053 sharp=0.019132 gtSharp=0.032309 rightPSNR=16.7041 n=38 path=outputs/beyond4_lossless/clips/0170_g125_ll/0170_inpainting_results_sbs.mkv
+--- 0204 GT ---                                          0.0000   0.0116
+0204_origin_ll                       (-28,0)     41.16   0.2053   0.0065   19.896   38
+ROW clip=0204 tag=0204_origin_ll dy=-28 dx=0 leftPSNR=41.1620 lpips=0.205310 sharp=0.006527 gtSharp=0.011577 rightPSNR=19.8959 n=38 path=outputs/beyond4_lossless/clips/0204_origin_ll/0204_inpainting_results_sbs.mkv
+0204_g115_ll                         (-28,0)     41.16   0.1968   0.0070   19.639   38
+ROW clip=0204 tag=0204_g115_ll dy=-28 dx=0 leftPSNR=41.1620 lpips=0.196847 sharp=0.006977 gtSharp=0.011577 rightPSNR=19.6387 n=38 path=outputs/beyond4_lossless/clips/0204_g115_ll/0204_inpainting_results_sbs.mkv
+0204_g125_ll                         (-28,0)     41.16   0.1942   0.0073   19.467   38
+ROW clip=0204 tag=0204_g125_ll dy=-28 dx=0 leftPSNR=41.1620 lpips=0.194249 sharp=0.007251 gtSharp=0.011577 rightPSNR=19.4672 n=38 path=outputs/beyond4_lossless/clips/0204_g125_ll/0204_inpainting_results_sbs.mkv
+0204_g140_ll                         (-28,0)     41.16   0.1936   0.0076   19.255   38
+ROW clip=0204 tag=0204_g140_ll dy=-28 dx=0 leftPSNR=41.1620 lpips=0.193571 sharp=0.007586 gtSharp=0.011577 rightPSNR=19.2552 n=38 path=outputs/beyond4_lossless/clips/0204_g140_ll/0204_inpainting_results_sbs.mkv
+0204_s25_ll                          (-28,0)     41.16   0.1897   0.0076   19.548   38
+ROW clip=0204 tag=0204_s25_ll dy=-28 dx=0 leftPSNR=41.1620 lpips=0.189684 sharp=0.007608 gtSharp=0.011577 rightPSNR=19.5481 n=38 path=outputs/beyond4_lossless/clips/0204_s25_ll/0204_inpainting_results_sbs.mkv
+--- 0225 GT ---                                          0.0000   0.0132
+0225_origin_ll                       (-28,0)     40.93   0.2750   0.0118   16.068   38
+ROW clip=0225 tag=0225_origin_ll dy=-28 dx=0 leftPSNR=40.9278 lpips=0.275038 sharp=0.011770 gtSharp=0.013156 rightPSNR=16.0680 n=38 path=outputs/beyond4_lossless/clips/0225_origin_ll/0225_inpainting_results_sbs.mkv
+0225_g125_ll                         (-28,0)     40.93   0.2668   0.0136   15.689   38
+ROW clip=0225 tag=0225_g125_ll dy=-28 dx=0 leftPSNR=40.9278 lpips=0.266751 sharp=0.013643 gtSharp=0.013156 rightPSNR=15.6891 n=38 path=outputs/beyond4_lossless/clips/0225_g125_ll/0225_inpainting_results_sbs.mkv
+--- 0251 GT ---                                          0.0000   0.0173
+0251_origin_ll                       (-28,0)     41.23   0.3460   0.0083   18.580   38
+ROW clip=0251 tag=0251_origin_ll dy=-28 dx=0 leftPSNR=41.2340 lpips=0.346040 sharp=0.008295 gtSharp=0.017307 rightPSNR=18.5801 n=38 path=outputs/beyond4_lossless/clips/0251_origin_ll/0251_inpainting_results_sbs.mkv
+0251_g125_ll                         (-28,0)     41.23   0.3416   0.0093   18.458   38
+ROW clip=0251 tag=0251_g125_ll dy=-28 dx=0 leftPSNR=41.2340 lpips=0.341595 sharp=0.009299 gtSharp=0.017307 rightPSNR=18.4576 n=38 path=outputs/beyond4_lossless/clips/0251_g125_ll/0251_inpainting_results_sbs.mkv
+--- 0259 GT ---                                          0.0000   0.0450
+0259_origin_ll                       (-28,0)     40.72   0.4376   0.0312   13.302   38
+ROW clip=0259 tag=0259_origin_ll dy=-28 dx=0 leftPSNR=40.7219 lpips=0.437586 sharp=0.031178 gtSharp=0.044964 rightPSNR=13.3021 n=38 path=outputs/beyond4_lossless/clips/0259_origin_ll/0259_inpainting_results_sbs.mkv
+0259_g125_ll                         (-28,0)     40.72   0.4480   0.0349   12.966   38
+ROW clip=0259 tag=0259_g125_ll dy=-28 dx=0 leftPSNR=40.7219 lpips=0.448013 sharp=0.034933 gtSharp=0.044964 rightPSNR=12.9657 n=38 path=outputs/beyond4_lossless/clips/0259_g125_ll/0259_inpainting_results_sbs.mkv
+--- 0301 GT ---                                          0.0000   0.0505
+0301_origin_ll                       (-28,0)     40.25   0.4351   0.0235   15.467   38
+ROW clip=0301 tag=0301_origin_ll dy=-28 dx=0 leftPSNR=40.2464 lpips=0.435095 sharp=0.023528 gtSharp=0.050529 rightPSNR=15.4667 n=38 path=outputs/beyond4_lossless/clips/0301_origin_ll/0301_inpainting_results_sbs.mkv
+0301_g115_ll                         (-28,0)     40.25   0.4077   0.0280   15.014   38
+ROW clip=0301 tag=0301_g115_ll dy=-28 dx=0 leftPSNR=40.2464 lpips=0.407700 sharp=0.027983 gtSharp=0.050529 rightPSNR=15.0140 n=38 path=outputs/beyond4_lossless/clips/0301_g115_ll/0301_inpainting_results_sbs.mkv
+0301_g125_ll                         (-28,0)     40.25   0.4068   0.0311   14.703   38
+ROW clip=0301 tag=0301_g125_ll dy=-28 dx=0 leftPSNR=40.2464 lpips=0.406805 sharp=0.031073 gtSharp=0.050529 rightPSNR=14.7028 n=38 path=outputs/beyond4_lossless/clips/0301_g125_ll/0301_inpainting_results_sbs.mkv
+0301_g140_ll                         (-28,0)     40.25   0.4279   0.0355   14.277   38
+ROW clip=0301 tag=0301_g140_ll dy=-28 dx=0 leftPSNR=40.2464 lpips=0.427870 sharp=0.035456 gtSharp=0.050529 rightPSNR=14.2769 n=38 path=outputs/beyond4_lossless/clips/0301_g140_ll/0301_inpainting_results_sbs.mkv
+0301_s25_ll                          (-28,0)     40.25   0.3986   0.0295   15.013   38
+ROW clip=0301 tag=0301_s25_ll dy=-28 dx=0 leftPSNR=40.2464 lpips=0.398593 sharp=0.029482 gtSharp=0.050529 rightPSNR=15.0130 n=38 path=outputs/beyond4_lossless/clips/0301_s25_ll/0301_inpainting_results_sbs.mkv

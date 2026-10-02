@@ -1,0 +1,37 @@
+=== PART 1: does s25 survive LOSSLESS scoring?  (four regime-spanning clips) ===
+origin = 8 steps guid 1.01 (DEPLOYED);  s25 = 25 steps guid 1.01;  frozen origin UNet, real-GT LPIPS, SCORE_STEP=4
+LOSSLESS = FFV1 bgr0 mkv, pre-encode md5 chain to the shipped baseline (FAITHFULNESS.txt)
+
+clip  regime (vs GT sharp)   | LL origin   LL s25  LL delta | mp4v origin mp4v s25 mp4v delta |  LL-mp4v
+0052  origin ALREADY sharper |    0.4467   0.4384   -0.0083 |      0.4432   0.4368    -0.0064 |  -0.0019
+0147  origin ALREADY sharper |    0.5269   0.5220   -0.0049 |      0.5183   0.5176    -0.0007 |  -0.0042
+0204  origin under-sharp     |    0.2053   0.1897   -0.0156 |      0.2122   0.1950    -0.0172 |  +0.0016
+0301  origin under-sharp     |    0.4351   0.3986   -0.0365 |      0.4445   0.4083    -0.0362 |  -0.0003
+MEAN                         |    0.4035   0.3872   -0.0163 |      0.4045   0.3894    -0.0151 |  -0.0012
+
+VERDICT: s25 improves 4/4 clips losslessly; mean delta -0.0163 vs -0.0151 through mp4v.
+The advantage SURVIVES and is slightly LARGER without the codec.  The clip it grows most on is
+0147, the weakest mp4v result: -0.0007 (mp4v, i.e. nothing) -> -0.0049 lossless, a 7x larger gain.
+
+leftPSNR, lossless, per clip (must be identical across configs - the left half is pass-through):
+  0052: origin 40.70 dB   s25 40.70 dB   IDENTICAL
+  0147: origin 40.40 dB   s25 40.40 dB   IDENTICAL
+  0204: origin 41.16 dB   s25 41.16 dB   IDENTICAL
+  0301: origin 40.25 dB   s25 40.25 dB   IDENTICAL
+  -> direct evidence the shared-bit-budget confound is gone (mp4v era: 46-52 dB and config-dependent).
+
+sharpness, lossless:
+clip  sh origin   sh s25    sh GT  s25/GT  overshoot?
+0052     0.0130   0.0137   0.0099   1.384   OVERSHOOT
+0147     0.0062   0.0067   0.0039   1.718   OVERSHOOT
+0204     0.0065   0.0076   0.0116   0.655    under-GT
+0301     0.0235   0.0295   0.0505   0.584    under-GT
+
+DC-match robustness (the ~2-4/255 offset documented in FAITHFULNESS.txt):
+clip   raw delta  dcmatch delta     diff  shift origin  shift s25
+0052     -0.0083        -0.0084  +0.0001        -3.897     -3.935
+0147     -0.0049        -0.0050  +0.0001        -3.951     -3.977
+0204     -0.0156        -0.0159  +0.0003        +3.277     +3.369
+0301     -0.0365        -0.0368  +0.0003        -2.419     -3.061
+  -> every delta moves by <=0.0003 under DC matching, and the per-config shift is stable to
+     within 0.65/255, so the DC offset is not carrying the s25 result.

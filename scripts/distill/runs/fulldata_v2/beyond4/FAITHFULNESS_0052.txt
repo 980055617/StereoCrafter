@@ -1,0 +1,7 @@
+[shape] mkv frames=(168, 576, 2048, 3)
+CLAIM1 writer-is-lossless: pre-encode md5=302ff6642b506396547d3b818c143e4d  decoded md5=302ff6642b506396547d3b818c143e4d  MATCH=True
+CLAIM2 left-half-passthrough: source=video_data/splatting/0052_splatting_results.mp4 crop=(800,576) size=576x1024 BIT_IDENTICAL=True maxabs=0 nonzero=0/297271296
+CLAIM3 lossless-vs-mp4v (n=168 frames of outputs/fulldata/clips/0052_origin/0052_inpainting_results_sbs.mp4):
+   right-half PSNR = 37.70 dB   maxabs=47
+   left-half  PSNR = 40.02 dB   maxabs=27
+   sharp(right): lossless=0.01287  mp4v=0.01347   ratio=0.9550

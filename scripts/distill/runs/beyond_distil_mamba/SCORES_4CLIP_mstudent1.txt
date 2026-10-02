@@ -1,0 +1,100 @@
+clip/config                           offset  leftPSNR    LPIPS    sharp    rPSNR   nf
+--- 0301 GT ---                                          0.0000   0.0505
+0301_origin_ll                       (-28,0)     40.25   0.4351   0.0235   15.467   38
+ROW clip=0301 tag=0301_origin_ll dy=-28 dx=0 leftPSNR=40.2464 lpips=0.435095 sharp=0.023528 gtSharp=0.050529 rightPSNR=15.4667 n=38 path=outputs/beyond4_lossless/clips/0301_origin_ll/0301_inpainting_results_sbs.mkv
+0301_s25_ll                          (-28,0)     40.25   0.3986   0.0295   15.013   38
+ROW clip=0301 tag=0301_s25_ll dy=-28 dx=0 leftPSNR=40.2464 lpips=0.398593 sharp=0.029482 gtSharp=0.050529 rightPSNR=15.0130 n=38 path=outputs/beyond4_lossless/clips/0301_s25_ll/0301_inpainting_results_sbs.mkv
+0301_student_ll                      (-28,0)     40.25   0.3982   0.0291   15.056   38
+ROW clip=0301 tag=0301_student_ll dy=-28 dx=0 leftPSNR=40.2464 lpips=0.398193 sharp=0.029051 gtSharp=0.050529 rightPSNR=15.0558 n=38 path=outputs/skeptic1_stack/clips/0301_student_ll/0301_inpainting_results_sbs.mkv
+0301_mamba_ll                        (-28,0)     40.25   0.4253   0.0249   15.284   38
+ROW clip=0301 tag=0301_mamba_ll dy=-28 dx=0 leftPSNR=40.2464 lpips=0.425254 sharp=0.024917 gtSharp=0.050529 rightPSNR=15.2841 n=38 path=outputs/skeptic1_stack/clips/0301_mamba_ll/0301_inpainting_results_sbs.mkv
+0301_mamba_s25_ll                    (-28,0)     40.25   0.3978   0.0305   14.894   38
+ROW clip=0301 tag=0301_mamba_s25_ll dy=-28 dx=0 leftPSNR=40.2464 lpips=0.397773 sharp=0.030464 gtSharp=0.050529 rightPSNR=14.8936 n=38 path=outputs/skeptic1_stack/clips/0301_mamba_s25_ll/0301_inpainting_results_sbs.mkv
+0301_mamba_oracle456_ll              (-28,0)     40.25   0.3958   0.0312   14.835   38
+ROW clip=0301 tag=0301_mamba_oracle456_ll dy=-28 dx=0 leftPSNR=40.2464 lpips=0.395819 sharp=0.031195 gtSharp=0.050529 rightPSNR=14.8350 n=38 path=outputs/skeptic1_stack/clips/0301_mamba_oracle456_ll/0301_inpainting_results_sbs.mkv
+0301_mamba_oracleALL_ll              (-28,0)     40.25   0.3960   0.0312   14.841   38
+ROW clip=0301 tag=0301_mamba_oracleALL_ll dy=-28 dx=0 leftPSNR=40.2464 lpips=0.395980 sharp=0.031209 gtSharp=0.050529 rightPSNR=14.8407 n=38 path=outputs/beyond_distil_mamba/clips/0301_mamba_oracleALL_ll/0301_inpainting_results_sbs.mkv
+0301_mstudent1_step100_ll            (-28,0)     40.25   0.4047   0.0299   14.898   38
+ROW clip=0301 tag=0301_mstudent1_step100_ll dy=-28 dx=0 leftPSNR=40.2464 lpips=0.404702 sharp=0.029923 gtSharp=0.050529 rightPSNR=14.8979 n=38 path=outputs/beyond_distil_mamba/clips/0301_mstudent1_step100_ll/0301_inpainting_results_sbs.mkv
+0301_mstudent1_step200_ll            (-28,0)     40.25   0.3916   0.0314   14.836   38
+ROW clip=0301 tag=0301_mstudent1_step200_ll dy=-28 dx=0 leftPSNR=40.2464 lpips=0.391589 sharp=0.031366 gtSharp=0.050529 rightPSNR=14.8361 n=38 path=outputs/beyond_distil_mamba/clips/0301_mstudent1_step200_ll/0301_inpainting_results_sbs.mkv
+0301_mstudent1_step400_ll            (-28,0)     40.25   0.3923   0.0302   15.084   38
+ROW clip=0301 tag=0301_mstudent1_step400_ll dy=-28 dx=0 leftPSNR=40.2464 lpips=0.392250 sharp=0.030158 gtSharp=0.050529 rightPSNR=15.0843 n=38 path=outputs/beyond_distil_mamba/clips/0301_mstudent1_step400_ll/0301_inpainting_results_sbs.mkv
+0301_mstudent1_step600_ll            (-28,0)     40.25   0.3831   0.0315   14.968   38
+ROW clip=0301 tag=0301_mstudent1_step600_ll dy=-28 dx=0 leftPSNR=40.2464 lpips=0.383060 sharp=0.031499 gtSharp=0.050529 rightPSNR=14.9678 n=38 path=outputs/beyond_distil_mamba/clips/0301_mstudent1_step600_ll/0301_inpainting_results_sbs.mkv
+0301_mstudent1_step800_ll            (-28,0)     40.25   0.3841   0.0321   14.829   38
+ROW clip=0301 tag=0301_mstudent1_step800_ll dy=-28 dx=0 leftPSNR=40.2464 lpips=0.384145 sharp=0.032081 gtSharp=0.050529 rightPSNR=14.8293 n=38 path=outputs/beyond_distil_mamba/clips/0301_mstudent1_step800_ll/0301_inpainting_results_sbs.mkv
+--- 0204 GT ---                                          0.0000   0.0116
+0204_origin_ll                       (-28,0)     41.16   0.2053   0.0065   19.896   38
+ROW clip=0204 tag=0204_origin_ll dy=-28 dx=0 leftPSNR=41.1620 lpips=0.205310 sharp=0.006527 gtSharp=0.011577 rightPSNR=19.8959 n=38 path=outputs/beyond4_lossless/clips/0204_origin_ll/0204_inpainting_results_sbs.mkv
+0204_s25_ll                          (-28,0)     41.16   0.1897   0.0076   19.548   38
+ROW clip=0204 tag=0204_s25_ll dy=-28 dx=0 leftPSNR=41.1620 lpips=0.189684 sharp=0.007608 gtSharp=0.011577 rightPSNR=19.5481 n=38 path=outputs/beyond4_lossless/clips/0204_s25_ll/0204_inpainting_results_sbs.mkv
+0204_student_ll                      (-28,0)     41.16   0.1883   0.0076   19.529   38
+ROW clip=0204 tag=0204_student_ll dy=-28 dx=0 leftPSNR=41.1620 lpips=0.188289 sharp=0.007599 gtSharp=0.011577 rightPSNR=19.5294 n=38 path=outputs/skeptic1_stack/clips/0204_student_ll/0204_inpainting_results_sbs.mkv
+0204_mamba_ll                        (-28,0)     41.16   0.2022   0.0066   19.743   38
+ROW clip=0204 tag=0204_mamba_ll dy=-28 dx=0 leftPSNR=41.1620 lpips=0.202218 sharp=0.006618 gtSharp=0.011577 rightPSNR=19.7430 n=38 path=outputs/skeptic1_stack/clips/0204_mamba_ll/0204_inpainting_results_sbs.mkv
+0204_mamba_s25_ll                    (-28,0)     41.16   0.1884   0.0078   19.429   38
+ROW clip=0204 tag=0204_mamba_s25_ll dy=-28 dx=0 leftPSNR=41.1620 lpips=0.188404 sharp=0.007754 gtSharp=0.011577 rightPSNR=19.4291 n=38 path=outputs/skeptic1_stack/clips/0204_mamba_s25_ll/0204_inpainting_results_sbs.mkv
+0204_mamba_oracle456_ll              (-28,0)     41.16   0.1886   0.0079   19.402   38
+ROW clip=0204 tag=0204_mamba_oracle456_ll dy=-28 dx=0 leftPSNR=41.1620 lpips=0.188560 sharp=0.007893 gtSharp=0.011577 rightPSNR=19.4018 n=38 path=outputs/beyond_distil_mamba/clips/0204_mamba_oracle456_ll/0204_inpainting_results_sbs.mkv
+0204_mstudent1_step100_ll            (-28,0)     41.16   0.1920   0.0078   19.355   38
+ROW clip=0204 tag=0204_mstudent1_step100_ll dy=-28 dx=0 leftPSNR=41.1620 lpips=0.191966 sharp=0.007774 gtSharp=0.011577 rightPSNR=19.3548 n=38 path=outputs/beyond_distil_mamba/clips/0204_mstudent1_step100_ll/0204_inpainting_results_sbs.mkv
+0204_mstudent1_step200_ll            (-28,0)     41.16   0.1898   0.0081   19.413   38
+ROW clip=0204 tag=0204_mstudent1_step200_ll dy=-28 dx=0 leftPSNR=41.1620 lpips=0.189789 sharp=0.008067 gtSharp=0.011577 rightPSNR=19.4132 n=38 path=outputs/beyond_distil_mamba/clips/0204_mstudent1_step200_ll/0204_inpainting_results_sbs.mkv
+0204_mstudent1_step400_ll            (-28,0)     41.16   0.1891   0.0081   19.320   38
+ROW clip=0204 tag=0204_mstudent1_step400_ll dy=-28 dx=0 leftPSNR=41.1620 lpips=0.189146 sharp=0.008080 gtSharp=0.011577 rightPSNR=19.3204 n=38 path=outputs/beyond_distil_mamba/clips/0204_mstudent1_step400_ll/0204_inpainting_results_sbs.mkv
+0204_mstudent1_step600_ll            (-28,0)     41.16   0.1867   0.0081   19.407   38
+ROW clip=0204 tag=0204_mstudent1_step600_ll dy=-28 dx=0 leftPSNR=41.1620 lpips=0.186677 sharp=0.008057 gtSharp=0.011577 rightPSNR=19.4066 n=38 path=outputs/beyond_distil_mamba/clips/0204_mstudent1_step600_ll/0204_inpainting_results_sbs.mkv
+0204_mstudent1_step800_ll            (-28,0)     41.16   0.1888   0.0080   19.450   38
+ROW clip=0204 tag=0204_mstudent1_step800_ll dy=-28 dx=0 leftPSNR=41.1620 lpips=0.188795 sharp=0.007958 gtSharp=0.011577 rightPSNR=19.4498 n=38 path=outputs/beyond_distil_mamba/clips/0204_mstudent1_step800_ll/0204_inpainting_results_sbs.mkv
+--- 0052 GT ---                                          0.0000   0.0099
+0052_origin_ll                     (-12,-12)     40.70   0.4467   0.0130   13.203   38
+ROW clip=0052 tag=0052_origin_ll dy=-12 dx=-12 leftPSNR=40.6982 lpips=0.446689 sharp=0.012979 gtSharp=0.009881 rightPSNR=13.2028 n=38 path=outputs/beyond4_lossless/clips/0052_origin_ll/0052_inpainting_results_sbs.mkv
+0052_s25_ll                        (-12,-12)     40.70   0.4384   0.0137   13.177   38
+ROW clip=0052 tag=0052_s25_ll dy=-12 dx=-12 leftPSNR=40.6982 lpips=0.438371 sharp=0.013702 gtSharp=0.009881 rightPSNR=13.1772 n=38 path=outputs/beyond4_lossless/clips/0052_s25_ll/0052_inpainting_results_sbs.mkv
+0052_student_ll                    (-12,-12)     40.70   0.4397   0.0135   13.205   38
+ROW clip=0052 tag=0052_student_ll dy=-12 dx=-12 leftPSNR=40.6982 lpips=0.439695 sharp=0.013494 gtSharp=0.009881 rightPSNR=13.2051 n=38 path=outputs/skeptic1_stack/clips/0052_student_ll/0052_inpainting_results_sbs.mkv
+0052_mamba_ll                      (-12,-12)     40.70   0.4467   0.0132   13.182   38
+ROW clip=0052 tag=0052_mamba_ll dy=-12 dx=-12 leftPSNR=40.6982 lpips=0.446684 sharp=0.013162 gtSharp=0.009881 rightPSNR=13.1822 n=38 path=outputs/skeptic1_stack/clips/0052_mamba_ll/0052_inpainting_results_sbs.mkv
+0052_mamba_s25_ll                  (-12,-12)     40.70   0.4375   0.0138   13.173   38
+ROW clip=0052 tag=0052_mamba_s25_ll dy=-12 dx=-12 leftPSNR=40.6982 lpips=0.437486 sharp=0.013819 gtSharp=0.009881 rightPSNR=13.1727 n=38 path=outputs/skeptic1_stack/clips/0052_mamba_s25_ll/0052_inpainting_results_sbs.mkv
+0052_mamba_oracle456_ll            (-12,-12)     40.70   0.4372   0.0139   13.165   38
+ROW clip=0052 tag=0052_mamba_oracle456_ll dy=-12 dx=-12 leftPSNR=40.6982 lpips=0.437181 sharp=0.013911 gtSharp=0.009881 rightPSNR=13.1646 n=38 path=outputs/skeptic1_stack/clips/0052_mamba_oracle456_ll/0052_inpainting_results_sbs.mkv
+0052_mstudent1_step100_ll          (-12,-12)     40.70   0.4371   0.0142   13.125   38
+ROW clip=0052 tag=0052_mstudent1_step100_ll dy=-12 dx=-12 leftPSNR=40.6982 lpips=0.437099 sharp=0.014151 gtSharp=0.009881 rightPSNR=13.1253 n=38 path=outputs/beyond_distil_mamba/clips/0052_mstudent1_step100_ll/0052_inpainting_results_sbs.mkv
+0052_mstudent1_step200_ll          (-12,-12)     40.70   0.4363   0.0144   13.077   38
+ROW clip=0052 tag=0052_mstudent1_step200_ll dy=-12 dx=-12 leftPSNR=40.6982 lpips=0.436260 sharp=0.014429 gtSharp=0.009881 rightPSNR=13.0766 n=38 path=outputs/beyond_distil_mamba/clips/0052_mstudent1_step200_ll/0052_inpainting_results_sbs.mkv
+0052_mstudent1_step400_ll          (-12,-12)     40.70   0.4361   0.0137   13.250   38
+ROW clip=0052 tag=0052_mstudent1_step400_ll dy=-12 dx=-12 leftPSNR=40.6982 lpips=0.436083 sharp=0.013722 gtSharp=0.009881 rightPSNR=13.2496 n=38 path=outputs/beyond_distil_mamba/clips/0052_mstudent1_step400_ll/0052_inpainting_results_sbs.mkv
+0052_mstudent1_step600_ll          (-12,-12)     40.70   0.4359   0.0141   13.175   38
+ROW clip=0052 tag=0052_mstudent1_step600_ll dy=-12 dx=-12 leftPSNR=40.6982 lpips=0.435926 sharp=0.014106 gtSharp=0.009881 rightPSNR=13.1747 n=38 path=outputs/beyond_distil_mamba/clips/0052_mstudent1_step600_ll/0052_inpainting_results_sbs.mkv
+0052_mstudent1_step800_ll          (-12,-12)     40.70   0.4364   0.0144   13.064   38
+ROW clip=0052 tag=0052_mstudent1_step800_ll dy=-12 dx=-12 leftPSNR=40.6982 lpips=0.436434 sharp=0.014379 gtSharp=0.009881 rightPSNR=13.0640 n=38 path=outputs/beyond_distil_mamba/clips/0052_mstudent1_step800_ll/0052_inpainting_results_sbs.mkv
+--- 0147 GT ---                                          0.0000   0.0039
+0147_origin_ll                     (-12,-12)     40.40   0.5269   0.0062   15.458   38
+ROW clip=0147 tag=0147_origin_ll dy=-12 dx=-12 leftPSNR=40.4039 lpips=0.526938 sharp=0.006179 gtSharp=0.003901 rightPSNR=15.4580 n=38 path=outputs/beyond4_lossless/clips/0147_origin_ll/0147_inpainting_results_sbs.mkv
+0147_s25_ll                        (-12,-12)     40.40   0.5220   0.0067   15.464   38
+ROW clip=0147 tag=0147_s25_ll dy=-12 dx=-12 leftPSNR=40.4039 lpips=0.522009 sharp=0.006690 gtSharp=0.003901 rightPSNR=15.4636 n=38 path=outputs/beyond4_lossless/clips/0147_s25_ll/0147_inpainting_results_sbs.mkv
+0147_student_ll                    (-12,-12)     40.40   0.5239   0.0066   15.452   38
+ROW clip=0147 tag=0147_student_ll dy=-12 dx=-12 leftPSNR=40.4039 lpips=0.523853 sharp=0.006649 gtSharp=0.003901 rightPSNR=15.4525 n=38 path=outputs/skeptic1_stack/clips/0147_student_ll/0147_inpainting_results_sbs.mkv
+0147_mamba_ll                      (-12,-12)     40.40   0.5264   0.0062   15.451   38
+ROW clip=0147 tag=0147_mamba_ll dy=-12 dx=-12 leftPSNR=40.4039 lpips=0.526428 sharp=0.006200 gtSharp=0.003901 rightPSNR=15.4514 n=38 path=outputs/skeptic1_stack/clips/0147_mamba_ll/0147_inpainting_results_sbs.mkv
+0147_mamba_s25_ll                  (-12,-12)     40.40   0.5206   0.0067   15.461   38
+ROW clip=0147 tag=0147_mamba_s25_ll dy=-12 dx=-12 leftPSNR=40.4039 lpips=0.520636 sharp=0.006653 gtSharp=0.003901 rightPSNR=15.4612 n=38 path=outputs/skeptic1_stack/clips/0147_mamba_s25_ll/0147_inpainting_results_sbs.mkv
+0147_mamba_oracle456_ll            (-12,-12)     40.40   0.5203   0.0067   15.453   38
+ROW clip=0147 tag=0147_mamba_oracle456_ll dy=-12 dx=-12 leftPSNR=40.4039 lpips=0.520332 sharp=0.006721 gtSharp=0.003901 rightPSNR=15.4527 n=38 path=outputs/beyond_distil_mamba/clips/0147_mamba_oracle456_ll/0147_inpainting_results_sbs.mkv
+0147_mstudent1_step100_ll          (-12,-12)     40.40   0.5244   0.0071   15.330   38
+ROW clip=0147 tag=0147_mstudent1_step100_ll dy=-12 dx=-12 leftPSNR=40.4039 lpips=0.524442 sharp=0.007098 gtSharp=0.003901 rightPSNR=15.3298 n=38 path=outputs/beyond_distil_mamba/clips/0147_mstudent1_step100_ll/0147_inpainting_results_sbs.mkv
+0147_mstudent1_step200_ll          (-12,-12)     40.40   0.5245   0.0071   15.318   38
+ROW clip=0147 tag=0147_mstudent1_step200_ll dy=-12 dx=-12 leftPSNR=40.4039 lpips=0.524517 sharp=0.007135 gtSharp=0.003901 rightPSNR=15.3177 n=38 path=outputs/beyond_distil_mamba/clips/0147_mstudent1_step200_ll/0147_inpainting_results_sbs.mkv
+0147_mstudent1_step400_ll          (-12,-12)     40.40   0.5209   0.0069   15.493   38
+ROW clip=0147 tag=0147_mstudent1_step400_ll dy=-12 dx=-12 leftPSNR=40.4039 lpips=0.520942 sharp=0.006901 gtSharp=0.003901 rightPSNR=15.4932 n=38 path=outputs/beyond_distil_mamba/clips/0147_mstudent1_step400_ll/0147_inpainting_results_sbs.mkv
+0147_mstudent1_step600_ll          (-12,-12)     40.40   0.5233   0.0071   15.390   38
+ROW clip=0147 tag=0147_mstudent1_step600_ll dy=-12 dx=-12 leftPSNR=40.4039 lpips=0.523278 sharp=0.007094 gtSharp=0.003901 rightPSNR=15.3896 n=38 path=outputs/beyond_distil_mamba/clips/0147_mstudent1_step600_ll/0147_inpainting_results_sbs.mkv
+0147_mstudent1_step800_ll          (-12,-12)     40.40   0.5258   0.0072   15.253   38
+ROW clip=0147 tag=0147_mstudent1_step800_ll dy=-12 dx=-12 leftPSNR=40.4039 lpips=0.525800 sharp=0.007187 gtSharp=0.003901 rightPSNR=15.2525 n=38 path=outputs/beyond_distil_mamba/clips/0147_mstudent1_step800_ll/0147_inpainting_results_sbs.mkv
+
+# MISSING ROWS (not scored):
+#   0204_mamba_oracleALL_ll
+#   0052_mamba_oracleALL_ll
+#   0147_mamba_oracleALL_ll

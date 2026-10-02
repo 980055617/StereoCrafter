@@ -1,0 +1,70 @@
+
+=== PART 1  s25 on the four regime-spanning clips  (s25_ll vs origin_ll, LOSSLESS FFV1, real-GT LPIPS, SCORE_STEP=4) ===
+clip      base      var    delta |  sh_base   sh_var    sh_GT  var/GT  overshoot? |   lPSNRb   lPSNRv   rPSNRb   rPSNRv
+0301    0.4351   0.3986  -0.0365 |   0.0235   0.0295   0.0505   0.583    under-GT |    40.25    40.25   15.467   15.013
+0204    0.2053   0.1897  -0.0156 |   0.0065   0.0076   0.0116   0.657    under-GT |    41.16    41.16   19.896   19.548
+0052    0.4467   0.4384  -0.0083 |   0.0130   0.0137   0.0099   1.387   OVERSHOOT |    40.70    40.70   13.203   13.177
+0147    0.5269   0.5220  -0.0049 |   0.0062   0.0067   0.0039   1.715   OVERSHOOT |    40.40    40.40   15.458   15.464
+MEAN    0.4035   0.3872  -0.0163   n=4  improved=4/4  worst=-0.0049  best=-0.0365  meanSharpRatio=1.139  overshootGT=2/4
+leftPSNR identical base-vs-var on all 4 clips: True
+alignment offset identical base-vs-var: True
+
+--- PART 1  lossless delta vs mp4v delta, side by side ---
+clip   LL origin    LL s25  LL delta |  mp4v origin  mp4v s25  mp4v delta | delta of deltas
+0301      0.4351    0.3986   -0.0365 |       0.4445    0.4083     -0.0362 |         -0.0003
+0204      0.2053    0.1897   -0.0156 |       0.2122    0.1950     -0.0172 |         +0.0016
+0052      0.4467    0.4384   -0.0083 |       0.4432    0.4368     -0.0064 |         -0.0019
+0147      0.5269    0.5220   -0.0049 |       0.5183    0.5176     -0.0007 |         -0.0042
+MEAN      0.4035    0.3872   -0.0163 |       0.4045    0.3894     -0.0151
+
+=== PART 2  g125 on all 12 test clips  (g125_ll vs origin_ll, LOSSLESS FFV1, real-GT LPIPS, SCORE_STEP=4) ===
+clip      base      var    delta |  sh_base   sh_var    sh_GT  var/GT  overshoot? |   lPSNRb   lPSNRv   rPSNRb   rPSNRv
+0042    0.4279   0.4198  -0.0081 |   0.0088   0.0097   0.0070   1.375   OVERSHOOT |    40.02    40.02   17.337   17.252
+0052    0.4467   0.4407  -0.0060 |   0.0130   0.0145   0.0099   1.470   OVERSHOOT |    40.70    40.70   13.203   13.085
+0125    0.4799   0.4580  -0.0219 |   0.0094   0.0115   0.0114   1.013   OVERSHOOT |    40.46    40.46   16.602   16.391
+0128    0.4055   0.3914  -0.0141 |   0.0135   0.0163   0.0105   1.558   OVERSHOOT |    39.75    39.75   18.450   18.048
+0141    0.4813   0.4869  +0.0055 |   0.0049   0.0053   0.0036   1.477   OVERSHOOT |    40.09    40.09   15.569   15.488
+0147    0.5269   0.5304  +0.0035 |   0.0062   0.0065   0.0039   1.670   OVERSHOOT |    40.40    40.40   15.458   15.388
+0170    0.2517   0.2561  +0.0043 |   0.0164   0.0191   0.0323   0.592    under-GT |    39.79    39.79   17.168   16.704
+0204    0.2053   0.1942  -0.0111 |   0.0065   0.0073   0.0116   0.626    under-GT |    41.16    41.16   19.896   19.467
+0225    0.2750   0.2668  -0.0083 |   0.0118   0.0136   0.0132   1.037   OVERSHOOT |    40.93    40.93   16.068   15.689
+0251    0.3460   0.3416  -0.0044 |   0.0083   0.0093   0.0173   0.537    under-GT |    41.23    41.23   18.580   18.458
+0259    0.4376   0.4480  +0.0104 |   0.0312   0.0349   0.0450   0.777    under-GT |    40.72    40.72   13.302   12.966
+0301    0.4351   0.4068  -0.0283 |   0.0235   0.0311   0.0505   0.615    under-GT |    40.25    40.25   15.467   14.703
+MEAN    0.3933   0.3867  -0.0065   n=12  improved=8/12  worst=+0.0104  best=-0.0283  meanSharpRatio=1.149  overshootGT=7/12
+leftPSNR identical base-vs-var on all 12 clips: True
+alignment offset identical base-vs-var: True
+
+--- PART 2  g125 lossless delta vs the mp4v 3-clip smoke (beyond2/SUMMARY_TABLE.txt) ---
+  0042: lossless -0.0081   mp4v smoke -0.0101
+  0204: lossless -0.0111   mp4v smoke -0.0130
+  0301: lossless -0.0283   mp4v smoke -0.0305
+
+=== PART 2  guidance optimum pinning: g115_ll  (g115_ll vs origin_ll, LOSSLESS FFV1, real-GT LPIPS, SCORE_STEP=4) ===
+clip      base      var    delta |  sh_base   sh_var    sh_GT  var/GT  overshoot? |   lPSNRb   lPSNRv   rPSNRb   rPSNRv
+0301    0.4351   0.4077  -0.0274 |   0.0235   0.0280   0.0505   0.554    under-GT |    40.25    40.25   15.467   15.014
+0204    0.2053   0.1968  -0.0085 |   0.0065   0.0070   0.0116   0.603    under-GT |    41.16    41.16   19.896   19.639
+0052    0.4467   0.4425  -0.0042 |   0.0130   0.0140   0.0099   1.418   OVERSHOOT |    40.70    40.70   13.203   13.112
+0147    0.5269   0.5295  +0.0026 |   0.0062   0.0064   0.0039   1.645   OVERSHOOT |    40.40    40.40   15.458   15.397
+MEAN    0.4035   0.3941  -0.0094   n=4  improved=3/4  worst=+0.0026  best=-0.0274  meanSharpRatio=1.094  overshootGT=2/4
+leftPSNR identical base-vs-var on all 4 clips: True
+alignment offset identical base-vs-var: True
+
+=== PART 2  guidance optimum pinning: g140_ll  (g140_ll vs origin_ll, LOSSLESS FFV1, real-GT LPIPS, SCORE_STEP=4) ===
+clip      base      var    delta |  sh_base   sh_var    sh_GT  var/GT  overshoot? |   lPSNRb   lPSNRv   rPSNRb   rPSNRv
+0301    0.4351   0.4279  -0.0072 |   0.0235   0.0355   0.0505   0.702    under-GT |    40.25    40.25   15.467   14.277
+0204    0.2053   0.1936  -0.0117 |   0.0065   0.0076   0.0116   0.655    under-GT |    41.16    41.16   19.896   19.255
+0052    0.4467   0.4390  -0.0077 |   0.0130   0.0150   0.0099   1.520   OVERSHOOT |    40.70    40.70   13.203   13.082
+0147    0.5269   0.5305  +0.0036 |   0.0062   0.0066   0.0039   1.681   OVERSHOOT |    40.40    40.40   15.458   15.407
+MEAN    0.4035   0.3977  -0.0058   n=4  improved=3/4  worst=+0.0036  best=-0.0117  meanSharpRatio=1.222  overshootGT=2/4
+leftPSNR identical base-vs-var on all 4 clips: True
+alignment offset identical base-vs-var: True
+
+--- guidance ladder on the four clips (lossless LPIPS) ---
+clip     origin      g115      g125      g140       s25
+0301     0.4351    0.4077    0.4068    0.4279    0.3986
+0204     0.2053    0.1968    0.1942    0.1936    0.1897
+0052     0.4467    0.4425    0.4407    0.4390    0.4384
+0147     0.5269    0.5295    0.5304    0.5305    0.5220
+MEAN     0.4035    0.3941    0.3930    0.3977    0.3872
+sharp    0.0123    0.0138    0.0148    0.0162    0.0144

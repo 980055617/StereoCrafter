@@ -1,0 +1,48 @@
+RUN 0301 repro8g101 rc=0 secs=166 20:07:11 dir=outputs/fulldata_v2/clips/0301_origin_repro8g101
+PHASE_repro_DONE 20:07:11
+RUN 0301 g100 rc=0 secs=119 20:11:03 dir=outputs/fulldata_v2/clips/0301_origin_g100
+RUN 0301 g103 rc=0 secs=169 20:13:52 dir=outputs/fulldata_v2/clips/0301_origin_g103
+RUN 0301 g106 rc=0 secs=171 20:16:43 dir=outputs/fulldata_v2/clips/0301_origin_g106
+RUN 0204 g100 rc=0 secs=121 20:18:44 dir=outputs/fulldata_v2/clips/0204_origin_g100
+RUN 0204 g103 rc=0 secs=173 20:21:37 dir=outputs/fulldata_v2/clips/0204_origin_g103
+RUN 0204 g106 rc=0 secs=171 20:24:28 dir=outputs/fulldata_v2/clips/0204_origin_g106
+RUN 0042 g100 rc=0 secs=128 20:26:36 dir=outputs/fulldata_v2/clips/0042_origin_g100
+RUN 0042 g103 rc=0 secs=179 20:29:35 dir=outputs/fulldata_v2/clips/0042_origin_g103
+RUN 0042 g106 rc=0 secs=180 20:32:35 dir=outputs/fulldata_v2/clips/0042_origin_g106
+PHASE_guid_DONE 20:32:35
+RUN 0301 s16 rc=0 secs=290 20:37:25 dir=outputs/fulldata_v2/clips/0301_origin_s16
+RUN 0204 s16 rc=0 secs=289 20:42:14 dir=outputs/fulldata_v2/clips/0204_origin_s16
+RUN 0042 s16 rc=0 secs=297 20:47:11 dir=outputs/fulldata_v2/clips/0042_origin_s16
+PHASE_s16_DONE 20:47:11
+RUN 0301 s25 rc=0 secs=421 20:54:13 dir=outputs/fulldata_v2/clips/0301_origin_s25
+RUN 0204 s25 rc=0 secs=420 21:01:13 dir=outputs/fulldata_v2/clips/0204_origin_s25
+RUN 0042 s25 rc=0 secs=427 21:08:20 dir=outputs/fulldata_v2/clips/0042_origin_s25
+PHASE_s25_DONE 21:08:20
+RUN 0301 s50 rc=0 secs=780 21:26:28 dir=outputs/fulldata_v2/clips/0301_origin_s50
+RUN 0204 s50 rc=0 secs=771 21:39:19 dir=outputs/fulldata_v2/clips/0204_origin_s50
+RUN 0042 s50 rc=0 secs=764 21:52:03 dir=outputs/fulldata_v2/clips/0042_origin_s50
+RUN 0042 g115 rc=0 secs=176 21:54:59 dir=outputs/fulldata_v2/clips/0042_origin_g115
+RUN 0301 s25g106 rc=0 secs=405 22:04:23 dir=outputs/fulldata_v2/clips/0301_origin_s25g106
+RUN 0204 s25g106 rc=0 secs=406 22:11:09 dir=outputs/fulldata_v2/clips/0204_origin_s25g106
+RUN 0042 s25g106 rc=0 secs=412 22:18:01 dir=outputs/fulldata_v2/clips/0042_origin_s25g106
+PHASE_combo_DONE 22:18:01
+RUN 0301 g110 rc=0 secs=170 22:20:52 dir=outputs/fulldata_v2/clips/0301_origin_g110
+RUN 0301 g115 rc=0 secs=169 22:23:41 dir=outputs/fulldata_v2/clips/0301_origin_g115
+RUN 0301 g125 rc=0 secs=169 22:26:30 dir=outputs/fulldata_v2/clips/0301_origin_g125
+RUN 0204 g110 rc=0 secs=169 22:29:19 dir=outputs/fulldata_v2/clips/0204_origin_g110
+RUN 0204 g115 rc=0 secs=169 22:32:08 dir=outputs/fulldata_v2/clips/0204_origin_g115
+RUN 0204 g125 rc=0 secs=169 22:34:57 dir=outputs/fulldata_v2/clips/0204_origin_g125
+RUN 0042 g110 rc=0 secs=175 22:37:52 dir=outputs/fulldata_v2/clips/0042_origin_g110
+SKIP 0042 g115 exists
+RUN 0042 g125 rc=0 secs=175 22:40:47 dir=outputs/fulldata_v2/clips/0042_origin_g125
+PHASE_guid2_DONE 22:40:47
+RUN 0301 g140 rc=0 secs=168 22:53:26 dir=outputs/fulldata_v2/clips/0301_origin_g140
+RUN 0301 g160 rc=0 secs=168 22:56:14 dir=outputs/fulldata_v2/clips/0301_origin_g160
+RUN 0301 g200 rc=0 secs=169 22:59:03 dir=outputs/fulldata_v2/clips/0301_origin_g200
+RUN 0204 g140 rc=0 secs=169 23:01:52 dir=outputs/fulldata_v2/clips/0204_origin_g140
+RUN 0204 g160 rc=0 secs=168 23:04:40 dir=outputs/fulldata_v2/clips/0204_origin_g160
+RUN 0204 g200 rc=0 secs=169 23:07:29 dir=outputs/fulldata_v2/clips/0204_origin_g200
+RUN 0042 g140 rc=0 secs=175 23:10:24 dir=outputs/fulldata_v2/clips/0042_origin_g140
+RUN 0042 g160 rc=0 secs=175 23:13:19 dir=outputs/fulldata_v2/clips/0042_origin_g160
+RUN 0042 g200 rc=0 secs=176 23:16:15 dir=outputs/fulldata_v2/clips/0042_origin_g200
+PHASE_guid3_DONE 23:16:15

@@ -1,0 +1,12 @@
+0040 mamba_ll none
+0091 mamba_ll none
+0184 mamba_ll none
+0245 mamba_ll none
+0040 mstudent1_step600_ll scripts/distill/runs/beyond_distil_mamba/mstudent1/step600.pt
+0091 mstudent1_step600_ll scripts/distill/runs/beyond_distil_mamba/mstudent1/step600.pt
+0184 mstudent1_step600_ll scripts/distill/runs/beyond_distil_mamba/mstudent1/step600.pt
+0245 mstudent1_step600_ll scripts/distill/runs/beyond_distil_mamba/mstudent1/step600.pt
+0040 mstudent1_step800_ll scripts/distill/runs/beyond_distil_mamba/mstudent1/step800.pt
+0091 mstudent1_step800_ll scripts/distill/runs/beyond_distil_mamba/mstudent1/step800.pt
+0184 mstudent1_step800_ll scripts/distill/runs/beyond_distil_mamba/mstudent1/step800.pt
+0245 mstudent1_step800_ll scripts/distill/runs/beyond_distil_mamba/mstudent1/step800.pt

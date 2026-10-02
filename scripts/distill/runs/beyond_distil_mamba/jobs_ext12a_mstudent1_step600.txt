@@ -1,0 +1,16 @@
+0042 mamba_ll none
+0125 mamba_ll none
+0128 mamba_ll none
+0141 mamba_ll none
+0170 mamba_ll none
+0225 mamba_ll none
+0251 mamba_ll none
+0259 mamba_ll none
+0042 mstudent1_step600_ll scripts/distill/runs/beyond_distil_mamba/mstudent1/step600.pt
+0125 mstudent1_step600_ll scripts/distill/runs/beyond_distil_mamba/mstudent1/step600.pt
+0128 mstudent1_step600_ll scripts/distill/runs/beyond_distil_mamba/mstudent1/step600.pt
+0141 mstudent1_step600_ll scripts/distill/runs/beyond_distil_mamba/mstudent1/step600.pt
+0170 mstudent1_step600_ll scripts/distill/runs/beyond_distil_mamba/mstudent1/step600.pt
+0225 mstudent1_step600_ll scripts/distill/runs/beyond_distil_mamba/mstudent1/step600.pt
+0251 mstudent1_step600_ll scripts/distill/runs/beyond_distil_mamba/mstudent1/step600.pt
+0259 mstudent1_step600_ll scripts/distill/runs/beyond_distil_mamba/mstudent1/step600.pt

@@ -1,0 +1,28 @@
+=== 12-clip artefact/detail decomposition (ringing_metrics.py, GT-defined regions, SCORE_STEP=8) ===
+edgeHF/GT  = detail at the GT's top-decile-gradient pixels, as a fraction of the GT's own (1.0 = matches GT)
+stripeE/GT = horizontal-difference energy in GT-FLAT regions, as a fraction of the GT's (splatting stripes)
+haloFrac%  = % of GT-edge pixels falling outside the GT's own 3x3 [min,max] by >0.04
+
+clip  | edgeHF/GT    g125      d% | stripeE/GT    g125      d% |  halo%   g125     d
+0042  |     0.476   0.500    +5.0 |      3.790   4.161    +9.8 |  32.80  33.96 +1.16
+0052  |     0.533   0.580    +8.8 |      2.854   3.173   +11.2 |  39.10  41.50 +2.40
+0125  |     0.425   0.468   +10.1 |      1.881   2.253   +19.8 |  38.48  41.70 +3.22
+0128  |     0.355   0.403   +13.5 |      1.722   2.088   +21.3 |  27.25  30.35 +3.10
+0141  |     0.546   0.599    +9.7 |      4.060   4.393    +8.2 |  25.95  27.48 +1.53
+0147  |     0.517   0.544    +5.2 |      4.828   5.012    +3.8 |  41.73  43.47 +1.74
+0170  |     0.618   0.645    +4.4 |      0.917   1.086   +18.4 |   8.27  10.56 +2.30
+0204  |     0.451   0.536   +18.8 |      2.020   2.228   +10.3 |  11.12  13.07 +1.95
+0225  |     0.458   0.545   +19.0 |      1.418   1.669   +17.7 |   5.48   7.32 +1.84
+0251  |     0.340   0.359    +5.6 |      3.027   3.403   +12.4 |  39.30  40.39 +1.09
+0259  |     0.298   0.299    +0.3 |      1.380   1.576   +14.2 |  32.64  34.89 +2.25
+0301  |     0.272   0.315   +15.8 |      0.975   1.295   +32.8 |  24.89  28.95 +4.05
+MEAN  |     0.441   0.483    +9.5 |      2.406   2.695   +12.0 |  27.25  29.47 +2.22
+
+Deployed origin is UNDER-detailed at the GT's real edges on 12/12 clips (edgeHF/GT < 1 on every clip, mean 0.441).
+Deployed origin carries MORE flat-region stripe energy than the GT on 10/12 clips (mean 2.41x GT, max 4.83x).
+g125 raises edge detail on 12/12 clips and raises stripe artefact on 12/12; halo fraction rises on 12/12.
+Mean relative change: detail +9.5%, stripe artefact +12.0%, halo +2.22 points.
+
+CONCLUSION: g125 buys detail and artefact at roughly the same relative rate, on every clip.
+It never introduces a ringing/halo SIGNATURE (no config is anywhere near GT's edge energy --
+both are far UNDER-detailed), but it uniformly amplifies the pre-existing splatting stripes.

@@ -1,0 +1,340 @@
+================================================================================================
+SCALED MAMBA-SIDE STEP DISTILLATION -- option (A) turned into a deliverable, and the data-scaling
+result that came with it.                                                   2026-10-01
+================================================================================================
+All quality numbers come from the LOSSLESS FFV1 path and the canonical scorer
+  render : scripts/distill/runs/fulldata_v2/beyond4/infer_lossless.py (via skeptic1/infer_ll_hook.py)
+  score  : scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py   SCORE_STEP=4
+No cv2 mp4v row appears anywhere in this directory (that writer moves measured LPIPS by -0.0100 to
++0.0104 per clip, larger than the entire s25 gain and sign-changing).
+
+
+1. THE CONFIGURATION: OPTION (A) -- 5 slots, Mamba-side distilled parameters
+------------------------------------------------------------------------------------------------
+The slot profile settles it on speed, which is the only axis that can: the three up_blocks.3 slots
+are 59-63 % of the shipped 5-slot win at every resolution, by two independent methods (marginal
+63.0/60.3/59.7 %, per-slot attribution 60.5/59.4/59.1 %). Option (B) therefore turns the two
+head-line hi-res claims from -20.6/-21.9 % into -8.2/-8.8 % and the deployed claim from -5.4 % into
+-2.0 %, which is only ~5x the measurement spread. Mamba's per-slot advantage also GROWS with
+resolution (2.05x at 576x1024, 5.98x at 1024x1792, 6.43x at 1024x1920), so the three up3 slots matter
+more, never less, in exactly the direction the project's hi-res claims point. The quality argument
+that used to favour (B) is gone: the Mamba-side run passed every criterion, so (A) now wins on both
+axes and (C) is moot because dropping Mamba forfeits the whole speed story. I did not re-derive any
+of this; the profile lane's numbers are reused as given.
+
+I re-measured ONE thing, because the deliverable's own speed should not be an inherited claim:
+scripts/distill/bench2.py UNMODIFIED, driven exactly as slotbudget/bench_totals_v1.sh drives it,
+with CKPT= so real weights are loaded (the published bench loaded none and timed the architecture).
+See section 5.
+
+
+2. WHAT I TRAINED, AND WHAT I SKIPPED
+------------------------------------------------------------------------------------------------
+Same objective, sub-grid, step subset {4,5,6}, MEASURED gains {0.7177, 0.8926, 0.9905}, x0-space
+residual, M=4 Karras substeps, AdamW lr 1e-5, grad clip 1.0, and NO on-policy refresh -- unchanged
+from mstudent1, deliberately, so the only variable is the training set.
+
+  training set : 10 clips from fulldata_v1's TRAIN split = curve_13 minus 0160 (the splits file's own
+                 "contaminated continuity reference") minus the two long clips 0358/0335 (their 151
+                 extra windows do not fit the budget):
+                 0094 0011 0177 0144 0179 0105 0286 0078 0165 0114
+                 134 windows / 402 target points, against mstudent1's 2 TEST clips / 26 / 78.
+                 NONE of the 12 test clips and NONE of the 8 dev clips appear here, so every number
+                 in the headline table is fully held out.
+  trainable    : the same 30 tensors / 3,641,325 params (three up_blocks.3 slots' attn1.fwd.core.* +
+                 attn1.time_embed_proj.*). down_blocks.0 is still untrainable at 24 GB.
+  ladder       : 2000 steps, checkpoints at 200/400/800/1200/1600/2000.
+  cost         : capture+targets 2657 s (134 windows, 19.8 s/window); 2000 steps in 8597 s total
+                 (2.73 s/step); peak 15.30 GiB -- identical to mstudent1's 15.30 GiB.
+  step-0 grad  : k=4 1.312, k=5 3.110, k=6 0.119 over 30 (clip,window) pairs -- nonzero, i.e. the
+                 objective is not self-consistent at the shipped Mamba weights.
+  target error : k4 8.018e-2 -> 4.270e-2 (0.533); k5 9.312e-2 -> 5.049e-2 (0.542);
+                 k6 1.585e-2 -> 6.563e-3 (0.414).  mstudent1: 0.474 / 0.528 / 0.506.
+  ||dW||       : ABSOLUTE fwd.core 1.0799 vs time_embed_proj 0.6509 -- the SSM core again moved MORE
+                 than the FiLM, reproducing mstudent1's finding (0.615 vs 0.454) more strongly, so
+                 this is a genuinely changed recurrence and not the step-length rescale that
+                 beyond_distil section F ruled out.  RELATIVE 1.69 % vs 5.21 %; overall 0.0194.
+
+SKIPPED, and why:
+  - a learning-rate or batch sweep for the larger set (see section 7: this is the cheapest remaining
+    experiment, and not doing it is the main caveat on the negative scaling result);
+  - per-slot attn1 CUDA-event hooks (slotbudget pass B) for the deliverable: its architecture is
+    identical to the shipped Mamba's (same classes, same shapes, only up3 weight VALUES differ), and
+    section 5 confirms the whole-UNet times agree to 0.15-0.19 %, so pass B would add nothing;
+  - 25-step (s25) rows on the dev clips, and the 12-test-clip renders of any rung other than the
+    pre-registered step800;
+  - the origin row on the dev clips (every dev comparison is a delta against the shipped Mamba).
+  Total GPU time actually spent, measured not estimated: 5.6 GPU-h across the two 4090s --
+    training          8597 s = 2.39 GPU-h  (capture 2657 s of that)
+    49 renders        8849 s = 2.46 GPU-h  (sum of the drivers' own per-run secs= fields:
+                                            12 dev baselines + 24 dev ladder + 13 headline/identity)
+    33 bench procs    1219 s = 0.34 GPU-h  (13.6 min origin+shipped, 6.7 min deliverable)
+    LPIPS scoring            ~0.4 GPU-h    (8 scoring jobs, decode-bound)
+  i.e. the top of the 4-6 GPU-h budget. The 22 failed bench processes cost nothing measurable --
+  they all died at import in well under a second.
+
+
+3. CHECKPOINT SELECTION -- and the 6th sighting of the anti-correlation
+------------------------------------------------------------------------------------------------
+Selection was by SAMPLED LPIPS on the DEV split (0040 0091 0184 0245), which fulldata_v1's rules
+designate for "model selection / stop rule" and which no run trained on. mstudent1, by contrast,
+selected step600 on TEST clips. Full ladder, delta vs the shipped 5-slot Mamba (TABLE_DEV_SELECTION.txt):
+
+      rung      dev mean LPIPS   d vs mamba    sh/GT      trailing-134-window train loss
+      mamba           0.5488       +0.0000      1.160
+      step200         0.5472       -0.0016      1.310      2.245e-03
+      step400         0.5467       -0.0021      1.314      2.120e-03
+      step800         0.5464       -0.0023      1.316      2.065e-03   <-- SELECTED
+      step1200        0.5471       -0.0017      1.335      2.008e-03
+      step1600        0.5468       -0.0020      1.341      1.959e-03   <-- loss minimum
+      step2000        0.5490       +0.0002      1.340      2.008e-03
+
+THE LOSS FELL MONOTONICALLY FROM step200 TO step1600 WHILE SAMPLED LPIPS PEAKED AT step800 AND THEN
+GOT WORSE, with step2000 actually worse than the shipped Mamba. Selecting on loss would have shipped
+step1600. That is the 6th observation of this project's loss/quality anti-correlation.
+
+step800 is ALSO the matched-optimiser-budget rung against mstudent1's step800, fixed by the
+experimental design. Both pre-specified criteria coincide, so one render set was needed.
+PREREGISTRATION.txt records the selection, and the shell output appended to it proves no test-clip
+render of mstudent2 existed when it was written.
+
+THE PRE-REGISTERED SHARPNESS TIE-BREAK WAS INSPECTED AND NOT APPLIED, AND IT WOULD NOT HAVE CHANGED
+THE ANSWER ANYWAY. The rule was "within 0.0010 of the best, prefer the rung whose sharpness-vs-GT is
+closer to 1.0". Its PRECONDITION is a meaningful sharpness difference between the contenders, and that
+precondition is absent: the top three rungs sit at 1.310 / 1.314 / 1.316, a 0.5 % spread, so there is
+nothing for the safeguard to object to. Its PURPOSE was to avoid shipping an over-sharpened
+checkpoint, and the selected step800 is already the third-LEAST sharp of the six rungs. (Sharpness is
+not even monotone in step here -- step1600 is 1.341 and step2000 is 1.340 -- so "later rung = sharper"
+is not a rule that holds on this ladder.) Applied literally on the dev ladder's 0.0008 LPIPS span, a
+0.0010 window swallows five of six rungs and the rule would have returned step200, a 1.5-epoch
+checkpoint, on that 0.5 % sharpness difference. Both outcomes are on the record: the rule as literally
+written selects step200 (dev 0.5472); the primary criterion selects step800 (0.5464). step800 is
+independently the matched-optimiser-budget rung fixed by the experimental design, so it wins on BOTH
+pre-specified grounds whatever the tie-break does -- the tie-break is not load-bearing for this
+choice.
+
+THE DEV SPLIT IS A WEAK INSTRUMENT, and this is a methodological finding in its own right. Its mean
+GT sharpness is 0.0093 against the test set's 0.0164, i.e. it is skewed to the low-sharpness regime
+where extra sharpening hurts; the shipped Mamba is already at 1.160x GT there; mstudent1 LOSES on
+0245; and the whole mstudent2 ladder spans 0.0008 LPIPS. Dev and test also rank adjacent rungs
+differently -- on the 4-clip test set mstudent1 ranks 600 > 800 (0.3822 vs 0.3838) while on dev it
+ranks 800 > 600 (0.5454 vs 0.5457). Dev selection is cleaner than selecting on test, but it is also
+blinder, and 0.0008 of spread cannot resolve a ladder.
+
+
+4. DID MORE TRAINING CLIPS HELP?  NO -- IT HURT.  (the main result of this run)
+------------------------------------------------------------------------------------------------
+Three independent readouts agree, and the effect runs the wrong way on all three.
+
+  (a) DEV, ladder vs ladder, clips neither run trained on, MATCHED optimiser budget (both step800):
+          2 clips / 26 windows   0.5454        10 clips / 134 windows   0.5464      = +0.0010
+      best rung vs best rung: mstudent1 0.5454 vs mstudent2 0.5464                  = +0.0010
+
+  (b) THE TEN TEST CLIPS HELD OUT FOR BOTH RUNS (test minus mstudent1's 0301+0204):
+          mamba 0.4084 -> mstudent1 s600 0.3949 (-0.0135)
+          mamba 0.4084 -> mstudent2 s800 0.3982 (-0.0102)                           = +0.0033
+
+  (c) THE EIGHT CLIPS CLEAN OF BOTH TRAINING AND SELECTION FOR EVERY ROW
+      (test minus mstudent1's training clips 0301+0204 AND its selection clips 0052+0147;
+       mstudent2 trained on none of the 12 and selected on dev):
+          origin 0.3881 -> mstudent1 s600 0.3738 (-0.0144)
+          origin 0.3881 -> mstudent2 s800 0.3773 (-0.0109)                          = +0.0035
+      So mstudent1's advantage is NOT an artefact of having selected its rung on test clips: it
+      survives on the set that is clean for both.
+
+It is not undertraining either. The ladder has a visible optimum at step800 and degrades after it,
+reaching WORSE-than-shipped-Mamba by step2000, so 5.2x the training data does not catch up at any
+rung this run measured. At matched optimiser steps, more clips means fewer passes per window
+(6 epochs over 134 windows vs mstudent1's 31 over 26) and that is the knob that changed; see
+section 7 for the one experiment that would separate "more data is worse" from "more data needs a
+different learning rate".
+
+The origin-side run's own evidence pointed this way and was simply never tested: it reached 85.3 % of
+the s25 gain on ten held-out clips from TWO training clips. The marginal value of more clips is not
+merely modest here, it is negative.
+
+
+5. THE HEADLINE TABLE  -> TABLE_HEADLINE_12CLIP.txt (and TABLE_HEADLINE_8CLIP_CLEAN.txt)
+------------------------------------------------------------------------------------------------
+12 test clips, LOSSLESS FFV1, DEPLOYED config (8 steps, EulerDiscrete Karras, guidance 1.01,
+14-frame windows overlap 3, 576x1024 centre crop). HARNESS ANCHOR: the four established reference
+means reproduce exactly -- origin 0.39325 (ref 0.3933), s25 0.37861 (0.3786), origin+student 0.37997
+(0.3800), shipped Mamba 0.39265 (0.3927).
+
+  n=12 (all test clips)         meanLPIPS  d vs origin  d vs mamba  improved  sh/mamba  sh/GT   worst clip
+  origin (deployed 8 steps)        0.3933      +0.0000     +0.0006      0/12    0.9735  0.936
+  mamba 5-slot (SHIPPED)           0.3927      -0.0006     +0.0000      8/12    1.0000  0.959   0259 +0.0036
+  origin + s25 (2.4x cost)         0.3786      -0.0146     -0.0140     12/12    1.0933  1.046   0259 -0.0009
+  origin + student    [*0301,0204] 0.3800      -0.0133     -0.0127     12/12    1.0780  1.030   0170 -0.0026
+  mamba + mstudent1 s600 [*same]   0.3766      -0.0167     -0.0161     12/12    1.1556  1.106   0259 -0.0010
+  THIS DELIVERABLE (A)             0.3804      -0.0128     -0.0122     12/12    1.1136  1.071   0259 -0.0019
+
+  n=10 (minus 0301,0204 -- held out for EVERY row)
+  origin                           0.4079      +0.0000     -0.0006      0/10    0.9752  1.020
+  mamba 5-slot (SHIPPED)           0.4084      +0.0006     +0.0000      6/10    1.0000  1.044   0259 +0.0036
+  origin + s25                     0.3955      -0.0124     -0.0129     10/10    1.0787  1.131   0259 -0.0009
+  origin + student                 0.3973      -0.0106     -0.0111     10/10    1.0622  1.113   0170 -0.0026
+  mamba + mstudent1 s600           0.3949      -0.0129     -0.0135     10/10    1.1386  1.195   0259 -0.0010
+  THIS DELIVERABLE (A)             0.3982      -0.0097     -0.0102     10/10    1.1052  1.162   0259 -0.0019
+
+  [*] = trained on the TEST clips 0301 and 0204, so those rows' n=12 means are NOT fully held out.
+  THIS DELIVERABLE trained only on TRAIN-split clips, so all 12 of its numbers are held out.
+  0301 alone contributes -0.0520 to mstudent1's n=12 delta, which is why its n=12 (-0.0167) and its
+  honest n=10 (-0.0129) differ so much. Roughly a quarter of its headline delta comes from two clips
+  it trained on.
+
+  WORST CLIP for the deliverable is 0259 at -0.0019: it still IMPROVES on origin, i.e. there is no
+  clip on which the deliverable loses. 12/12 improved on origin and 12/12 on the shipped Mamba.
+  SHARPNESS: mean 1.1136x the shipped Mamba, 1.071x GT on n=12. No clip loses sharpness. The
+  deliverable over-sharpens LESS than mstudent1 everywhere (n=8 sh/GT 1.056 vs 1.088), but both push
+  the already-over-sharp low-GT clips hard: 0147 (GT 0.0039) to 1.778x GT and 0141 (GT 0.0036) to
+  1.644x, against mstudent1's 1.819x and 1.696x. s25 reaches 1.715x/1.568x there, so this is the
+  objective's signature and not a defect of the Mamba side.
+  rightPSNR: 16.425 -> 16.229 dB on n=12 (-0.196 dB) -- the usual perception/distortion trade; s25
+  shows the same signature.
+
+SPEED AND PEAK VRAM  -> bench_totals_v2_TABLE.txt
+bench2.py UNMODIFIED, slotbudget methodology verbatim: batch 2 (guidance 1.01 keeps the CFG-doubled
+batch), 14 frames, fp16, GATE=1.0 DS=128 EXP=1 BIDIR=fwd, 3 untimed warmups then 10 timed forwards
+with cuda.synchronize bracketing / 10, peak reset after warmup, ONE PROCESS PER REPEAT,
+reps-outer/configs-inner, EXCLUSIVE GPU 0, n=5 at the deployed resolution and n=3 hi-res.
+Resolutions are HxW (so the brief's "1920x1024" is H=1024 W=1920).
+
+  res(HxW)     config                     n   sec/fwd   +-half   delta%   peakMiB  dVRAM%
+  h576w1024    origin                     5    0.9654   0.0033    +0.00      7396   +0.00
+  h576w1024    mamba 5-slot SHIPPED       5    0.9137   0.0026    -5.36      7415   +0.26
+  h576w1024    THIS DELIVERABLE           5    0.9123   0.0030    -5.50      7415   +0.26
+  h1024w1792   origin                     3    3.7339   0.0059    +0.00     16790   +0.00
+  h1024w1792   mamba 5-slot SHIPPED       3    2.9649   0.0030   -20.60     16808   +0.11
+  h1024w1792   THIS DELIVERABLE           3    2.9593   0.0064   -20.74     16808   +0.11
+  h1024w1920   origin                     3    4.0884   0.0055    +0.00     17783   +0.00
+  h1024w1920   mamba 5-slot SHIPPED       3    3.1882   0.0047   -22.02     17799   +0.09
+  h1024w1920   THIS DELIVERABLE           3    3.1834   0.0033   -22.14     17799   +0.09
+
+Every run verified mamba_core=5, plain_attn1=11, origin_attn=0, gates=[1.0] -- the correct 5-slot
+build with no double execution. The published figures reproduce with the checkpoint actually loaded
+(-5.36/-20.60/-22.02 % against published -5.3/-20.5/-21.7 % and slotbudget's -5.41/-20.56/-21.87 %).
+The deliverable is indistinguishable from the shipped Mamba (-0.15 to -0.19 %, inside the half-spread)
+and its peak VRAM is byte-identical, which is expected: same module classes, same shapes, only
+up_blocks.3 weight VALUES differ. So the deliverable costs exactly what the shipped Mamba costs, and
+the published speed claims transfer to it unchanged.
+A CAVEAT INHERITED FROM THE PROFILE LANE, not re-measured here: on the un-warmed deployed path the
+first call into the first Mamba slot costs a one-time ~5.07 s of Triton kernel build, which nearly
+cancels the ~5.35 s of UNet time the 5-slot saves on a 151-frame 576x1024 clip. The deployed-resolution
+win is real in UNet-module time (what is published) but roughly a wash end-to-end per process; at
+hi-res the 0.77-0.89 s per-forward saving swamps it.
+
+
+6. THE DELIVERABLE, AND THE ONE JUDGEMENT CALL IN THIS REPORT
+------------------------------------------------------------------------------------------------
+SHIPPED:
+  /mnt/ssd_data/stereocrafter_weights/_distill_injected/mamba5slot_plus_stepdistil_up3_train10clip_step800_20261001.pt
+  md5 08cf44850b8f392efb307e3a48cd82d1   16,119,038 bytes   95 tensors
+ALTERNATIVE, also built and verified so the project can switch with one path change:
+  /mnt/ssd_data/stereocrafter_weights/_distill_injected/mamba5slot_plus_stepdistil_up3_test2clip_step600_20261001_ALT_trained_on_0301_0204.pt
+  md5 8f6f94b87241e7c27f3a80d57c78eb4d   = mstudent1 step600, i.e. the 2-clip weights
+PROTECTED, untouched and re-checked after every write:
+  light_lvl0_fulldata333_v2_8k_mamba_only.pt  md5 e9c232878319d041680e7fb3be74bf10
+
+THE CALL. On any FIXED clip set the 2-clip weights are better by 0.0033-0.0035 LPIPS. I shipped the
+10-clip weights anyway, and the project should know exactly what it is buying and giving up:
+  + the STEP-DISTILLATION stage is clean in the shipped file and not in the ALT, and that is the only
+    difference between the two files; so the shipped file's 12-clip row needs no asterisk at that
+    stage, whereas the ALT's honest claim is restricted to 10 clips. Base-level contamination is
+    IDENTICAL in both (see the nuance below) and is a pre-existing project condition, not something
+    either file improves or worsens;
+  + less over-sharpening (n=8 sh/GT 1.056 vs 1.088; 1.778x vs 1.819x GT on the worst clip 0147),
+    which is the risk direction the project has flagged;
+  + the rung was selected on dev, not on test clips;
+  - 0.0033-0.0035 LPIPS of held-out quality.
+As reportable headline deltas the two are nearly a wash (mstudent1's honest n=10 delta -0.0129 vs the
+deliverable's honest n=12 delta -0.0128) but that coincidence must NOT be read as equivalence: the
+n=10 set is harder (origin 0.4079 vs 0.3933), and on a common set the 2-clip weights win. If the
+project values the 0.0035 over the clean protocol, switch to the ALT path -- it is verified, loadable
+and reproducible by the same two commands below with the ALT md5.
+THE NUANCE, on the record so the purity claim is not overread: fulldata_v1's rules say only 0042, 0204
+and 0301 "were never distilled on", so the shipped Mamba BASE may already have seen the other nine
+test clips -- equally in both files, since both carry the same 65 untouched base tensors. The purity
+difference between the two deliverables is therefore confined to the step-distillation stage; it is
+real and it is the whole difference between them, but it does not make the test set clean in an
+absolute sense.
+
+WHY A MERGED FILE. The tracked entry point takes ONE --unet_state_path, so a 30-tensor student is not
+shippable alone. The deliverable is the shipped 95-tensor partial state with the 30 trained
+up_blocks.3 tensors overwritten in bf16, mamba_gate buffers kept.
+
+CONTROLS, all passed:
+  - 30 trained tensors are EXACTLY the three up3 slots' evaluated set (8 fwd.core + 2 time_embed_proj
+    per slot); no down_blocks.0, no .bwd.*, no origin_attn.*, no gate.
+  - the 65 untouched tensors are bit-identical to the shipped file; 18/30 trained tensors differ after
+    the fp32->bf16 cast (12 round to the same bf16). The hook run independently logged "18/30
+    differed", which cross-checks the bf16 path. (The ALT file gives 19/30 and the earlier
+    mstudent1 hook log also said 19/30.)
+  - 5 gated modules, gate 1.0 with reference_disabled, materialized 5, 95/95 bit-exact after the
+    fp32->bf16 round trip, 0 unexpected keys, ALL 5 FiLMs nonzero. The last one is load-bearing:
+    time_embed_proj is created lazily and zero-initialised, a zero FiLM is the identity, and 2.46M of
+    the 3.64M trained params live there -- a silently dropped FiLM would still pass every algebra
+    control while being a weaker model.
+  - FULL-PARAMETER IDENTITY: the merged file and the hook path agree on all 1518 parameters and all
+    5 buffers, bit for bit (verify_deliverable.log). Same for the ALT file (verify_alt.log).
+  - PIXEL IDENTITY through the tracked entry point: dev clip 0040 rendered with the merged file via
+    inpainting_inference.run gives pre-encode md5 0a1ca849573980dbdd6490a7c29ca632, identical to the
+    HOOK render of the same rung, and the FFV1 .mkv.md5 sidecars match. The tracked run logged
+    "Materialized Mamba time_embed_proj modules before load: 5", "Partial UNet state load:
+    missing=1428 unexpected=0", "mamba_gate_override=1.0: updated 5 gated modules".
+    All 12 headline clips were rendered through that same tracked path, not through the hook.
+
+
+7. REPRODUCING THE HEADLINE ROW -- the exact commands
+------------------------------------------------------------------------------------------------
+Both commands need the conda env AND the six Mamba env vars. Note that
+etc/conda/activate.d/stereocrafter.sh is what puts the repo on PYTHONPATH; a systemd unit that calls
+python by absolute path never runs it, which is why bench_deliv_v2.sh's 22 processes all died at
+bench2.py:18 with "No module named 'pipelines'" (preserved in logs/, superseded by
+bench_deliv_v3.sh which sets PYTHONPATH explicitly; bench2.py itself is unmodified).
+
+  set +u; source ~/miniconda3/etc/profile.d/conda.sh; conda activate stereocrafter; set -u
+  cd /home/kawa/master_project/StereoCrafter
+  DELIV=/mnt/ssd_data/stereocrafter_weights/_distill_injected/mamba5slot_plus_stepdistil_up3_train10clip_step800_20261001.pt
+  export MAMBA_SELF_ATTN_INCLUDE='down_blocks.0.*,up_blocks.3.*' MAMBA_SELF_ATTN_EXCLUDE='__nomatch__'
+  export MAMBA_SELF_ATTN_D_STATE=128 MAMBA_SELF_ATTN_EXPAND=1
+  export MAMBA_BIDIRECTIONAL_MODE=fwd MAMBA_SELF_ATTN_REPLACEMENT=gated_residual
+
+(A) LOAD CHECK through the TRACKED entry point (mp4v writer -- do NOT score this output):
+  python inpainting_inference.py \
+    --config=config/0160_overfit_inference_matched.json \
+    --input_video_path=video_data/splatting/0301_splatting_results.mp4 \
+    --save_dir=outputs/<A NEW DIR> \
+    --unet_state_path=$DELIV --expected_partial_unet_state=True --mamba_gate_override=1.0 \
+    --num_inference_steps=8 --min_guidance_scale=1.01 --max_guidance_scale=1.01
+
+(B) THE HEADLINE ROW -- identical sampling path, LOSSLESS writer (this is what was scored):
+  export LOSSLESS_SBS=1 KEEP_ANAGLYPH=0
+  export SK_UNET=$DELIV SK_CK='' SK_GUID=1.01 SK_STEPS=8
+  for C in 0042 0052 0125 0128 0141 0147 0170 0204 0225 0251 0259 0301; do
+    SK_CLIP=$C SK_OUT=outputs/<A NEW DIR>/clips/${C}_mstudent2_step800_deliv_ll \
+      python scripts/distill/runs/skeptic1/infer_ll_hook.py
+  done
+  python scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py \
+    0042=outputs/<A NEW DIR>/clips/0042_.../0042_inpainting_results_sbs.mkv ...   # SCORE_STEP=4
+(infer_ll_hook.py with SK_CK empty calls inpainting_inference.run with exactly (A)'s arguments; only
+the writer is rebound, so the diffusion path is byte-for-byte the tracked one.)
+
+Retrain from scratch: bash scripts/distill/runs/beyond_distil_mamba_scaled/chainA_train.sh
+Speed row:            bash .../bench_deliv_v3.sh 0 <NEW out.txt> $DELIV origin mamba5ck mamba5deliv
+
+
+8. THE SINGLE CHEAPEST REMAINING EXPERIMENT
+------------------------------------------------------------------------------------------------
+The negative scaling result has one untested confound: at matched optimiser steps, 10 clips means
+6 passes per window where 2 clips means 31. The learning rate was held at 1e-5 for like-for-like, so
+"more data is worse" and "more data needs a bigger step" are not separated. The cheapest test reuses
+the capture already on disk (2657 s of target precompute, the expensive half) and only re-runs the
+optimiser: ~2 GPU-h for two more 800-step arms at lr 3e-5 and 1e-4 from the same 402 cached targets,
+scored on the 4-clip test set where the ladder has ~9x the dynamic range dev has (mstudent1 spans
+0.3822-0.3896 there against dev's 0.0008). If neither arm reaches mstudent1's -0.0135 on the ten
+held-out clips, "two clips is enough" is established and the 333-clip / 35-GPU-h plan should be
+dropped outright rather than subsampled.
+A second, independent gap worth one line: the selection instrument, not the model, is this run's
+weakest component. Any future ladder should be selected on a set with the test set's sharpness
+distribution, because dev's 0.0008 span cannot resolve adjacent rungs.

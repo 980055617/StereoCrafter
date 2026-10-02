@@ -1,0 +1,27 @@
+clip/config                           offset  leftPSNR    LPIPS    sharp    rPSNR   nf
+--- 0204 GT ---                                          0.0000   0.0116
+0204_mamba_ll                        (-28,0)     41.16   0.2022   0.0066   19.743   38
+ROW clip=0204 tag=0204_mamba_ll dy=-28 dx=0 leftPSNR=41.1620 lpips=0.202218 sharp=0.006618 gtSharp=0.011577 rightPSNR=19.7430 n=38 path=outputs/skeptic1_stack/clips/0204_mamba_ll/0204_inpainting_results_sbs.mkv
+0204_mamba_s25_ll                    (-28,0)     41.16   0.1884   0.0078   19.429   38
+ROW clip=0204 tag=0204_mamba_s25_ll dy=-28 dx=0 leftPSNR=41.1620 lpips=0.188404 sharp=0.007754 gtSharp=0.011577 rightPSNR=19.4291 n=38 path=outputs/skeptic1_stack/clips/0204_mamba_s25_ll/0204_inpainting_results_sbs.mkv
+0204_mamba_oracle456_ll              (-28,0)     41.16   0.1886   0.0079   19.402   38
+ROW clip=0204 tag=0204_mamba_oracle456_ll dy=-28 dx=0 leftPSNR=41.1620 lpips=0.188560 sharp=0.007893 gtSharp=0.011577 rightPSNR=19.4018 n=38 path=outputs/beyond_distil_mamba/clips/0204_mamba_oracle456_ll/0204_inpainting_results_sbs.mkv
+0204_mstudent1_step400_ll            (-28,0)     41.16   0.1891   0.0081   19.320   38
+ROW clip=0204 tag=0204_mstudent1_step400_ll dy=-28 dx=0 leftPSNR=41.1620 lpips=0.189146 sharp=0.008080 gtSharp=0.011577 rightPSNR=19.3204 n=38 path=outputs/beyond_distil_mamba/clips/0204_mstudent1_step400_ll/0204_inpainting_results_sbs.mkv
+0204_mstudent1_step600_ll            (-28,0)     41.16   0.1867   0.0081   19.407   38
+ROW clip=0204 tag=0204_mstudent1_step600_ll dy=-28 dx=0 leftPSNR=41.1620 lpips=0.186677 sharp=0.008057 gtSharp=0.011577 rightPSNR=19.4066 n=38 path=outputs/beyond_distil_mamba/clips/0204_mstudent1_step600_ll/0204_inpainting_results_sbs.mkv
+0204_mstudent1_step800_ll            (-28,0)     41.16   0.1888   0.0080   19.450   38
+ROW clip=0204 tag=0204_mstudent1_step800_ll dy=-28 dx=0 leftPSNR=41.1620 lpips=0.188795 sharp=0.007958 gtSharp=0.011577 rightPSNR=19.4498 n=38 path=outputs/beyond_distil_mamba/clips/0204_mstudent1_step800_ll/0204_inpainting_results_sbs.mkv
+--- 0052 GT ---                                          0.0000   0.0099
+0052_mamba_ll                      (-12,-12)     40.70   0.4467   0.0132   13.182   38
+ROW clip=0052 tag=0052_mamba_ll dy=-12 dx=-12 leftPSNR=40.6982 lpips=0.446684 sharp=0.013162 gtSharp=0.009881 rightPSNR=13.1822 n=38 path=outputs/skeptic1_stack/clips/0052_mamba_ll/0052_inpainting_results_sbs.mkv
+0052_mamba_s25_ll                  (-12,-12)     40.70   0.4375   0.0138   13.173   38
+ROW clip=0052 tag=0052_mamba_s25_ll dy=-12 dx=-12 leftPSNR=40.6982 lpips=0.437486 sharp=0.013819 gtSharp=0.009881 rightPSNR=13.1727 n=38 path=outputs/skeptic1_stack/clips/0052_mamba_s25_ll/0052_inpainting_results_sbs.mkv
+0052_mamba_oracle456_ll            (-12,-12)     40.70   0.4372   0.0139   13.165   38
+ROW clip=0052 tag=0052_mamba_oracle456_ll dy=-12 dx=-12 leftPSNR=40.6982 lpips=0.437181 sharp=0.013911 gtSharp=0.009881 rightPSNR=13.1646 n=38 path=outputs/skeptic1_stack/clips/0052_mamba_oracle456_ll/0052_inpainting_results_sbs.mkv
+0052_mstudent1_step400_ll          (-12,-12)     40.70   0.4361   0.0137   13.250   38
+ROW clip=0052 tag=0052_mstudent1_step400_ll dy=-12 dx=-12 leftPSNR=40.6982 lpips=0.436083 sharp=0.013722 gtSharp=0.009881 rightPSNR=13.2496 n=38 path=outputs/beyond_distil_mamba/clips/0052_mstudent1_step400_ll/0052_inpainting_results_sbs.mkv
+0052_mstudent1_step600_ll          (-12,-12)     40.70   0.4359   0.0141   13.175   38
+ROW clip=0052 tag=0052_mstudent1_step600_ll dy=-12 dx=-12 leftPSNR=40.6982 lpips=0.435926 sharp=0.014106 gtSharp=0.009881 rightPSNR=13.1747 n=38 path=outputs/beyond_distil_mamba/clips/0052_mstudent1_step600_ll/0052_inpainting_results_sbs.mkv
+0052_mstudent1_step800_ll          (-12,-12)     40.70   0.4364   0.0144   13.064   38
+ROW clip=0052 tag=0052_mstudent1_step800_ll dy=-12 dx=-12 leftPSNR=40.6982 lpips=0.436434 sharp=0.014379 gtSharp=0.009881 rightPSNR=13.0640 n=38 path=outputs/beyond_distil_mamba/clips/0052_mstudent1_step800_ll/0052_inpainting_results_sbs.mkv

@@ -1,0 +1,108 @@
+[0042] n=19 crop=(800,576) 576x1024
+label           haloFrac%  haloMean    flatHF  flatHF/GT    edgeHF  edgeHF/GT   stripeE  stripeE/GT
+GT                  0.000   0.00000   0.00798      1.000   0.06120      1.000   0.00190       1.000
+origin             32.801   0.04548   0.01233      1.545   0.02912      0.476   0.00720       3.790
+g125               33.961   0.04726   0.01298      1.627   0.03063      0.500   0.00791       4.161
+  haloFrac% = % of GT-edge pixels whose value falls outside the GT's own 3x3 [min,max] by >0.04 (halo/ringing)
+  flatHF    = mean |Laplacian| inside GT-flat regions (noise / amplified splatting texture)
+  edgeHF    = mean |Laplacian| inside the GT's top-decile gradient regions (detail at edges)
+  stripeE   = mean |horizontal difference| inside GT-flat regions (splatting-stripe energy)
+[0052] n=19 crop=(800,576) 576x1024
+label           haloFrac%  haloMean    flatHF  flatHF/GT    edgeHF  edgeHF/GT   stripeE  stripeE/GT
+GT                  0.000   0.00000   0.00930      1.000   0.08725      1.000   0.00227       1.000
+origin             39.105   0.05863   0.01000      1.075   0.04652      0.533   0.00648       2.854
+g125               41.504   0.06306   0.01089      1.171   0.05064      0.580   0.00721       3.173
+  haloFrac% = % of GT-edge pixels whose value falls outside the GT's own 3x3 [min,max] by >0.04 (halo/ringing)
+  flatHF    = mean |Laplacian| inside GT-flat regions (noise / amplified splatting texture)
+  edgeHF    = mean |Laplacian| inside the GT's top-decile gradient regions (detail at edges)
+  stripeE   = mean |horizontal difference| inside GT-flat regions (splatting-stripe energy)
+[0125] n=19 crop=(800,576) 576x1024
+label           haloFrac%  haloMean    flatHF  flatHF/GT    edgeHF  edgeHF/GT   stripeE  stripeE/GT
+GT                  0.000   0.00000   0.00746      1.000   0.08158      1.000   0.00233       1.000
+origin             38.483   0.05438   0.00735      0.985   0.03467      0.425   0.00438       1.881
+g125               41.698   0.06073   0.00800      1.073   0.03817      0.468   0.00525       2.253
+  haloFrac% = % of GT-edge pixels whose value falls outside the GT's own 3x3 [min,max] by >0.04 (halo/ringing)
+  flatHF    = mean |Laplacian| inside GT-flat regions (noise / amplified splatting texture)
+  edgeHF    = mean |Laplacian| inside the GT's top-decile gradient regions (detail at edges)
+  stripeE   = mean |horizontal difference| inside GT-flat regions (splatting-stripe energy)
+[0128] n=19 crop=(800,576) 576x1024
+label           haloFrac%  haloMean    flatHF  flatHF/GT    edgeHF  edgeHF/GT   stripeE  stripeE/GT
+GT                  0.000   0.00000   0.01937      1.000   0.07320      1.000   0.00642       1.000
+origin             27.245   0.03112   0.01663      0.859   0.02602      0.355   0.01106       1.722
+g125               30.349   0.03526   0.01890      0.976   0.02953      0.403   0.01340       2.088
+  haloFrac% = % of GT-edge pixels whose value falls outside the GT's own 3x3 [min,max] by >0.04 (halo/ringing)
+  flatHF    = mean |Laplacian| inside GT-flat regions (noise / amplified splatting texture)
+  edgeHF    = mean |Laplacian| inside the GT's top-decile gradient regions (detail at edges)
+  stripeE   = mean |horizontal difference| inside GT-flat regions (splatting-stripe energy)
+[0141] n=19 crop=(800,576) 576x1024
+label           haloFrac%  haloMean    flatHF  flatHF/GT    edgeHF  edgeHF/GT   stripeE  stripeE/GT
+GT                  0.000   0.00000   0.00447      1.000   0.04119      1.000   0.00072       1.000
+origin             25.951   0.04457   0.00469      1.050   0.02251      0.546   0.00291       4.060
+g125               27.484   0.04673   0.00493      1.104   0.02467      0.599   0.00315       4.393
+  haloFrac% = % of GT-edge pixels whose value falls outside the GT's own 3x3 [min,max] by >0.04 (halo/ringing)
+  flatHF    = mean |Laplacian| inside GT-flat regions (noise / amplified splatting texture)
+  edgeHF    = mean |Laplacian| inside the GT's top-decile gradient regions (detail at edges)
+  stripeE   = mean |horizontal difference| inside GT-flat regions (splatting-stripe energy)
+[0147] n=19 crop=(800,576) 576x1024
+label           haloFrac%  haloMean    flatHF  flatHF/GT    edgeHF  edgeHF/GT   stripeE  stripeE/GT
+GT                  0.000   0.00000   0.00322      1.000   0.04589      1.000   0.00057       1.000
+origin             41.727   0.06253   0.00401      1.246   0.02370      0.517   0.00277       4.828
+g125               43.466   0.06500   0.00406      1.262   0.02495      0.544   0.00288       5.012
+  haloFrac% = % of GT-edge pixels whose value falls outside the GT's own 3x3 [min,max] by >0.04 (halo/ringing)
+  flatHF    = mean |Laplacian| inside GT-flat regions (noise / amplified splatting texture)
+  edgeHF    = mean |Laplacian| inside the GT's top-decile gradient regions (detail at edges)
+  stripeE   = mean |horizontal difference| inside GT-flat regions (splatting-stripe energy)
+[0170] n=19 crop=(224,448) 576x1024
+label           haloFrac%  haloMean    flatHF  flatHF/GT    edgeHF  edgeHF/GT   stripeE  stripeE/GT
+GT                  0.000   0.00000   0.04769      1.000   0.26271      1.000   0.01141       1.000
+origin              8.265   0.00998   0.03410      0.715   0.16240      0.618   0.01046       0.917
+g125               10.562   0.01285   0.03883      0.814   0.16947      0.645   0.01239       1.086
+  haloFrac% = % of GT-edge pixels whose value falls outside the GT's own 3x3 [min,max] by >0.04 (halo/ringing)
+  flatHF    = mean |Laplacian| inside GT-flat regions (noise / amplified splatting texture)
+  edgeHF    = mean |Laplacian| inside the GT's top-decile gradient regions (detail at edges)
+  stripeE   = mean |horizontal difference| inside GT-flat regions (splatting-stripe energy)
+[0204] n=19 crop=(224,448) 576x1024
+label           haloFrac%  haloMean    flatHF  flatHF/GT    edgeHF  edgeHF/GT   stripeE  stripeE/GT
+GT                  0.000   0.00000   0.01022      1.000   0.32747      1.000   0.00151       1.000
+origin             11.125   0.01678   0.00981      0.960   0.14783      0.451   0.00305       2.020
+g125               13.075   0.01955   0.01093      1.069   0.17546      0.536   0.00336       2.228
+  haloFrac% = % of GT-edge pixels whose value falls outside the GT's own 3x3 [min,max] by >0.04 (halo/ringing)
+  flatHF    = mean |Laplacian| inside GT-flat regions (noise / amplified splatting texture)
+  edgeHF    = mean |Laplacian| inside the GT's top-decile gradient regions (detail at edges)
+  stripeE   = mean |horizontal difference| inside GT-flat regions (splatting-stripe energy)
+[0225] n=19 crop=(224,448) 576x1024
+label           haloFrac%  haloMean    flatHF  flatHF/GT    edgeHF  edgeHF/GT   stripeE  stripeE/GT
+GT                  0.000   0.00000   0.02819      1.000   0.42566      1.000   0.00555       1.000
+origin              5.480   0.00709   0.02483      0.881   0.19490      0.458   0.00787       1.418
+g125                7.324   0.00951   0.02865      1.017   0.23196      0.545   0.00927       1.669
+  haloFrac% = % of GT-edge pixels whose value falls outside the GT's own 3x3 [min,max] by >0.04 (halo/ringing)
+  flatHF    = mean |Laplacian| inside GT-flat regions (noise / amplified splatting texture)
+  edgeHF    = mean |Laplacian| inside the GT's top-decile gradient regions (detail at edges)
+  stripeE   = mean |horizontal difference| inside GT-flat regions (splatting-stripe energy)
+[0251] n=19 crop=(224,448) 576x1024
+label           haloFrac%  haloMean    flatHF  flatHF/GT    edgeHF  edgeHF/GT   stripeE  stripeE/GT
+GT                  0.000   0.00000   0.00590      1.000   0.12789      1.000   0.00142       1.000
+origin             39.300   0.06285   0.00771      1.305   0.04351      0.340   0.00428       3.027
+g125               40.388   0.06498   0.00822      1.392   0.04591      0.359   0.00482       3.403
+  haloFrac% = % of GT-edge pixels whose value falls outside the GT's own 3x3 [min,max] by >0.04 (halo/ringing)
+  flatHF    = mean |Laplacian| inside GT-flat regions (noise / amplified splatting texture)
+  edgeHF    = mean |Laplacian| inside the GT's top-decile gradient regions (detail at edges)
+  stripeE   = mean |horizontal difference| inside GT-flat regions (splatting-stripe energy)
+[0259] n=19 crop=(224,448) 576x1024
+label           haloFrac%  haloMean    flatHF  flatHF/GT    edgeHF  edgeHF/GT   stripeE  stripeE/GT
+GT                  0.000   0.00000   0.06168      1.000   0.27743      1.000   0.01829       1.000
+origin             32.640   0.05441   0.05031      0.816   0.08259      0.298   0.02523       1.380
+g125               34.889   0.05951   0.05286      0.857   0.08282      0.299   0.02882       1.576
+  haloFrac% = % of GT-edge pixels whose value falls outside the GT's own 3x3 [min,max] by >0.04 (halo/ringing)
+  flatHF    = mean |Laplacian| inside GT-flat regions (noise / amplified splatting texture)
+  edgeHF    = mean |Laplacian| inside the GT's top-decile gradient regions (detail at edges)
+  stripeE   = mean |horizontal difference| inside GT-flat regions (splatting-stripe energy)
+[0301] n=19 crop=(224,448) 576x1024
+label           haloFrac%  haloMean    flatHF  flatHF/GT    edgeHF  edgeHF/GT   stripeE  stripeE/GT
+GT                  0.000   0.00000   0.05438      1.000   0.25671      1.000   0.01798       1.000
+origin             24.890   0.03704   0.03288      0.605   0.06977      0.272   0.01753       0.975
+g125               28.945   0.04530   0.03848      0.708   0.08088      0.315   0.02327       1.295
+  haloFrac% = % of GT-edge pixels whose value falls outside the GT's own 3x3 [min,max] by >0.04 (halo/ringing)
+  flatHF    = mean |Laplacian| inside GT-flat regions (noise / amplified splatting texture)
+  edgeHF    = mean |Laplacian| inside the GT's top-decile gradient regions (detail at edges)
+  stripeE   = mean |horizontal difference| inside GT-flat regions (splatting-stripe energy)

@@ -1,0 +1,13 @@
+clip/config                           offset  leftPSNR    LPIPS    sharp    rPSNR   nf
+--- 0040 GT ---                                          0.0000   0.0043
+0040_mstudent2_step1200_ll         (-12,-12)     39.91   0.5027   0.0079   12.791   38
+ROW clip=0040 tag=0040_mstudent2_step1200_ll dy=-12 dx=-12 leftPSNR=39.9129 lpips=0.502749 sharp=0.007909 gtSharp=0.004318 rightPSNR=12.7914 n=38 path=outputs/beyond_distil_mamba_scaled/clips/0040_mstudent2_step1200_ll/0040_inpainting_results_sbs.mkv
+--- 0091 GT ---                                          0.0000   0.0031
+0091_mstudent2_step1200_ll         (-12,-12)     40.29   0.6436   0.0045   12.925   38
+ROW clip=0091 tag=0091_mstudent2_step1200_ll dy=-12 dx=-12 leftPSNR=40.2881 lpips=0.643619 sharp=0.004532 gtSharp=0.003117 rightPSNR=12.9253 n=38 path=outputs/beyond_distil_mamba_scaled/clips/0091_mstudent2_step1200_ll/0091_inpainting_results_sbs.mkv
+--- 0184 GT ---                                          0.0000   0.0103
+0184_mstudent2_step1200_ll           (-28,0)     39.68   0.4925   0.0095   11.404   38
+ROW clip=0184 tag=0184_mstudent2_step1200_ll dy=-28 dx=0 leftPSNR=39.6799 lpips=0.492521 sharp=0.009497 gtSharp=0.010259 rightPSNR=11.4042 n=38 path=outputs/beyond_distil_mamba_scaled/clips/0184_mstudent2_step1200_ll/0184_inpainting_results_sbs.mkv
+--- 0245 GT ---                                          0.0000   0.0196
+0245_mstudent2_step1200_ll           (-28,0)     40.69   0.5495   0.0221   13.248   38
+ROW clip=0245 tag=0245_mstudent2_step1200_ll dy=-28 dx=0 leftPSNR=40.6934 lpips=0.549478 sharp=0.022063 gtSharp=0.019571 rightPSNR=13.2482 n=38 path=outputs/beyond_distil_mamba_scaled/clips/0245_mstudent2_step1200_ll/0245_inpainting_results_sbs.mkv

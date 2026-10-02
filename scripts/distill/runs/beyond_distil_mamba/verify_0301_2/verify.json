@@ -1,0 +1,315 @@
+{
+ "clip": "0301",
+ "M": 4,
+ "wins": [
+  0
+ ],
+ "slots": "up3",
+ "out": "scripts/distill/runs/beyond_distil_mamba/verify_0301_2",
+ "build_info": {
+  "n_gated": 5,
+  "gated_names": [
+   "down_blocks.0.attentions.0.transformer_blocks.0.attn1",
+   "down_blocks.0.attentions.1.transformer_blocks.0.attn1",
+   "up_blocks.3.attentions.0.transformer_blocks.0.attn1",
+   "up_blocks.3.attentions.1.transformer_blocks.0.attn1",
+   "up_blocks.3.attentions.2.transformer_blocks.0.attn1"
+  ],
+  "ck": "/mnt/ssd_data/stereocrafter_weights/_distill_injected/light_lvl0_fulldata333_v2_8k_mamba_only.pt",
+  "ck_tensors": 95,
+  "materialized": 5,
+  "n_missing": 1428,
+  "n_unexpected": 0,
+  "unexpected": [],
+  "n_gate_updated": 5,
+  "ck_absent": [],
+  "ck_mismatch": [],
+  "gates": [
+   [
+    "down_blocks.0.attentions.0.transformer_blocks.0.attn1",
+    1.0,
+    true
+   ],
+   [
+    "down_blocks.0.attentions.1.transformer_blocks.0.attn1",
+    1.0,
+    true
+   ],
+   [
+    "up_blocks.3.attentions.0.transformer_blocks.0.attn1",
+    1.0,
+    true
+   ],
+   [
+    "up_blocks.3.attentions.1.transformer_blocks.0.attn1",
+    1.0,
+    true
+   ],
+   [
+    "up_blocks.3.attentions.2.transformer_blocks.0.attn1",
+    1.0,
+    true
+   ]
+  ]
+ },
+ "film": {
+  "down_blocks.0.attentions.0.transformer_blocks.0.attn1": [
+   true,
+   0.4375
+  ],
+  "down_blocks.0.attentions.1.transformer_blocks.0.attn1": [
+   true,
+   0.17578125
+  ],
+  "up_blocks.3.attentions.0.transformer_blocks.0.attn1": [
+   true,
+   0.1494140625
+  ],
+  "up_blocks.3.attentions.1.transformer_blocks.0.attn1": [
+   true,
+   0.177734375
+  ],
+  "up_blocks.3.attentions.2.transformer_blocks.0.attn1": [
+   true,
+   0.1220703125
+  ]
+ },
+ "trainable": {
+  "slots": "up3",
+  "n_tensors": 30,
+  "n_params": 3641325,
+  "groups": {
+   "fwd.core": 1181805,
+   "time_embed_proj": 2459520
+  },
+  "names": [
+   "up_blocks.3.attentions.0.transformer_blocks.0.attn1.fwd.core.dt_bias",
+   "up_blocks.3.attentions.0.transformer_blocks.0.attn1.fwd.core.A_log",
+   "up_blocks.3.attentions.0.transformer_blocks.0.attn1.fwd.core.D",
+   "up_blocks.3.attentions.0.transformer_blocks.0.attn1.fwd.core.in_proj.weight",
+   "up_blocks.3.attentions.0.transformer_blocks.0.attn1.fwd.core.conv1d.weight",
+   "up_blocks.3.attentions.0.transformer_blocks.0.attn1.fwd.core.conv1d.bias",
+   "up_blocks.3.attentions.0.transformer_blocks.0.attn1.fwd.core.norm.weight",
+   "up_blocks.3.attentions.0.transformer_blocks.0.attn1.fwd.core.out_proj.weight",
+   "up_blocks.3.attentions.0.transformer_blocks.0.attn1.time_embed_proj.weight",
+   "up_blocks.3.attentions.0.transformer_blocks.0.attn1.time_embed_proj.bias",
+   "up_blocks.3.attentions.1.transformer_blocks.0.attn1.fwd.core.dt_bias",
+   "up_blocks.3.attentions.1.transformer_blocks.0.attn1.fwd.core.A_log",
+   "up_blocks.3.attentions.1.transformer_blocks.0.attn1.fwd.core.D",
+   "up_blocks.3.attentions.1.transformer_blocks.0.attn1.fwd.core.in_proj.weight",
+   "up_blocks.3.attentions.1.transformer_blocks.0.attn1.fwd.core.conv1d.weight",
+   "up_blocks.3.attentions.1.transformer_blocks.0.attn1.fwd.core.conv1d.bias",
+   "up_blocks.3.attentions.1.transformer_blocks.0.attn1.fwd.core.norm.weight",
+   "up_blocks.3.attentions.1.transformer_blocks.0.attn1.fwd.core.out_proj.weight",
+   "up_blocks.3.attentions.1.transformer_blocks.0.attn1.time_embed_proj.weight",
+   "up_blocks.3.attentions.1.transformer_blocks.0.attn1.time_embed_proj.bias",
+   "up_blocks.3.attentions.2.transformer_blocks.0.attn1.fwd.core.dt_bias",
+   "up_blocks.3.attentions.2.transformer_blocks.0.attn1.fwd.core.A_log",
+   "up_blocks.3.attentions.2.transformer_blocks.0.attn1.fwd.core.D",
+   "up_blocks.3.attentions.2.transformer_blocks.0.attn1.fwd.core.in_proj.weight",
+   "up_blocks.3.attentions.2.transformer_blocks.0.attn1.fwd.core.conv1d.weight",
+   "up_blocks.3.attentions.2.transformer_blocks.0.attn1.fwd.core.conv1d.bias",
+   "up_blocks.3.attentions.2.transformer_blocks.0.attn1.fwd.core.norm.weight",
+   "up_blocks.3.attentions.2.transformer_blocks.0.attn1.fwd.core.out_proj.weight",
+   "up_blocks.3.attentions.2.transformer_blocks.0.attn1.time_embed_proj.weight",
+   "up_blocks.3.attentions.2.transformer_blocks.0.attn1.time_embed_proj.bias"
+  ]
+ },
+ "excluded_counts": {
+  "bwd": 40,
+  "origin_attn": 25
+ },
+ "sigmas": [
+  700.0,
+  286.5388488769531,
+  102.90337371826172,
+  30.993608474731445,
+  7.276163101196289,
+  1.1675708293914795,
+  0.09738767892122269,
+  0.0020000000949949026
+ ],
+ "pixel_control": {
+  "ref": "outputs/skeptic1_stack/clips/0301_mamba_ll/0301_inpainting_results_sbs.mkv",
+  "identical": 1,
+  "maxabs": 0,
+  "n_differing": 0,
+  "md5_mine": "a6e20ef113ea64e7676404687dfb1e0d",
+  "md5_ref": "a6e20ef113ea64e7676404687dfb1e0d"
+ },
+ "algebra": [
+  {
+   "w": 0,
+   "k": 0,
+   "sigma": 700.0,
+   "inp_maxabs": 0.0,
+   "x0hat_rel": 0.003978376742452383,
+   "euler_rel": 0.0016823953483253717
+  },
+  {
+   "w": 0,
+   "k": 1,
+   "sigma": 286.5388488769531,
+   "inp_maxabs": 0.0,
+   "x0hat_rel": 0.0038413561414927244,
+   "euler_rel": 0.0016645945142954588
+  },
+  {
+   "w": 0,
+   "k": 2,
+   "sigma": 102.90337371826172,
+   "inp_maxabs": 0.0,
+   "x0hat_rel": 0.0036027918104082346,
+   "euler_rel": 0.0016637926455587149
+  },
+  {
+   "w": 0,
+   "k": 3,
+   "sigma": 30.993608474731445,
+   "inp_maxabs": 0.0,
+   "x0hat_rel": 0.003058931790292263,
+   "euler_rel": 0.0016796778654679656
+  },
+  {
+   "w": 0,
+   "k": 4,
+   "sigma": 7.276163101196289,
+   "inp_maxabs": 0.0,
+   "x0hat_rel": 0.0034364487510174513,
+   "euler_rel": 0.0022290395572781563
+  },
+  {
+   "w": 0,
+   "k": 5,
+   "sigma": 1.1675708293914795,
+   "inp_maxabs": 0.0,
+   "x0hat_rel": 0.0025804995093494654,
+   "euler_rel": 0.002857174491509795
+  },
+  {
+   "w": 0,
+   "k": 6,
+   "sigma": 0.09738767892122269,
+   "inp_maxabs": 0.0,
+   "x0hat_rel": 0.00023449843865819275,
+   "euler_rel": 0.0016730226343497634
+  },
+  {
+   "w": 0,
+   "k": 7,
+   "sigma": 0.0020000000949949026,
+   "inp_maxabs": 0.0,
+   "x0hat_rel": 4.667509472255915e-07,
+   "euler_rel": 0.00010862313502002507
+  }
+ ],
+ "trunc": [
+  {
+   "w": 0,
+   "k": 0,
+   "sigma": 700.0,
+   "trunc_M1": 0.0,
+   "trunc_M4": 1.7690155800664797e-05,
+   "dx0_M4": 0.012152101844549179
+  },
+  {
+   "w": 0,
+   "k": 1,
+   "sigma": 286.5388488769531,
+   "trunc_M1": 0.0,
+   "trunc_M4": 6.501851021312177e-05,
+   "dx0_M4": 0.01471718866378069
+  },
+  {
+   "w": 0,
+   "k": 2,
+   "sigma": 102.90337371826172,
+   "trunc_M1": 0.0,
+   "trunc_M4": 0.0002683440688997507,
+   "dx0_M4": 0.01662050001323223
+  },
+  {
+   "w": 0,
+   "k": 3,
+   "sigma": 30.993608474731445,
+   "trunc_M1": 0.0,
+   "trunc_M4": 0.0023058438673615456,
+   "dx0_M4": 0.030539626255631447
+  },
+  {
+   "w": 0,
+   "k": 4,
+   "sigma": 7.276163101196289,
+   "trunc_M1": 3.910778048066277e-07,
+   "trunc_M4": 0.04232271760702133,
+   "dx0_M4": 0.099236860871315
+  },
+  {
+   "w": 0,
+   "k": 5,
+   "sigma": 1.1675708293914795,
+   "trunc_M1": 0.0,
+   "trunc_M4": 0.12292299419641495,
+   "dx0_M4": 0.14173908531665802
+  },
+  {
+   "w": 0,
+   "k": 6,
+   "sigma": 0.09738767892122269,
+   "trunc_M1": 0.0,
+   "trunc_M4": 0.017001939937472343,
+   "dx0_M4": 0.01739090494811535
+  },
+  {
+   "w": 0,
+   "k": 7,
+   "sigma": 0.0020000000949949026,
+   "trunc_M1": 0.0,
+   "trunc_M4": 1.6870046238182113e-05,
+   "dx0_M4": 1.6870195395313203e-05
+  }
+ ],
+ "eval_vs_train": {
+  "rel_eval": 0.13730302453041077,
+  "rel_train": 0.13730302453041077,
+  "reldiff": 0.0
+ },
+ "g0_up3": {
+  "4": {
+   "sigma": 7.276163101196289,
+   "loss": 0.0026440205983817577,
+   "rel": 0.09813199192285538,
+   "gnorm": 1.647389369406081,
+   "by_group": {
+    "fwd.core": 0.21781056630030976,
+    "time_embed_proj": 1.6329269094604644
+   },
+   "n_none": 0
+  },
+  "5": {
+   "sigma": 1.1675708293914795,
+   "loss": 0.00897097960114479,
+   "rel": 0.13730302453041077,
+   "gnorm": 5.34385803052388,
+   "by_group": {
+    "fwd.core": 0.6896619608674618,
+    "time_embed_proj": 5.299168333816828
+   },
+   "n_none": 0
+  },
+  "6": {
+   "sigma": 0.09738767892122269,
+   "loss": 0.00017002920503728092,
+   "rel": 0.017376171424984932,
+   "gnorm": 0.1544696415281125,
+   "by_group": {
+    "fwd.core": 0.015450704993754049,
+    "time_embed_proj": 0.1536949767201894
+   },
+   "n_none": 0
+  }
+ },
+ "peak_GiB_up3": 15.262380123138428,
+ "slot_grad_all5_error": "CUDA out of memory. Tried to allocate 80.00 MiB. GPU 0 has a total capacity of 23.52 GiB of which 45.88 MiB is free. Including non-PyTorch memory, this process has 23.45 GiB memory in use. Of the allocated memory 21.77 GiB is allocated by PyTorch, and 172.61 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segmen",
+ "failures": []
+}

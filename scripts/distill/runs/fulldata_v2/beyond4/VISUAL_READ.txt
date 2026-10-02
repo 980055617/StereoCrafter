@@ -1,0 +1,73 @@
+=== VISUAL READ: GT / deployed origin / g125, 100% zoom, texture-rich crops ===
+Crops: outputs/beyond4_lossless/crops/{0052,0147,0301}/<clip>_f{40,75,110}_3way_crop_100pct.png
+       (+ _300pct_nearest.png for inspection, + _context_origin_with_box.png showing where the crop is)
+Region chosen by gradient energy in the GT and reused identically in all three panels;
+GT panel uses score_clip.py's offset math verbatim (t0=(H-h)//2+dy, l0=(W-w)//2+dx).
+
+WHAT I SEE
+
+0301 (origin under-sharp, the biggest g125 win).  GT: fine twigs, grass blades and bark all
+separated.  Origin: a waxy smear -- twigs merge into blobs, the reflection in the water is mush.
+g125: visibly more structure, individual branches and grass blades separate again, distinctly
+closer to GT.  This is GENUINE DETAIL, not ringing: no bright/dark halo rims on the trunks, no
+stair-stepping on the branch edges.  Clear visual win.
+
+0052 (frame-wide 'sharp' says origin ALREADY sharper than GT).  GT: bicycle frames with visible
+film grain, crisp spokes and brake cables.  Origin: smooth and waxy, the thin cables partly
+dissolve.  g125: slightly crisper -- cable and spoke edges tighter, the '501' sign lettering a
+little better defined.  No halos on the dark tube edges.  Marginal but real improvement.
+
+0147 (frame-wide 'sharp' says origin ALREADY sharper than GT; g125 REGRESSES in LPIPS).  GT: fine
+detail and grain on the white machine housing.  Origin: smooth, slightly washed out.  g125: a
+little crisper AND noticeably higher local contrast -- the red band is more saturated, the dark
+cables darker.  It reads 'crunchier' rather than more detailed.  This is the clip where LPIPS gets
+worse (+0.0035), and the crop is consistent with that: contrast is being added where detail is not.
+
+THE FRAME-WIDE 'sharp' STATISTIC MISLABELS 0052 AND 0147  (this is the important finding)
+
+In every texture-rich crop, on every clip and every frame, GT is SHARPER than origin:
+  clip  frame   GT      origin   g125
+  0052   40   0.02970  0.02382  0.02657
+  0052   75   0.02644  0.02209  0.02447
+  0052  110   0.02934  0.02515  0.02807
+  0147   40   0.01430  0.01195  0.01274
+  0147   75   0.01493  0.01261  0.01318
+  0147  110   0.01427  0.01167  0.01263
+  0301   40   0.06338  0.03241  0.04039
+  0301   75   0.07996  0.03410  0.04495
+  0301  110   0.06010  0.02753  0.03379
+and edgeHF/GT (mean |Laplacian| inside the GT's top-decile gradient regions) is 0.53 / 0.52 / 0.27
+for origin on 0052 / 0147 / 0301 -- i.e. origin is UNDER-detailed at real edges on ALL THREE clips,
+including the two the frame-wide statistic calls 'already sharper than GT'.
+
+The frame-wide number is inflated by SPLATTING-STRIPE ENERGY IN FLAT REGIONS, not by detail:
+stripeE/GT (mean |horizontal difference| inside GT-flat regions) for origin is
+  0052  2.85x GT      0147  4.83x GT      0301  0.98x GT
+So on the two 4400x4400 clips, most of origin's 'extra sharpness' is disocclusion/stripe artefact.
+'Origin already sharper than GT' should be read as 'origin already carries more stripe artefact
+than the GT carries texture', NOT as 'origin is over-sharpened'.
+
+WHAT g125 DOES TO THE ARTEFACT/DETAIL TRADE  (ringing_metrics.py, GT-defined regions, SCORE_STEP=8)
+
+           edgeHF/GT (detail, higher=better)   stripeE/GT (artefact, lower=better)   haloFrac%
+  clip     origin   g125    s25               origin   g125    s25                  origin  g125   s25
+  0052      0.533   0.580  0.546               2.854   3.173  3.080                 39.1   41.5  39.7
+  0147      0.517   0.544  0.536               4.828   5.012  5.599                 41.7   43.5  42.4
+  0301      0.272   0.315  0.299               0.975   1.295  1.239                 24.9   28.9  27.8
+
+g125 buys real edge detail (+9%, +5%, +16% of the GT's edge energy) but amplifies flat-region
+stripe energy by +11%, +4%, +33% and raises the halo fraction by 2.4, 1.7 and 4.1 points.
+That trade is COMPARABLE TO s25's on the same clips -- s25 lands at similar edgeHF with similar or
+worse stripeE (0147: s25 stripeE 5.599 vs g125 5.012) -- but g125 costs 1.03x inference where s25
+costs 2.5x.  Neither config introduces the ringing/halo signature that would disqualify it
+outright; both amplify the pre-existing splatting stripes along with the detail.
+
+ADDITIONAL OBSERVATION (0052 frame 40, crops/0052/0052_f40_3way_crop_300pct_nearest.png)
+
+The crop lands on a poster with legible German text in the GT ("trinken ... furt").  Neither config
+reproduces it: origin renders hallucinated glyph shapes that are simply wrong, and g125 renders the
+SAME wrong glyphs with more contrast and crisper strokes.  So in regions the model has to invent
+(disocclusions), higher guidance does not recover content -- it makes the invented content more
+confident.  That is not visible as ringing, and LPIPS mildly rewards it (texture statistics), but it
+is worth knowing that part of g125's "sharpness" is committing harder to a hallucination.
+It is not a reason to reject g125 by itself: origin is equally wrong there, just softer.

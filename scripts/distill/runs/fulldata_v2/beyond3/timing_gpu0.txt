@@ -1,0 +1,12 @@
+RUN 0052 s25 steps=25 guid=1.01 gpu=0 rc=0 secs=468 23:43:12 dir=outputs/fulldata_v2/clips/0052_origin_s25
+RUN 0128 s25 steps=25 guid=1.01 gpu=0 rc=0 secs=399 23:49:51 dir=outputs/fulldata_v2/clips/0128_origin_s25
+RUN 0147 s25 steps=25 guid=1.01 gpu=0 rc=0 secs=462 23:57:33 dir=outputs/fulldata_v2/clips/0147_origin_s25
+RUN 0225 s25 steps=25 guid=1.01 gpu=0 rc=0 secs=389 00:04:02 dir=outputs/fulldata_v2/clips/0225_origin_s25
+RUN 0259 s25 steps=25 guid=1.01 gpu=0 rc=0 secs=389 00:10:31 dir=outputs/fulldata_v2/clips/0259_origin_s25
+RUN 0042 repro8g101 steps=8 guid=1.01 gpu=0 rc=0 secs=171 00:13:22 dir=outputs/fulldata_v2/clips/0042_origin_repro8g101
+RUN 0052 repro8g101 steps=8 guid=1.01 gpu=0 rc=0 secs=186 00:16:28 dir=outputs/fulldata_v2/clips/0052_origin_repro8g101
+RUN 0125 repro8g101 steps=8 guid=1.01 gpu=0 rc=0 secs=182 00:19:30 dir=outputs/fulldata_v2/clips/0125_origin_repro8g101
+RUN 0128 repro8g101 steps=8 guid=1.01 gpu=0 rc=0 secs=171 00:22:21 dir=outputs/fulldata_v2/clips/0128_origin_repro8g101
+RUN 0141 repro8g101 steps=8 guid=1.01 gpu=0 rc=0 secs=171 00:25:12 dir=outputs/fulldata_v2/clips/0141_origin_repro8g101
+RUN 0147 repro8g101 steps=8 guid=1.01 gpu=0 rc=0 secs=195 00:28:27 dir=outputs/fulldata_v2/clips/0147_origin_repro8g101
+GPU0_ALL_DONE 00:28:27

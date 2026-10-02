@@ -1,0 +1,35 @@
+======================================================================================================================
+CHECKPOINT SELECTION -- DEV SPLIT, LOSSLESS FFV1, real-GT LPIPS, deployed config (8 steps, g 1.01)
+dev clips ['0040', '0091', '0184', '0245']   GT sharpness [0.0043, 0.0031, 0.0103, 0.0196]
+scorer scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py  SCORE_STEP=4
+======================================================================================================================
+  row                                 0040     0091     0184     0245  meanLPIPS  d vs mamba  impr   sh/GT  sh/mamba   rPSNR
+  mamba_ll                          0.5073   0.6469   0.5028   0.5381     0.5488     +0.0000   0/4   1.160    1.0000  12.649
+  mstudent1_step600_ll              0.5026   0.6404   0.4908   0.5492     0.5457     -0.0030   3/4   1.365    1.1778  12.618
+  mstudent1_step800_ll              0.5034   0.6419   0.4926   0.5438     0.5454     -0.0034   3/4   1.377    1.1858  12.494
+  mstudent2_step200_ll              0.5044   0.6419   0.4955   0.5468     0.5472     -0.0016   3/4   1.310    1.1299  12.579
+  mstudent2_step400_ll              0.5026   0.6435   0.4908   0.5497     0.5467     -0.0021   3/4   1.314    1.1363  12.621
+  mstudent2_step800_ll              0.5029   0.6431   0.4935   0.5462     0.5464     -0.0023   3/4   1.316    1.1374  12.586
+  mstudent2_step1200_ll             0.5027   0.6436   0.4925   0.5495     0.5471     -0.0017   3/4   1.335    1.1530  12.592
+  mstudent2_step1600_ll             0.5026   0.6426   0.4927   0.5492     0.5468     -0.0020   3/4   1.341    1.1600  12.581
+  mstudent2_step2000_ll             0.5042   0.6435   0.4931   0.5552     0.5490     +0.0002   3/4   1.340    1.1558  12.549
+
+best by dev LPIPS      : mstudent2_step800_ll  mean 0.5464  sh/GT 1.316
+within 0.0010 of best : ['mstudent2_step1200_ll', 'mstudent2_step1600_ll', 'mstudent2_step200_ll', 'mstudent2_step400_ll', 'mstudent2_step800_ll']
+SELECTED               : mstudent2_step200_ll  mean 0.5472  sh/GT 1.310   (tie-break on sharpness-vs-GT)
+SELECTED_LABEL=mstudent2_step200_ll
+SELECTED_STEP=200
+
+--- DID MORE TRAINING CLIPS HELP?  ladder vs ladder on the SAME dev clips, neither run trained on them ---
+  mstudent1 (2 TEST clips, 26 windows)   best rung mstudent1_step800_ll: 0.5454
+      mstudent1_step600_ll         0.5457
+      mstudent1_step800_ll         0.5454
+  mstudent2 (10 TRAIN clips, 134 windows) best rung mstudent2_step800_ll: 0.5464
+      mstudent2_step200_ll         0.5472
+      mstudent2_step400_ll         0.5467
+      mstudent2_step800_ll         0.5464
+      mstudent2_step1200_ll        0.5471
+      mstudent2_step1600_ll        0.5468
+      mstudent2_step2000_ll        0.5490
+  MATCHED OPTIMISER BUDGET (both step800): 2 clips 0.5454 vs 10 clips 0.5464 = +0.0010
+  BEST vs BEST: +0.0010 (more clips did NOT help)
