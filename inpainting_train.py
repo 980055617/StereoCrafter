@@ -369,6 +369,7 @@ def _train_main(
     euler_low_sigma_prob: float = 0.0,
     euler_low_sigma_fraction: float = 0.35,
     noise_mask_loss_weight: float = 0.0,
+    cond_latent_scale: float = 1.0,   # multiplier on the warped-frame (cond) latents; inference feeds them raw (1.0). Trainer used vae scaling_factor (0.18215) until 2026-09-29
     x0_latent_loss_weight: float = 0.0,
     x0_latent_mask_weight: float = 0.0,
     x0_latent_grad_loss_weight: float = 0.0,
@@ -475,6 +476,9 @@ def _train_main(
             "zero_optimization": zero_opt,
             "gradient_accumulation_steps": int(grad_steps),
         }
+        if max_grad_norm and max_grad_norm > 0:
+            # accelerate's clip_grad_norm_ is a no-op under DeepSpeed; the engine clips only when this key is set
+            ds_cfg["gradient_clipping"] = float(max_grad_norm)
         if train_batch is not None:
             ds_cfg["train_batch_size"] = int(train_batch)
         elif train_micro is not None:
@@ -856,6 +860,7 @@ def _train_main(
     euler_low_sigma_prob = min(max(float(euler_low_sigma_prob), 0.0), 1.0)
     euler_low_sigma_fraction = min(max(float(euler_low_sigma_fraction), 0.0), 1.0)
     noise_mask_loss_weight = max(0.0, float(noise_mask_loss_weight))
+    cond_latent_scale = float(cond_latent_scale)
     x0_latent_loss_weight = max(0.0, float(x0_latent_loss_weight))
     x0_latent_mask_weight = max(0.0, float(x0_latent_mask_weight))
     if x0_latent_loss_weight > 0.0 and diffusion_scheduler_key != "euler":
@@ -976,7 +981,8 @@ def _train_main(
                         ).latent_dist.mode()
                     )
             frame_latents = torch.cat(latent_list, dim=0).unsqueeze(0)
-            frame_latents *= pipeline.vae.config.scaling_factor
+            if cond_latent_scale != 1.0:
+                frame_latents = frame_latents * cond_latent_scale
             frame_latents = frame_latents.to(device=unet_in_device, dtype=image_embeddings.dtype)
             frame_latents = _to_unet_entry(frame_latents)
 
@@ -1367,6 +1373,8 @@ def _train_main(
         if cached is not None:
             return cached
         count = estimate_num_chunks(path, frames_chunk=frames_chunk, overlap=overlap)
+        if max_chunks_per_video:
+            count = min(count, int(max_chunks_per_video))   # balance what is actually trained (per-video subsample below)
         chunk_count_cache[path] = count
         return count
 
@@ -2025,6 +2033,7 @@ def _train_main(
             _keep = any(m in _name for m in [k for k in str(freeze_keep).split(",") if k])
             _p.requires_grad_(_keep); _n_on += int(_keep)
         logger.info("freeze_base: %d Mamba-side tensors trainable, all other UNet parameters frozen", _n_on)
+    logger.info("cond_latent_scale=%g (inference feeds the warped-frame latents raw, i.e. 1.0)", cond_latent_scale)
 
     # 学習対象パラメータのみ最適化
     trainable_params = [p for p in pipeline.unet.parameters() if p.requires_grad]
@@ -3592,18 +3601,23 @@ def _train_main(
             # エポックごとに動画順をシャッフル
             random.shuffle(video_paths)
             epoch_video_paths = video_paths
+            epoch_pad_flags = [False] * len(epoch_video_paths)
             if ds_enabled and accelerator is not None:
                 buckets, totals = _assign_videos_balanced(video_paths, accelerator.num_processes)
                 epoch_video_paths = buckets[accelerator.process_index]
+                epoch_pad_flags = [False] * len(epoch_video_paths)
                 if accelerator.is_main_process:
                     totals_str = ", ".join(str(total) for total in totals)
                     logger.info("Balanced chunk assignment across ranks: %s", totals_str)
                 shared_video_count = _dist_max(len(epoch_video_paths))
                 if epoch_video_paths and len(epoch_video_paths) < shared_video_count:
                     pad = shared_video_count - len(epoch_video_paths)
+                    # duplicates keep the collectives in step; their loss is zero-weighted in the batch loop
                     epoch_video_paths = epoch_video_paths + [epoch_video_paths[-1]] * pad
+                    epoch_pad_flags = epoch_pad_flags + [True] * pad
             epoch_loss = 0.0
             epoch_batches = 0
+            epoch_pad_steps = 0
             printer.start_epoch(epoch_idx=epoch, epochs_total=planned_epochs_total, videos_total=len(epoch_video_paths))
 
             for video_idx, video_path in enumerate(epoch_video_paths, start=1):
@@ -3653,8 +3667,12 @@ def _train_main(
                         if last_batch is None:
                             last_batch = _get_preflight_batch()
                         batch = last_batch
+                        batch_weight = 0.0   # re-fed batch: this rank has fewer windows than the other rank
                     else:
                         last_batch = batch
+                        batch_weight = 0.0 if epoch_pad_flags[video_idx - 1] else 1.0   # rank-padding duplicate
+                    if batch_weight == 0.0:
+                        epoch_pad_steps += 1
 
                     if device.type == "cuda":
                         torch.cuda.reset_peak_memory_stats(device)
@@ -3711,7 +3729,7 @@ def _train_main(
                                 skip_update = True
                             else:
                                 accum_counter += 1
-                                loss = loss_raw
+                                loss = loss_raw if batch_weight == 1.0 else loss_raw * batch_weight
                                 if debug_deepspeed_graph and not logged_loss_meta:
                                     logger.warning(
                                         "DeepSpeed debug: grad_enabled=%s inference_mode=%s loss.requires_grad=%s loss.grad_fn=%s",
@@ -3953,6 +3971,11 @@ def _train_main(
             # エポック平均を表示して毎エポック後にチェックポイントを保存
             avg_epoch_loss = epoch_loss / max(epoch_batches, 1)
             printer.finish_epoch(avg_loss=avg_epoch_loss, epoch_batches=epoch_batches)
+            if epoch_pad_steps:
+                logger.info(
+                    "Rank %s epoch %d: %d of %d steps were zero-weight (rank-padding duplicates / re-fed batches)",
+                    os.environ.get("LOCAL_RANK", "0"), epoch, epoch_pad_steps, epoch_batches,
+                )
             if val_split and (epoch % val_interval_epochs == 0):
                 run_validation(val_split, epoch)
             if ds_enabled and accelerator is not None:

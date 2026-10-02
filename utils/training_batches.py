@@ -76,6 +76,10 @@ class _StreamingVideo:
             tile_w = max(raw_w // 2, 1)
         self._tile_h = tile_h
         self._tile_w = tile_w
+        # true quadrant size: split the 2x2 tile at the half first, then crop each quadrant to the 128-multiple
+        # (mirrors utils/inpainting.py read_and_prepare_video so training sees the same pixels as inference)
+        self._half_h = raw_h // 2
+        self._half_w = raw_w // 2
 
     @property
     def frame_count(self) -> int:
@@ -94,10 +98,10 @@ class _StreamingVideo:
         frames = torch.from_numpy(batch).permute(0, 3, 1, 2).float() / 255.0
         height = self._tile_h
         width = self._tile_w
-        frames = frames[:, :, : height * 2, : width * 2]
-        frames_right = frames[:, :, :height, width:]
-        frames_mask = frames[:, :, height:, :width]
-        frames_warped = frames[:, :, height:, width:]
+        hh, hw = self._half_h, self._half_w
+        frames_right = frames[:, :, :hh, hw : 2 * hw][:, :, :height, :width]
+        frames_mask = frames[:, :, hh : 2 * hh, :hw][:, :, :height, :width]
+        frames_warped = frames[:, :, hh : 2 * hh, hw : 2 * hw][:, :, :height, :width]
         frames_mask = frames_mask.mean(dim=1, keepdim=True)
         return frames_warped, frames_mask, frames_right
 
