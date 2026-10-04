@@ -8,3 +8,12 @@ runs/**/*.png
 # Local link farms into video_data/ (machine-specific absolute symlinks; rebuild from the
 # split JSON, e.g. train_gt27 = video_data/train_gt28 minus 0358).
 splits/train_gt*/
+# Run plumbing (2026-10-04): completion sentinels read by the capture/eval lanes, progress files, captured process
+# output (same role as *.log) and binary arrays. They stay on disk for the scripts; git keeps only the records.
+runs/**/*.done
+runs/**/*.ready
+runs/**/*_progress.txt
+runs/**/*.stdout
+runs/**/*.stderr
+runs/**/*.npy
+runs/**/*.npz
