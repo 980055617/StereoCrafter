@@ -1,0 +1,35 @@
+{
+ "title": "STEP 2 EXTENSION -- ALL 12 TEST CLIPS: merged early steps (T6/T5, RNG padded to the 8-step stream) at guidance 1.01, and T5 at guidance 1.00. LOSSLESS FFV1, real-GT LPIPS",
+ "clips": ["0042","0052","0125","0128","0141","0147","0170","0204","0225","0251","0259","0301"],
+ "origin_ref": "origin_ll",
+ "rows": [
+  {"label": "origin_ll",                  "name": "origin 8-step @1.01 (8x2)",      "ref": null},
+  {"label": "origin_g100_s8",             "name": "origin 8-step @1.00 (8x1)",      "ref": "origin_ll"},
+  {"label": "origin_g101_T6pad",          "name": "origin T6 @1.01 (6x2)",          "ref": "origin_ll"},
+  {"label": "origin_g101_T5pad",          "name": "origin T5 @1.01 (5x2)",          "ref": "origin_ll"},
+  {"label": "origin_g100_T5pad",          "name": "origin T5 @1.00 (5x1)",          "ref": "origin_ll"},
+  {"label": "mstudent2_step800_deliv_ll", "name": "deliverable 8-step @1.01 (8x2)", "ref": null},
+  {"label": "deliv_g100_s8",              "name": "deliverable 8-step @1.00 (8x1)", "ref": "mstudent2_step800_deliv_ll"},
+  {"label": "deliv_g101_T6pad",           "name": "deliverable T6 @1.01 (6x2)",     "ref": "mstudent2_step800_deliv_ll"},
+  {"label": "deliv_g101_T5pad",           "name": "deliverable T5 @1.01 (5x2)",     "ref": "mstudent2_step800_deliv_ll"},
+  {"label": "deliv_g100_T5pad",           "name": "deliverable T5 @1.00 (5x1)",     "ref": "mstudent2_step800_deliv_ll"}
+ ],
+ "criteria": [
+  {"name": "S2' deliverable T6 @1.01 FREE (12-clip, final)", "row": "deliv_g101_T6pad", "ref": "mstudent2_step800_deliv_ll",
+   "mean_max": 0.002, "clip_max": 0.005, "sharp_band": null, "gating": true},
+  {"name": "S2' deliverable T5 @1.01 FREE (12-clip, final)", "row": "deliv_g101_T5pad", "ref": "mstudent2_step800_deliv_ll",
+   "mean_max": 0.002, "clip_max": 0.005, "sharp_band": null, "gating": true},
+  {"name": "S2' deliverable T5 @1.00 FREE vs DEPLOYED 8x2 (12-clip, final)", "row": "deliv_g100_T5pad", "ref": "mstudent2_step800_deliv_ll",
+   "mean_max": 0.002, "clip_max": 0.005, "sharp_band": null, "gating": true},
+  {"name": "reported: deliverable T5 @1.00 vs 8-step @1.00 (schedule effect alone)", "row": "deliv_g100_T5pad", "ref": "deliv_g100_s8",
+   "mean_max": 0.002, "clip_max": 0.005, "sharp_band": null, "gating": false},
+  {"name": "reported: origin T6 @1.01 vs origin 8x2", "row": "origin_g101_T6pad", "ref": "origin_ll",
+   "mean_max": 0.002, "clip_max": 0.005, "sharp_band": null, "gating": false},
+  {"name": "reported: origin T5 @1.01 vs origin 8x2", "row": "origin_g101_T5pad", "ref": "origin_ll",
+   "mean_max": 0.002, "clip_max": 0.005, "sharp_band": null, "gating": false},
+  {"name": "reported: origin T5 @1.00 vs origin 8x2", "row": "origin_g100_T5pad", "ref": "origin_ll",
+   "mean_max": 0.002, "clip_max": 0.005, "sharp_band": null, "gating": false},
+  {"name": "reported: origin T5 @1.00 vs origin 8-step @1.00 (schedule effect alone)", "row": "origin_g100_T5pad", "ref": "origin_g100_s8",
+   "mean_max": 0.002, "clip_max": 0.005, "sharp_band": null, "gating": false}
+ ]
+}

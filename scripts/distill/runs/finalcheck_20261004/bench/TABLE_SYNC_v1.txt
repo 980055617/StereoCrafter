@@ -1,0 +1,99 @@
+================================================================================================================================================================
+BENCH LANE -- DIAGNOSTIC 'sync' arm (POST-HOC, NON-GATING; PREREG_ADDENDUM_sync.txt): host sync after every timed forward
+run dir outputs/finalcheck_20261004/bench/sync_v1; unsynced reference = the primary run outputs/finalcheck_20261004/bench/run_v1 (unmodified bench2.py)
+  versions.txt:
+     python 3.11.15 torch 2.4.0 cuda 12.1 diffusers 0.29.2 gpu NVIDIA GeForce RTX 4090
+  bench2_md5.txt:
+     c439daf2f5829a2dfd7d1802fc985f73  scripts/distill/bench2.py
+     5855d102069b14c8904bc81d2e9e6bf7  scripts/distill/runs/finalcheck_20261004/bench/bench2_sync_diag.py
+  diag_copy_diff.txt:
+     56c56
+     <     for _ in range(10): u(inp,t,encoder_hidden_states=enc,added_time_ids=add)
+     ---
+     >     for _ in range(10): u(inp,t,encoder_hidden_states=enc,added_time_ids=add); torch.cuda.synchronize()  # DIAG COPY: only change vs scripts/distill/bench2.py (host sync per forward, as the deployed loop's .item())
+================================================================================================================================================================
+  processes: 36 of 36; missing none; retries none
+  B1 instrumentation: PASS
+  B4 exclusivity: PASS   (GPU1 sampler n=569, max util 0 %)
+
+--- per forward: synced vs unsynced (mean +- half-range, n=3) ---
+  res         config  BS  synced s      +- unsynced s synced-unsynced ms   ratio
+  576x1024    origin   2    0.9635  0.0007     0.9612                2.2  1.0023
+  576x1024    mamba5   2    0.9107  0.0004     0.9103                0.4  1.0004
+  576x1024    origin   1    0.4864  0.0000     0.4857                0.7  1.0015
+  576x1024    mamba5   1    0.4589  0.0002     0.4587                0.2  1.0004
+  1024x1792   origin   2    3.7182  0.0010     3.7127                5.5  1.0015
+  1024x1792   mamba5   2    2.9544  0.0004     2.9529                1.5  1.0005
+  1024x1792   origin   1    1.8809  0.0008     1.8792                1.6  1.0009
+  1024x1792   mamba5   1    1.4963  0.0000     1.4953                0.9  1.0006
+  1024x1920   origin   2    4.0633  0.0011     4.0591                4.2  1.0010
+  1024x1920   mamba5   2    3.1764  0.0006     3.1742                2.2  1.0007
+  1024x1920   origin   1    2.0609  0.0008     2.0603                0.6  1.0003
+  1024x1920   mamba5   1    1.6165  0.0006     1.6159                0.6  1.0004
+
+================================================================================================================================================================
+X1-sync at 576x1024: |pred/meas - 1| <= 0.04 for EVERY included row (BS=2 rows are explicit requirements)
+================================================================================================================================================================
+  configuration                  meas rel unsync pred    p/m sync pred    p/m  X1-sync
+  deployed origin 8x2 @1.01        1.0000      1.0000  1.000    1.0000  1.000  ok
+  deliverable 8x2 @1.01            0.9500      0.9470  0.997    0.9452  0.995  ok
+  deliverable 8x1 @1.00            0.5260      0.4772  0.907    0.4763  0.906  OUT
+  deliverable T6 @1.01 (6x2)       0.7122      0.7103  0.997    0.7089  0.995  ok
+  deliverable T5 @1.01 (5x2)       0.5934      0.5919  0.997    0.5908  0.996  ok
+  deliverable T5 @1.00 (5x1)       0.3287      0.2983  0.908    0.2977  0.906  OUT
+  origin 8x1 @1.00                 0.5522      0.5053  0.915    0.5048  0.914  OUT
+  origin T6 @1.01 (6x2)            0.7501      0.7500  1.000    0.7500  1.000  ok
+  origin T5 @1.01 (5x2)            0.6248      0.6250  1.000    0.6250  1.000  ok
+  origin T5 @1.00 (5x1)            0.3450      0.3158  0.915    0.3155  0.915  excluded row, info only
+  X1-sync: FAIL -> deliverable 8x1 @1.00 0.906; deliverable T5 @1.00 (5x1) 0.906; origin 8x1 @1.00 0.914
+
+  absolute per forward, 576x1024 (information): deployed (speed lane, bf16, CUDA events) vs synced bench vs unsynced bench
+    origin BS2  deployed 0.9534   synced 0.9635 (x1.011)   unsynced 0.9612 (x1.008)
+    mamba5 BS2  deployed 0.9057   synced 0.9107 (x1.006)   unsynced 0.9103 (x1.005)
+    origin BS1  deployed 0.5264   synced 0.4864 (x0.924)   unsynced 0.4857 (x0.923)
+    mamba5 BS1  deployed 0.5015   synced 0.4589 (x0.915)   unsynced 0.4587 (x0.915)
+
+================================================================================================================================================================
+PER-WINDOW UNet TIME relative to deployed origin 8x2 @1.01: published methodology (unsynced fp16) vs sync bench (mechanism NOT confirmed: not an estimate)
++- = half-range of the 3 per-rep paired ratios.  Lever rows at 1024x1792 / 1024x1920: SPEED-ONLY (quality verified at 576x1024 only).
+================================================================================================================================================================
+--- 576x1024   deployed origin per-window UNet: unsynced 7.690 s, synced 7.708 s ---
+  deployed origin 8x2 @1.01      unsynced 1.0000 +- 0.0000   synced 1.0000 +- 0.0000   measured (deployed) 1.0000
+  deliverable 8x2 @1.01          unsynced 0.9470 +- 0.0029   synced 0.9452 +- 0.0011   measured (deployed) 0.9500
+  deliverable 8x1 @1.00          unsynced 0.4772 +- 0.0012   synced 0.4763 +- 0.0002   measured (deployed) 0.5260
+  deliverable T6 @1.01 (6x2)     unsynced 0.7103 +- 0.0022   synced 0.7089 +- 0.0008   measured (deployed) 0.7122
+  deliverable T5 @1.01 (5x2)     unsynced 0.5919 +- 0.0018   synced 0.5908 +- 0.0007   measured (deployed) 0.5934
+  deliverable T5 @1.00 (5x1)     unsynced 0.2983 +- 0.0008   synced 0.2977 +- 0.0001   measured (deployed) 0.3287
+  origin 8x1 @1.00               unsynced 0.5053 +- 0.0013   synced 0.5048 +- 0.0004   measured (deployed) 0.5522
+  origin T6 @1.01 (6x2)          unsynced 0.7500 +- 0.0000   synced 0.7500 +- 0.0000   measured (deployed) 0.7501
+  origin T5 @1.01 (5x2)          unsynced 0.6250 +- 0.0000   synced 0.6250 +- 0.0000   measured (deployed) 0.6248
+  origin T5 @1.00 (5x1)          unsynced 0.3158 +- 0.0008   synced 0.3155 +- 0.0002   measured (deployed) 0.3450   [EXCLUDED: failed its quality criterion]
+
+--- 1024x1792   deployed origin per-window UNet: unsynced 29.702 s, synced 29.746 s ---
+  deployed origin 8x2 @1.01      unsynced 1.0000 +- 0.0000   synced 1.0000 +- 0.0000
+  deliverable 8x2 @1.01          unsynced 0.7954 +- 0.0013   synced 0.7946 +- 0.0001
+  deliverable 8x1 @1.00          unsynced 0.4028 +- 0.0009   synced 0.4024 +- 0.0001
+  deliverable T6 @1.01 (6x2)     unsynced 0.5965 +- 0.0010   synced 0.5959 +- 0.0001
+  deliverable T5 @1.01 (5x2)     unsynced 0.4971 +- 0.0008   synced 0.4966 +- 0.0001
+  deliverable T5 @1.00 (5x1)     unsynced 0.2517 +- 0.0006   synced 0.2515 +- 0.0001
+  origin 8x1 @1.00               unsynced 0.5062 +- 0.0011   synced 0.5058 +- 0.0001
+  origin T6 @1.01 (6x2)          unsynced 0.7500 +- 0.0000   synced 0.7500 +- 0.0000
+  origin T5 @1.01 (5x2)          unsynced 0.6250 +- 0.0000   synced 0.6250 +- 0.0000
+  origin T5 @1.00 (5x1)          unsynced 0.3163 +- 0.0007   synced 0.3162 +- 0.0001   [EXCLUDED: failed its quality criterion]
+
+--- 1024x1920   deployed origin per-window UNet: unsynced 32.473 s, synced 32.506 s ---
+  deployed origin 8x2 @1.01      unsynced 1.0000 +- 0.0000   synced 1.0000 +- 0.0000
+  deliverable 8x2 @1.01          unsynced 0.7820 +- 0.0004   synced 0.7817 +- 0.0001
+  deliverable 8x1 @1.00          unsynced 0.3981 +- 0.0004   synced 0.3978 +- 0.0000
+  deliverable T6 @1.01 (6x2)     unsynced 0.5865 +- 0.0003   synced 0.5863 +- 0.0001
+  deliverable T5 @1.01 (5x2)     unsynced 0.4888 +- 0.0003   synced 0.4886 +- 0.0000
+  deliverable T5 @1.00 (5x1)     unsynced 0.2488 +- 0.0002   synced 0.2486 +- 0.0000
+  origin 8x1 @1.00               unsynced 0.5076 +- 0.0004   synced 0.5072 +- 0.0000
+  origin T6 @1.01 (6x2)          unsynced 0.7500 +- 0.0000   synced 0.7500 +- 0.0000
+  origin T5 @1.01 (5x2)          unsynced 0.6250 +- 0.0000   synced 0.6250 +- 0.0000
+  origin T5 @1.00 (5x1)          unsynced 0.3172 +- 0.0002   synced 0.3170 +- 0.0000   [EXCLUDED: failed its quality criterion]
+
+Mamba share t(mamba5,BS)/t(origin,BS), synced vs unsynced:
+  576x1024    BS2 synced 0.9452 (-5.48 %) unsynced 0.9470 (-5.30 %)   |   BS1 synced 0.9435 (-5.65 %) unsynced 0.9445 (-5.55 %)
+  1024x1792   BS2 synced 0.7946 (-20.54 %) unsynced 0.7954 (-20.46 %)   |   BS1 synced 0.7955 (-20.45 %) unsynced 0.7957 (-20.43 %)
+  1024x1920   BS2 synced 0.7817 (-21.83 %) unsynced 0.7820 (-21.80 %)   |   BS1 synced 0.7844 (-21.56 %) unsynced 0.7843 (-21.57 %)

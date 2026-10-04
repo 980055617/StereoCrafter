@@ -1,0 +1,15 @@
+clip/config                           offset  leftPSNR    LPIPS    sharp    rPSNR   nf
+--- 0301 GT ---                                          0.0000   0.0505
+0301_origin_ll                       (-28,0)     40.25   0.4351   0.0235   15.467   38
+ROW clip=0301 tag=0301_origin_ll dy=-28 dx=0 leftPSNR=40.2464 lpips=0.435095 sharp=0.023528 gtSharp=0.050529 rightPSNR=15.4667 n=38 path=outputs/beyond4_lossless/clips/0301_origin_ll/0301_inpainting_results_sbs.mkv
+regB_step100_0301                    (-28,0)     40.25   0.6310   0.0178   16.044   38
+ROW clip=0301 tag=regB_step100_0301 dy=-28 dx=0 leftPSNR=40.2464 lpips=0.630977 sharp=0.017779 gtSharp=0.050529 rightPSNR=16.0444 n=38 path=scripts/distill/runs/clean_controls/regB/infer/regB_step100_0301/0301_inpainting_results_sbs.mkv
+regB_step200_0301                    (-28,0)     40.25   0.5959   0.0189   15.869   38
+ROW clip=0301 tag=regB_step200_0301 dy=-28 dx=0 leftPSNR=40.2464 lpips=0.595946 sharp=0.018858 gtSharp=0.050529 rightPSNR=15.8690 n=38 path=scripts/distill/runs/clean_controls/regB/infer/regB_step200_0301/0301_inpainting_results_sbs.mkv
+regB_step300_0301                    (-28,0)     40.25   0.6001   0.0191   15.803   38
+ROW clip=0301 tag=regB_step300_0301 dy=-28 dx=0 leftPSNR=40.2464 lpips=0.600086 sharp=0.019105 gtSharp=0.050529 rightPSNR=15.8032 n=38 path=scripts/distill/runs/clean_controls/regB/infer/regB_step300_0301/0301_inpainting_results_sbs.mkv
+--- 0204 GT ---                                          0.0000   0.0116
+0204_origin_ll                       (-28,0)     41.16   0.2053   0.0065   19.896   38
+ROW clip=0204 tag=0204_origin_ll dy=-28 dx=0 leftPSNR=41.1620 lpips=0.205310 sharp=0.006527 gtSharp=0.011577 rightPSNR=19.8959 n=38 path=outputs/beyond4_lossless/clips/0204_origin_ll/0204_inpainting_results_sbs.mkv
+regB_step300_0204                    (-28,0)     41.16   0.2403   0.0066   20.038   38
+ROW clip=0204 tag=regB_step300_0204 dy=-28 dx=0 leftPSNR=41.1620 lpips=0.240284 sharp=0.006556 gtSharp=0.011577 rightPSNR=20.0380 n=38 path=scripts/distill/runs/clean_controls/regB/infer/regB_step300_0204/0204_inpainting_results_sbs.mkv

@@ -1,0 +1,18 @@
+draw sequence identical to null: pos: True
+draw sequence identical to null: regpos: True
+
+run       step1 gn step1 loss  mean loss  mean gn  clipped% last50 loss
+null         0.347     0.0738     0.2854    0.149      0.0%      0.1826
+pos          1.868     0.5773     0.5173    0.721     22.7%      0.4166
+regpos       1.244     0.4253     0.4688    0.745     32.0%      0.3716
+
+per-sigma mean loss (null / pos / regpos) and mean pre-clip grad norm:
+   sigma    null_loss     pos_loss  regpos_loss |    null_gn     pos_gn  regpos_gn
+     700       0.0955       0.3956       0.3306 |      0.165      0.908      0.922   (n=33)
+   286.5       0.0922       0.3632       0.3177 |      0.127      0.926      1.069   (n=29)
+   102.9       0.0890       0.3839       0.3182 |      0.129      1.049      1.109   (n=44)
+   30.99       0.0886       0.3997       0.3278 |      0.148      1.054      1.154   (n=38)
+   7.276       0.0850       0.3620       0.2989 |      0.130      1.001      0.954   (n=36)
+   1.168       0.1132       0.3821       0.3155 |      0.172      0.554      0.551   (n=43)
+ 0.09739       0.6721       0.8148       0.8068 |      0.245      0.269      0.226   (n=38)
+   0.002       1.0014       1.0022       1.0021 |      0.070      0.082      0.072   (n=39)

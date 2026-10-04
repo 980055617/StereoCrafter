@@ -1,0 +1,40 @@
+V1 TEMPORAL CONSISTENCY -- 1024x1792 -- source outputs/finalcheck_20261004/validate/v2_temporal/temporal_1024x1792.json
+clips (n=4): 0042 0052 0170 0204   methods: origin, deliv
+tLP = mean LPIPS(frame t, t+1); warp = flow-warped |I_t+1(x+F) - I_t(x)| with RAFT flow on the GT window;
+ratio = seam/nonseam mean |R_t+1 - R_t| (seams t=11k+2, k>=1).  Lower is better for warp and ratio.
+
+--- tLP ---
+  row            0042     0052     0170     0204      MEAN
+  GT           0.0649   0.1419   0.1437   0.0290    0.0949
+  origin       0.0542   0.1286   0.1317   0.0261    0.0851
+  deliv        0.0655   0.1351   0.1386   0.0312    0.0926
+
+--- warp error ---
+  row            0042     0052     0170     0204      MEAN
+  GT           0.0056   0.0101   0.0154   0.0100    0.0103
+  origin       0.0085   0.0155   0.0191   0.0085    0.0129
+  deliv        0.0107   0.0177   0.0233   0.0116    0.0158
+
+--- seam ratio (seam/nonseam) ---
+  row            0042     0052     0170     0204      MEAN
+  GT           0.9722   0.9931   0.9883   0.9686    0.9806
+  origin       1.1210   1.0283   1.0416   1.6457    1.2091
+  deliv        1.2025   1.0541   1.0647   1.7903    1.2779
+
+--- tLP / tLP_GT (1.0 = flickers as much as the real right eye) ---
+  row            0042     0052     0170     0204      MEAN  mean|r-1|
+  origin        0.834    0.906    0.917    0.899     0.889     0.1109
+  deliv         1.008    0.952    0.965    1.077     1.001     0.0421
+
+--- warp / warp(origin) and ratio / ratio(origin), per clip ---
+  warp  deliv       1.264    1.141    1.216    1.355
+  ratio deliv       1.073    1.025    1.022    1.088
+
+=== PRE-REGISTERED FLAGS (PREREG.txt), deliverable vs origin ===
+  [PRE-REGISTERED] deliv: mean warp 0.01582 vs origin 0.01292 (+22.4%) -> F1 FLAG (>+5%)
+  [PRE-REGISTERED] deliv: warp worse than origin on 4/4 clips -> F2 FLAG (>= 3/4)
+  [PRE-REGISTERED] deliv: mean seam ratio 1.2779 vs origin 1.2091 (+5.7%) -> F3 ok (>+10%)
+  OUTCOME (deliverable): TEMPORAL REGRESSION FLAGGED: F1, F2
+
+=== PRE-REGISTERED tLP READING ===
+  closeness c_m = mean |tLP_m/tLP_GT - 1|:  origin 0.1109  deliv 0.0421

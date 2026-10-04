@@ -1,0 +1,29 @@
+clip/config                           offset  regshift  leftPSNR LPIPSreg    sharp rPSNRreg   nf
+--- 0301 GT (registered by (0,-12)) ---                                 0.0000   0.0505
+0301_origin_ll                       (-28,0)   (0,-12)     40.25   0.4057   0.0235   17.180   38
+ROWREG clip=0301 tag=0301_origin_ll dy=-28 dx=0 ddy=0 ddx=-12 leftPSNR=40.2464 lpips_reg=0.405686 sharp=0.023528 gtSharp=0.050529 rightPSNR_reg=17.1803 n=38 path=outputs/beyond4_lossless/clips/0301_origin_ll/0301_inpainting_results_sbs.mkv
+regB_originall_0301                  (-28,0)   (0,-12)     40.25   0.4057   0.0235   17.180   38
+ROWREG clip=0301 tag=regB_originall_0301 dy=-28 dx=0 ddy=0 ddx=-12 leftPSNR=40.2464 lpips_reg=0.405686 sharp=0.023528 gtSharp=0.050529 rightPSNR_reg=17.1803 n=38 path=scripts/distill/runs/clean_controls/regB/infer/regB_originall_0301/0301_inpainting_results_sbs.mkv
+regB_step100_0301                    (-28,0)   (0,-12)     40.25   0.6010   0.0178   17.683   38
+ROWREG clip=0301 tag=regB_step100_0301 dy=-28 dx=0 ddy=0 ddx=-12 leftPSNR=40.2464 lpips_reg=0.601020 sharp=0.017779 gtSharp=0.050529 rightPSNR_reg=17.6832 n=38 path=scripts/distill/runs/clean_controls/regB/infer/regB_step100_0301/0301_inpainting_results_sbs.mkv
+regB_step200_0301                    (-28,0)   (0,-12)     40.25   0.5617   0.0189   17.975   38
+ROWREG clip=0301 tag=regB_step200_0301 dy=-28 dx=0 ddy=0 ddx=-12 leftPSNR=40.2464 lpips_reg=0.561657 sharp=0.018858 gtSharp=0.050529 rightPSNR_reg=17.9752 n=38 path=scripts/distill/runs/clean_controls/regB/infer/regB_step200_0301/0301_inpainting_results_sbs.mkv
+regB_step300_0301                    (-28,0)   (0,-12)     40.25   0.5635   0.0191   18.018   38
+ROWREG clip=0301 tag=regB_step300_0301 dy=-28 dx=0 ddy=0 ddx=-12 leftPSNR=40.2464 lpips_reg=0.563544 sharp=0.019105 gtSharp=0.050529 rightPSNR_reg=18.0184 n=38 path=scripts/distill/runs/clean_controls/regB/infer/regB_step300_0301/0301_inpainting_results_sbs.mkv
+posUnreg_step300_0301                (-28,0)   (0,-12)     40.25   0.7378   0.0149   16.257   38
+ROWREG clip=0301 tag=posUnreg_step300_0301 dy=-28 dx=0 ddy=0 ddx=-12 leftPSNR=40.2464 lpips_reg=0.737836 sharp=0.014945 gtSharp=0.050529 rightPSNR_reg=16.2569 n=38 path=scripts/distill/runs/clean_controls/regB/infer/posUnreg_step300_0301/0301_inpainting_results_sbs.mkv
+posUnreg_step100_0301                (-28,0)   (0,-12)     40.25   0.8007   0.0131   16.592   38
+ROWREG clip=0301 tag=posUnreg_step100_0301 dy=-28 dx=0 ddy=0 ddx=-12 leftPSNR=40.2464 lpips_reg=0.800695 sharp=0.013130 gtSharp=0.050529 rightPSNR_reg=16.5920 n=38 path=scripts/distill/runs/clean_controls/regB/infer/posUnreg_step100_0301/0301_inpainting_results_sbs.mkv
+posUnreg_step200_0301                (-28,0)   (0,-12)     40.25   0.6921   0.0159   16.412   38
+ROWREG clip=0301 tag=posUnreg_step200_0301 dy=-28 dx=0 ddy=0 ddx=-12 leftPSNR=40.2464 lpips_reg=0.692140 sharp=0.015932 gtSharp=0.050529 rightPSNR_reg=16.4122 n=38 path=scripts/distill/runs/clean_controls/regB/infer/posUnreg_step200_0301/0301_inpainting_results_sbs.mkv
+regB_step200_0301_e1high             (-28,0)   (0,-12)     40.25   0.4089   0.0236   17.203   38
+ROWREG clip=0301 tag=regB_step200_0301_e1high dy=-28 dx=0 ddy=0 ddx=-12 leftPSNR=40.2464 lpips_reg=0.408921 sharp=0.023644 gtSharp=0.050529 rightPSNR_reg=17.2029 n=38 path=scripts/distill/runs/clean_controls/regB/infer/regB_step200_0301_e1high/0301_inpainting_results_sbs.mkv
+regB_step200_0301_e1low              (-28,0)   (0,-12)     40.25   0.5522   0.0186   17.981   38
+ROWREG clip=0301 tag=regB_step200_0301_e1low dy=-28 dx=0 ddy=0 ddx=-12 leftPSNR=40.2464 lpips_reg=0.552155 sharp=0.018569 gtSharp=0.050529 rightPSNR_reg=17.9808 n=38 path=scripts/distill/runs/clean_controls/regB/infer/regB_step200_0301_e1low/0301_inpainting_results_sbs.mkv
+--- 0204 GT (registered by (-1,-17)) ---                                 0.0000   0.0116
+0204_origin_ll                       (-28,0)  (-1,-17)     41.16   0.1346   0.0065   23.428   38
+ROWREG clip=0204 tag=0204_origin_ll dy=-28 dx=0 ddy=-1 ddx=-17 leftPSNR=41.1620 lpips_reg=0.134612 sharp=0.006527 gtSharp=0.011577 rightPSNR_reg=23.4284 n=38 path=outputs/beyond4_lossless/clips/0204_origin_ll/0204_inpainting_results_sbs.mkv
+regB_step300_0204                    (-28,0)  (-1,-17)     41.16   0.1715   0.0066   22.843   38
+ROWREG clip=0204 tag=regB_step300_0204 dy=-28 dx=0 ddy=-1 ddx=-17 leftPSNR=41.1620 lpips_reg=0.171522 sharp=0.006556 gtSharp=0.011577 rightPSNR_reg=22.8431 n=38 path=scripts/distill/runs/clean_controls/regB/infer/regB_step300_0204/0204_inpainting_results_sbs.mkv
+regB_step200_0204                    (-28,0)  (-1,-17)     41.16   0.1626   0.0066   23.153   38
+ROWREG clip=0204 tag=regB_step200_0204 dy=-28 dx=0 ddy=-1 ddx=-17 leftPSNR=41.1620 lpips_reg=0.162628 sharp=0.006640 gtSharp=0.011577 rightPSNR_reg=23.1531 n=38 path=scripts/distill/runs/clean_controls/regB/infer/regB_step200_0204/0204_inpainting_results_sbs.mkv

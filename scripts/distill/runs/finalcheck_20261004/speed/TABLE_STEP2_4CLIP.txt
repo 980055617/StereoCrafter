@@ -1,0 +1,90 @@
+==================================================================================================================================
+STEP 2 (4 regime clips) -- MERGED EARLY STEPS at guidance 1.01, RNG padded to the 8-step stream (primary) + unpadded deliverable T5 (secondary). LOSSLESS FFV1, real-GT LPIPS
+scorer scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py SCORE_STEP=4 (unchanged), FFV1 renders only
+==================================================================================================================================
+
+--- PER CLIP: LPIPS (lower is better) ---
+  row                                     0301     0204     0052     0147
+  GT sharpness                          0.0505   0.0116   0.0099   0.0039
+  origin 8-step @1.01 (8x2)             0.4351   0.2053   0.4467   0.5269
+  origin T6 @1.01 (6x2)                 0.4355   0.2056   0.4467   0.5270
+  origin T5 @1.01 (5x2)                 0.4391   0.2074   0.4471   0.5274
+  deliverable 8-step @1.01 (8x2)        0.3965   0.1867   0.4395   0.5244
+  deliverable T6 @1.01 (6x2)            0.3965   0.1868   0.4395   0.5246
+  deliverable T5 @1.01 (5x2)            0.3980   0.1875   0.4399   0.5257
+  deliv T5 @1.01 UNPADDED (5x2)         0.3987   0.1872   0.4397   0.5253
+
+--- PER CLIP: delta vs origin_ll (negative = better) ---
+  origin T6 @1.01 (6x2)                +0.0004  +0.0003  +0.0001  +0.0000
+  origin T5 @1.01 (5x2)                +0.0040  +0.0021  +0.0004  +0.0004
+  deliverable 8-step @1.01 (8x2)       -0.0386  -0.0186  -0.0072  -0.0025
+  deliverable T6 @1.01 (6x2)           -0.0386  -0.0185  -0.0071  -0.0023
+  deliverable T5 @1.01 (5x2)           -0.0371  -0.0178  -0.0068  -0.0012
+  deliv T5 @1.01 UNPADDED (5x2)        -0.0364  -0.0181  -0.0070  -0.0016
+
+--- PER CLIP: delta vs the SAME MODEL's reference config (ref) ---
+  origin T6 @1.01 (6x2) - ref          +0.0004  +0.0003  +0.0001  +0.0000
+  origin T5 @1.01 (5x2) - ref          +0.0040  +0.0021  +0.0004  +0.0004
+  deliverable T6 @1.01 (6x2) - ref     +0.0000  +0.0000  +0.0000  +0.0003
+  deliverable T5 @1.01 (5x2) - ref     +0.0015  +0.0008  +0.0004  +0.0013
+  deliv T5 @1.01 UNPADDED (5x2) - ref   +0.0022  +0.0005  +0.0002  +0.0009
+
+--- PER CLIP: sharpness / GT sharpness (1.0 = matches the real right eye) ---
+  origin 8-step @1.01 (8x2)              0.466    0.564    1.314    1.584
+  origin T6 @1.01 (6x2)                  0.464    0.563    1.312    1.584
+  origin T5 @1.01 (5x2)                  0.458    0.558    1.306    1.589
+  deliverable 8-step @1.01 (8x2)         0.565    0.667    1.394    1.778
+  deliverable T6 @1.01 (6x2)             0.565    0.666    1.393    1.784
+  deliverable T5 @1.01 (5x2)             0.561    0.652    1.385    1.799
+  deliv T5 @1.01 UNPADDED (5x2)          0.566    0.652    1.391    1.803
+
+--- PER CLIP: sharpness ratio vs the same model's reference config ---
+  origin T6 @1.01 (6x2) / ref           0.9972   0.9992   0.9988   1.0002
+  origin T5 @1.01 (5x2) / ref           0.9829   0.9902   0.9941   1.0029
+  deliverable T6 @1.01 (6x2) / ref      1.0000   0.9984   0.9993   1.0037
+  deliverable T5 @1.01 (5x2) / ref      0.9922   0.9780   0.9937   1.0117
+  deliv T5 @1.01 UNPADDED (5x2) / ref    1.0016   0.9772   0.9975   1.0140
+
+==================================================================================================================================
+MEANS over n=4 clips: 0301 0204 0052 0147
+==================================================================================================================================
+  row                                meanLPIPS   d vs origin_ll  d vs ref improved  sh/GT  sh/ref   worst vs origin      worst vs ref   rPSNR
+  origin 8-step @1.01 (8x2)             0.4035          +0.0000               0/4   0.982              0301 +0.0000                    16.006
+  origin T6 @1.01 (6x2)                 0.4037          +0.0002   +0.0002     0/4   0.981  0.9989      0301 +0.0004      0301 +0.0004  16.009
+  origin T5 @1.01 (5x2)                 0.4052          +0.0017   +0.0017     0/4   0.978  0.9925      0301 +0.0040      0301 +0.0040  16.019
+  deliverable 8-step @1.01 (8x2)        0.3868          -0.0167               4/4   1.101              0147 -0.0025                    15.751
+  deliverable T6 @1.01 (6x2)            0.3869          -0.0166   +0.0001     4/4   1.102  1.0004      0147 -0.0023      0147 +0.0003  15.751
+  deliverable T5 @1.01 (5x2)            0.3878          -0.0157   +0.0010     4/4   1.099  0.9939      0147 -0.0012      0301 +0.0015  15.765
+  deliv T5 @1.01 UNPADDED (5x2)         0.3877          -0.0158   +0.0009     4/4   1.103  0.9976      0147 -0.0016      0301 +0.0022  15.758
+
+==================================================================================================================================
+PRE-REGISTERED CRITERIA (scripts/distill/runs/finalcheck_20261004/speed/PREREG.txt)
+==================================================================================================================================
+  [GATING] S2 deliverable T6 @1.01 FREE (4-clip)  (deliv_g101_T6pad vs mstudent2_step800_deliv_ll, n=4, better on 0/4): PASS
+        (a) mean delta +0.0001 <= +0.002: PASS
+        (b) worst clip 0147 +0.0003 <= +0.005: PASS
+  [GATING] S2 deliverable T5 @1.01 FREE (4-clip)  (deliv_g101_T5pad vs mstudent2_step800_deliv_ll, n=4, better on 0/4): PASS
+        (a) mean delta +0.0010 <= +0.002: PASS
+        (b) worst clip 0301 +0.0015 <= +0.005: PASS
+  [reported] S2-origin T6 @1.01 (reported)  (origin_g101_T6pad vs origin_ll, n=4, better on 0/4): PASS
+        (a) mean delta +0.0002 <= +0.002: PASS
+        (b) worst clip 0301 +0.0004 <= +0.005: PASS
+  [reported] S2-origin T5 @1.01 (reported)  (origin_g101_T5pad vs origin_ll, n=4, better on 0/4): PASS
+        (a) mean delta +0.0017 <= +0.002: PASS
+        (b) worst clip 0301 +0.0040 <= +0.005: PASS
+  [reported] S2 secondary: deliverable T5 @1.01 UNPADDED (reported)  (deliv_g101_T5nat vs mstudent2_step800_deliv_ll, n=4, better on 0/4): PASS
+        (a) mean delta +0.0009 <= +0.002: PASS
+        (b) worst clip 0301 +0.0022 <= +0.005: PASS
+
+==================================================================================================================================
+PROVENANCE (score file per row; render dir root)
+==================================================================================================================================
+  origin 8-step @1.01 (8x2)          label=origin_ll                      roots=['outputs/beyond4_lossless'] scores=['scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt']
+  origin T6 @1.01 (6x2)              label=origin_g101_T6pad              roots=['outputs/finalcheck_20261004/speed'] scores=['scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_4clip.txt']
+  origin T5 @1.01 (5x2)              label=origin_g101_T5pad              roots=['outputs/finalcheck_20261004/speed'] scores=['scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_4clip.txt']
+  deliverable 8-step @1.01 (8x2)     label=mstudent2_step800_deliv_ll     roots=['outputs/beyond_distil_mamba_scaled'] scores=['scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt']
+  deliverable T6 @1.01 (6x2)         label=deliv_g101_T6pad               roots=['outputs/finalcheck_20261004/speed'] scores=['scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_4clip.txt']
+  deliverable T5 @1.01 (5x2)         label=deliv_g101_T5pad               roots=['outputs/finalcheck_20261004/speed'] scores=['scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_4clip.txt']
+  deliv T5 @1.01 UNPADDED (5x2)      label=deliv_g101_T5nat               roots=['outputs/finalcheck_20261004/speed'] scores=['scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_4clip.txt']
+
+VERDICTS: S2 deliverable T6 @1.01 FREE (4-clip): PASS; S2 deliverable T5 @1.01 FREE (4-clip): PASS; S2-origin T6 @1.01 (reported): PASS; S2-origin T5 @1.01 (reported): PASS; S2 secondary: deliverable T5 @1.01 UNPADDED (reported): PASS

@@ -1,0 +1,23 @@
+start point: 15 tensors, 1229760 params, ||W0|| = 347.935 (llnull and llsplat start_bf16.pt identical)
+
+rel ||dW||/||W0|| vs the true bf16 start (old method vs fp16 file folded in a 0.00168 cast vector):
+run                              step100   step200   step300
+old null (mp4v self-target)      0.00064   0.00093   0.00116
+old pos (unregistered GT)        0.00106   0.00145   0.00174
+A llnull (lossless self)         0.00059   0.00089   0.00109
+A2 llsplat (lossless self)       0.00059   0.00086   0.00107
+B regpos (registered GT)         0.00084   0.00122   0.00150
+B regpos_pf (per-frame reg)      0.00081   0.00116   0.00141
+
+cosine between step-300 deltas (true start):
+                               old null (mp old pos (unr A llnull (lo A2 llsplat ( B regpos (re B regpos_pf 
+old null (mp4v self-target)           1.000       -0.002        0.760        0.759       -0.010       -0.012
+old pos (unregistered GT)            -0.002        1.000        0.030        0.031        0.185        0.267
+A llnull (lossless self)              0.760        0.030        1.000        0.838        0.013        0.002
+A2 llsplat (lossless self)            0.759        0.031        0.838        1.000        0.002       -0.012
+B regpos (registered GT)             -0.010        0.185        0.013        0.002        1.000        0.802
+B regpos_pf (per-frame reg)          -0.012        0.267        0.002       -0.012        0.802        1.000
+
+cos(B regpos step200, A llnull step300) = -0.007
+cos(B regpos step200, old pos step200)  = 0.276
+cos(B regpos step200, B regpos_pf step300) = 0.806

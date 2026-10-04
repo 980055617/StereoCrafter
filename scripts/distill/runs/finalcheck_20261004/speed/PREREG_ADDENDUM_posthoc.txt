@@ -1,0 +1,15 @@
+PRE-REGISTRATION ADDENDUM (POST-HOC, SECONDARY) -- finalcheck_20261004 / speed lane
+Written 2026-10-04 ~08:20 JST, AFTER the primary results in PREREG.txt were scored (TABLE_STEP2_EXT12.txt) and
+BEFORE the arm below is rendered or scored.  It is labelled POST-HOC and NON-GATING: it cannot change any verdict
+in PREREG.txt; it only checks that the recommended configuration also holds the way it would literally ship.
+
+Why: the recommended configuration (deliverable T5 @ guidance 1.00, 5 UNet calls x batch 1 per window) was measured
+RNG-PADDED (SK_RNG_PAD_TO=8, every window starts from the deployed 8-step render's noise).  A shipped T5 sampler runs
+UNPADDED (windows 1.. get a different noise realisation).  The only unpadded evidence so far is T5 @1.01 on 4 clips.
+
+Arm: deliverable T5 @1.00, SK_SIGMAS = T5 exact values, NO pad, all 12 test clips  (label deliv_g100_T5nat).
+Expected integrity: G6 pass-through as before; G7 fingerprints: window 0 identical to the 8-step reference, later
+windows DIFFERENT (check_fingerprints_v1.py expectation for *nat*).
+Reported against the deployed deliverable 8-step @1.01 with the SAME thresholds as S2':
+  mean12 delta <= +0.002 and every clip <= +0.005  -> "holds unpadded" / "does not hold unpadded".
+Also reported: per-clip and mean difference unpadded - padded (= the seed-realisation effect at fixed schedule).

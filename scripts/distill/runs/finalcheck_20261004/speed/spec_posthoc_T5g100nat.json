@@ -1,0 +1,17 @@
+{
+ "title": "POST-HOC SECONDARY (PREREG_ADDENDUM_posthoc.txt): deliverable T5 @1.00 UNPADDED (natural RNG = what would literally ship) vs the deployed deliverable 8x2 @1.01, 12 clips. LOSSLESS FFV1, real-GT LPIPS",
+ "clips": ["0042","0052","0125","0128","0141","0147","0170","0204","0225","0251","0259","0301"],
+ "origin_ref": "origin_ll",
+ "rows": [
+  {"label": "origin_ll",                  "name": "origin 8-step @1.01 (8x2)",       "ref": null},
+  {"label": "mstudent2_step800_deliv_ll", "name": "deliverable 8-step @1.01 (8x2)",  "ref": null},
+  {"label": "deliv_g100_T5pad",           "name": "deliverable T5 @1.00 PADDED",     "ref": "mstudent2_step800_deliv_ll"},
+  {"label": "deliv_g100_T5nat",           "name": "deliverable T5 @1.00 UNPADDED",   "ref": "mstudent2_step800_deliv_ll"}
+ ],
+ "criteria": [
+  {"name": "POST-HOC (non-gating): deliverable T5 @1.00 UNPADDED holds vs DEPLOYED 8x2", "row": "deliv_g100_T5nat", "ref": "mstudent2_step800_deliv_ll",
+   "mean_max": 0.002, "clip_max": 0.005, "sharp_band": null, "gating": false},
+  {"name": "seed-realisation effect: UNPADDED vs PADDED (same schedule)", "row": "deliv_g100_T5nat", "ref": "deliv_g100_T5pad",
+   "mean_max": 0.002, "clip_max": 0.005, "sharp_band": null, "gating": false}
+ ]
+}

@@ -1,0 +1,15 @@
+{
+ "_note": "Slot 3 (characteristic) windows, chosen BY HAND on 2026-10-04 from the GT-only context images outputs/finalcheck_20261004/blind/select_v2/context/<clip>_f75_gt_context.png (byte-identical to select_v1's) plus two GT-only frames at the slot-2 frames of 0170 (f99) and 0125 (f97). No render pixel (A or B) had been viewed when these were written. Frame = the band-centre frame fc (75 for every clip). Window [y, x] in the 576x1024 render window, size 384. Overlap cap 25 % vs slots 1 and 2 (PREREG); 'cap_relaxed' only where NO slot-3 window on the grid satisfies the cap.",
+ "0042": {"y": 0,   "x": 256, "reason": "stair-rail top ends and their shadows on the sunlit paving-joint grid (straight regular joints + specular steel)"},
+ "0052": {"y": 64,  "x": 296, "reason": "the row of rental bikes: saddles and the printed panel text ('einkaufen', 'KLAGENFURT') -- legible lettering is the clip's signature detail"},
+ "0125": {"y": 192, "x": 560, "reason": "near-field rock face (the clip's dominant surface at f75) with the diagonal spray streak", "cap_relaxed": true, "cap_note": "no slot-3 window satisfies the 25 % cap against both slot 1 (176,152)@f75 and slot 2 (0,496)@f97; relaxed against slot 2 only (41.7 %), which is 22 frames later on a panning camera and shows foliage/house there, not the rock"},
+ "0128": {"y": 152, "x": 0,   "reason": "the brown hen and a dark hen beside the fence posts (feathers, thin fence wire)"},
+ "0141": {"y": 192, "x": 360, "reason": "bus-seat fabric dot pattern under the horizontal handrail (low-light fine regular pattern)"},
+ "0147": {"y": 192, "x": 112, "reason": "the athlete's shorts and legs over the striped gym floor (the moving subject)"},
+ "0170": {"y": 0,   "x": 152, "reason": "the A-frame chalkboard sign (thin wooden legs, board edge, chalk lettering) on the cobblestones", "cap_relaxed": true, "cap_note": "no slot-3 window satisfies the 25 % cap against both slot 1 (56,448)@f75 and slot 2 (184,0)@f99; the pigeon (the other signature content) is already inside slot 2 at f99; relaxed against slot 2 only (31.5 %, shared pixels are plain cobblestone, 24 frames apart)"},
+ "0204": {"y": 64,  "x": 0,   "reason": "snow-capped mountain and distant shoreline above the lake (far-field low-contrast detail)"},
+ "0225": {"y": 0,   "x": 640, "reason": "forested hillside with the large villa at upper right (tree-crown texture, building edges)"},
+ "0251": {"y": 192, "x": 0,   "reason": "the foreground spectator's head (hair strands, ear) in front of the trees -- a near-field subject with a large depth jump"},
+ "0259": {"y": 192, "x": 400, "reason": "the out-of-focus dandelion seed head in the foreground over the path, with the lamp post (near-field defocus)"},
+ "0301": {"y": 192, "x": 352, "reason": "central tree trunks and fence post in the dense undergrowth (thin branches)"}
+}

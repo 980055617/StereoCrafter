@@ -1,0 +1,2 @@
+# H0 control: the new hook at the config resolution must reproduce speed/clips/0042_deliv_g100_T5pad (writer md5)
+0042 deliv_g100_T5pad_cfgctl deliv 1.00 700.0,7.276163101196289,1.1675708293914795,0.09738767892122269,0.0020000000949949026 8 - -

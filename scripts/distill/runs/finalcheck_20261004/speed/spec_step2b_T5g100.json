@@ -1,0 +1,18 @@
+{
+ "title": "STEP 2b (4 regime clips) -- deliverable T5 at guidance 1.00 (5x1), RNG padded; the combined lever vs the DEPLOYED deliverable 8-step @1.01. LOSSLESS FFV1, real-GT LPIPS",
+ "clips": ["0301","0204","0052","0147"],
+ "origin_ref": "origin_ll",
+ "rows": [
+  {"label": "origin_ll",                  "name": "origin 8-step @1.01 (8x2)",      "ref": null},
+  {"label": "mstudent2_step800_deliv_ll", "name": "deliverable 8-step @1.01 (8x2)", "ref": null},
+  {"label": "deliv_g100_s8",              "name": "deliverable 8-step @1.00 (8x1)", "ref": "mstudent2_step800_deliv_ll"},
+  {"label": "deliv_g101_T5pad",           "name": "deliverable T5 @1.01 (5x2)",     "ref": "mstudent2_step800_deliv_ll"},
+  {"label": "deliv_g100_T5pad",           "name": "deliverable T5 @1.00 (5x1)",     "ref": "mstudent2_step800_deliv_ll"}
+ ],
+ "criteria": [
+  {"name": "S2 deliverable T5 @1.00 FREE vs DEPLOYED 8x2 (4-clip)", "row": "deliv_g100_T5pad", "ref": "mstudent2_step800_deliv_ll",
+   "mean_max": 0.002, "clip_max": 0.005, "sharp_band": null, "gating": true},
+  {"name": "S2 reported: deliverable T5 @1.00 vs 8-step @1.00 (schedule effect alone)", "row": "deliv_g100_T5pad", "ref": "deliv_g100_s8",
+   "mean_max": 0.002, "clip_max": 0.005, "sharp_band": null, "gating": false}
+ ]
+}

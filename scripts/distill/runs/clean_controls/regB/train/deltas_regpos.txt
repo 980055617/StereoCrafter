@@ -1,0 +1,5 @@
+  sd = torch.load(os.path.join(d, f"step{step}.pt"), map_location="cpu"); return torch.cat([(sd[k].float() - orig[k]).flatten() for k in KEYS])
+run               rel||dW||/||W||    cos_vs_null     cos_vs_pos
+null                      0.00204          1.000          0.571
+pos                       0.00242          0.571          1.000
+regpos                    0.00225          0.609          0.606

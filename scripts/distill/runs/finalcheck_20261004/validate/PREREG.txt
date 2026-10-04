@@ -1,0 +1,144 @@
+PRE-REGISTRATION -- finalcheck_20261004 / lane "validate" (GPU 1 only)
+Written 2026-10-04 ~03:50 JST, BEFORE any scoring or rendering in this lane.  Not edited after scoring
+starts; any later addition goes in a dated ADDENDUM section at the bottom, never by changing text above it.
+
+SUBJECT
+  deliverable  /mnt/ssd_data/stereocrafter_weights/_distill_injected/
+               mamba5slot_plus_stepdistil_up3_train10clip_step800_20261001.pt   md5 08cf44850b8f392efb307e3a48cd82d1
+               (verified 03:40 today; read-only, never written)
+  comparators  origin (deployed: 8 Euler/Karras steps, guidance 1.01, 14-frame windows overlap 3, seed 1234,
+               config/0160_overfit_inference_matched.json); shipped 5-slot Mamba
+               (light_lvl0_fulldata333_v2_8k_mamba_only.pt, md5 e9c232878319d041680e7fb3be74bf10);
+               origin + 25 sampling steps ("s25").
+  "worse" always means: higher LPIPS / higher tLP-distance / higher warp error / higher seam ratio.
+
+==========================================================================================================
+V1  TEMPORAL CONSISTENCY at 576x1024, 12 test clips 0042 0052 0125 0128 0141 0147 0170 0204 0225 0251 0259 0301
+==========================================================================================================
+Inputs: the EXISTING lossless FFV1 renders (no rendering):
+  origin   outputs/beyond4_lossless/clips/<c>_origin_ll/
+  shipped  outputs/beyond_distil_mamba/clips/<c>_mamba_ll/  (0042 0125 0128 0141 0170 0225 0251 0259)
+           outputs/skeptic1_stack/clips/<c>_mamba_ll/        (0052 0147 0204 0301)
+  deliv    outputs/beyond_distil_mamba_scaled/clips/<c>_mstudent2_step800_deliv_ll/
+  s25      outputs/beyond4_lossless/clips/<c>_s25_ll/        (0052 0147 0204 0301)
+           outputs/skeptic1_stack/clips/<c>_s25_ll/          (the other 8)
+  per clip the order is origin FIRST, then shipped, deliv, s25.
+
+Tool: score_temporal_ll.py in this directory = a COPY of scripts/distill/score_temporal.py whose metric math
+(alignment search, tLP, RAFT flows + fwd-bwd mask, warp error, seam indices t=11k+2 k>=1) is unchanged.  The
+only changes: (a) the GT tile's quadrants are kept as uint8 and converted to float32 per slice (same values;
+the tracked script needs ~45 GB host RAM per 4400x4400 tile), (b) the left-eye alignment is reused when a
+render's left half is byte-identical to a previous render of the same clip (deterministic, same result),
+(c) the JSON also records paths/offsets.  STEP=1 (every frame) -- STEP is never exported.
+  Equivalence control (required before the copy's numbers are reported): the TRACKED score_temporal.py and the
+  copy on clip 0204 with origin + deliv must print identical tLP / warp / seam / nonseam values (all printed
+  digits).  If not identical, the copy is rejected and V1 is re-run with the tracked script.
+  RAFT gate: the log must contain "[temporal] RAFT loaded".  A NaN warp error means F1/F2 were NOT EVALUATED
+  (never read as a pass).
+
+Per clip reported: tLP (GT and each method), warp (GT and each method), seam, nonseam, ratio = seam/nonseam.
+Aggregates: 12-clip arithmetic MEAN of the per-clip values (ratio: mean of per-clip ratios).
+
+REGRESSION FLAGS (deliverable vs origin; any one triggers "TEMPORAL REGRESSION FLAGGED"):
+  F1  mean_warp(deliv) > 1.05 * mean_warp(origin)
+  F2  warp(deliv) > warp(origin) on >= 9 of the 12 clips
+  F3  mean_ratio(deliv) > 1.10 * mean_ratio(origin)
+  Outcome: PASS (no flag) or FLAGGED (naming which).
+
+tLP READING (pre-specified interpretation, not a flag):
+  closeness c_m = 12-clip mean of |tLP_m / tLP_GT - 1|  (0 = flickers exactly as much as the real right eye).
+  Statement "the deliverable is further from GT's own tLP than origin+25 steps is" iff c_deliv > c_s25.
+  Also reported: signed 12-clip mean of tLP_m/tLP_GT, and the number of clips where
+  |tLP_deliv/tLP_GT - 1| > |tLP_s25/tLP_GT - 1|.
+CONTEXT ROWS (descriptive, no flag): F1/F2/F3 quantities also printed for s25 vs origin and shipped vs origin, so a
+  sharpness-driven increase (s25 is sharper too) can be told apart from a deliverable-specific one.
+KNOWN CONFOUND (stated in advance): the real right eye is not pixel-registered with the renders (residual
+  horizontal offset ~-12..-59 px, outputs/review_20261001/GEOMETRY.txt); flows are computed on the GT window at
+  the scorer's left-eye registration and applied to every method alike, and warp error grows with output
+  sharpness under any flow error.  OPTIONAL diagnostic (only if time allows, never overrides F1-F3): warp error
+  with the GT window shifted by a per-clip integer offset that registers it to the model's warped input.
+
+==========================================================================================================
+SCORER VALIDATION AT HI-RES (prerequisite for V2 scoring)
+==========================================================================================================
+  S1 reproduction: score_clip_ll.py (via a copy whose ONLY change is a GT-tile directory knob, default
+     video_data/train) on outputs/fulldata/fullhd/0204_origin/0204_inpainting_results_sbs.mp4 must reproduce the
+     row in scripts/distill/runs/fulldata/lpips/fullhd.txt (= FINAL_TABLES 1920x1024 origin 0204):
+         offset (-28,0)  leftPSNR 48.63  LPIPS 0.1882  sharp 0.0057      (all four printed values exact)
+     for at least one candidate GT directory: video_data/train (today), video_data/train_leftGT_broken,
+     video_data/test_train.  PREDICTION: fails with today's video_data/train, because every train tile was
+     rewritten 2026-09-23 (real right eye; 0204 went from 152 to 151 frames).  The candidate that reproduces (if
+     any) is named; if none does, that is stated plainly.
+  S2 equivalence: the tracked scripts/distill/score_clip.py and score_clip_ll.py, run on the same hi-res inputs
+     (the old 0204 render and at least one NEW hi-res FFV1 render), print identical offset/leftPSNR/LPIPS/sharp.
+  S3 geometry: on the new hi-res renders the recovered offset equals the /128-crop + centre-crop math of
+     inpainting_inference.py: 0042/0052 -> (-12,-12), 0170/0204 -> (-28,0), at both widths; and within each
+     clip x resolution, offset and leftPSNR are identical for origin and deliv.
+  The hi-res scorer is TRUSTED iff S2 and S3 pass (S1 is reported either way).
+  Old FINAL_TABLES hi-res numbers are never placed beside new numbers as a comparison (different GT).
+
+==========================================================================================================
+HI-RES HOOK SMOKE (prerequisite for the 16 V2 renders)
+==========================================================================================================
+  H1 infer_ll_hook_res.py (copy of scripts/distill/runs/skeptic1/infer_ll_hook.py + SK_H/SK_W knobs passed as
+     target_height/target_width, tile_num=1) with SK_H=576 SK_W=1024, deliverable, clip 0042, GPU 1, must write
+     a pre-encode sbs md5 equal to outputs/beyond_distil_mamba_scaled/clips/0042_mstudent2_step800_deliv_ll/
+     writer_md5.txt (9344fe73fa3fe970a11357867c64fe6a, also rendered on GPU 1).  If it differs: STOP, no V2 renders.
+  H2 per-render log gates: origin rows "[sk] ... unet=None" and NO "Partial UNet state load" line;
+     deliverable rows "missing=1428" and "updated 5 gated modules".  A render failing its gate is excluded.
+
+==========================================================================================================
+V2  HI-RES QUALITY: clips 0170 0204 0042 0052 x {origin, deliv} x {1024x1792, 1024x1920} (HxW) = 16 renders
+==========================================================================================================
+  Render: tile_num=1, 8 steps, guidance 1.01, seed 1234, config/0160_overfit_inference_matched.json, FFV1 writer.
+  Score:  scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py, SCORE_STEP=4.
+  Per clip and resolution: LPIPS(origin), LPIPS(deliv), delta = deliv - origin, sharpness, sharpness/GT.
+  TRANSFER RULE, judged separately at 1024x1792 and at 1024x1920:
+     the 576x1024 gain TRANSFERS to a resolution iff
+        mean_4clip LPIPS(deliv) < mean_4clip LPIPS(origin)   AND   max over the 4 clips of (deliv - origin) <= +0.005
+  Descriptive comparison: the same-clip 576x1024 deltas from TABLE_HEADLINE_12CLIP.txt
+     0042 -0.0061  0052 -0.0072  0170 -0.0071  0204 -0.0186   (4-clip mean -0.0098).
+  FINAL STATEMENT: the deliverable's quality claim covers a speed-claim resolution iff the rule says TRANSFERS
+     there; stated per resolution (1024x1792, 1024x1920).
+  OPTIONAL (if time allows): score_temporal_ll.py on the hi-res renders, per resolution, with the V1 quantities;
+     F1/F3 thresholds as in V1, F2 analog = worse on >= 3 of 4 clips; descriptive only (n=4, low power).
+
+==========================================================================================================
+ADDENDUM 1 -- written 2026-10-04 ~04:02 JST, AFTER seeing (i) the tracked-script control rows for 0204
+(origin, deliv) and (ii) the 0042 rows of the main V1 run, BEFORE the other 10 clips' rows and before any
+12-clip aggregate or flag was computed.  F1/F2/F3 and the tLP reading above are UNCHANGED and remain the only
+pass/fail rules.  What I had seen: on both clips the deliverable's warp error and tLP were above origin's
+(0204 warp 0.0141 vs 0.0105; 0042 warp 0.0125 vs 0.0097, tLP/GT 1.076 vs 0.910; s25 0.0110 / 1.005).
+Added DIAGNOSTICS (interpretation only, never override F1-F3):
+  D1 (was "OPTIONAL diagnostic" above, now scheduled): GT-registered warp.  Per clip, one integer (ddy,ddx) that
+     registers the real right eye TR to the train tile's warped right eye BR over the deployed window, holes
+     (BL mask) excluded, MSE pooled over every 10th frame; search ddy -10..10, ddx -120..40 (step 2, then +-2/+-3
+     step 1).  RAFT flows recomputed on the shifted GT window; warp error for GT_reg and every method.
+  D2 sharpness-matched origin: R_k = round(255*clip(R + k*(R - GaussBlur_sigma1_k5(R)), 0, 1))/255 applied to the
+     ORIGIN render's right eye, k >= 0 bisected so that the sharpness statistic (score_clip_ll's mean |horizontal
+     difference|, over the same frames) equals the deliverable's.  tLP, warp (same unregistered flows as V1) and
+     seam ratio of R_k.  Reading fixed now: if deliv's warp and tLP are within +5% of the sharpness-matched
+     origin's (or below), the deliverable's increase over origin is what added sharpness alone produces in these
+     metrics; if deliv exceeds the sharpness-matched origin by more than 5% on the 12-clip mean, the deliverable
+     adds temporal instability beyond its sharpness.
+  Built-in check: the diagnostic script recomputes the unregistered origin/deliv warp; it must reproduce the
+  main V1 JSON values (else its D1/D2 numbers are not reported).
+
+ADDENDUM 2 (2026-10-04 03:57 JST) -- correction of a clerical error only: ADDENDUM 1's header time "~04:02" is
+wrong; the file's mtime after that append is 2026-10-04 03:53:40 JST, i.e. after the 0204 control rows and the 0042
+rows, and before the 0052 rows were seen (as ADDENDUM 1 states).  No criterion changed.
+
+ADDENDUM 3 (2026-10-04 04:07 JST) -- tooling/procedure only; NO criterion changed.  Written after V1 rows for 9 clips
+were visible, before any 12-clip aggregate, before any V2 render.
+  (a) V2 renders use infer_ll_hook_res_lowmem.py = infer_ll_hook_res.py + inpainting_inference.read_and_prepare_video
+      rebound to lowmem_reader.py (chunked decode, same element-wise ops, same output strides).  Reason: the tracked
+      reader peaks at ~60-80 GB host RAM on the 4400x4400 clips while two other lanes share the host.  Proof of
+      identity: test_lowmem_reader.py (tensor values bitwise equal + identical strides/offsets after the centre crop
+      at 576x1024, 1024x1792, 1024x1920 on 0042/0204, first 20 frames) -> IDENTITY_PASS; end-to-end: H1 md5 (unchanged).
+      If H1 fails, the smoke is re-run with the non-lowmem hook into a new control label before any conclusion.
+  (b) v1_equiv_check.py implements the pre-registered printed-digit rule (4 dp; exact float identity reported too).
+  (c) D1 sanity rule (fixed before v1_diag.py runs): hole fraction <= 10% on every clip and |ddx - GEOMETRY.txt ddx|
+      <= 6 px on 0147 0141 0042 0128 0301 0204, else D1 is dropped (D2 unaffected).
+  (d) V2 analysis enforces H2 from timing_gpu1.txt (rc=0 and gate=PASS); a resolution with any of its 8 renders
+      excluded is "NOT EVALUABLE".  The single allowed retry of a failed render uses a new label suffix _r2.
+  (e) Follow-up order: hi-res temporal (task item) before D1/D2 (addendum diagnostics).

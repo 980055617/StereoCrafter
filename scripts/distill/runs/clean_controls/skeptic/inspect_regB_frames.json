@@ -1,0 +1,462 @@
+{
+ "0301": {
+  "n_tile": 151,
+  "n_reg": 151,
+  "quadrant": [
+   1080,
+   1920
+  ],
+  "window": [
+   224,
+   448
+  ],
+  "shift": [
+   0,
+   -12
+  ],
+  "shifted_window_inside_quadrant": true,
+  "frames": {
+   "0": {
+    "reg_is_exact_TR_crop": true,
+    "maxabs": 0,
+    "hole_pct": 0.1068115234375,
+    "psnr_unreg": 14.419609710936497,
+    "psnr_reg_applied": 16.82048130310101,
+    "my_best_shift": [
+     0,
+     -10
+    ],
+    "my_best_psnr": 17.67470233199191,
+    "edge_cols": {
+     "left12_std": 48.75256620890031,
+     "right12_std": 36.04121116430744,
+     "left12_eq_quadrant": true,
+     "right12_eq_quadrant": true,
+     "any_const_col": false
+    }
+   },
+   "75": {
+    "reg_is_exact_TR_crop": true,
+    "maxabs": 0,
+    "hole_pct": 0.665283203125,
+    "psnr_unreg": 13.352936214807968,
+    "psnr_reg_applied": 16.750157504473304,
+    "my_best_shift": [
+     0,
+     -12
+    ],
+    "my_best_psnr": 16.750157504473304,
+    "edge_cols": {
+     "left12_std": 48.85012087131733,
+     "right12_std": 38.910726947620155,
+     "left12_eq_quadrant": true,
+     "right12_eq_quadrant": true,
+     "any_const_col": false
+    }
+   },
+   "150": {
+    "reg_is_exact_TR_crop": true,
+    "maxabs": 0,
+    "hole_pct": 1.1510213216145835,
+    "psnr_unreg": 14.144821807586457,
+    "psnr_reg_applied": 16.393042182417012,
+    "my_best_shift": [
+     -1,
+     -11
+    ],
+    "my_best_psnr": 17.032951857780187,
+    "edge_cols": {
+     "left12_std": 52.08825717466296,
+     "right12_std": 41.88842291973465,
+     "left12_eq_quadrant": true,
+     "right12_eq_quadrant": true,
+     "any_const_col": false
+    }
+   }
+  }
+ },
+ "0204": {
+  "n_tile": 151,
+  "n_reg": 151,
+  "quadrant": [
+   1080,
+   1920
+  ],
+  "window": [
+   224,
+   448
+  ],
+  "shift": [
+   -1,
+   -17
+  ],
+  "shifted_window_inside_quadrant": true,
+  "frames": {
+   "75": {
+    "reg_is_exact_TR_crop": true,
+    "maxabs": 0,
+    "hole_pct": 0.028313530815972224,
+    "psnr_unreg": 18.915285086807902,
+    "psnr_reg_applied": 22.648806220378596,
+    "my_best_shift": [
+     0,
+     -18
+    ],
+    "my_best_psnr": 23.02566670583053,
+    "edge_cols": {
+     "left12_std": 45.05392619352231,
+     "right12_std": 68.81279351722286,
+     "left12_eq_quadrant": true,
+     "right12_eq_quadrant": true,
+     "any_const_col": false
+    }
+   }
+  }
+ },
+ "render_frame_counts": {
+  "outputs/beyond4_lossless/clips/0301_origin_ll/0301_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "outputs/beyond4_lossless/clips/0301_s25_ll/0301_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "outputs/skeptic1_stack/clips/0301_student_ll/0301_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "outputs/beyond_distil_mamba/clips/0301_mstudent1_step600_ll/0301_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "scripts/distill/runs/clean_controls/selfA/infer/0301_llnull_step100/0301_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "scripts/distill/runs/clean_controls/selfA/infer/0301_llnull_step200/0301_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "scripts/distill/runs/clean_controls/selfA/infer/0301_llnull_step300/0301_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "scripts/distill/runs/clean_controls/selfA/infer/0301_llnull_step300_e1high/0301_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "scripts/distill/runs/clean_controls/selfA/infer/0301_llnull_step300_e1low/0301_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "scripts/distill/runs/clean_controls/selfA/infer/0301_llsplat_step100/0301_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "scripts/distill/runs/clean_controls/selfA/infer/0301_llsplat_step200/0301_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "scripts/distill/runs/clean_controls/selfA/infer/0301_llsplat_step300/0301_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "scripts/distill/runs/clean_controls/selfA/infer/0301_oldmp4vnull_step100/0301_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "scripts/distill/runs/clean_controls/selfA/infer/0301_oldmp4vnull_step200/0301_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "scripts/distill/runs/clean_controls/selfA/infer/0301_oldmp4vnull_step300/0301_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "scripts/distill/runs/clean_controls/selfA/infer/0301_origin_nohook_ll/0301_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "scripts/distill/runs/clean_controls/selfA/infer/0301_originall_hook_ll/0301_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "scripts/distill/runs/clean_controls/regB/infer/posUnreg_step100_0301/0301_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "scripts/distill/runs/clean_controls/regB/infer/posUnreg_step200_0301/0301_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "scripts/distill/runs/clean_controls/regB/infer/posUnreg_step300_0301/0301_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "scripts/distill/runs/clean_controls/regB/infer/regB_originall_0301/0301_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "scripts/distill/runs/clean_controls/regB/infer/regB_step100_0301/0301_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "scripts/distill/runs/clean_controls/regB/infer/regB_step200_0301/0301_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "scripts/distill/runs/clean_controls/regB/infer/regB_step300_0301/0301_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "scripts/distill/runs/clean_controls/regB/infer/regBpf_step100_0301/0301_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "scripts/distill/runs/clean_controls/regB/infer/regBpf_step200_0301/0301_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "scripts/distill/runs/clean_controls/regB/infer/regBpf_step300_0301/0301_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "scripts/distill/runs/clean_controls/regB/infer/regB_step200_0301_e1high/0301_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "scripts/distill/runs/clean_controls/regB/infer/regB_step200_0301_e1low/0301_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "scripts/distill/runs/clean_controls/regB/infer/regB_step200_0301_s25/0301_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "outputs/beyond4_lossless/clips/0204_origin_ll/0204_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "outputs/beyond4_lossless/clips/0204_s25_ll/0204_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "outputs/skeptic1_stack/clips/0204_student_ll/0204_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "outputs/beyond_distil_mamba/clips/0204_mstudent1_step600_ll/0204_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "scripts/distill/runs/clean_controls/selfA/infer/0204_llnull_step100/0204_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "scripts/distill/runs/clean_controls/selfA/infer/0204_llnull_step200/0204_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "scripts/distill/runs/clean_controls/selfA/infer/0204_llnull_step300/0204_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "scripts/distill/runs/clean_controls/selfA/infer/0204_llsplat_step300/0204_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "scripts/distill/runs/clean_controls/selfA/infer/0204_oldmp4vnull_step300/0204_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "scripts/distill/runs/clean_controls/selfA/infer/0204_origin_nohook_ll/0204_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "scripts/distill/runs/clean_controls/regB/infer/regB_step200_0204/0204_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "scripts/distill/runs/clean_controls/regB/infer/regB_step300_0204/0204_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ],
+  "scripts/distill/runs/clean_controls/regB/infer/regBpf_step300_0204/0204_inpainting_results_sbs.mkv": [
+   151,
+   [
+    576,
+    2048,
+    3
+   ]
+  ]
+ }
+}

@@ -1,0 +1,15 @@
+clip/config                           offset  leftPSNR    LPIPS    sharp    rPSNR   nf
+--- 0301 GT ---                                          0.0000   0.0505
+0301_origin_ll                       (-28,0)     40.25   0.4351   0.0235   15.467   38
+ROW clip=0301 tag=0301_origin_ll dy=-28 dx=0 leftPSNR=40.2464 lpips=0.435095 sharp=0.023528 gtSharp=0.050529 rightPSNR=15.4667 n=38 path=outputs/beyond4_lossless/clips/0301_origin_ll/0301_inpainting_results_sbs.mkv
+0301_s25_ll                          (-28,0)     40.25   0.3986   0.0295   15.013   38
+ROW clip=0301 tag=0301_s25_ll dy=-28 dx=0 leftPSNR=40.2464 lpips=0.398593 sharp=0.029482 gtSharp=0.050529 rightPSNR=15.0130 n=38 path=outputs/beyond4_lossless/clips/0301_s25_ll/0301_inpainting_results_sbs.mkv
+llnull_step300_0301_s25              (-28,0)     40.25   0.4532   0.0212   15.413   38
+ROW clip=0301 tag=llnull_step300_0301_s25 dy=-28 dx=0 leftPSNR=40.2464 lpips=0.453196 sharp=0.021246 gtSharp=0.050529 rightPSNR=15.4133 n=38 path=scripts/distill/runs/clean_controls/selfA/infer_s25/llnull_step300_0301_s25/0301_inpainting_results_sbs.mkv
+--- 0204 GT ---                                          0.0000   0.0116
+0204_origin_ll                       (-28,0)     41.16   0.2053   0.0065   19.896   38
+ROW clip=0204 tag=0204_origin_ll dy=-28 dx=0 leftPSNR=41.1620 lpips=0.205310 sharp=0.006527 gtSharp=0.011577 rightPSNR=19.8959 n=38 path=outputs/beyond4_lossless/clips/0204_origin_ll/0204_inpainting_results_sbs.mkv
+0204_s25_ll                          (-28,0)     41.16   0.1897   0.0076   19.548   38
+ROW clip=0204 tag=0204_s25_ll dy=-28 dx=0 leftPSNR=41.1620 lpips=0.189684 sharp=0.007608 gtSharp=0.011577 rightPSNR=19.5481 n=38 path=outputs/beyond4_lossless/clips/0204_s25_ll/0204_inpainting_results_sbs.mkv
+llnull_step300_0204_s25              (-28,0)     41.16   0.2046   0.0063   19.734   38
+ROW clip=0204 tag=llnull_step300_0204_s25 dy=-28 dx=0 leftPSNR=41.1620 lpips=0.204607 sharp=0.006264 gtSharp=0.011577 rightPSNR=19.7339 n=38 path=scripts/distill/runs/clean_controls/selfA/infer_s25/llnull_step300_0204_s25/0204_inpainting_results_sbs.mkv

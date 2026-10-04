@@ -1,0 +1,2 @@
+# H1 smoke: deliverable at an EXPLICIT 576x1024 through the hook copy; must equal the existing writer md5
+0042 deliv 576 1024

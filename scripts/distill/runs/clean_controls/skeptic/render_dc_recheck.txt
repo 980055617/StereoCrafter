@@ -1,0 +1,9 @@
+render-vs-origin, right half (x>=1024), frames 30/75/120: mean shift /255 ; Laplacian energy ratio render/origin ; PSNR dB
+  llnull_step300         shift +1.380/+1.410/+1.651  lapRatio 0.711/0.713/0.663  psnr 33.16/32.99/32.69
+  llsplat_step300        shift -0.946/-0.926/-1.011  lapRatio 0.704/0.716/0.681  psnr 33.11/32.83/32.66
+  oldmp4vnull_step300    shift -0.613/-1.097/-0.468  lapRatio 0.527/0.593/0.505  psnr 33.03/32.57/32.27
+  regB_step200           shift -0.535/+0.286/+0.902  lapRatio 0.986/0.991/0.848  psnr 25.00/25.08/23.24
+  left half frame75 identical to origin: llnull_step300         True
+  left half frame75 identical to origin: llsplat_step300        True
+  left half frame75 identical to origin: oldmp4vnull_step300    True
+  left half frame75 identical to origin: regB_step200           True

@@ -1,0 +1,4 @@
+# c1: copied driver, SK_GUID=1.01, no SK_SIGMAS -> must reproduce 3e367e6167e5ae62681f50b86579f6b6
+0301 deliv_g101_s8 deliv 1.01 - -
+# c2: SK_SIGMAS = the scheduler's own 8 default sigmas (+ pad-to-8 => K=0 no-op) -> must reproduce the same md5
+0301 deliv_g101_T8sig_pad8 deliv 1.01 700.0,286.5388488769531,102.90337371826172,30.993608474731445,7.276163101196289,1.1675708293914795,0.09738767892122269,0.0020000000949949026 8

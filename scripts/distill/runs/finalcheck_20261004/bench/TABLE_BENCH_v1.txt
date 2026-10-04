@@ -1,0 +1,81 @@
+======================================================================================================================================================
+BENCH LANE (finalcheck_20261004) -- scripts/distill/bench2.py UNMODIFIED, synthetic UNet-only forward, 14 frames, fp16, no checkpoint
+run dir outputs/finalcheck_20261004/bench/run_v1;  criteria: scripts/distill/runs/finalcheck_20261004/bench/PREREG.txt (written before any bench process)
+each value = mean seconds per UNet forward over 10 timed forwards after 3 untimed warm-ups (one process); n=3 processes per configuration, reps-outer/configs-inner
+======================================================================================================================================================
+  versions.txt: python 3.11.15 torch 2.4.0 cuda 12.1 diffusers 0.29.2 gpu NVIDIA GeForce RTX 4090
+  bench2_md5.txt: c439daf2f5829a2dfd7d1802fc985f73  scripts/distill/bench2.py
+  env at start: CUDA_VISIBLE_DEVICES=['CUDA_VISIBLE_DEVICES=0']; MAMBA_*/PYTORCH_CUDA_ALLOC_CONF present: none
+
+--- PER PROCESS (B1 instrumentation + B4 exclusivity) ---
+  tag                                sec  peakMiB batch tokens  calls(oa/mc/pa) gates  repl  GPU1 max util/mem during   GPU0 temp  GPU0 SM MHz   PRE apps   B1
+  origin_bs2_h576w1024_r1         0.9574     7396     2   9216  0/0/16          []        0      0% /    15 MiB (n=  7)     37-68      210-2745   1 ok   PASS
+  origin_bs2_h1024w1792_r1        3.7028    16790     2  28672  0/0/16          []        0      0% /    15 MiB (n= 26)     45-80     2520-2730   1 ok   PASS
+  origin_bs2_h1024w1920_r1        4.0538    17783     2  30720  0/0/16          []        0      0% /    15 MiB (n= 28)     53-80     2520-2730   1 ok   PASS
+  mamba5_bs2_h576w1024_r1         0.9102     7404     2   9216  0/5/11          [1.0]     5      0% /    15 MiB (n= 10)     55-78     2520-2745   1 ok   PASS
+  mamba5_bs2_h1024w1792_r1        2.9511    16798     2  28672  0/5/11          [1.0]     5      0% /    15 MiB (n= 23)     55-80     2520-2745   1 ok   PASS
+  mamba5_bs2_h1024w1920_r1        3.1719    17788     2  30720  0/5/11          [1.0]     5      0% /    15 MiB (n= 25)     54-80      780-2745   1 ok   PASS
+  origin_bs1_h576w1024_r1         0.4853     5075     1   9216  0/0/16          []        0      0% /    15 MiB (n=  5)     54-78      780-2730   1 ok   PASS
+  origin_bs1_h1024w1792_r1        1.8796     9570     1  28672  0/0/16          []        0      0% /    15 MiB (n= 14)     54-82     2520-2730   1 ok   PASS
+  origin_bs1_h1024w1920_r1        2.0590    10040     1  30720  0/0/16          []        0      0% /    15 MiB (n= 15)     56-81     2520-2730   1 ok   PASS
+  mamba5_bs1_h576w1024_r1         0.4584     5081     1   9216  0/5/11          [1.0]     5      0% /    15 MiB (n=  7)     55-78     2520-2745   1 ok   PASS
+  mamba5_bs1_h1024w1792_r1        1.4953     9575     1  28672  0/5/11          [1.0]     5      0% /    15 MiB (n= 14)     54-79     2520-2745   1 ok   PASS
+  mamba5_bs1_h1024w1920_r1        1.6154    10047     1  30720  0/5/11          [1.0]     5      0% /    15 MiB (n= 14)     56-78     2520-2745   1 ok   PASS
+  origin_bs2_h576w1024_r2         0.9629     7396     2   9216  0/0/16          []        0      0% /    15 MiB (n=  7)     54-80      780-2730   1 ok   PASS
+  origin_bs2_h1024w1792_r2        3.7181    16790     2  28672  0/0/16          []        0      0% /    15 MiB (n= 26)     54-83      390-2730   1 ok   PASS
+  origin_bs2_h1024w1920_r2        4.0601    17783     2  30720  0/0/16          []        0      0% /    15 MiB (n= 28)     54-81     2520-2730   1 ok   PASS
+  mamba5_bs2_h576w1024_r2         0.9104     7404     2   9216  0/5/11          [1.0]     5      0% /    15 MiB (n= 10)     55-79     2520-2745   1 ok   PASS
+  mamba5_bs2_h1024w1792_r2        2.9535    16798     2  28672  0/5/11          [1.0]     5      0% /    15 MiB (n= 24)     57-81     2520-2745   1 ok   PASS
+  mamba5_bs2_h1024w1920_r2        3.1751    17788     2  30720  0/5/11          [1.0]     5      0% /    15 MiB (n= 25)     56-81     2520-2745   1 ok   PASS
+  origin_bs1_h576w1024_r2         0.4856     5075     1   9216  0/0/16          []        0      0% /    15 MiB (n=  4)     57-79     2520-2730   1 ok   PASS
+  origin_bs1_h1024w1792_r2        1.8790     9570     1  28672  0/0/16          []        0      0% /    15 MiB (n= 13)     54-82      780-2730   1 ok   PASS
+  origin_bs1_h1024w1920_r2        2.0610    10040     1  30720  0/0/16          []        0      0% /    15 MiB (n= 15)     55-80     2520-2730   1 ok   PASS
+  mamba5_bs1_h576w1024_r2         0.4589     5081     1   9216  0/5/11          [1.0]     5      0% /    15 MiB (n=  7)     55-78     2520-2745   1 ok   PASS
+  mamba5_bs1_h1024w1792_r2        1.4947     9575     1  28672  0/5/11          [1.0]     5      0% /    15 MiB (n= 14)     54-80     2520-2745   1 ok   PASS
+  mamba5_bs1_h1024w1920_r2        1.6161    10047     1  30720  0/5/11          [1.0]     5      0% /    15 MiB (n= 15)     55-80     2520-2745   1 ok   PASS
+  origin_bs2_h576w1024_r3         0.9634     7396     2   9216  0/0/16          []        0      0% /    15 MiB (n=  8)     56-80     2520-2730   1 ok   PASS
+  origin_bs2_h1024w1792_r3        3.7173    16790     2  28672  0/0/16          []        0      0% /    15 MiB (n= 25)     56-82     2520-2730   1 ok   PASS
+  origin_bs2_h1024w1920_r3        4.0633    17783     2  30720  0/0/16          []        0      0% /    15 MiB (n= 28)     55-85      780-2730   1 ok   PASS
+  mamba5_bs2_h576w1024_r3         0.9103     7404     2   9216  0/5/11          [1.0]     5      0% /    15 MiB (n= 10)     54-78      780-2745   1 ok   PASS
+  mamba5_bs2_h1024w1792_r3        2.9542    16798     2  28672  0/5/11          [1.0]     5      0% /    15 MiB (n= 24)     54-82      405-2745   1 ok   PASS
+  mamba5_bs2_h1024w1920_r3        3.1757    17788     2  30720  0/5/11          [1.0]     5      0% /    15 MiB (n= 25)     58-82     2520-2745   1 ok   PASS
+  origin_bs1_h576w1024_r3         0.4861     5075     1   9216  0/0/16          []        0      0% /    15 MiB (n=  5)     55-78     2520-2745   1 ok   PASS
+  origin_bs1_h1024w1792_r3        1.8791     9570     1  28672  0/0/16          []        0      0% /    15 MiB (n= 14)     56-81     2520-2730   1 ok   PASS
+  origin_bs1_h1024w1920_r3        2.0609    10040     1  30720  0/0/16          []        0      0% /    15 MiB (n= 15)     56-82     2520-2730   1 ok   PASS
+  mamba5_bs1_h576w1024_r3         0.4589     5081     1   9216  0/5/11          [1.0]     5      0% /    15 MiB (n=  7)     56-78     2520-2745   1 ok   PASS
+  mamba5_bs1_h1024w1792_r3        1.4960     9575     1  28672  0/5/11          [1.0]     5      0% /    15 MiB (n= 14)     56-79     2520-2745   1 ok   PASS
+  mamba5_bs1_h1024w1920_r3        1.6161    10047     1  30720  0/5/11          [1.0]     5      0% /    15 MiB (n= 14)     56-80     2520-2745   1 ok   PASS
+  processes used: 36 of 36 expected; missing: none
+  retries used: none;  FAILED lines in the driver log: none
+  whole-bench GPU1 sampler: n=568 samples, max util 0 %, max mem 15 MiB
+
+--- PER CONFIGURATION: mean +- half-range (max-min)/2 over n processes ---
+  res (HxW)   config  BS  n sec/forward   +-half  half% vs origin same BS  peak MiB   dVRAM   BS1/BS2 (same model)
+  576x1024    origin   2  3      0.9612   0.0030   0.31            +0.00%      7396  +0.00%                       
+  576x1024    mamba5   2  3      0.9103   0.0001   0.01            -5.30%      7404  +0.11%                       
+  576x1024    origin   1  3      0.4857   0.0004   0.08            +0.00%      5075  +0.00%                 0.5053
+  576x1024    mamba5   1  3      0.4587   0.0003   0.05            -5.55%      5081  +0.12%                 0.5039
+  1024x1792   origin   2  3      3.7127   0.0077   0.21            +0.00%     16790  +0.00%                       
+  1024x1792   mamba5   2  3      2.9529   0.0016   0.05           -20.46%     16798  +0.05%                       
+  1024x1792   origin   1  3      1.8792   0.0003   0.02            +0.00%      9570  +0.00%                 0.5062
+  1024x1792   mamba5   1  3      1.4953   0.0007   0.04           -20.43%      9575  +0.05%                 0.5064
+  1024x1920   origin   2  3      4.0591   0.0048   0.12            +0.00%     17783  +0.00%                       
+  1024x1920   mamba5   2  3      3.1742   0.0019   0.06           -21.80%     17788  +0.03%                       
+  1024x1920   origin   1  3      2.0603   0.0010   0.05            +0.00%     10040  +0.00%                 0.5076
+  1024x1920   mamba5   1  3      1.6159   0.0004   0.02           -21.57%     10047  +0.07%                 0.5091
+
+--- GATES (PREREG.txt) ---
+  B1 instrumentation (calls, gates, total_replaced, batch, tokens, rc, RESULT): PASS
+  B2 environment identity (BS=2 peak_MiB within +-4 MiB of 2026-10-01): PASS
+     B3 576x1024   origin  BS2 mean 0.9612 vs 2026-10-01 0.9641: -0.30 % (tol +-1.5 %) ok
+     B3 576x1024   mamba5  BS2 mean 0.9103 vs 2026-10-01 0.9119: -0.18 % (tol +-1.5 %) ok
+     B3 576x1024   Mamba delta -5.30 % vs 2026-10-01 -5.41 %: +0.11 pt (tol +-1.0 pt) ok
+     B3 1024x1792  origin  BS2 mean 3.7127 vs 2026-10-01 3.7251: -0.33 % (tol +-1.5 %) ok
+     B3 1024x1792  mamba5  BS2 mean 2.9529 vs 2026-10-01 2.9592: -0.21 % (tol +-1.5 %) ok
+     B3 1024x1792  Mamba delta -20.46 % vs 2026-10-01 -20.56 %: +0.10 pt (tol +-1.0 pt) ok
+     B3 1024x1920  origin  BS2 mean 4.0591 vs 2026-10-01 4.0745: -0.38 % (tol +-1.5 %) ok
+     B3 1024x1920  mamba5  BS2 mean 3.1742 vs 2026-10-01 3.1835: -0.29 % (tol +-1.5 %) ok
+     B3 1024x1920  Mamba delta -21.80 % vs 2026-10-01 -21.87 %: +0.07 pt (tol +-1.0 pt) ok
+  B3 timing reproduction: PASS
+  B4 exclusivity (GPU1 0 % util and <=100 MiB in every sample during every process; no foreign compute app before any process): PASS
+  B5 precision (flag half-range > 1.0 % of the mean; reported, not a gate): no configuration flagged

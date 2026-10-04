@@ -1,0 +1,65 @@
+Setting up [LPIPS] perceptual loss: trunk [alex], v[0.1], spatial [off]
+Loading model from: /home/kawa/miniconda3/envs/stereocrafter/lib/python3.11/site-packages/lpips/weights/v0.1/alex.pth
+clip/config                           offset  leftPSNR    LPIPS    sharp    rPSNR   nf
+--- 0301 GT ---                                          0.0000   0.0505
+0301_origin_ll                       (-28,0)     40.25   0.4351   0.0235   15.467   38
+ROW clip=0301 tag=0301_origin_ll dy=-28 dx=0 leftPSNR=40.2464 lpips=0.435095 sharp=0.023528 gtSharp=0.050529 rightPSNR=15.4667 n=38 path=outputs/beyond4_lossless/clips/0301_origin_ll/0301_inpainting_results_sbs.mkv
+0301_s25_ll                          (-28,0)     40.25   0.3986   0.0295   15.013   38
+ROW clip=0301 tag=0301_s25_ll dy=-28 dx=0 leftPSNR=40.2464 lpips=0.398593 sharp=0.029482 gtSharp=0.050529 rightPSNR=15.0130 n=38 path=outputs/beyond4_lossless/clips/0301_s25_ll/0301_inpainting_results_sbs.mkv
+0301_student_ll                      (-28,0)     40.25   0.3982   0.0291   15.056   38
+ROW clip=0301 tag=0301_student_ll dy=-28 dx=0 leftPSNR=40.2464 lpips=0.398193 sharp=0.029051 gtSharp=0.050529 rightPSNR=15.0558 n=38 path=outputs/skeptic1_stack/clips/0301_student_ll/0301_inpainting_results_sbs.mkv
+0301_mstudent1_step600_ll            (-28,0)     40.25   0.3831   0.0315   14.968   38
+ROW clip=0301 tag=0301_mstudent1_step600_ll dy=-28 dx=0 leftPSNR=40.2464 lpips=0.383060 sharp=0.031499 gtSharp=0.050529 rightPSNR=14.9678 n=38 path=outputs/beyond_distil_mamba/clips/0301_mstudent1_step600_ll/0301_inpainting_results_sbs.mkv
+0301_llnull_step100                  (-28,0)     40.25   0.4480   0.0215   15.412   38
+ROW clip=0301 tag=0301_llnull_step100 dy=-28 dx=0 leftPSNR=40.2464 lpips=0.448046 sharp=0.021487 gtSharp=0.050529 rightPSNR=15.4124 n=38 path=scripts/distill/runs/clean_controls/selfA/infer/0301_llnull_step100/0301_inpainting_results_sbs.mkv
+0301_llnull_step200                  (-28,0)     40.25   0.4629   0.0202   15.486   38
+ROW clip=0301 tag=0301_llnull_step200 dy=-28 dx=0 leftPSNR=40.2464 lpips=0.462878 sharp=0.020215 gtSharp=0.050529 rightPSNR=15.4865 n=38 path=scripts/distill/runs/clean_controls/selfA/infer/0301_llnull_step200/0301_inpainting_results_sbs.mkv
+0301_llnull_step300                  (-28,0)     40.25   0.4741   0.0195   15.536   38
+ROW clip=0301 tag=0301_llnull_step300 dy=-28 dx=0 leftPSNR=40.2464 lpips=0.474131 sharp=0.019477 gtSharp=0.050529 rightPSNR=15.5356 n=38 path=scripts/distill/runs/clean_controls/selfA/infer/0301_llnull_step300/0301_inpainting_results_sbs.mkv
+0301_llnull_step300_e1high           (-28,0)     40.25   0.4364   0.0233   15.476   38
+ROW clip=0301 tag=0301_llnull_step300_e1high dy=-28 dx=0 leftPSNR=40.2464 lpips=0.436373 sharp=0.023252 gtSharp=0.050529 rightPSNR=15.4763 n=38 path=scripts/distill/runs/clean_controls/selfA/infer/0301_llnull_step300_e1high/0301_inpainting_results_sbs.mkv
+0301_llnull_step300_e1low            (-28,0)     40.25   0.4723   0.0197   15.526   38
+ROW clip=0301 tag=0301_llnull_step300_e1low dy=-28 dx=0 leftPSNR=40.2464 lpips=0.472329 sharp=0.019718 gtSharp=0.050529 rightPSNR=15.5259 n=38 path=scripts/distill/runs/clean_controls/selfA/infer/0301_llnull_step300_e1low/0301_inpainting_results_sbs.mkv
+0301_llsplat_step100                 (-28,0)     40.25   0.4449   0.0219   15.379   38
+ROW clip=0301 tag=0301_llsplat_step100 dy=-28 dx=0 leftPSNR=40.2464 lpips=0.444879 sharp=0.021920 gtSharp=0.050529 rightPSNR=15.3794 n=38 path=scripts/distill/runs/clean_controls/selfA/infer/0301_llsplat_step100/0301_inpainting_results_sbs.mkv
+0301_llsplat_step200                 (-28,0)     40.25   0.4602   0.0205   15.481   38
+ROW clip=0301 tag=0301_llsplat_step200 dy=-28 dx=0 leftPSNR=40.2464 lpips=0.460245 sharp=0.020508 gtSharp=0.050529 rightPSNR=15.4809 n=38 path=scripts/distill/runs/clean_controls/selfA/infer/0301_llsplat_step200/0301_inpainting_results_sbs.mkv
+0301_llsplat_step300                 (-28,0)     40.25   0.4722   0.0196   15.541   38
+ROW clip=0301 tag=0301_llsplat_step300 dy=-28 dx=0 leftPSNR=40.2464 lpips=0.472186 sharp=0.019647 gtSharp=0.050529 rightPSNR=15.5413 n=38 path=scripts/distill/runs/clean_controls/selfA/infer/0301_llsplat_step300/0301_inpainting_results_sbs.mkv
+0301_oldmp4vnull_step100             (-28,0)     40.25   0.4644   0.0200   15.526   38
+ROW clip=0301 tag=0301_oldmp4vnull_step100 dy=-28 dx=0 leftPSNR=40.2464 lpips=0.464375 sharp=0.019963 gtSharp=0.050529 rightPSNR=15.5261 n=38 path=scripts/distill/runs/clean_controls/selfA/infer/0301_oldmp4vnull_step100/0301_inpainting_results_sbs.mkv
+0301_oldmp4vnull_step200             (-28,0)     40.25   0.4824   0.0186   15.607   38
+ROW clip=0301 tag=0301_oldmp4vnull_step200 dy=-28 dx=0 leftPSNR=40.2464 lpips=0.482368 sharp=0.018585 gtSharp=0.050529 rightPSNR=15.6073 n=38 path=scripts/distill/runs/clean_controls/selfA/infer/0301_oldmp4vnull_step200/0301_inpainting_results_sbs.mkv
+0301_oldmp4vnull_step300             (-28,0)     40.25   0.4942   0.0180   15.633   38
+ROW clip=0301 tag=0301_oldmp4vnull_step300 dy=-28 dx=0 leftPSNR=40.2464 lpips=0.494202 sharp=0.017968 gtSharp=0.050529 rightPSNR=15.6327 n=38 path=scripts/distill/runs/clean_controls/selfA/infer/0301_oldmp4vnull_step300/0301_inpainting_results_sbs.mkv
+0301_origin_nohook_ll                (-28,0)     40.25   0.4351   0.0235   15.467   38
+ROW clip=0301 tag=0301_origin_nohook_ll dy=-28 dx=0 leftPSNR=40.2464 lpips=0.435095 sharp=0.023528 gtSharp=0.050529 rightPSNR=15.4667 n=38 path=scripts/distill/runs/clean_controls/selfA/infer/0301_origin_nohook_ll/0301_inpainting_results_sbs.mkv
+0301_originall_hook_ll               (-28,0)     40.25   0.4351   0.0235   15.467   38
+ROW clip=0301 tag=0301_originall_hook_ll dy=-28 dx=0 leftPSNR=40.2464 lpips=0.435095 sharp=0.023528 gtSharp=0.050529 rightPSNR=15.4667 n=38 path=scripts/distill/runs/clean_controls/selfA/infer/0301_originall_hook_ll/0301_inpainting_results_sbs.mkv
+posUnreg_step100_0301                (-28,0)     40.25   0.8004   0.0131   16.969   38
+ROW clip=0301 tag=posUnreg_step100_0301 dy=-28 dx=0 leftPSNR=40.2464 lpips=0.800377 sharp=0.013130 gtSharp=0.050529 rightPSNR=16.9694 n=38 path=scripts/distill/runs/clean_controls/regB/infer/posUnreg_step100_0301/0301_inpainting_results_sbs.mkv
+posUnreg_step200_0301                (-28,0)     40.25   0.6835   0.0159   17.272   38
+ROW clip=0301 tag=posUnreg_step200_0301 dy=-28 dx=0 leftPSNR=40.2464 lpips=0.683490 sharp=0.015932 gtSharp=0.050529 rightPSNR=17.2717 n=38 path=scripts/distill/runs/clean_controls/regB/infer/posUnreg_step200_0301/0301_inpainting_results_sbs.mkv
+posUnreg_step300_0301                (-28,0)     40.25   0.7237   0.0149   17.444   38
+ROW clip=0301 tag=posUnreg_step300_0301 dy=-28 dx=0 leftPSNR=40.2464 lpips=0.723662 sharp=0.014945 gtSharp=0.050529 rightPSNR=17.4436 n=38 path=scripts/distill/runs/clean_controls/regB/infer/posUnreg_step300_0301/0301_inpainting_results_sbs.mkv
+regB_originall_0301                  (-28,0)     40.25   0.4351   0.0235   15.467   38
+ROW clip=0301 tag=regB_originall_0301 dy=-28 dx=0 leftPSNR=40.2464 lpips=0.435095 sharp=0.023528 gtSharp=0.050529 rightPSNR=15.4667 n=38 path=scripts/distill/runs/clean_controls/regB/infer/regB_originall_0301/0301_inpainting_results_sbs.mkv
+regB_step100_0301                    (-28,0)     40.25   0.6310   0.0178   16.044   38
+ROW clip=0301 tag=regB_step100_0301 dy=-28 dx=0 leftPSNR=40.2464 lpips=0.630977 sharp=0.017779 gtSharp=0.050529 rightPSNR=16.0444 n=38 path=scripts/distill/runs/clean_controls/regB/infer/regB_step100_0301/0301_inpainting_results_sbs.mkv
+regB_step200_0301                    (-28,0)     40.25   0.5959   0.0189   15.869   38
+ROW clip=0301 tag=regB_step200_0301 dy=-28 dx=0 leftPSNR=40.2464 lpips=0.595946 sharp=0.018858 gtSharp=0.050529 rightPSNR=15.8690 n=38 path=scripts/distill/runs/clean_controls/regB/infer/regB_step200_0301/0301_inpainting_results_sbs.mkv
+regB_step300_0301                    (-28,0)     40.25   0.6001   0.0191   15.803   38
+ROW clip=0301 tag=regB_step300_0301 dy=-28 dx=0 leftPSNR=40.2464 lpips=0.600086 sharp=0.019105 gtSharp=0.050529 rightPSNR=15.8032 n=38 path=scripts/distill/runs/clean_controls/regB/infer/regB_step300_0301/0301_inpainting_results_sbs.mkv
+regBpf_step100_0301                  (-28,0)     40.25   0.6208   0.0180   16.065   38
+ROW clip=0301 tag=regBpf_step100_0301 dy=-28 dx=0 leftPSNR=40.2464 lpips=0.620789 sharp=0.018041 gtSharp=0.050529 rightPSNR=16.0650 n=38 path=scripts/distill/runs/clean_controls/regB/infer/regBpf_step100_0301/0301_inpainting_results_sbs.mkv
+regBpf_step200_0301                  (-28,0)     40.25   0.6291   0.0175   16.095   38
+ROW clip=0301 tag=regBpf_step200_0301 dy=-28 dx=0 leftPSNR=40.2464 lpips=0.629144 sharp=0.017516 gtSharp=0.050529 rightPSNR=16.0946 n=38 path=scripts/distill/runs/clean_controls/regB/infer/regBpf_step200_0301/0301_inpainting_results_sbs.mkv
+regBpf_step300_0301                  (-28,0)     40.25   0.6047   0.0188   16.024   38
+ROW clip=0301 tag=regBpf_step300_0301 dy=-28 dx=0 leftPSNR=40.2464 lpips=0.604680 sharp=0.018790 gtSharp=0.050529 rightPSNR=16.0236 n=38 path=scripts/distill/runs/clean_controls/regB/infer/regBpf_step300_0301/0301_inpainting_results_sbs.mkv
+regB_step200_0301_e1high             (-28,0)     40.25   0.4386   0.0236   15.489   38
+ROW clip=0301 tag=regB_step200_0301_e1high dy=-28 dx=0 leftPSNR=40.2464 lpips=0.438603 sharp=0.023644 gtSharp=0.050529 rightPSNR=15.4892 n=38 path=scripts/distill/runs/clean_controls/regB/infer/regB_step200_0301_e1high/0301_inpainting_results_sbs.mkv
+regB_step200_0301_e1low              (-28,0)     40.25   0.5863   0.0186   15.865   38
+ROW clip=0301 tag=regB_step200_0301_e1low dy=-28 dx=0 leftPSNR=40.2464 lpips=0.586330 sharp=0.018569 gtSharp=0.050529 rightPSNR=15.8655 n=38 path=scripts/distill/runs/clean_controls/regB/infer/regB_step200_0301_e1low/0301_inpainting_results_sbs.mkv
+regB_step200_0301_s25                (-28,0)     40.25   0.4314   0.0287   15.263   38
+ROW clip=0301 tag=regB_step200_0301_s25 dy=-28 dx=0 leftPSNR=40.2464 lpips=0.431391 sharp=0.028731 gtSharp=0.050529 rightPSNR=15.2631 n=38 path=scripts/distill/runs/clean_controls/regB/infer/regB_step200_0301_s25/0301_inpainting_results_sbs.mkv
+EXIT 0

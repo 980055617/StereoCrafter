@@ -1,0 +1,74 @@
+V2 HI-RES QUALITY -- deliverable vs origin, lossless FFV1, score_clip_ll.py SCORE_STEP=4
+sources: outputs/finalcheck_20261004/validate/v2_scores/V2_hires_scores.txt, outputs/finalcheck_20261004/validate/v2_scores/V2_576_rescore.txt, outputs/finalcheck_20261004/validate/v2_scores/S1_*.txt, outputs/finalcheck_20261004/validate/v2_scores/S2_*.txt
+
+=== S1 reproduction of fulldata/lpips/fullhd.txt '0204_origin (-28,0) 48.63 0.1882 0.0057' (old mp4v render) ===
+  GT dir test_train             -> (-28,0) 48.63 0.1882 0.0057   REPRODUCES
+  GT dir train                  -> (-27,0) 23.91 0.1934 0.0057   differs
+  GT dir train_leftGT_broken    -> (-28,0) 48.63 0.1882 0.0057   REPRODUCES
+  S1: PASS (reproduced with the GT dir marked REPRODUCES)
+
+=== S2 equivalence: tracked scripts/distill/score_clip.py vs score_clip_ll.py on identical inputs ===
+  0042_deliv_ll_1024x1792            tracked=[('(-12,-12)', '40.53', '0.3855', '0.0074')] ll=[('(-12,-12)', '40.53', '0.3855', '0.0074')] IDENTICAL
+  0204_origin                        tracked=[('(-27,0)', '23.91', '0.1934', '0.0057')] ll=[('(-27,0)', '23.91', '0.1934', '0.0057')] IDENTICAL
+  0204_origin_ll_1024x1920           tracked=[('(-28,0)', '41.11', '0.1872', '0.0062')] ll=[('(-28,0)', '41.11', '0.1872', '0.0062')] IDENTICAL
+  GT_0042                            tracked=[('0.0000', '0.0070')] ll=[('0.0000', '0.0070')] IDENTICAL
+  GT_0204                            tracked=[('0.0000', '0.0116')] ll=[('0.0000', '0.0116')] IDENTICAL
+  S2: PASS
+
+=== H2 render gates (outputs/finalcheck_20261004/validate/timing_gpu1.txt) ===
+  0042 deliv_ll_1024x1792       rc=0 gate=PASS secs=553
+  0042 deliv_ll_1024x1920       rc=0 gate=PASS secs=594
+  0042 deliv_ll_576x1024        rc=0 gate=PASS secs=182
+  0042 origin_ll_1024x1792      rc=0 gate=PASS secs=644
+  0042 origin_ll_1024x1920      rc=0 gate=PASS secs=700
+  0052 deliv_ll_1024x1792       rc=0 gate=PASS secs=602
+  0052 deliv_ll_1024x1920       rc=0 gate=PASS secs=647
+  0052 origin_ll_1024x1792      rc=0 gate=PASS secs=704
+  0052 origin_ll_1024x1920      rc=0 gate=PASS secs=763
+  0170 deliv_ll_1024x1792       rc=0 gate=PASS secs=545
+  0170 deliv_ll_1024x1920       rc=0 gate=PASS secs=600
+  0170 origin_ll_1024x1792      rc=0 gate=PASS secs=634
+  0170 origin_ll_1024x1920      rc=0 gate=PASS secs=701
+  0204 deliv_ll_1024x1792       rc=0 gate=PASS secs=547
+  0204 deliv_ll_1024x1920       rc=0 gate=PASS secs=586
+  0204 origin_ll_1024x1792      rc=0 gate=PASS secs=636
+  0204 origin_ll_1024x1920      rc=0 gate=PASS secs=700
+
+=== S3 geometry: recovered offset vs crop math, and origin/deliv registration identical ===
+  0170 1024x1792: origin (-28, 0) leftPSNR 39.8520 | deliv (-28, 0) leftPSNR 39.8520 | expected (-28, 0) -> ok
+  0170 1024x1920: origin (-28, 0) leftPSNR 39.8609 | deliv (-28, 0) leftPSNR 39.8609 | expected (-28, 0) -> ok
+  0204 1024x1792: origin (-28, 0) leftPSNR 41.1078 | deliv (-28, 0) leftPSNR 41.1078 | expected (-28, 0) -> ok
+  0204 1024x1920: origin (-28, 0) leftPSNR 41.1053 | deliv (-28, 0) leftPSNR 41.1053 | expected (-28, 0) -> ok
+  0042 1024x1792: origin (-12, -12) leftPSNR 40.5305 | deliv (-12, -12) leftPSNR 40.5305 | expected (-12, -12) -> ok
+  0042 1024x1920: origin (-12, -12) leftPSNR 40.5299 | deliv (-12, -12) leftPSNR 40.5299 | expected (-12, -12) -> ok
+  0052 1024x1792: origin (-12, -12) leftPSNR 40.4300 | deliv (-12, -12) leftPSNR 40.4300 | expected (-12, -12) -> ok
+  0052 1024x1920: origin (-12, -12) leftPSNR 40.4118 | deliv (-12, -12) leftPSNR 40.4118 | expected (-12, -12) -> ok
+  S3: PASS
+
+=== 1024x1792 (HxW), tile_num=1 -- per clip ===
+  clip    LPIPS origin  LPIPS deliv     delta |  sharp o  sharp d  GTsharp   o/GT   d/GT | 576 delta (table) 576 delta (rescore)
+  0170          0.2950       0.2773   -0.0176 |   0.0135   0.0150   0.0323  0.418  0.465 |           -0.0071             -0.0071
+  0204          0.1827       0.1654   -0.0173 |   0.0060   0.0073   0.0116  0.520  0.630 |           -0.0186             -0.0186
+  0042          0.3912       0.3855   -0.0058 |   0.0063   0.0074   0.0070  0.895  1.048 |           -0.0061             -0.0061
+  0052          0.4475       0.4369   -0.0107 |   0.0092   0.0099   0.0099  0.927  1.003 |           -0.0072             -0.0072
+  4-clip mean: origin 0.3291  deliv 0.3163  delta -0.0128  improved 4/4  worst clip -0.0058   (576x1024 same 4 clips, table: -0.0097)
+  PRE-REGISTERED RULE (mean improves AND no clip worse than +0.005): TRANSFERS
+
+=== 1024x1920 (HxW), tile_num=1 -- per clip ===
+  clip    LPIPS origin  LPIPS deliv     delta |  sharp o  sharp d  GTsharp   o/GT   d/GT | 576 delta (table) 576 delta (rescore)
+  0170          0.2951       0.2766   -0.0185 |   0.0132   0.0147   0.0323  0.409  0.456 |           -0.0071             -0.0071
+  0204          0.1872       0.1714   -0.0158 |   0.0062   0.0075   0.0116  0.535  0.650 |           -0.0186             -0.0186
+  0042          0.3918       0.3864   -0.0054 |   0.0062   0.0072   0.0070  0.879  1.030 |           -0.0061             -0.0061
+  0052          0.4400       0.4290   -0.0110 |   0.0088   0.0095   0.0099  0.888  0.962 |           -0.0072             -0.0072
+  4-clip mean: origin 0.3285  deliv 0.3158  delta -0.0127  improved 4/4  worst clip -0.0054   (576x1024 same 4 clips, table: -0.0097)
+  PRE-REGISTERED RULE (mean improves AND no clip worse than +0.005): TRANSFERS
+
+=== 576x1024 re-score of the existing renders (consistency with TABLE_HEADLINE_12CLIP.txt) ===
+  0170: origin 0.2517  deliv 0.2446
+  0204: origin 0.2053  deliv 0.1867
+  0042: origin 0.4279  deliv 0.4218
+  0052: origin 0.4467  deliv 0.4395
+
+=== FINAL STATEMENT (per resolution) ===
+  1024x1792: the 576x1024 quality gain TRANSFERS -> the quality claim COVERS this speed-claim resolution
+  1024x1920: the 576x1024 quality gain TRANSFERS -> the quality claim COVERS this speed-claim resolution

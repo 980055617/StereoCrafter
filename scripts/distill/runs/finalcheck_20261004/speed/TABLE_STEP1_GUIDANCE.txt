@@ -1,0 +1,68 @@
+==================================================================================================================================
+STEP 1 -- GUIDANCE 1.00 vs 1.01, 12 TEST CLIPS, LOSSLESS FFV1, real-GT LPIPS (8 Euler steps Karras, 14-frame windows overlap 3, 576x1024, seed 1234)
+scorer scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py SCORE_STEP=4 (unchanged), FFV1 renders only
+==================================================================================================================================
+
+--- PER CLIP: LPIPS (lower is better) ---
+  row                                     0042     0052     0125     0128     0141     0147     0170     0204     0225     0251     0259     0301
+  GT sharpness                          0.0070   0.0099   0.0114   0.0105   0.0036   0.0039   0.0323   0.0116   0.0132   0.0173   0.0450   0.0505
+  origin @1.01 (deployed, 8x2)          0.4279   0.4467   0.4799   0.4055   0.4813   0.5269   0.2517   0.2053   0.2750   0.3460   0.4376   0.4351
+  origin @1.00 (8x1)                    0.4282   0.4470   0.4811   0.4064   0.4812   0.5267   0.2524   0.2060   0.2758   0.3465   0.4380   0.4375
+  deliverable @1.01 (8x2)               0.4218   0.4395   0.4655   0.3882   0.4681   0.5244   0.2446   0.1867   0.2587   0.3355   0.4357   0.3965
+  deliverable @1.00 (8x1)               0.4220   0.4397   0.4664   0.3884   0.4678   0.5242   0.2448   0.1868   0.2587   0.3357   0.4356   0.3970
+
+--- PER CLIP: delta vs origin_ll (negative = better) ---
+  origin @1.00 (8x1)                   +0.0003  +0.0003  +0.0011  +0.0009  -0.0002  -0.0002  +0.0007  +0.0007  +0.0007  +0.0005  +0.0004  +0.0024
+  deliverable @1.01 (8x2)              -0.0061  -0.0072  -0.0144  -0.0173  -0.0133  -0.0025  -0.0071  -0.0186  -0.0164  -0.0105  -0.0019  -0.0386
+  deliverable @1.00 (8x1)              -0.0059  -0.0070  -0.0136  -0.0171  -0.0136  -0.0027  -0.0069  -0.0185  -0.0163  -0.0104  -0.0020  -0.0381
+
+--- PER CLIP: delta vs the SAME MODEL's reference config (ref) ---
+  origin @1.00 (8x1) - ref             +0.0003  +0.0003  +0.0011  +0.0009  -0.0002  -0.0002  +0.0007  +0.0007  +0.0007  +0.0005  +0.0004  +0.0024
+  deliverable @1.00 (8x1) - ref        +0.0002  +0.0002  +0.0008  +0.0002  -0.0003  -0.0002  +0.0002  +0.0000  +0.0000  +0.0002  -0.0001  +0.0005
+
+--- PER CLIP: sharpness / GT sharpness (1.0 = matches the real right eye) ---
+  origin @1.01 (deployed, 8x2)           1.253    1.314    0.828    1.287    1.360    1.584    0.507    0.564    0.895    0.479    0.693    0.466
+  origin @1.00 (8x1)                     1.247    1.306    0.821    1.277    1.354    1.579    0.504    0.561    0.889    0.477    0.690    0.460
+  deliverable @1.01 (8x2)                1.458    1.394    0.939    1.546    1.644    1.778    0.547    0.667    1.016    0.557    0.739    0.565
+  deliverable @1.00 (8x1)                1.455    1.388    0.932    1.539    1.640    1.775    0.544    0.665    1.013    0.556    0.736    0.561
+
+--- PER CLIP: sharpness ratio vs the same model's reference config ---
+  origin @1.00 (8x1) / ref              0.9952   0.9942   0.9908   0.9921   0.9961   0.9966   0.9937   0.9951   0.9939   0.9945   0.9947   0.9884
+  deliverable @1.00 (8x1) / ref         0.9974   0.9953   0.9933   0.9952   0.9978   0.9986   0.9951   0.9979   0.9965   0.9972   0.9970   0.9931
+
+==================================================================================================================================
+MEANS over n=12 clips: 0042 0052 0125 0128 0141 0147 0170 0204 0225 0251 0259 0301
+==================================================================================================================================
+  row                                meanLPIPS   d vs origin_ll  d vs ref improved  sh/GT  sh/ref   worst vs origin      worst vs ref   rPSNR
+  origin @1.01 (deployed, 8x2)          0.3933          +0.0000               0/12  0.936              0042 +0.0000                    16.425
+  origin @1.00 (8x1)                    0.3939          +0.0006   +0.0006     2/12  0.930  0.9938      0301 +0.0024      0301 +0.0024  16.437
+  deliverable @1.01 (8x2)               0.3804          -0.0128              12/12  1.071              0259 -0.0019                    16.229
+  deliverable @1.00 (8x1)               0.3806          -0.0127   +0.0001    12/12  1.067  0.9962      0259 -0.0020      0125 +0.0008  16.238
+
+==================================================================================================================================
+PRE-REGISTERED CRITERIA (scripts/distill/runs/finalcheck_20261004/speed/PREREG.txt)
+==================================================================================================================================
+  [GATING] S1 deliverable guidance 1.00 is FREE  (deliv_g100_s8 vs mstudent2_step800_deliv_ll, n=12, better on 3/12): PASS
+        (a) mean delta +0.0001 <= +0.002: PASS
+        (b) worst clip 0125 +0.0008 <= +0.005: PASS
+        (c) mean per-clip sharp ratio 0.9962 in [0.97, 1.03]: PASS
+  [reported] S1-origin guidance 1.00 (origin's own lever)  (origin_g100_s8 vs origin_ll, n=12, better on 2/12): PASS
+        (a) mean delta +0.0006 <= +0.002: PASS
+        (b) worst clip 0301 +0.0024 <= +0.005: PASS
+        (c) mean per-clip sharp ratio 0.9938 in [0.97, 1.03]: PASS
+
+==================================================================================================================================
+G8 SCORER REPRODUCTION vs scripts/distill/runs/beyond_distil_mamba_scaled/TABLE_HEADLINE_12CLIP.txt (tolerance +-0.0001)
+==================================================================================================================================
+  origin_ll                          headline row 'origin (deployed 8 steps)': per-clip MATCH; rescored mean 0.3933
+  mstudent2_step800_deliv_ll         headline row 'THIS DELIVERABLE (A)': per-clip MATCH; rescored mean 0.3804
+
+==================================================================================================================================
+PROVENANCE (score file per row; render dir root)
+==================================================================================================================================
+  origin @1.01 (deployed, 8x2)       label=origin_ll                      roots=['outputs/beyond4_lossless'] scores=['scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt']
+  origin @1.00 (8x1)                 label=origin_g100_s8                 roots=['outputs/finalcheck_20261004/speed'] scores=['scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt']
+  deliverable @1.01 (8x2)            label=mstudent2_step800_deliv_ll     roots=['outputs/beyond_distil_mamba_scaled'] scores=['scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt']
+  deliverable @1.00 (8x1)            label=deliv_g100_s8                  roots=['outputs/finalcheck_20261004/speed'] scores=['scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt']
+
+VERDICTS: S1 deliverable guidance 1.00 is FREE: PASS; S1-origin guidance 1.00 (origin's own lever): PASS; G8 scorer reproduction: PASS

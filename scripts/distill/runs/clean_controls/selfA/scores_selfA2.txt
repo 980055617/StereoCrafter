@@ -1,0 +1,15 @@
+clip/config                           offset  leftPSNR    LPIPS    sharp    rPSNR   nf
+--- 0301 GT ---                                          0.0000   0.0505
+0301_origin_nohook_ll                (-28,0)     40.25   0.4351   0.0235   15.467   38
+ROW clip=0301 tag=0301_origin_nohook_ll dy=-28 dx=0 leftPSNR=40.2464 lpips=0.435095 sharp=0.023528 gtSharp=0.050529 rightPSNR=15.4667 n=38 path=scripts/distill/runs/clean_controls/selfA/infer/0301_origin_nohook_ll/0301_inpainting_results_sbs.mkv
+0301_llsplat_step300                 (-28,0)     40.25   0.4722   0.0196   15.541   38
+ROW clip=0301 tag=0301_llsplat_step300 dy=-28 dx=0 leftPSNR=40.2464 lpips=0.472186 sharp=0.019647 gtSharp=0.050529 rightPSNR=15.5413 n=38 path=scripts/distill/runs/clean_controls/selfA/infer/0301_llsplat_step300/0301_inpainting_results_sbs.mkv
+0301_llsplat_step100                 (-28,0)     40.25   0.4449   0.0219   15.379   38
+ROW clip=0301 tag=0301_llsplat_step100 dy=-28 dx=0 leftPSNR=40.2464 lpips=0.444879 sharp=0.021920 gtSharp=0.050529 rightPSNR=15.3794 n=38 path=scripts/distill/runs/clean_controls/selfA/infer/0301_llsplat_step100/0301_inpainting_results_sbs.mkv
+0301_llsplat_step200                 (-28,0)     40.25   0.4602   0.0205   15.481   38
+ROW clip=0301 tag=0301_llsplat_step200 dy=-28 dx=0 leftPSNR=40.2464 lpips=0.460245 sharp=0.020508 gtSharp=0.050529 rightPSNR=15.4809 n=38 path=scripts/distill/runs/clean_controls/selfA/infer/0301_llsplat_step200/0301_inpainting_results_sbs.mkv
+--- 0204 GT ---                                          0.0000   0.0116
+0204_origin_nohook_ll                (-28,0)     41.16   0.2053   0.0065   19.896   38
+ROW clip=0204 tag=0204_origin_nohook_ll dy=-28 dx=0 leftPSNR=41.1620 lpips=0.205310 sharp=0.006527 gtSharp=0.011577 rightPSNR=19.8959 n=38 path=scripts/distill/runs/clean_controls/selfA/infer/0204_origin_nohook_ll/0204_inpainting_results_sbs.mkv
+0204_llsplat_step300                 (-28,0)     41.16   0.2254   0.0057   19.901   38
+ROW clip=0204 tag=0204_llsplat_step300 dy=-28 dx=0 leftPSNR=41.1620 lpips=0.225385 sharp=0.005719 gtSharp=0.011577 rightPSNR=19.9009 n=38 path=scripts/distill/runs/clean_controls/selfA/infer/0204_llsplat_step300/0204_inpainting_results_sbs.mkv

@@ -1,0 +1,74 @@
+V1 DIAGNOSTICS D1/D2 (interpretation only; F1-F3 decided by the main run) -- sources outputs/finalcheck_20261004/validate/v1_temporal/temporal_576_12clip.json , outputs/finalcheck_20261004/validate/v1_temporal/diag_D1D2.json
+clips (n=12): 0042 0052 0125 0128 0141 0147 0170 0204 0225 0251 0259 0301
+built-in check (recomputed unregistered origin/deliv warp == main JSON): ALL IDENTICAL
+
+--- D1 sanity (hole fraction, ddx vs GEOMETRY.txt) ---
+  0042: hole_frac 0.0144  ddx  -36  GEOMETRY -36
+  0052: hole_frac 0.0094  ddx  -40  GEOMETRY -
+  0125: hole_frac 0.0112  ddx  -28  GEOMETRY -
+  0128: hole_frac 0.0054  ddx  -31  GEOMETRY -34
+  0141: hole_frac 0.0280  ddx  -61  GEOMETRY -59
+  0147: hole_frac 0.0158  ddx  -44  GEOMETRY -41
+  0170: hole_frac 0.0005  ddx   -9  GEOMETRY -
+  0204: hole_frac 0.0003  ddx  -17  GEOMETRY -17
+  0225: hole_frac 0.0000  ddx  -14  GEOMETRY -
+  0251: hole_frac 0.0175  ddx  -19  GEOMETRY -
+  0259: hole_frac 0.0128  ddx  -17  GEOMETRY -
+  0301: hole_frac 0.0138  ddx  -12  GEOMETRY -15
+  D1 sanity: PASS -- D1 reportable
+
+--- D1 registration of the real right eye to the model input (holes excluded) ---
+  clip    ddy   ddx  PSNR@0  PSNRreg validFlow unreg    reg
+  0042     -1   -36   17.32    23.42           0.982  0.979
+  0052      0   -40   13.20    17.61           0.912  0.910
+  0125      0   -28   16.48    19.12           0.975  0.975
+  0128      0   -31   17.95    21.28           0.970  0.970
+  0141      0   -61   15.46    21.86           0.984  0.978
+  0147      0   -44   15.47    19.01           0.911  0.909
+  0170     -1    -9   16.58    20.23           0.978  0.978
+  0204     -1   -17   18.59    23.20           0.993  0.992
+  0225     -1   -14   15.28    18.52           0.987  0.987
+  0251     -1   -19   18.33    25.63           0.973  0.972
+  0259      0   -17   12.89    18.11           0.993  0.993
+  0301      0   -12   14.34    16.35           0.849  0.848
+
+--- D1 warp error with REGISTERED GT flows (and the main unregistered values for comparison) ---
+  clip    origin_reg shipped_reg   deliv_reg     s25_reg   GT_reg |  origin_unreg shipped_unreg   deliv_unreg     s25_unreg
+  0042       0.00872     0.00884     0.01145     0.01002  0.00605 |       0.00972       0.00987       0.01247       0.01103
+  0052       0.01543     0.01550     0.01801     0.01762  0.01397 |       0.02169       0.02186       0.02411       0.02377
+  0125       0.01490     0.01506     0.01923     0.01825  0.00966 |       0.01509       0.01525       0.01942       0.01845
+  0128       0.01278     0.01317     0.01629     0.01561  0.00903 |       0.01303       0.01343       0.01655       0.01588
+  0141       0.00394     0.00390     0.00547     0.00562  0.00711 |       0.00425       0.00421       0.00579       0.00593
+  0147       0.00545     0.00530     0.00680     0.00676  0.00605 |       0.00831       0.00815       0.00968       0.00961
+  0170       0.02666     0.02724     0.03073     0.02962  0.01938 |       0.02674       0.02732       0.03081       0.02970
+  0204       0.01048     0.01089     0.01410     0.01380  0.01196 |       0.01048       0.01089       0.01410       0.01380
+  0225       0.01644     0.01712     0.02093     0.02094  0.01857 |       0.01641       0.01709       0.02089       0.02090
+  0251       0.00854     0.00885     0.01090     0.01017  0.00715 |       0.01042       0.01075       0.01280       0.01206
+  0259       0.02379     0.02493     0.02739     0.02643  0.01006 |       0.02387       0.02501       0.02747       0.02652
+  0301       0.04824     0.05145     0.06092     0.06309  0.07032 |       0.04935       0.05270       0.06209       0.06425
+  MEAN       0.01628     0.01685     0.02019     0.01983  0.01578 |       0.01745       0.01804       0.02135       0.02099
+  shipped  vs origin: registered mean +3.5% (worse on 10/12) | unregistered mean +3.4%
+  deliv    vs origin: registered mean +24.0% (worse on 12/12) | unregistered mean +22.4%
+  s25      vs origin: registered mean +21.8% (worse on 12/12) | unregistered mean +20.3%
+
+--- D2 sharpness-matched origin (unsharp mask, k bisected to the deliverable's sharpness) ---
+  clip        k  sh orig  sh deliv   sh R_k |   tLP o  tLP R_k   tLP d |  warp o  warp R_k  warp d |  wreg R_k  wreg d | ratio R_k  ratio d
+  0042    0.450  0.00885   0.01033  0.01033 |  0.0557   0.0613  0.0659 | 0.00972   0.01085 0.01247 |   0.00982 0.01145 |     1.209    1.312
+  0052    0.313  0.01299   0.01379  0.01379 |  0.1329   0.1357  0.1379 | 0.02169   0.02277 0.02411 |   0.01638 0.01801 |     1.018    1.039
+  0125    0.440  0.00945   0.01071  0.01071 |  0.2209   0.2265  0.2366 | 0.01509   0.01654 0.01942 |   0.01635 0.01923 |     1.034    1.024
+  0128    0.597  0.01356   0.01628  0.01628 |  0.0608   0.0673  0.0702 | 0.01303   0.01523 0.01655 |   0.01497 0.01629 |     1.225    1.395
+  0141    0.773  0.00492   0.00594  0.00594 |  0.0100   0.0122  0.0194 | 0.00425   0.00495 0.00579 |   0.00464 0.00547 |     1.830    2.035
+  0147    0.623  0.00617   0.00693  0.00693 |  0.0653   0.0678  0.0698 | 0.00831   0.00883 0.00968 |   0.00592 0.00680 |     1.272    1.354
+  0170    0.150  0.01639   0.01765  0.01765 |  0.1192   0.1221  0.1246 | 0.02674   0.02856 0.03081 |   0.02847 0.03073 |     1.043    1.058
+  0204    0.314  0.00653   0.00770  0.00770 |  0.0293   0.0322  0.0328 | 0.01048   0.01233 0.01410 |   0.01233 0.01410 |     1.534    1.635
+  0225    0.232  0.01173   0.01332  0.01332 |  0.0292   0.0310  0.0340 | 0.01641   0.01865 0.02089 |   0.01869 0.02093 |     1.678    1.838
+  0251    0.416  0.00829   0.00965  0.00965 |  0.0704   0.0733  0.0785 | 0.01042   0.01142 0.01280 |   0.00953 0.01090 |     1.080    1.204
+  0259    0.149  0.03109   0.03313  0.03313 |  0.0468   0.0482  0.0561 | 0.02387   0.02533 0.02747 |   0.02525 0.02739 |     1.711    2.043
+  0301    0.430  0.02319   0.02797  0.02797 |  0.2771   0.2870  0.2867 | 0.04935   0.05420 0.06209 |   0.05305 0.06092 |     1.047    1.068
+  MEAN    0.407  0.01276   0.01445  0.01445 |  0.0931   0.0971  0.1010 | 0.01745   0.01914 0.02135 |   0.01795 0.02019 |     1.307    1.417
+
+=== ADDENDUM-1 READING (fixed before the aggregate was seen) ===
+  warp (unregistered flows, as V1)  : deliv 0.02135 vs R_k 0.01914 (+11.6%; deliv higher on 12/12) -> deliverable EXCEEDS the sharpness-matched origin by >5% -> instability beyond its sharpness
+  warp (registered flows, D1)       : deliv 0.02019 vs R_k 0.01795 (+12.5%; deliv higher on 12/12) -> deliverable EXCEEDS the sharpness-matched origin by >5% -> instability beyond its sharpness
+  tLP                               : deliv 0.10104 vs R_k 0.09705 (+4.1%; deliv higher on 11/12) -> deliverable within +5% of (or below) the sharpness-matched origin -> increase is what added sharpness alone produces
+  seam ratio                        : deliv 1.41711 vs R_k 1.30682 (+8.4%; deliv higher on 11/12) -> deliverable EXCEEDS the sharpness-matched origin by >5% -> instability beyond its sharpness

@@ -1,0 +1,20 @@
+{
+ "title": "STEP 1 -- GUIDANCE 1.00 vs 1.01, 12 TEST CLIPS, LOSSLESS FFV1, real-GT LPIPS (8 Euler steps Karras, 14-frame windows overlap 3, 576x1024, seed 1234)",
+ "clips": ["0042","0052","0125","0128","0141","0147","0170","0204","0225","0251","0259","0301"],
+ "origin_ref": "origin_ll",
+ "rows": [
+  {"label": "origin_ll",                  "name": "origin @1.01 (deployed, 8x2)",  "ref": null},
+  {"label": "origin_g100_s8",             "name": "origin @1.00 (8x1)",            "ref": "origin_ll"},
+  {"label": "mstudent2_step800_deliv_ll", "name": "deliverable @1.01 (8x2)",       "ref": null},
+  {"label": "deliv_g100_s8",              "name": "deliverable @1.00 (8x1)",       "ref": "mstudent2_step800_deliv_ll"}
+ ],
+ "criteria": [
+  {"name": "S1 deliverable guidance 1.00 is FREE", "row": "deliv_g100_s8", "ref": "mstudent2_step800_deliv_ll",
+   "mean_max": 0.002, "clip_max": 0.005, "sharp_band": [0.97, 1.03], "gating": true},
+  {"name": "S1-origin guidance 1.00 (origin's own lever)", "row": "origin_g100_s8", "ref": "origin_ll",
+   "mean_max": 0.002, "clip_max": 0.005, "sharp_band": [0.97, 1.03], "gating": false}
+ ],
+ "headline": {"file": "scripts/distill/runs/beyond_distil_mamba_scaled/TABLE_HEADLINE_12CLIP.txt",
+              "map": {"origin_ll": "origin (deployed 8 steps)", "mstudent2_step800_deliv_ll": "THIS DELIVERABLE (A)"},
+              "tol": 0.0001}
+}

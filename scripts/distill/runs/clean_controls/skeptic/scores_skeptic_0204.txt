@@ -1,0 +1,31 @@
+Setting up [LPIPS] perceptual loss: trunk [alex], v[0.1], spatial [off]
+Loading model from: /home/kawa/miniconda3/envs/stereocrafter/lib/python3.11/site-packages/lpips/weights/v0.1/alex.pth
+clip/config                           offset  leftPSNR    LPIPS    sharp    rPSNR   nf
+--- 0204 GT ---                                          0.0000   0.0116
+0204_origin_ll                       (-28,0)     41.16   0.2053   0.0065   19.896   38
+ROW clip=0204 tag=0204_origin_ll dy=-28 dx=0 leftPSNR=41.1620 lpips=0.205310 sharp=0.006527 gtSharp=0.011577 rightPSNR=19.8959 n=38 path=outputs/beyond4_lossless/clips/0204_origin_ll/0204_inpainting_results_sbs.mkv
+0204_s25_ll                          (-28,0)     41.16   0.1897   0.0076   19.548   38
+ROW clip=0204 tag=0204_s25_ll dy=-28 dx=0 leftPSNR=41.1620 lpips=0.189684 sharp=0.007608 gtSharp=0.011577 rightPSNR=19.5481 n=38 path=outputs/beyond4_lossless/clips/0204_s25_ll/0204_inpainting_results_sbs.mkv
+0204_student_ll                      (-28,0)     41.16   0.1883   0.0076   19.529   38
+ROW clip=0204 tag=0204_student_ll dy=-28 dx=0 leftPSNR=41.1620 lpips=0.188289 sharp=0.007599 gtSharp=0.011577 rightPSNR=19.5294 n=38 path=outputs/skeptic1_stack/clips/0204_student_ll/0204_inpainting_results_sbs.mkv
+0204_mstudent1_step600_ll            (-28,0)     41.16   0.1867   0.0081   19.407   38
+ROW clip=0204 tag=0204_mstudent1_step600_ll dy=-28 dx=0 leftPSNR=41.1620 lpips=0.186677 sharp=0.008057 gtSharp=0.011577 rightPSNR=19.4066 n=38 path=outputs/beyond_distil_mamba/clips/0204_mstudent1_step600_ll/0204_inpainting_results_sbs.mkv
+0204_llnull_step100                  (-28,0)     41.16   0.2146   0.0060   19.954   38
+ROW clip=0204 tag=0204_llnull_step100 dy=-28 dx=0 leftPSNR=41.1620 lpips=0.214601 sharp=0.005975 gtSharp=0.011577 rightPSNR=19.9536 n=38 path=scripts/distill/runs/clean_controls/selfA/infer/0204_llnull_step100/0204_inpainting_results_sbs.mkv
+0204_llnull_step200                  (-28,0)     41.16   0.2194   0.0058   19.950   38
+ROW clip=0204 tag=0204_llnull_step200 dy=-28 dx=0 leftPSNR=41.1620 lpips=0.219425 sharp=0.005840 gtSharp=0.011577 rightPSNR=19.9495 n=38 path=scripts/distill/runs/clean_controls/selfA/infer/0204_llnull_step200/0204_inpainting_results_sbs.mkv
+0204_llnull_step300                  (-28,0)     41.16   0.2255   0.0057   19.953   38
+ROW clip=0204 tag=0204_llnull_step300 dy=-28 dx=0 leftPSNR=41.1620 lpips=0.225453 sharp=0.005728 gtSharp=0.011577 rightPSNR=19.9530 n=38 path=scripts/distill/runs/clean_controls/selfA/infer/0204_llnull_step300/0204_inpainting_results_sbs.mkv
+0204_llsplat_step300                 (-28,0)     41.16   0.2254   0.0057   19.901   38
+ROW clip=0204 tag=0204_llsplat_step300 dy=-28 dx=0 leftPSNR=41.1620 lpips=0.225385 sharp=0.005719 gtSharp=0.011577 rightPSNR=19.9009 n=38 path=scripts/distill/runs/clean_controls/selfA/infer/0204_llsplat_step300/0204_inpainting_results_sbs.mkv
+0204_oldmp4vnull_step300             (-28,0)     41.16   0.2361   0.0054   19.888   38
+ROW clip=0204 tag=0204_oldmp4vnull_step300 dy=-28 dx=0 leftPSNR=41.1620 lpips=0.236134 sharp=0.005427 gtSharp=0.011577 rightPSNR=19.8882 n=38 path=scripts/distill/runs/clean_controls/selfA/infer/0204_oldmp4vnull_step300/0204_inpainting_results_sbs.mkv
+0204_origin_nohook_ll                (-28,0)     41.16   0.2053   0.0065   19.896   38
+ROW clip=0204 tag=0204_origin_nohook_ll dy=-28 dx=0 leftPSNR=41.1620 lpips=0.205310 sharp=0.006527 gtSharp=0.011577 rightPSNR=19.8959 n=38 path=scripts/distill/runs/clean_controls/selfA/infer/0204_origin_nohook_ll/0204_inpainting_results_sbs.mkv
+regB_step200_0204                    (-28,0)     41.16   0.2332   0.0066   20.032   38
+ROW clip=0204 tag=regB_step200_0204 dy=-28 dx=0 leftPSNR=41.1620 lpips=0.233183 sharp=0.006640 gtSharp=0.011577 rightPSNR=20.0322 n=38 path=scripts/distill/runs/clean_controls/regB/infer/regB_step200_0204/0204_inpainting_results_sbs.mkv
+regB_step300_0204                    (-28,0)     41.16   0.2403   0.0066   20.038   38
+ROW clip=0204 tag=regB_step300_0204 dy=-28 dx=0 leftPSNR=41.1620 lpips=0.240284 sharp=0.006556 gtSharp=0.011577 rightPSNR=20.0380 n=38 path=scripts/distill/runs/clean_controls/regB/infer/regB_step300_0204/0204_inpainting_results_sbs.mkv
+regBpf_step300_0204                  (-28,0)     41.16   0.2388   0.0066   20.178   38
+ROW clip=0204 tag=regBpf_step300_0204 dy=-28 dx=0 leftPSNR=41.1620 lpips=0.238797 sharp=0.006618 gtSharp=0.011577 rightPSNR=20.1779 n=38 path=scripts/distill/runs/clean_controls/regB/infer/regBpf_step300_0204/0204_inpainting_results_sbs.mkv
+EXIT 0

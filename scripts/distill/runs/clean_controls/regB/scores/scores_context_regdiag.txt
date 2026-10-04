@@ -1,0 +1,20 @@
+clip/config                           offset  regshift  leftPSNR LPIPSreg    sharp rPSNRreg   nf
+--- 0301 GT (registered by (0,-12)) ---                                 0.0000   0.0505
+0301_origin_ll                       (-28,0)   (0,-12)     40.25   0.4057   0.0235   17.180   38
+ROWREG clip=0301 tag=0301_origin_ll dy=-28 dx=0 ddy=0 ddx=-12 leftPSNR=40.2464 lpips_reg=0.405686 sharp=0.023528 gtSharp=0.050529 rightPSNR_reg=17.1803 n=38 path=outputs/beyond4_lossless/clips/0301_origin_ll/0301_inpainting_results_sbs.mkv
+0301_s25_ll                          (-28,0)   (0,-12)     40.25   0.3687   0.0295   16.632   38
+ROWREG clip=0301 tag=0301_s25_ll dy=-28 dx=0 ddy=0 ddx=-12 leftPSNR=40.2464 lpips_reg=0.368719 sharp=0.029482 gtSharp=0.050529 rightPSNR_reg=16.6315 n=38 path=outputs/beyond4_lossless/clips/0301_s25_ll/0301_inpainting_results_sbs.mkv
+0301_student_ll                      (-28,0)   (0,-12)     40.25   0.3686   0.0291   16.660   38
+ROWREG clip=0301 tag=0301_student_ll dy=-28 dx=0 ddy=0 ddx=-12 leftPSNR=40.2464 lpips_reg=0.368565 sharp=0.029051 gtSharp=0.050529 rightPSNR_reg=16.6597 n=38 path=outputs/skeptic1_stack/clips/0301_student_ll/0301_inpainting_results_sbs.mkv
+0301_mstudent1_step600_ll            (-28,0)   (0,-12)     40.25   0.3498   0.0315   16.678   38
+ROWREG clip=0301 tag=0301_mstudent1_step600_ll dy=-28 dx=0 ddy=0 ddx=-12 leftPSNR=40.2464 lpips_reg=0.349761 sharp=0.031499 gtSharp=0.050529 rightPSNR_reg=16.6783 n=38 path=outputs/beyond_distil_mamba/clips/0301_mstudent1_step600_ll/0301_inpainting_results_sbs.mkv
+--- 0204 GT (registered by (-1,-17)) ---                                 0.0000   0.0116
+0204_origin_ll                       (-28,0)  (-1,-17)     41.16   0.1346   0.0065   23.428   38
+ROWREG clip=0204 tag=0204_origin_ll dy=-28 dx=0 ddy=-1 ddx=-17 leftPSNR=41.1620 lpips_reg=0.134612 sharp=0.006527 gtSharp=0.011577 rightPSNR_reg=23.4284 n=38 path=outputs/beyond4_lossless/clips/0204_origin_ll/0204_inpainting_results_sbs.mkv
+0204_s25_ll                          (-28,0)  (-1,-17)     41.16   0.1188   0.0076   23.320   38
+ROWREG clip=0204 tag=0204_s25_ll dy=-28 dx=0 ddy=-1 ddx=-17 leftPSNR=41.1620 lpips_reg=0.118781 sharp=0.007608 gtSharp=0.011577 rightPSNR_reg=23.3200 n=38 path=outputs/beyond4_lossless/clips/0204_s25_ll/0204_inpainting_results_sbs.mkv
+0204_student_ll                      (-28,0)  (-1,-17)     41.16   0.1168   0.0076   23.355   38
+ROWREG clip=0204 tag=0204_student_ll dy=-28 dx=0 ddy=-1 ddx=-17 leftPSNR=41.1620 lpips_reg=0.116789 sharp=0.007599 gtSharp=0.011577 rightPSNR_reg=23.3549 n=38 path=outputs/skeptic1_stack/clips/0204_student_ll/0204_inpainting_results_sbs.mkv
+0204_mstudent1_step600_ll            (-28,0)  (-1,-17)     41.16   0.1144   0.0081   23.399   38
+ROWREG clip=0204 tag=0204_mstudent1_step600_ll dy=-28 dx=0 ddy=-1 ddx=-17 leftPSNR=41.1620 lpips_reg=0.114438 sharp=0.008057 gtSharp=0.011577 rightPSNR_reg=23.3992 n=38 path=outputs/beyond_distil_mamba/clips/0204_mstudent1_step600_ll/0204_inpainting_results_sbs.mkv
+EXIT 

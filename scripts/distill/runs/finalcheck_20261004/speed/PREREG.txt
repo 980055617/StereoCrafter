@@ -1,0 +1,94 @@
+PRE-REGISTRATION -- finalcheck_20261004 / speed lane (GPU 0 only)
+Written 2026-10-04 ~03:50 JST, BEFORE any scorer call in this lane (no score_clip_ll.py run has been made by
+this lane at the time of writing; the only renders in flight are the c1/c2 md5 controls).
+
+Subject   the deliverable  /mnt/ssd_data/stereocrafter_weights/_distill_injected/
+          mamba5slot_plus_stepdistil_up3_train10clip_step800_20261001.pt  (md5 08cf44850b8f392efb307e3a48cd82d1, verified)
+          and plain origin (no state, MAMBA_SELF_ATTN_INCLUDE='__nomatch__').
+Deployed  8 Euler steps, Karras sigmas of the shipped scheduler, guidance 1.01 (min=max), 14-frame windows overlap 3,
+          576x1024 centre crop, noise_seed 1234, config/0160_overfit_inference_matched.json.
+Scorer    scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py UNCHANGED, SCORE_STEP=4, FFV1 renders only.
+          LPIPS = ROW lpips; sharpness = ROW sharp; GT sharpness = ROW gtSharp.  Lower LPIPS is better.
+12 test clips  0042 0052 0125 0128 0141 0147 0170 0204 0225 0251 0259 0301
+4 regime clips 0301 0204 0052 0147
+
+UNet work per 14-frame window (batch-elements through the UNet): deployed 8 steps x batch 2 = 16;
+8x1 = 8 (guidance 1.00 skips the unconditional branch); 6x2 = 12; 5x2 = 10; 5x1 = 5.
+
+-------------------------------------------------------------------------------------------------------------------
+G. GATING INTEGRITY CHECKS (a failure blocks scoring/using the affected rows until fixed)
+-------------------------------------------------------------------------------------------------------------------
+G1  c1: the copied driver at SK_GUID=1.01, no SK_SIGMAS, 0301 deliverable reproduces the pre-encode md5
+    3e367e6167e5ae62681f50b86579f6b6 (outputs/beyond_distil_mamba_scaled/clips/0301_mstudent2_step800_deliv_ll/writer_md5.txt).
+G2  c2: SK_SIGMAS = the scheduler's own 8 default sigmas (exact float32 reprs) AND SK_RNG_PAD_TO=8 (K=0, a no-op)
+    reproduces the same md5.
+G3  same-session 1.01 re-renders reproduce the existing md5s: origin 0301 2e533d7755c950d2fc95043f6fb0a51d,
+    origin 0204 e5c5fba479a64801b686f28ba656064f, deliverable 0204 181547f36e68f7dde7371d9a1ebbad78.
+    (The origin ones also prove that the hook's origin mode == the beyond4 infer_lossless.py origin path.)
+G4  0301 deliverable @1.00 rendered twice -> identical pre-encode md5 (bit-reproducible).
+G5  0301 origin @1.00 via the plain tracked infer_lossless.py CLI == via the hook's origin mode (md5).
+G6  pass-through: for every new render, the FFV1 decode's full-array md5 equals its writer md5, and the decoded
+    LEFT half [:, :, :1024] is bit-identical (md5 + frame count) to origin@1.01's decoded left half of the same clip.
+G7  RNG pairing: every guidance-1.00 render and every SK_RNG_PAD_TO=8 render has per-window initial-latent
+    fingerprints (md5 of the raw bits returned by prepare_latents) identical to the 8-step renders of the same clip
+    in this session (c1 for 0301).  Unpadded T5 renders are EXPECTED to differ after window 0 (that is the point
+    of the secondary arm).
+G8  scorer reproduction: rescoring the EXISTING origin@1.01 and deliverable@1.01 renders reproduces every per-clip
+    LPIPS of scripts/distill/runs/beyond_distil_mamba_scaled/TABLE_HEADLINE_12CLIP.txt within +-0.0001 and the
+    12-clip means 0.3933 / 0.3804.
+
+-------------------------------------------------------------------------------------------------------------------
+S1. STEP 1 -- GUIDANCE 1.00 (12 clips).  Comparison is automatically RNG-paired: the per-step scheduler noise is
+    drawn on model_output, which is batch 1 at both 1.00 and 1.01, so CUDA RNG consumption is identical (G7 checks).
+-------------------------------------------------------------------------------------------------------------------
+PRIMARY  guidance 1.00 is "FREE" for the deliverable iff ALL of
+  S1a  mean12 LPIPS(deliv@1.00) - mean12 LPIPS(deliv@1.01) <= +0.002
+  S1b  max over the 12 clips of [LPIPS(deliv@1.00) - LPIPS(deliv@1.01)] <= +0.005
+  S1c  mean over the 12 clips of the per-clip ratio sharp(deliv@1.00)/sharp(deliv@1.01) lies in [0.97, 1.03]
+REPORTED, NOT A GATE: the same three numbers for origin@1.00 vs origin@1.01 (origin's own lever, so the Mamba
+  contribution stays separable), and deliv@1.00 vs origin@1.01 (delta, clips improved, worst clip).
+Table rows: origin@1.01, origin@1.00, deliverable@1.01, deliverable@1.00 -- per clip, 12-clip mean, delta vs
+  origin@1.01, clips improved vs origin@1.01, mean sharpness (sharp/GT and per-clip ratio vs the same model @1.01),
+  worst clip (largest delta vs origin@1.01; and largest delta vs the same model @1.01).
+
+-------------------------------------------------------------------------------------------------------------------
+S2. STEP 2 -- MERGED EARLY STEPS (exact scheduler sigma values; the trailing 0 is appended by the hook)
+    T6 = 700.0, 30.993608474731445, 7.276163101196289, 1.1675708293914795, 0.09738767892122269, 0.0020000000949949026
+    T5 = 700.0, 7.276163101196289, 1.1675708293914795, 0.09738767892122269, 0.0020000000949949026
+-------------------------------------------------------------------------------------------------------------------
+DESIGN  The scheduler's step() draws one CUDA randn per step even at gamma=0 (unused), so a 6- or 5-step schedule
+  would shift the RNG and give windows 1.. different initial noise than the 8-step reference.  PRIMARY renders
+  therefore use SK_RNG_PAD_TO=8 (discarded draws after each window's last step) so every window starts from the
+  8-step render's initial noise: a paired comparison that isolates the schedule.  This is a measurement device;
+  a shipped T6/T5 sampler would run unpadded (same expected quality, different noise realisation).
+PRIMARY (4 regime clips)  a deliverable variant V in {T6@1.01, T5@1.01} is "FREE (4-clip)" iff
+  S2a  mean4 LPIPS(V) - mean4 LPIPS(deliv 8-step @1.01) <= +0.002
+  S2b  every clip: LPIPS(V) - LPIPS(deliv 8-step @1.01) <= +0.005
+  deliverable T5@1.00 (rendered ONLY if S1 passes): judged against the DEPLOYED deliverable 8-step @1.01 with the
+  same single budget (+0.002 mean / +0.005 per clip) -- the combined lever; also reported vs deliv 8-step @1.00
+  (schedule effect alone at guidance 1.00).
+  Origin T6@1.01 / T5@1.01 vs origin 8-step @1.01: same thresholds, REPORTED (not a gate for the deliverable).
+EXTENSION  every deliverable variant that is FREE (4-clip) is rendered on all 12 clips, together with the matching
+  origin variant (reference), and judged with the same rule on 12 clips:
+  S2a'  mean12 delta <= +0.002 ;  S2b'  every one of the 12 clips <= +0.005.
+  The 12-clip verdict is final: a 4-clip pass that fails on 12 clips is a FAIL.
+SECONDARY (not gating)  deliverable T5@1.01 UNPADDED (natural RNG = literally what a shipped T5 would do) on the
+  4 regime clips, same reference; padded-vs-unpadded difference = the seed-realisation effect at a fixed schedule.
+Sharpness in step 2: reported (mean per-clip ratio vs the same model's 8-step render), not gated.
+
+-------------------------------------------------------------------------------------------------------------------
+SPEED (reported, not gated)
+-------------------------------------------------------------------------------------------------------------------
+Per render: process wall-clock (driver, python start -> exit, includes model load, VAE, FFV1 encode), in-loop
+seconds (sum over windows of the CUDA-synchronised pipeline __call__: CLIP+VAE encode + sampling loop), UNet GPU
+seconds (CUDA events around every UNet forward), UNet calls and batch sizes.  Medians per configuration.
+The headline speed ratio for guidance 1.00 is the PAIRED same-session result on 0301 and 0204 (1.01 re-rendered
+in this session); the 2026-10-01 timing logs were taken with two GPUs busy and are not compared.
+GPU 0 runs one job at a time; no scoring runs on GPU 0 while timing renders run.
+
+-------------------------------------------------------------------------------------------------------------------
+RECOMMENDATION RULE (pre-registered)
+-------------------------------------------------------------------------------------------------------------------
+Recommend the configuration with the fewest UNet batch-elements per window among those that pass every gate on
+12 clips; if none passes, keep the deployed 8x2.  Origin's own deltas under the same levers are reported beside
+the deliverable's so the "Mamba" share and the "inference-setting" share of any speed claim stay separable.

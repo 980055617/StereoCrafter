@@ -10795,3 +10795,126 @@ is Unity-observable for shipped video, so it needs its own `docs/bundle-shared/D
 (2) do NOT fund the 333-clip step-distillation run (more clips measurably hurt); (3) the GT-vs-render residual
 disparity of -15..-59 px means every absolute vs-GT number in this project is inflated - deltas are unaffected, but a
 registered scorer would be worth having.
+
+## 2026-10-03 - Two clean controls on "should we just train normally?": the clean self-target still drifts, registered GT still degrades
+
+Prompted by the user's question whether per-sample diffusion-loss training should replace distillation. Both earlier
+"training damages origin" controls had confounds: the self-target was a lossy mp4v render, and the GT was not registered
+to the render frame. `scripts/distill/runs/clean_controls/{selfA,regB,skeptic}/`; all numbers LOSSLESS (FFV1 +
+score_clip_ll.py); the lossless deployed-origin reference is **0301 0.4351 / sharp 0.0235, 0204 0.2053 / 0.0065**
+(the 0.4445 quoted in earlier entries is the mp4v-era figure).
+
+**Control A, lossless self-target** (same trainer, seed, eps/sigma schedule, 13 windows, 300 steps as the old null run;
+only the target codec differs). The old target was measurably corrupted: mp4v minus lossless = mean shift -2.155/255,
+MAD 3.29/255, PSNR 35.6 dB, and the codec error alone carried 28 % of the target's own high-frequency energy. Result:
+0301 +0.0130 / +0.0278 / **+0.0390** at steps 100/200/300 (sharp -8.7 / -14.1 / -17.2 %), held-out 0204 +0.0201. The
+pre-registered fail threshold (>= +0.03) is cleared. Like-for-like, the OLD mp4v-target checkpoints rendered losslessly
+drift +0.0293 / +0.0473 / +0.0591, so **44 / 59 / 66 % of the old drift survives on the clean target: the codec caused
+about one third of the old +0.060, not the effect**. A2 (cond+mask ALSO from the splatting file, i.e. the pipeline's own
+exact triple) gives the same drift (+0.0371) while removing a +2/255 DC shift the primary run had learned from the
+train-tile/splatting-file offset. Step-1 gradient on the clean point target 0.353 (an on-trajectory FUNCTION target gives
+exactly 0); rel ||dW||/||W|| vs the bf16 start 0.00109 (old 0.00116; the earlier "0.00204" was mostly the fp16->bf16
+cast floor); drift direction cos 0.76 with the old run; 95 % of the damage expressed at sampling sigma <= 31.
+
+**Control B, GT registered to the render.** Per-frame registration of the real right eye against the model's warped
+input gives a clip-global (0,-12) on 0301 with a 9 px per-frame drift across the clip (a real limitation of any global
+shift; per-frame registration was also run and changes nothing). Result: 0301 0.6310 / **0.5959** / 0.6001
+(+0.196 / +0.161 / +0.165), sharp 0.0235 -> 0.018-0.019; held-out 0204 0.2332 / 0.2403. Registration removed 35-46 %
+of the unregistered damage (0.8004 / 0.6835 / 0.7237) but what remains is 4-6x the headroom that 25-step sampling
+realises. **The same regB weights sampled with 25 steps score 0.4314** (origin+s25 0.3986): ~80 % of the deployed damage
+vanishes when the sampler is not compute-limited, so most of it is the fine-tuned denoiser meeting the effectively
+3-step trajectory, not a destroyed denoiser. Step-1 gradient 1.244.
+
+**Answer table (skeptic re-scored all 43 renders from disk; 70/70 reported rows reproduced; frame counts 151 and
+offset (-28,0) identical on every pair; repo and both protected checkpoints untouched):**
+
+| row | 0301 LPIPS / sharp | 0204 LPIPS / sharp | needs at inference |
+| --- | --- | --- | --- |
+| deployed origin | 0.4351 / 0.0235 | 0.2053 / 0.0065 | 8 steps, shipped weights |
+| origin + s25 | 0.3986 / 0.0295 | 0.1897 / 0.0076 | 25 steps (3.1x UNet cost) |
+| step-distilled attn student | 0.3982 / 0.0291 | 0.1883 / 0.0076 | 8 steps |
+| Mamba + step-distilled (deliverable family) | 0.3831 / 0.0315 | 0.1867 / 0.0081 | 8 steps, less UNet time |
+| control A step300 (lossless self-target) | 0.4741 / 0.0195 | 0.2255 / 0.0057 | 8 steps |
+| control B step200 (registered GT) | 0.5959 / 0.0189 | 0.2332 / 0.0066 | 8 steps (0.4314 / 0.0287 at 25 steps) |
+
+**Conclusions that survive on clean evidence:** per-sample point-target fine-tuning degrades the deployed output at every
+checkpoint, on trained and held-out clips, for both target kinds; the damage is expressed at low sampling sigma with a
+sharpness collapse; training loss anti-correlates with deployed quality (7th sighting: B's loss fell 0.425 -> 0.372 while
+LPIPS rose +0.16); the compute-limited sampler is the real opening.
+**Conclusions softened:** (a) the old +0.060 self-target number may not be quoted as clean; write "a per-sample point
+target degrades origin; the mp4v target exaggerated it by about half". (b) GT misregistration was real but secondary
+(under half of the GT damage). (c) Weight-space: against the true bf16 start the registered-GT drift is ORTHOGONAL to the
+self-target drift (cos -0.010) and shares only 0.185 with the unregistered-GT drift, while the three self-target runs
+cluster at 0.76-0.84 - registration changed WHAT was learned; "mechanism unchanged" holds for the symptoms, not the
+direction. (d) "A deterministic per-sample target makes the optimum a one-step model" is PARTIALLY supported: the pull
+exists and is a point-target effect, but these runs are nowhere near any optimum (rel dW 0.001), the earlier mech lane
+found the damaged x0-hat at sigma 700 BLURRIER not sharper, and ~80 % of the GT-run damage disappears at 25 steps.
+Replacement wording: "with one deterministic target per window the per-sample loss is non-zero even for the model's own
+lossless output; it moves the sigma-shared attn1 weights toward that sample at sigma >= 7, and the compute-limited 8-step
+(effectively 3-step) Euler trajectory amplifies the resulting change of the sigma 0.1-1 function into blur and LPIPS loss."
+**Settled (same day):** the clean self-target drift is NOT sampler sensitivity. selfA/llnull/step300 sampled with
+25 steps scores **0.4532** on 0301 against origin+s25's 0.3986 (+0.0546 - LARGER than its +0.0390 at 8 steps; sharp
+0.0212 vs 0.0295) and 0.2046 on 0204 against 0.1897 (+0.0149; `selfA/scores_selfA_s25.txt`). So the two target kinds
+behave differently under a non-compute-limited sampler: the registered-GT weights recover ~80 % of their deployed damage at
+25 steps, the clean self-target weights recover none. Reading: training toward a fixed sample of the model's own output
+genuinely degrades the denoiser (the "collapse" wording stays for the self-target, now on clean evidence), while most of
+the GT-target damage at 8 steps was the fine-tuned denoiser meeting the effectively 3-step trajectory.
+
+## 2026-10-04 - Final checks of the deliverable: hi-res PASSES, flicker metric FAILS (shared with 25-step origin), speed levers PASS
+
+`scripts/distill/runs/finalcheck_20261004/{speed,validate,blind,bench,independent}/`, renders under
+`outputs/finalcheck_20261004/`. All quality numbers lossless (FFV1 + score_clip_ll.py); every lane wrote a PREREG.txt
+before scoring; an independent lane re-scored the key rows from disk (all reproduced exactly) and confirmed both protected
+checkpoints unchanged.
+
+**Hi-res quality - PASS.** The deliverable was only ever scored at 576x1024 while its speed claims are at hi-res. On the
+four hi-res test clips (0042 0052 0170 0204, tiling off): 1024x1792 **-0.0128** vs origin (4/4 improved, worst -0.0058),
+1024x1920 **-0.0127** (4/4, worst -0.0054), both at least as large as the same clips' 576x1024 gain (-0.0098).
+
+**Temporal consistency - FAILS the pre-registered rule.** 12 clips at 576x1024: RAFT warp error **+22.4 %** vs origin,
+worse on **12/12** clips (thresholds +5 % / 9 of 12); window-seam ratio +6.6 % (passes, threshold +10 %). Context, not an
+excuse: origin sampled with 25 steps - the trajectory the deliverable distils - trips the same flags (+20.3 %, 12/12),
+and the deliverable is within ~2 % of it on every temporal metric (warp +1.7 %, tLP +0.9 %, seam -0.9 %). Against a
+sharpness-matched (unsharp-masked) origin the deliverable is still +11.6 % on warp but only +4.1 % on tLP: about half of
+the warp increase is what added sharpness alone produces, the rest is not. Misregistered GT flow does not explain it
+(+24.0 % with registered flows). This is a metric result, not proven visible flicker. Visual check material:
+`outputs/finalcheck_20261004/flicker/<clip>_origin_deliverable_s25.mp4` (origin | deliverable | origin 25 steps) for the
+five clips where the deliverable's tLP exceeds both GT's own and s25's: 0042 0128 0170 0251 0259.
+
+**Speed levers (inference settings) - PASS for the deliverable.** Paired renders, 12 clips:
+
+| deliverable config | 12-clip LPIPS | vs deliverable 8x2 | vs origin 8x2 (0.3933) | UNet time / window vs deployed origin (576 / 1792 / 1920) |
+| --- | ---: | ---: | ---: | --- |
+| 8 steps, guidance 1.01 (deployed) | 0.3804 | - | -0.0128, 12/12 | 0.950 / 0.796 / 0.783 |
+| 8 steps, guidance 1.00 | 0.3806 | +0.0001 | -0.0127, 12/12 | 0.526 / - / - |
+| T5 = sigmas 700, 7.276, 1.168, 0.0974, 0.002, guidance 1.00 | **0.3815** | +0.0011 | **-0.0117, 12/12** | **0.329 / 0.277 / 0.274** |
+
+Guidance 1.00 skips the unconditional branch (the pipeline runs CFG only when guidance > 1.0), so each step is one
+batch-1 UNet call instead of a batch-2 call for a 1 % blend. T5 merges the first four sampler steps, whose exact
+substitution was measured to change the output only at the noise floor, and keeps sigma 7.28 / 1.17 / 0.097 where the
+step-distilled corrections live. These levers apply to origin too and are NOT Mamba results; separated: inference settings
+0.345 / 0.341 / 0.342, Mamba 0.953 / 0.812 / 0.802 (product = the last column). But origin does not tolerate them as well:
+origin T5@1.00 is +0.0021 (worst 0301 +0.0065), FAILING the same +0.002 criterion the deliverable passes; at every
+sampler setting the deliverable beats origin by -0.0128 to -0.0136 on 12/12 clips. T5@1.00 at hi-res: 1024x1792 0.3173
+(-0.0118 vs origin, 4/4), 1024x1920 0.3168 (-0.0117, 4/4); its temporal metrics match the deployed-settings deliverable
+(warp -0.6 %). Process wall-clock (incl. VAE and I/O) for T5@1.00: 0.57-0.59x. Caveats: (a) the synthetic fp16 bench
+over-predicts the batch-1 gain by ~9 % (an unexplained ~40 ms per forward on the deployed path at batch 1), so the table
+uses deployed-path measurements; (b) at 576x1024 the Mamba path pays a one-time ~5 s first-window warm-up per process,
+so whole-clip time there is slightly WORSE than origin at the same settings (0.373 vs 0.345); it amortises over longer
+videos or a persistent process. Unpadded vs RNG-padded T5 differ per clip by -0.0022..+0.0013 (seed effect); the
+unpadded numbers are what would ship.
+
+**Blind rating - material ready, not yet rated.** 36 registered-GT / A / B crops (12 texture, 10 disocclusion,
+2 texture2, 12 characteristic) in `outputs/finalcheck_20261004/blind/items_v3/` (v1 leaked the identity through JPEG
+size and logged stds; v3 pads A and B to equal byte length). Published as a private rating page that stores each answer in
+its database: https://claude.ai/artifact/9HE9utrSaLDAUV5a8ZnSpX - unblind with
+`items_v3/_KEY_do_not_open_before_rating.json` and a two-sided exact sign test on the non-tie answers. Caveat: on 6-8
+items the real right eye cannot be pixel-aligned for near objects (0125, 0259, 0147, 0052).
+
+**Blind rating result (2026-10-04, the user).** The user looked through the page and reported "ほぼいっしょ" (nearly the
+same). Five answers were saved; unblinded with the key: four "no visible difference" (0251 characteristic, 0259
+characteristic, 0125 characteristic, 0052 disocclusion) and one preference for the DELIVERABLE (0301 texture, the clip
+with the largest LPIPS gain); origin was preferred on none. Too few non-tie answers for a sign test. Thesis wording this
+supports: "LPIPS improves on 12/12 clips; to the eye the outputs are nearly indistinguishable, and where a difference was
+seen the deliverable was preferred" - not "visibly better". Raw answers: scratchpad export of the page's `ratings`
+collection (q01-q05).

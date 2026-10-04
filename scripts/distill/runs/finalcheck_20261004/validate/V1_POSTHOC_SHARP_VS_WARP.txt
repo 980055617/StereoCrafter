@@ -1,0 +1,5 @@
+POST-HOC (computed after all V1 data was seen; descriptive only).
+warp from outputs/finalcheck_20261004/validate/v1_temporal/temporal_576_12clip.json; sharpness/GT rows verbatim from scripts/distill/runs/beyond_distil_mamba_scaled/TABLE_HEADLINE_12CLIP.txt
+  deliv: geo-mean sharpness ratio vs origin 1.143; geo-mean warp ratio vs origin 1.238; per-clip corr 0.845
+  s25  : geo-mean sharpness ratio vs origin 1.122; geo-mean warp ratio vs origin 1.204; per-clip corr 0.794
+  pooled deliv+s25 (n=24): corr(log sharpness ratio, log warp ratio) = 0.822; OLS slope = 1.17

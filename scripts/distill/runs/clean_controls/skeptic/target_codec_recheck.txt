@@ -1,0 +1,5 @@
+frames: lossless 151  mp4v 151  shapes (576, 2048, 3) (576, 2048, 3)
+frame  30 right half: mp4v - lossless mean -2.213/255  MAD 3.149/255  maxabs 41  PSNR 36.00 dB  Laplacian energy ratio mp4v/lossless 0.894  codec-error HF / target HF 0.321
+frame  75 right half: mp4v - lossless mean -2.021/255  MAD 3.369/255  maxabs 33  PSNR 35.42 dB  Laplacian energy ratio mp4v/lossless 0.898  codec-error HF / target HF 0.332
+frame 120 right half: mp4v - lossless mean -2.151/255  MAD 2.991/255  maxabs 26  PSNR 36.54 dB  Laplacian energy ratio mp4v/lossless 0.962  codec-error HF / target HF 0.220
+all 151 frames right half: mean shift -2.155/255  MAD 3.289/255

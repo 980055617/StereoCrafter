@@ -1,0 +1,7 @@
+V1 context (descriptive): deliverable vs origin+25 steps, 576x1024, 12 clips -- source outputs/finalcheck_20261004/validate/v1_temporal/temporal_576_12clip.json
+  warp : mean deliv 0.02135  s25 0.02099  deliv/s25 +1.7%  deliv higher on 9/12  (0042:+ 0052:+ 0125:+ 0128:+ 0141:- 0147:+ 0170:+ 0204:+ 0225:- 0251:+ 0259:+ 0301:-)
+  tLP  : mean deliv 0.10104  s25 0.10010  deliv/s25 +0.9%  deliv higher on 8/12  (0042:+ 0052:+ 0125:+ 0128:+ 0141:- 0147:- 0170:+ 0204:- 0225:- 0251:+ 0259:+ 0301:+)
+  ratio: mean deliv 1.41711  s25 1.43034  deliv/s25 -0.9%  deliv higher on 5/12  (0042:+ 0052:- 0125:- 0128:+ 0141:- 0147:+ 0170:+ 0204:- 0225:- 0251:- 0259:- 0301:+)
+  clips where tLP(deliv) > tLP(GT): 0042(1.076) 0128(1.066) 0170(1.021) 0204(1.072) 0225(1.368) 0251(1.038) 0259(2.921)
+  ... and also > tLP(s25): 0042 0128 0170 0251 0259
+  clips where tLP(origin) > tLP(GT): 0225 0259

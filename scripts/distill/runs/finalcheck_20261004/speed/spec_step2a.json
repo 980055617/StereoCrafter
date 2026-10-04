@@ -1,0 +1,26 @@
+{
+ "title": "STEP 2 (4 regime clips) -- MERGED EARLY STEPS at guidance 1.01, RNG padded to the 8-step stream (primary) + unpadded deliverable T5 (secondary). LOSSLESS FFV1, real-GT LPIPS",
+ "clips": ["0301","0204","0052","0147"],
+ "origin_ref": "origin_ll",
+ "rows": [
+  {"label": "origin_ll",                  "name": "origin 8-step @1.01 (8x2)",      "ref": null},
+  {"label": "origin_g101_T6pad",          "name": "origin T6 @1.01 (6x2)",          "ref": "origin_ll"},
+  {"label": "origin_g101_T5pad",          "name": "origin T5 @1.01 (5x2)",          "ref": "origin_ll"},
+  {"label": "mstudent2_step800_deliv_ll", "name": "deliverable 8-step @1.01 (8x2)", "ref": null},
+  {"label": "deliv_g101_T6pad",           "name": "deliverable T6 @1.01 (6x2)",     "ref": "mstudent2_step800_deliv_ll"},
+  {"label": "deliv_g101_T5pad",           "name": "deliverable T5 @1.01 (5x2)",     "ref": "mstudent2_step800_deliv_ll"},
+  {"label": "deliv_g101_T5nat",           "name": "deliv T5 @1.01 UNPADDED (5x2)",  "ref": "mstudent2_step800_deliv_ll"}
+ ],
+ "criteria": [
+  {"name": "S2 deliverable T6 @1.01 FREE (4-clip)", "row": "deliv_g101_T6pad", "ref": "mstudent2_step800_deliv_ll",
+   "mean_max": 0.002, "clip_max": 0.005, "sharp_band": null, "gating": true},
+  {"name": "S2 deliverable T5 @1.01 FREE (4-clip)", "row": "deliv_g101_T5pad", "ref": "mstudent2_step800_deliv_ll",
+   "mean_max": 0.002, "clip_max": 0.005, "sharp_band": null, "gating": true},
+  {"name": "S2-origin T6 @1.01 (reported)", "row": "origin_g101_T6pad", "ref": "origin_ll",
+   "mean_max": 0.002, "clip_max": 0.005, "sharp_band": null, "gating": false},
+  {"name": "S2-origin T5 @1.01 (reported)", "row": "origin_g101_T5pad", "ref": "origin_ll",
+   "mean_max": 0.002, "clip_max": 0.005, "sharp_band": null, "gating": false},
+  {"name": "S2 secondary: deliverable T5 @1.01 UNPADDED (reported)", "row": "deliv_g101_T5nat", "ref": "mstudent2_step800_deliv_ll",
+   "mean_max": 0.002, "clip_max": 0.005, "sharp_band": null, "gating": false}
+ ]
+}

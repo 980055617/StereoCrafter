@@ -1,0 +1,14 @@
+reference: scripts/distill/runs/clean_controls/selfA/infer/0301_origin_nohook_ll/0301_inpainting_results_sbs.mkv (151 frames)
+variant                             meanRef  meanVar shift/255  MAD/255    PSNR lapE var/ref sharp ref sharp var
+originall_hook                      0.32795  0.32795    +0.000    0.000  180.00       1.0000   0.02319   0.02319
+llnull_step100                      0.32795  0.33441    +1.646    3.275   34.22       0.7738   0.02319   0.02123
+llnull_step200                      0.32795  0.33565    +1.964    3.992   32.84       0.6929   0.02319   0.02003
+OLD_mp4v_null_step300               0.32795  0.31691    -2.815    5.610   30.26       0.5058   0.02319   0.01841
+OLD_mp4v_origin                     0.32795  0.31950    -2.155    3.289   35.61       0.9138   0.02319   0.02319
+RENDER_DIFF_DONE
+reference: scripts/distill/runs/clean_controls/selfA/infer/0301_origin_nohook_ll/0301_inpainting_results_sbs.mkv (151 frames)
+variant                             meanRef  meanVar shift/255  MAD/255    PSNR lapE var/ref sharp ref sharp var
+llnull_step300                      0.32795  0.33373    +1.473    4.167   32.32       0.6652   0.02319   0.01935
+llnull_step300_e1high               0.32795  0.32791    -0.010    0.677   46.88       0.9713   0.02319   0.02292
+llnull_step300_e1low                0.32795  0.33369    +1.464    4.133   32.38       0.6863   0.02319   0.01956
+RENDER_DIFF_DONE

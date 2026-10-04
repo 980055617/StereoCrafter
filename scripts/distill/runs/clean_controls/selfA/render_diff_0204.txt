@@ -1,0 +1,6 @@
+reference: scripts/distill/runs/clean_controls/selfA/infer/0204_origin_nohook_ll/0204_inpainting_results_sbs.mkv (151 frames)
+variant                             meanRef  meanVar shift/255  MAD/255    PSNR lapE var/ref sharp ref sharp var
+llnull_step300                      0.51458  0.51591    +0.341    1.726   38.77       0.8850   0.00653   0.00573
+llsplat_step300                     0.51458  0.51099    -0.916    1.985   38.12       0.8828   0.00653   0.00573
+OLD_mp4v_origin_0204                0.51458  0.50643    -2.078    2.588   37.83       0.9715   0.00653   0.00626
+RENDER_DIFF_DONE

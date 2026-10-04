@@ -1,0 +1,60 @@
+==================================================================================================================================
+POST-HOC SECONDARY (PREREG_ADDENDUM_posthoc.txt): deliverable T5 @1.00 UNPADDED (natural RNG = what would literally ship) vs the deployed deliverable 8x2 @1.01, 12 clips. LOSSLESS FFV1, real-GT LPIPS
+scorer scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py SCORE_STEP=4 (unchanged), FFV1 renders only
+==================================================================================================================================
+
+--- PER CLIP: LPIPS (lower is better) ---
+  row                                     0042     0052     0125     0128     0141     0147     0170     0204     0225     0251     0259     0301
+  GT sharpness                          0.0070   0.0099   0.0114   0.0105   0.0036   0.0039   0.0323   0.0116   0.0132   0.0173   0.0450   0.0505
+  origin 8-step @1.01 (8x2)             0.4279   0.4467   0.4799   0.4055   0.4813   0.5269   0.2517   0.2053   0.2750   0.3460   0.4376   0.4351
+  deliverable 8-step @1.01 (8x2)        0.4218   0.4395   0.4655   0.3882   0.4681   0.5244   0.2446   0.1867   0.2587   0.3355   0.4357   0.3965
+  deliverable T5 @1.00 PADDED           0.4240   0.4402   0.4677   0.3892   0.4681   0.5255   0.2459   0.1876   0.2609   0.3367   0.4371   0.3989
+  deliverable T5 @1.00 UNPADDED         0.4253   0.4399   0.4682   0.3890   0.4675   0.5251   0.2446   0.1874   0.2606   0.3368   0.4349   0.3994
+
+--- PER CLIP: delta vs origin_ll (negative = better) ---
+  deliverable 8-step @1.01 (8x2)       -0.0061  -0.0072  -0.0144  -0.0173  -0.0133  -0.0025  -0.0071  -0.0186  -0.0164  -0.0105  -0.0019  -0.0386
+  deliverable T5 @1.00 PADDED          -0.0039  -0.0065  -0.0122  -0.0163  -0.0133  -0.0014  -0.0058  -0.0177  -0.0141  -0.0093  -0.0005  -0.0362
+  deliverable T5 @1.00 UNPADDED        -0.0026  -0.0068  -0.0118  -0.0165  -0.0138  -0.0018  -0.0071  -0.0179  -0.0145  -0.0093  -0.0027  -0.0357
+
+--- PER CLIP: delta vs the SAME MODEL's reference config (ref) ---
+  deliverable T5 @1.00 PADDED - ref    +0.0022  +0.0007  +0.0022  +0.0009  -0.0000  +0.0011  +0.0013  +0.0009  +0.0023  +0.0012  +0.0014  +0.0024
+  deliverable T5 @1.00 UNPADDED - ref   +0.0035  +0.0004  +0.0026  +0.0007  -0.0006  +0.0007  +0.0000  +0.0006  +0.0019  +0.0013  -0.0009  +0.0029
+
+--- PER CLIP: sharpness / GT sharpness (1.0 = matches the real right eye) ---
+  origin 8-step @1.01 (8x2)              1.253    1.314    0.828    1.287    1.360    1.584    0.507    0.564    0.895    0.479    0.693    0.466
+  deliverable 8-step @1.01 (8x2)         1.458    1.394    0.939    1.546    1.644    1.778    0.547    0.667    1.016    0.557    0.739    0.565
+  deliverable T5 @1.00 PADDED            1.497    1.377    0.923    1.525    1.619    1.795    0.537    0.649    0.989    0.560    0.773    0.556
+  deliverable T5 @1.00 UNPADDED          1.525    1.383    0.913    1.548    1.615    1.799    0.543    0.649    0.994    0.556    0.770    0.561
+
+--- PER CLIP: sharpness ratio vs the same model's reference config ---
+  deliverable T5 @1.00 PADDED / ref     1.0265   0.9880   0.9836   0.9861   0.9852   1.0095   0.9823   0.9738   0.9735   1.0049   1.0463   0.9835
+  deliverable T5 @1.00 UNPADDED / ref    1.0459   0.9919   0.9729   1.0015   0.9827   1.0118   0.9928   0.9728   0.9782   0.9983   1.0430   0.9928
+
+==================================================================================================================================
+MEANS over n=12 clips: 0042 0052 0125 0128 0141 0147 0170 0204 0225 0251 0259 0301
+==================================================================================================================================
+  row                                meanLPIPS   d vs origin_ll  d vs ref improved  sh/GT  sh/ref   worst vs origin      worst vs ref   rPSNR
+  origin 8-step @1.01 (8x2)             0.3933          +0.0000               0/12  0.936              0042 +0.0000                    16.425
+  deliverable 8-step @1.01 (8x2)        0.3804          -0.0128              12/12  1.071              0259 -0.0019                    16.229
+  deliverable T5 @1.00 PADDED           0.3818          -0.0114   +0.0014    12/12  1.067  0.9953      0259 -0.0005      0301 +0.0024  16.222
+  deliverable T5 @1.00 UNPADDED         0.3815          -0.0117   +0.0011    12/12  1.071  0.9987      0147 -0.0018      0042 +0.0035  16.218
+
+==================================================================================================================================
+PRE-REGISTERED CRITERIA (scripts/distill/runs/finalcheck_20261004/speed/PREREG.txt)
+==================================================================================================================================
+  [reported] POST-HOC (non-gating): deliverable T5 @1.00 UNPADDED holds vs DEPLOYED 8x2  (deliv_g100_T5nat vs mstudent2_step800_deliv_ll, n=12, better on 2/12): PASS
+        (a) mean delta +0.0011 <= +0.002: PASS
+        (b) worst clip 0042 +0.0035 <= +0.005: PASS
+  [reported] seed-realisation effect: UNPADDED vs PADDED (same schedule)  (deliv_g100_T5nat vs deliv_g100_T5pad, n=12, better on 8/12): PASS
+        (a) mean delta -0.0003 <= +0.002: PASS
+        (b) worst clip 0042 +0.0013 <= +0.005: PASS
+
+==================================================================================================================================
+PROVENANCE (score file per row; render dir root)
+==================================================================================================================================
+  origin 8-step @1.01 (8x2)          label=origin_ll                      roots=['outputs/beyond4_lossless'] scores=['scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt']
+  deliverable 8-step @1.01 (8x2)     label=mstudent2_step800_deliv_ll     roots=['outputs/beyond_distil_mamba_scaled'] scores=['scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt']
+  deliverable T5 @1.00 PADDED        label=deliv_g100_T5pad               roots=['outputs/finalcheck_20261004/speed'] scores=['scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt', 'scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_T5G100_4clip.txt']
+  deliverable T5 @1.00 UNPADDED      label=deliv_g100_T5nat               roots=['outputs/finalcheck_20261004/speed'] scores=['scripts/distill/runs/finalcheck_20261004/speed/SCORES_POSTHOC_T5G100NAT.txt']
+
+VERDICTS: POST-HOC (non-gating): deliverable T5 @1.00 UNPADDED holds vs DEPLOYED 8x2: PASS; seed-realisation effect: UNPADDED vs PADDED (same schedule): PASS

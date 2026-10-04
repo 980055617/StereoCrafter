@@ -1,0 +1,67 @@
+--- /home/kawa/master_project/StereoCrafter/scripts/distill/runs/diag_trainer/minift/xcheck_mini_ft.py	2026-09-29 04:13:41.437821475 +0900
++++ xcheck_mini_ft_ll.py	2026-10-03 13:03:40.586677711 +0900
+@@ -1,10 +1,14 @@
+-"""P1 positive controls: deployment-faithful mini fine-tune of origin's 15 up_blocks.3 attn1 tensors on ONE clip.
+-Derived from ../xcheck_mem_window.py (registered aligned_batch(), encode(), ff_chunk None) with the x_t / v-target /
+-timestep formulas of ../xcheck_grad_dir.py (== inpainting_train.py:1032-1062 on the deployed EulerDiscrete 8-step grid).
+-  variant null : target = RIGHT half of outputs/fulldata_v2/clips/0301_origin/0301_inpainting_results_sbs.mp4 (origin's own output)
+-  variant pos  : target = TR quadrant (real right eye) of video_data/train/0301_train.mp4, same registered 576x1024 crop
+-usage: [MINIFT_SIGMAS=deploy8|idx:0,1|700,7.28|lognormal:0.7:1.6] CUDA_VISIBLE_DEVICES=<g> python xcheck_mini_ft.py <null|pos> [out_subdir]
+-Writes minift/<out_subdir>/{train_log.csv, meta.json, step100.pt, step200.pt, step300.pt}; never overwrites an existing dir.
++"""CONTROL A (clean self-consistency): copy of scripts/distill/runs/diag_trainer/minift/xcheck_mini_ft.py (2026-09-29) with ONE
++functional change -- the "null" target is read from the LOSSLESS FFV1 render of the same deployed origin output instead of the
++cv2-mp4v render (same pre-encode array, md5 2e533d7755c950d2fc95043f6fb0a51d; beyond4/FAITHFULNESS.txt), so the two runs differ
++only in the target's codec.  Seed, eps/sigma sequence, windows, steps, LR, clipping, checkpoints: identical to the original.
++Additive diagnostics only (no effect on the optimisation): (a) the left half of the lossless sbs must be BIT-IDENTICAL to the
++splatting input's TL crop (the original's "< 3/255" train-tile check is kept as well); (b) the bf16 start point of the 15 trained
++tensors is saved to start_bf16.pt so rel ||dW||/||W|| can be measured against the true start (not the fp16 file).
++  variant null : target = RIGHT half of outputs/beyond4_lossless/clips/0301_origin_ll/0301_inpainting_results_sbs.mkv (origin's own output, lossless)
++  variant pos  : (unchanged) target = TR quadrant (real right eye) of video_data/train/0301_train.mp4, same registered 576x1024 crop
++usage: [MINIFT_SIGMAS=deploy8|idx:0,1|700,7.28|lognormal:0.7:1.6] CUDA_VISIBLE_DEVICES=<g> python xcheck_mini_ft_ll.py <null|pos> [out_subdir]
++Writes clean_controls/selfA/<out_subdir>/{train_log.csv, meta.json, start_bf16.pt, step100.pt, step200.pt, step300.pt}; never overwrites an existing dir.
+ """
+ import os, sys, json, time, csv, math
+ REPO = "/home/kawa/master_project/StereoCrafter"; os.chdir(REPO); sys.path.insert(0, REPO)
+@@ -21,8 +25,9 @@
+ VARIANT = sys.argv[1]; assert VARIANT in ("null", "pos")
+ SUB = sys.argv[2] if len(sys.argv) > 2 else VARIANT
+ CLIP = "0301"; NF = 14; STRIDE = 11; STEPS = 300; LR = 1e-5; SEED = 1234; SAVE_AT = (100, 200, 300)
+-ORIGIN_SBS = f"outputs/fulldata_v2/clips/{CLIP}_origin/{CLIP}_inpainting_results_sbs.mp4"
+-BASE = "scripts/distill/runs/diag_trainer/minift"
++ORIGIN_SBS = f"outputs/beyond4_lossless/clips/{CLIP}_origin_ll/{CLIP}_inpainting_results_sbs.mkv"   # CONTROL A: LOSSLESS (was outputs/fulldata_v2/clips/{CLIP}_origin/{CLIP}_inpainting_results_sbs.mp4)
++ORIGIN_SBS_MP4V_OLD = f"outputs/fulldata_v2/clips/{CLIP}_origin/{CLIP}_inpainting_results_sbs.mp4"
++BASE = "scripts/distill/runs/clean_controls/selfA"
+ OUT = os.path.join(BASE, SUB); k = 1
+ while os.path.exists(OUT): k += 1; OUT = os.path.join(BASE, f"{SUB}_{k}")
+ os.makedirs(OUT); print("OUT", OUT, flush=True)
+@@ -44,6 +49,7 @@
+ pipe.unet.train()
+ # fp32 master copies + AdamW
+ master = {n: torch.nn.Parameter(p.detach().float().clone()) for n, p in TRAIN}
++torch.save({n: p.detach().cpu().clone() for n, p in TRAIN}, os.path.join(OUT, "start_bf16.pt"))   # CONTROL A diagnostic: exact bf16 start point
+ opt = torch.optim.AdamW([master[n] for n, _ in TRAIN], lr=LR, betas=(0.9, 0.999), weight_decay=0.0)
+ sched = EulerDiscreteScheduler.from_config(pipe.scheduler.config); sched.set_timesteps(8, device=dev)
+ SIGMAS = [float(s) for s in sched.sigmas[:8]]; TS = [float(t) for t in sched.timesteps[:8]]
+@@ -96,6 +102,11 @@
+ mad_left = (L30 - TL30).abs().mean().item(); mad_right_gt = (R30 - TR30).abs().mean().item(); mad_right_cond = (R30 - BR30).abs().mean().item()
+ print(f"[sanity] frame30 MAD sbs-left vs TL crop = {mad_left*255:.3f}/255 (codec-only expected < 3); sbs-right(origin out) vs TR(real GT) = {mad_right_gt*255:.2f}/255; vs BR(cond) = {mad_right_cond*255:.2f}/255", flush=True)
+ assert mad_left < 3 / 255, f"origin sbs not pixel-aligned with the registered crop: MAD {mad_left*255:.2f}/255"
++# CONTROL A diagnostic: the lossless sbs left half is the pipeline's pass-through of the SPLATTING input's TL crop -> must be bit-identical (maxabs == 0)
++spl30 = torch.from_numpy(VideoReader(f"video_data/splatting/{CLIP}_splatting_results.mp4", ctx=cpu(0))[30].asnumpy()).permute(2, 0, 1).float().unsqueeze(0) / 255.0
++_, _, _, TLs30 = crop_quadrants(spl30); maxabs_spl = (L30 - TLs30).abs().max().item() * 255; mad_spl = (L30 - TLs30).abs().mean().item() * 255
++print(f"[sanity-A] frame30 MAD sbs-left vs SPLATTING TL crop = {mad_spl:.4f}/255, maxabs = {maxabs_spl:.4f}/255 (lossless: must be exactly 0)", flush=True)
++assert maxabs_spl == 0.0, f"lossless sbs left half is not bit-identical to the splatting TL crop: maxabs {maxabs_spl}/255"
+ if VARIANT == "null":
+     tgt30 = R30
+     mad_tt = (tgt30 - R30).abs().mean().item(); print(f"[sanity] P1-null target frame30 vs origin output frame30 MAD = {mad_tt*255:.3f}/255", flush=True)
+@@ -124,7 +135,9 @@
+            "trainable": [n for n, _ in TRAIN], "nf": NF, "stride": STRIDE, "windows": starts, "steps": STEPS, "lr": LR, "betas": [0.9, 0.999], "wd": 0.0,
+            "clip_grad_norm": 1.0, "seed": SEED, "sigmas": SIGMAS, "timesteps": TS, "sigma_spec": SIGSPEC, "cond_latent_scale": 1.0, "x0_scale": pipe.vae.config.scaling_factor,
+            "mask_fracs": mask_fracs, "sanity_mad_left_255": mad_left * 255, "sanity_mad_right_vs_gt_255": mad_right_gt * 255,
+-           "sanity_mad_right_vs_cond_255": mad_right_cond * 255}, open(os.path.join(OUT, "meta.json"), "w"), indent=1)
++           "sanity_mad_right_vs_cond_255": mad_right_cond * 255,
++           "control": "A clean self-consistency (lossless target)", "target_codec": "FFV1 lossless (decord bit-exact)", "old_mp4v_target": ORIGIN_SBS_MP4V_OLD,
++           "sanity_mad_left_vs_splat_TL_255": mad_spl, "sanity_maxabs_left_vs_splat_TL_255": maxabs_spl, "start_point_file": "start_bf16.pt"}, open(os.path.join(OUT, "meta.json"), "w"), indent=1)
+ 
+ # ---- training ----
+ g = torch.Generator(device=dev).manual_seed(SEED); rng = torch.Generator().manual_seed(SEED + 1)

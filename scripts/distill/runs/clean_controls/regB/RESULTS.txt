@@ -1,0 +1,167 @@
+CONTROL B -- "NORMAL" PER-SAMPLE DIFFUSION-LOSS TRAINING TOWARD THE REAL RIGHT EYE, REGISTERED TO THE RENDER FRAME
+GPU 1, 2026-10-03.  Directory: scripts/distill/runs/clean_controls/regB/   (nothing tracked modified; nothing under video_data/ touched)
+======================================================================================================================================
+
+VERDICT: REGISTRATION DOES NOT HELP: 0301 0.5959 (best step 200; steps 100/200/300 = 0.6310 / 0.5959 / 0.6001 vs deployed origin 0.4351,
+         i.e. +0.196 / +0.161 / +0.165 at every checkpoint -- pre-registered outcome (i)).  Held-out 0204: 0.2332 (step200) / 0.2403
+         (step300) vs origin 0.2053 (+0.028 / +0.035).  Registration removed 35-46 % of the unregistered run's damage (lossless,
+         within-codec: pos 0.8004 / 0.6835 / 0.7237) but the remaining damage is 4-6x the +0.037 headroom that 25-step sampling
+         and the step-distilled students realise (0.3986 / 0.3982 / 0.3831).  The point-target conclusion stands; the geometric
+         misregistration of the GT was a real but secondary contributor.  Two extras (section 8): per-FRAME registration changes
+         nothing (0.6208 / 0.6291 / 0.6047), and the same regB weights sampled with 25 steps score 0.4314 (origin+s25 0.3986) --
+         ~80 % of the deployed damage is the fine-tuned denoiser meeting the compute-limited 8-step trajectory, not a broken denoiser.
+
+All LPIPS numbers below are LOSSLESS (FFV1 renders, scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py, SCORE_STEP=4, n=38
+frames, LPIPS-alex vs the UNregistered real right eye at the scorer's window (dy,dx)=(-28,0) -- the project's standard number).
+"LPIPSreg" rows are a DIAGNOSTIC against the registered GT (scores/score_clip_ll_reg.py), reported separately and never mixed in.
+
+--------------------------------------------------------------------------------------------------------------------------------------
+0. FAITHFULNESS OF THE MEASUREMENT PATH
+--------------------------------------------------------------------------------------------------------------------------------------
+* infer/xcheck_hybrid_regB_ll.py = minift/xcheck_hybrid_minift.py + the beyond4 FFV1 writer rebinding (import infer_lossless).
+  Control render mode=originall on 0301 -> pre-encode md5 2e533d7755c950d2fc95043f6fb0a51d == outputs/beyond4_lossless/clips/
+  0301_origin_ll (FAITHFULNESS_OK in infer/chain_regB_v1.log; infer/regB_originall_0301/writer_md5.txt), and its score row is
+  identical to origin's (0.4351 / sharp 0.0235 / rPSNR 15.467).
+* Origin re-scored by me (scores/scores_origin_rescore.txt): 0301 LPIPS 0.4351 sharp 0.0235 rPSNR 15.467; 0204 0.2053 / 0.0065 / 19.896.
+  (The 0.4445 quoted in the task is the mp4v-era number; the lossless reference used throughout is 0.4351.)
+* Context rows re-scored by me losslessly (scores/scores_context_std.txt) agree to 4 decimals with
+  scripts/distill/runs/beyond_distil_mamba/TABLE_12CLIP_mstudent1_step600.txt.
+
+--------------------------------------------------------------------------------------------------------------------------------------
+1. REGISTRATION (registration/REGISTRATION.txt, registration.json, register.log)
+--------------------------------------------------------------------------------------------------------------------------------------
+Exhaustive integer search |ddy|<=3, |ddx|<=64 of the real right eye (train tile TR) against the model's warped input (train tile BR)
+over the deployed 576x1024 window (top,left)=(224,448), holes (BL>0.5) excluded, 16 frames per clip (every 10th + last).
+  0301: per-frame optimum ddx drifts -10, -7, -12, -14, -15, -14, -15, -13, -11, -10, -8, -6, -10, -12, -12, -11 (frames 0..150),
+        ddy in [-2,+1].  Spread 9 px  ->  NOT STABLE (> 4 px).  Joint optimum (argmax of the mean PSNR over frames) = (ddy,ddx)=(0,-12),
+        mean PSNR 14.43 -> 16.42 dB; per-frame median (0,-11).  GEOMETRY.txt's (1,-15) is reproduced exactly at its frame 40.
+        Per-block (192x256) fits at frames 0/75/150: ddx in [-16,-7], IQR [-12,-11]  -> the residual disparity is depth-dependent;
+        no single shift registers every region.  LIMITATION: the applied global (0,-12) leaves up to ~4-5 px residual on some
+        frames/regions (0.5 latent pixel).  A per-frame refinement (register_gt_perframe_regB.py, all 151 frames, median-5 smoothed,
+        ddx in [-16,-6]) gains only +0.4 dB more (whole-clip GT-vs-BR PSNR 14.47 unreg -> 16.52 global -> 16.91 per-frame), which is
+        why the depth-dependent part dominates what remains; it is used in the follow-up run in section 7.
+  0204: (-1,-17) at 16/16 frames within 2 px -> STABLE; mean PSNR 18.59 -> 23.22 dB; GEOMETRY.txt's (-1,-17) reproduced.
+        Per-block ddx in [-19,-10] (bottom row of blocks -10..-14): also depth-dependent, but the global fit is good.
+Applied: the registered GT = TR read at the window shifted by the clip-global (ddy,ddx); the shifted window stays inside the
+1080x1920 quadrant, so 0 pixels had to be filled from BR.  Saved losslessly (FFV1, decode verified bit-exact):
+  registration/0301_gt_registered_576x1024.mkv   md5 ff2a1ad47e2124ce83f1eb42ca2b1ae7   <- the frames trained on
+  registration/0204_gt_registered_576x1024.mkv   md5 e91cb81fff621eaa06a1d73c42de0219   (scoring diagnostic only; 0204 never trained on)
+  registration/0301_gt_registered_perframe_576x1024.mkv  md5 49f58a67ece38cd296c20e5df18bd2cb  (follow-up run)
+  inspection panels registration/<clip>_inspect_f{000,075,150}.png = [BR | TR unregistered | TR registered] / [ - | |TR-BR| unreg | reg]
+Mask check: train-tile BL vs splatting-video BL disagree on 0.012 % (0301) / 0.0015 % (0204) of window pixels.
+
+--------------------------------------------------------------------------------------------------------------------------------------
+2. TRAINING (train/xcheck_mini_ft_regB.py = minift/xcheck_mini_ft.py + variant "regpos"; diff in the file header; run dir train/regpos)
+--------------------------------------------------------------------------------------------------------------------------------------
+Identical to the P1 trainer: same seed 1234 (the sigma/window draw sequence is verified identical to null and pos step by step),
+13 windows on the deployed stride-11 grid, 300 steps, lr 1e-5 AdamW, clip 1.0, the 15 up_blocks.3.*.attn1 tensors, fp32 masters /
+bf16 forward, uniform over the 8 deployment sigmas; the ONLY change is target = registration/0301_gt_registered_576x1024.mkv (md5
+verified at load).  307 s, peak 15.25 GiB.  Checkpoints train/regpos/step{100,200,300}.pt (fp32 dicts of the 15 tensors).
+  step-1 gradient norm (pre-clip, sigma 30.99, window 0 -- same draw in all three runs):  null 0.347 | pos 1.868 | regpos 1.244
+  mean loss / mean pre-clip gn / clipped steps:  null 0.2854 / 0.149 / 0 %  |  pos 0.5173 / 0.721 / 22.7 %  |  regpos 0.4688 / 0.745 / 32.0 %
+  per-sigma mean loss (null / pos / regpos): s700 0.096/0.396/0.331  s287 0.092/0.363/0.318  s103 0.089/0.384/0.318  s31 0.089/0.400/0.328
+     s7.3 0.085/0.362/0.299  s1.17 0.113/0.382/0.316  s0.097 0.672/0.815/0.807  s0.002 1.001/1.002/1.002   (train/dynamics_regpos.txt)
+  -> registration closes ~20-25 % of the pos-vs-null loss gap at the high sigmas; the rest is content the model does not produce.
+  rel ||dW||/||W|| at step 300 vs the origin safetensors (minift/analyze_deltas.py, train/deltas_regpos.txt):
+     null 0.00204 | pos 0.00242 | regpos 0.00225;  cos(regpos, null) = 0.609, cos(regpos, pos) = 0.606  (null-vs-pos 0.571)
+  Loss went DOWN monotonically (last-50 mean 0.372 vs 0.425 at step 1) while sampled LPIPS went UP: the 7th loss/quality
+  anti-correlation in this project; checkpoints are selected by sampled LPIPS only.
+
+--------------------------------------------------------------------------------------------------------------------------------------
+3. SCORES  (scores/scores_regB_final.txt; consolidated by scores/summarize_regB.py)
+--------------------------------------------------------------------------------------------------------------------------------------
+0301 (trained clip)   GT sharp 0.0505                      LPIPS   d vs origin   sharp    rPSNR
+  deployed origin (origin_ll, my re-score)                 0.4351    +0.0000      0.0235   15.467
+  regB step100  (registered GT)                            0.6310    +0.1959      0.0178   16.044
+  regB step200  (registered GT)  <- best by sampled LPIPS  0.5959    +0.1609      0.0189   15.869
+  regB step300  (registered GT)                            0.6001    +0.1650      0.0191   15.803
+  pos  step100  (UNregistered GT, same trainer, lossless)  0.8004    +0.3653      0.0131   16.969
+  pos  step200                                             0.6835    +0.2484      0.0159   17.272
+  pos  step300                                             0.7237    +0.2886      0.0149   17.444
+  fraction of the unregistered damage removed by registration: step100 46.4 %, step200 35.3 %, step300 42.8 %
+  (mp4v-era pos numbers 0.7727/0.6736/0.7075 are NOT comparable to lossless rows; the within-codec baseline above is what counts.)
+0204 (held-out, never trained on)  GT sharp 0.0116
+  deployed origin                                          0.2053    +0.0000      0.0065   19.896
+  regB step200                                             0.2332    +0.0279      0.0066   20.032
+  regB step300                                             0.2403    +0.0350      0.0066   20.038
+Sharpness: 0301 drops 0.0235 -> 0.0178..0.0191 (GT 0.0505) -- the output gets blurrier while its PSNR vs the GT rises
+(15.47 -> 15.8-16.0 dB): regression toward the conditional mean, the signature of a single-sample MSE target.  0204 sharpness kept.
+
+--------------------------------------------------------------------------------------------------------------------------------------
+4. SIGMA-BAND SWAP at inference, best checkpoint step200, clip 0301  (trained tensors used only in part of the 8-step sampler)
+--------------------------------------------------------------------------------------------------------------------------------------
+  e1high: regB tensors only when t=0.25 ln(sigma) > 1.0 (sigma 700/287/103, first 3 steps), origin otherwise:  0.4386  (+0.0035, harmless)
+  e1low : regB tensors only in the last 5 steps (sigma 31 .. 0.002), origin otherwise:                          0.5863  (+0.1512 of +0.1609)
+  -> 94 % of the damage is expressed in the low-sigma half of the trajectory, exactly as in the pos run (e1high 0.4500 / e1low 0.7086,
+     mp4v era).  Registration did not change WHERE the damage lives, only its size.
+
+--------------------------------------------------------------------------------------------------------------------------------------
+5. DIAGNOSTIC: LPIPS AGAINST THE REGISTERED GT  (scores/scores_regB_regdiag.txt, scores_context_regdiag.txt; not the standard number)
+--------------------------------------------------------------------------------------------------------------------------------------
+  0301: origin 0.4057 | regB step100/200/300 0.6010 / 0.5617 / 0.5635 | pos step100/200/300 0.8007 / 0.6921 / 0.7378
+        | e1high 0.4089 | e1low 0.5522 | s25 0.3687 | attn student 0.3686 | mstudent1 0.3498
+  0204: origin 0.1346 | regB step200/300 0.1626 / 0.1715 | s25 0.1188 | attn student 0.1168 | mstudent1 0.1144
+  Reading: (a) ~0.03 (0301) and ~0.07 (0204) of every standard LPIPS is pure misregistration, the same for all configs, rankings
+  unchanged; (b) the regB output moves AWAY from the registered target too (+0.156), so it did not learn anything LPIPS rewards;
+  (c) the unregistered run visibly chased the unregistered GT -- its PSNR vs the unregistered GT rose to 17.4 dB while its PSNR vs
+  the REGISTERED GT fell to 16.3 dB (origin 17.2): it was being asked for a re-warp, and that part registration did remove.
+
+--------------------------------------------------------------------------------------------------------------------------------------
+6. CONTEXT ROW -- where registered-GT training lands relative to distillation (all lossless, same scorer; my re-scores, identical to
+   scripts/distill/runs/beyond_distil_mamba/TABLE_12CLIP_mstudent1_step600.txt)
+--------------------------------------------------------------------------------------------------------------------------------------
+                                            0301 LPIPS  sharp   |  0204 LPIPS  sharp
+  deployed origin (8 steps, g 1.01)           0.4351   0.0235   |   0.2053    0.0065
+  origin + s25 (25 steps, same weights)       0.3986   0.0295   |   0.1897    0.0076
+  origin + attn student (step-distilled)      0.3982   0.0291   |   0.1883    0.0076
+  mamba + mstudent1_step600 (deliverable)     0.3831   0.0315   |   0.1867    0.0081
+  regB registered-GT training, step200        0.5959   0.0189   |   0.2332    0.0066
+  gap regB-step200 minus best distilled:     +0.2128            |  +0.0465
+
+--------------------------------------------------------------------------------------------------------------------------------------
+7. PRE-REGISTERED READOUT
+--------------------------------------------------------------------------------------------------------------------------------------
+Outcome (i): it still degrades (>= +0.1 on 0301 at every step: +0.196 / +0.161 / +0.165).  Registration was not the blocker; the
+point-target conclusion stands.  Quantified: registration removed 35-46 % of the unregistered damage, left 4-6x the s25 headroom
+as damage, did not move the damage out of the low-sigma steps, and did not stop the sharpness collapse.  (ii)/(iii) do not apply.
+Follow-ups run after the main chain (section 8) test the two obvious objections: "your global registration was approximate"
+(per-frame-registered training) and "maybe the denoiser improved but the 8-step trajectory is fragile" (25-step sampling of regB).
+
+--------------------------------------------------------------------------------------------------------------------------------------
+8. EXTRAS  (infer/chain_regB_v3_extras.sh + chain_regB_v2_followup.sh; both finished 14:21)
+--------------------------------------------------------------------------------------------------------------------------------------
+(a) WHERE DOES THE DAMAGE LIVE -- the regB step200 weights sampled with 25 Euler steps on 0301 (infer/xcheck_hybrid_regB_ll_steps.py,
+    MINIFT_STEPS=25, same hook, FFV1; scores/scores_regB_s25.txt):
+        regB step200 @ 8 steps   0.5959   sharp 0.0189      (+0.1609 vs deployed origin 0.4351)
+        regB step200 @ 25 steps  0.4314   sharp 0.0287      (+0.0328 vs origin+s25 0.3986 / 0.0295;  -0.0037 vs deployed origin, at 3.1x the sampler cost)
+    The same weights that cost +0.161 on the deployed 8-step trajectory cost +0.033 on the 25-step one, and the sharpness collapse
+    (0.0189) disappears (0.0287 vs s25's 0.0295).  ~80 % of the deployed damage is therefore the interaction between the fine-tuned
+    denoiser and the compute-limited 8-step Euler trajectory, not a destroyed denoiser -- the per-sample loss optimises single-step
+    denoising accuracy, which is not what the 8-step sampler needs.  (One clip, one checkpoint; a direct reading, not a theorem.)
+(b) IS THE APPROXIMATE REGISTRATION THE LIMITER -- per-frame-registered training (train/xcheck_mini_ft_regB_pf.py, run dir
+    train/regpos_pf, target registration/0301_gt_registered_perframe_576x1024.mkv, all 151 frames individually registered, md5
+    verified at load; everything else identical; scores/scores_regBpf_final.txt):
+        0301 steps 100/200/300:  0.6208 / 0.6291 / 0.6047   sharp 0.0180 / 0.0175 / 0.0188   (global-shift run: 0.6310 / 0.5959 / 0.6001)
+        best by sampled LPIPS = step300 -> held-out 0204: 0.2388 (+0.0335), sharp 0.0066     (global-shift run step300: 0.2403)
+        LPIPSreg (vs registered GT): 0.5911 / 0.6013 / 0.5759 on 0301; 0.1760 on 0204
+        step-1 gn 0.921 (regpos 1.244, pos 1.868, null 0.347); mean loss 0.4663, last-50 0.3755; rel ||dW||/||W|| 0.00219,
+        cos vs null 0.626 / vs pos 0.656 (train/deltas_regpos_pf.txt, dynamics_regpos_pf.txt)
+    Refining the registration from a global shift to per-frame shifts (GT-vs-BR PSNR 16.52 -> 16.91 dB) changes the sampled LPIPS
+    by < 0.01 in either direction at every checkpoint.  The 9 px per-frame drift reported as a limitation in section 1 is therefore
+    not what limits this control; the remaining depth-dependent residual (per-block spread) is at most ~5 px, 0.6 latent pixel.
+
+--------------------------------------------------------------------------------------------------------------------------------------
+9. OUTPUT FOLDERS (all NEW, nothing pre-existing overwritten or deleted)
+--------------------------------------------------------------------------------------------------------------------------------------
+  scripts/distill/runs/clean_controls/regB/registration/   registered GT mkv's (+.md5), REGISTRATION.txt, registration*.json, PNG panels, logs
+  scripts/distill/runs/clean_controls/regB/train/regpos/   step100/200/300.pt, train_log.csv, meta.json; train/train_regpos.log, deltas_regpos.txt, dynamics_regpos.txt
+  scripts/distill/runs/clean_controls/regB/train/regpos_pf/ same for the per-frame-registered follow-up run (train_regpos_pf.log, deltas_regpos_pf.txt, dynamics_regpos_pf.txt)
+  scripts/distill/runs/clean_controls/regB/infer/          one dir per render: regB_originall_0301, regB_step{100,200,300}_0301, regB_step{200,300}_0204,
+                                                           regB_step200_0301_{e1high,e1low,s25}, posUnreg_step{100,200,300}_0301, regBpf_step{100,200,300}_0301,
+                                                           regBpf_step300_0204 (+ .log each; chain_regB_v1.log, chain_regB_v3_extras.log)
+  scripts/distill/runs/clean_controls/regB/scores/         TABLE_regB.txt (consolidated), scores_origin_rescore.txt, scores_regB_phaseA.txt, scores_regB_final.txt,
+                                                           scores_regB_regdiag.txt, scores_regB_s25.txt, scores_regBpf_{0301,final,regdiag}.txt, scores_context_std.txt,
+                                                           scores_context_regdiag.txt, early_*.txt, summarize_regB.py, score_clip_ll_reg.py
+  Hard-rule compliance: GPU 1 only (CUDA_VISIBLE_DEVICES=1, transient systemd units), no tracked file edited, no git command, nothing under
+  video_data/ or any existing checkpoint touched (minift/pos/*.pt read only), every render in a new directory, all quality numbers via the
+  FFV1 path + score_clip_ll.py SCORE_STEP=4, checkpoints selected by sampled LPIPS.  No run failed; no retry was needed.

@@ -1,0 +1,59 @@
+  start = torch.load(os.path.join(NEW, "start_bf16.pt"), map_location="cpu"); KEYS = sorted(start)
+  def load(d, step): return cat(torch.load(os.path.join(d, f"step{step}.pt"), map_location="cpu"))
+safetensors dtype: {torch.float16}
+start_bf16.pt vs safetensors(fp16)->bf16 : maxabs diff = 0.000e+00  (0 => the trainer's start point IS the bf16 cast of the fp16 file)
+bf16 quantisation floor of the start point : rel ||bf16 - fp16|| / ||W|| = 0.00168   <- what the old fp16-file measurement folded into 'dW'
+
+run         step   rel dW/W vs bf16 start   rel dW/W vs fp16 file (old method)   cos(new,old) same step
+llnull       100                  0.00059                              0.00178                    0.738
+old null     100                  0.00064                              0.00180                    0.738
+llnull       200                  0.00089                              0.00190                    0.760
+old null     200                  0.00093                              0.00192                    0.760
+llnull       300                  0.00109                              0.00200                    0.760
+old null     300                  0.00116                              0.00204                    0.760
+
+per-tensor share of ||dW||^2 at step 300 (llnull / old null):
+  0.transformer_blocks.0.attn1.to_k.weight 0.049 / 0.057
+  0.transformer_blocks.0.attn1.to_out.0.bias 0.000 / 0.000
+  0.transformer_blocks.0.attn1.to_out.0.weight 0.096 / 0.098
+  0.transformer_blocks.0.attn1.to_q.weight 0.039 / 0.048
+  0.transformer_blocks.0.attn1.to_v.weight 0.060 / 0.069
+  1.transformer_blocks.0.attn1.to_k.weight 0.019 / 0.023
+  1.transformer_blocks.0.attn1.to_out.0.bias 0.000 / 0.000
+  1.transformer_blocks.0.attn1.to_out.0.weight 0.094 / 0.101
+  1.transformer_blocks.0.attn1.to_q.weight 0.026 / 0.026
+  1.transformer_blocks.0.attn1.to_v.weight 0.059 / 0.066
+  2.transformer_blocks.0.attn1.to_k.weight 0.048 / 0.045
+  2.transformer_blocks.0.attn1.to_out.0.bias 0.001 / 0.001
+  2.transformer_blocks.0.attn1.to_out.0.weight 0.242 / 0.225
+  2.transformer_blocks.0.attn1.to_q.weight 0.037 / 0.029
+  2.transformer_blocks.0.attn1.to_v.weight 0.229 / 0.212
+
+train_log.csv statistics:
+== llnull (scripts/distill/runs/clean_controls/selfA/llnull) target=outputs/beyond4_lossless/clips/0301_origin_ll/0301_inpainting_results_sbs.mkv right half
+   step-1 pre-clip grad norm = 0.3534 (sigma 30.99, window 0) | mean over 300 steps = 0.1415 | steps 1-50 0.1965 | 251-300 0.1122 | clipped(>1) 0/300
+   loss mean 1-50 = 0.2969 | 251-300 = 0.1775 | s/step median 0.993 | peak alloc 15.25 GiB
+      sigma   n loss_1-150 loss_151-300  gn_mean
+        700  33     0.0892       0.0897   0.1379
+      286.5  29     0.0865       0.0851   0.1113
+      102.9  44     0.0845       0.0818   0.1168
+      30.99  38     0.0819       0.0835   0.1272
+      7.276  36     0.0805       0.0804   0.1094
+      1.168  43     0.1097       0.1077   0.1749
+    0.09739  38     0.6556       0.6438   0.2734
+      0.002  39     1.0013       1.0015   0.0729
+== old null (scripts/distill/runs/diag_trainer/minift/null) target=outputs/fulldata_v2/clips/0301_origin/0301_inpainting_results_sbs.mp4 right half
+   step-1 pre-clip grad norm = 0.3469 (sigma 30.99, window 0) | mean over 300 steps = 0.1485 | steps 1-50 0.2075 | 251-300 0.1192 | clipped(>1) 0/300
+   loss mean 1-50 = 0.3047 | 251-300 = 0.1826 | s/step median 0.993 | peak alloc 15.25 GiB
+      sigma   n loss_1-150 loss_151-300  gn_mean
+        700  33     0.0957       0.0954   0.1652
+      286.5  29     0.0946       0.0896   0.1266
+      102.9  44     0.0907       0.0872   0.1290
+      30.99  38     0.0880       0.0895   0.1485
+      7.276  36     0.0855       0.0846   0.1302
+      1.168  43     0.1146       0.1125   0.1723
+    0.09739  38     0.6781       0.6631   0.2447
+      0.002  39     1.0013       1.0014   0.0697
+
+(window, sigma) schedule identical between the two runs for all 300 steps: True
+DELTAS_DONE

@@ -1,0 +1,99 @@
+================================================================================================================================================================
+BENCH LANE -- DIAGNOSTIC dtype arm (POST-HOC, NON-GATING; PREREG_ADDENDUM_dtype.txt)
+run dir outputs/finalcheck_20261004/bench/dtype_v1; fp16 reference = the primary run outputs/finalcheck_20261004/bench/run_v1 (unmodified bench2.py)
+  versions.txt:
+     python 3.11.15 torch 2.4.0 cuda 12.1 diffusers 0.29.2 gpu NVIDIA GeForce RTX 4090
+  bench2_md5.txt:
+     c439daf2f5829a2dfd7d1802fc985f73  scripts/distill/bench2.py
+     390ac3691d167013e8fc947e79ccd366  scripts/distill/runs/finalcheck_20261004/bench/bench2_dtype_diag.py
+  diag_copy_diff.txt:
+     20c20
+     < pre="weights/stable-video-diffusion-img2vid-xt-1-1/"; up="weights/StereoCrafter/"; dt=torch.float16
+     ---
+     > pre="weights/stable-video-diffusion-img2vid-xt-1-1/"; up="weights/StereoCrafter/"; dt={"fp16":torch.float16,"bf16":torch.bfloat16}[os.environ.get("DT","fp16")]  # DIAG COPY: only change vs scripts/distill/bench2.py
+================================================================================================================================================================
+  processes: 42 of 42 expected; missing none; retries none
+  B1 instrumentation: PASS
+  B4 exclusivity: PASS   (GPU1 sampler n=609, max util 0 %)
+
+--- C0 COPY-IDENTITY: fp16 control (bench2_dtype_diag.py, DT=fp16) vs the primary run (unmodified bench2.py), BS=1 576x1024 ---
+  origin  diag-copy fp16 0.4851 +- 0.0005   primary fp16 0.4857 +- 0.0004   -0.12 % (tol +-1.5 %) ok
+  mamba5  diag-copy fp16 0.4585 +- 0.0003   primary fp16 0.4587 +- 0.0003   -0.06 % (tol +-1.5 %) ok
+  C0: PASS
+
+--- D1 bf16 per forward (mean +- half-range, n) vs the primary fp16 run ---
+  res         config  BS  n   bf16 s      +- peak MiB   fp16 s bf16/fp16  bf16 BS1/BS2 fp16 BS1/BS2
+  576x1024    origin   2  3   0.9611  0.0002     7396   0.9612    0.9999                           
+  576x1024    mamba5   2  3   0.9099  0.0005     7404   0.9103    0.9996                           
+  576x1024    origin   1  3   0.4857  0.0002     5075   0.4857    1.0001        0.5053       0.5053
+  576x1024    mamba5   1  3   0.4586  0.0001     5081   0.4587    0.9997        0.5040       0.5039
+  1024x1792   origin   2  3   3.7006  0.0015    16790   3.7127    0.9967                           
+  1024x1792   mamba5   2  3   2.9412  0.0005    16798   2.9529    0.9960                           
+  1024x1792   origin   1  3   1.8750  0.0003     9570   1.8792    0.9977        0.5067       0.5062
+  1024x1792   mamba5   1  3   1.4929  0.0006     9575   1.4953    0.9984        0.5076       0.5064
+  1024x1920   origin   2  3   4.0456  0.0008    17783   4.0591    0.9967                           
+  1024x1920   mamba5   2  3   3.1629  0.0006    17788   3.1742    0.9964                           
+  1024x1920   origin   1  3   2.0577  0.0008    10040   2.0603    0.9988        0.5086       0.5076
+  1024x1920   mamba5   1  3   1.6154  0.0002    10047   1.6159    0.9997        0.5107       0.5091
+
+--- D3 MAMBA SHARE t(mamba5,BS)/t(origin,BS): bf16 vs fp16 ---
+  576x1024    BS2 bf16 0.9467 (-5.33 %) fp16 0.9470 (-5.30 %)   |   BS1 bf16 0.9442 (-5.58 %) fp16 0.9445 (-5.55 %)
+  1024x1792   BS2 bf16 0.7948 (-20.52 %) fp16 0.7954 (-20.46 %)   |   BS1 bf16 0.7962 (-20.38 %) fp16 0.7957 (-20.43 %)
+  1024x1920   BS2 bf16 0.7818 (-21.82 %) fp16 0.7820 (-21.80 %)   |   BS1 bf16 0.7851 (-21.49 %) fp16 0.7843 (-21.57 %)
+
+================================================================================================================================================================
+D2  X1-bf16 at 576x1024: |pred/meas - 1| <= 0.04 for every included row (same rule as PREREG X1, predictions from the bf16 bench)
+================================================================================================================================================================
+  configuration                  meas rel fp16 pred fp16 p/m bf16 pred bf16 p/m  X1-bf16
+  deployed origin 8x2 @1.01        1.0000    1.0000    1.000    1.0000    1.000  ok
+  deliverable 8x2 @1.01            0.9500    0.9470    0.997    0.9467    0.997  ok
+  deliverable 8x1 @1.00            0.5260    0.4772    0.907    0.4771    0.907  OUT
+  deliverable T6 @1.01 (6x2)       0.7122    0.7103    0.997    0.7100    0.997  ok
+  deliverable T5 @1.01 (5x2)       0.5934    0.5919    0.997    0.5917    0.997  ok
+  deliverable T5 @1.00 (5x1)       0.3287    0.2983    0.908    0.2982    0.907  OUT
+  origin 8x1 @1.00                 0.5522    0.5053    0.915    0.5053    0.915  OUT
+  origin T6 @1.01 (6x2)            0.7501    0.7500    1.000    0.7500    1.000  ok
+  origin T5 @1.01 (5x2)            0.6248    0.6250    1.000    0.6250    1.000  ok
+  origin T5 @1.00 (5x1)            0.3450    0.3158    0.915    0.3158    0.915  excluded row, info only
+  X1-bf16: FAIL -> deliverable 8x1 @1.00; deliverable T5 @1.00 (5x1); origin 8x1 @1.00
+
+================================================================================================================================================================
+PER-WINDOW UNet TIME relative to deployed origin 8x2 @1.01 at the same resolution: published-methodology fp16 vs bf16 (deployed dtype)
++- = half-range of the 3 per-rep paired ratios.  Lever rows at 1024x1792 / 1024x1920 are SPEED-ONLY (quality verified at 576x1024 only).
+================================================================================================================================================================
+--- 576x1024  deployed origin per-window UNet: fp16 bench 7.690 s, bf16 bench 7.689 s ---
+  deployed origin 8x2 @1.01      fp16 rel 1.0000 +- 0.0000   bf16 rel 1.0000 +- 0.0000   bf16 per-window   7.689 s
+  deliverable 8x2 @1.01          fp16 rel 0.9470 +- 0.0029   bf16 rel 0.9467 +- 0.0006   bf16 per-window   7.279 s
+  deliverable 8x1 @1.00          fp16 rel 0.4772 +- 0.0012   bf16 rel 0.4771 +- 0.0002   bf16 per-window   3.669 s
+  deliverable T6 @1.01 (6x2)     fp16 rel 0.7103 +- 0.0022   bf16 rel 0.7100 +- 0.0005   bf16 per-window   5.460 s
+  deliverable T5 @1.01 (5x2)     fp16 rel 0.5919 +- 0.0018   bf16 rel 0.5917 +- 0.0004   bf16 per-window   4.550 s
+  deliverable T5 @1.00 (5x1)     fp16 rel 0.2983 +- 0.0008   bf16 rel 0.2982 +- 0.0001   bf16 per-window   2.293 s
+  origin 8x1 @1.00               fp16 rel 0.5053 +- 0.0013   bf16 rel 0.5053 +- 0.0003   bf16 per-window   3.886 s
+  origin T6 @1.01 (6x2)          fp16 rel 0.7500 +- 0.0000   bf16 rel 0.7500 +- 0.0000   bf16 per-window   5.767 s
+  origin T5 @1.01 (5x2)          fp16 rel 0.6250 +- 0.0000   bf16 rel 0.6250 +- 0.0000   bf16 per-window   4.806 s
+  origin T5 @1.00 (5x1)          fp16 rel 0.3158 +- 0.0008   bf16 rel 0.3158 +- 0.0002   bf16 per-window   2.428 s   [EXCLUDED: failed its quality criterion]
+
+--- 1024x1792  deployed origin per-window UNet: fp16 bench 29.702 s, bf16 bench 29.605 s ---
+  deployed origin 8x2 @1.01      fp16 rel 1.0000 +- 0.0000   bf16 rel 1.0000 +- 0.0000   bf16 per-window  29.605 s
+  deliverable 8x2 @1.01          fp16 rel 0.7954 +- 0.0013   bf16 rel 0.7948 +- 0.0002   bf16 per-window  23.530 s
+  deliverable 8x1 @1.00          fp16 rel 0.4028 +- 0.0009   bf16 rel 0.4034 +- 0.0003   bf16 per-window  11.943 s
+  deliverable T6 @1.01 (6x2)     fp16 rel 0.5965 +- 0.0010   bf16 rel 0.5961 +- 0.0002   bf16 per-window  17.647 s
+  deliverable T5 @1.01 (5x2)     fp16 rel 0.4971 +- 0.0008   bf16 rel 0.4967 +- 0.0001   bf16 per-window  14.706 s
+  deliverable T5 @1.00 (5x1)     fp16 rel 0.2517 +- 0.0006   bf16 rel 0.2521 +- 0.0002   bf16 per-window   7.465 s
+  origin 8x1 @1.00               fp16 rel 0.5062 +- 0.0011   bf16 rel 0.5067 +- 0.0002   bf16 per-window  15.000 s
+  origin T6 @1.01 (6x2)          fp16 rel 0.7500 +- 0.0000   bf16 rel 0.7500 +- 0.0000   bf16 per-window  22.204 s
+  origin T5 @1.01 (5x2)          fp16 rel 0.6250 +- 0.0000   bf16 rel 0.6250 +- 0.0000   bf16 per-window  18.503 s
+  origin T5 @1.00 (5x1)          fp16 rel 0.3163 +- 0.0007   bf16 rel 0.3167 +- 0.0002   bf16 per-window   9.375 s   [EXCLUDED: failed its quality criterion]
+
+--- 1024x1920  deployed origin per-window UNet: fp16 bench 32.473 s, bf16 bench 32.365 s ---
+  deployed origin 8x2 @1.01      fp16 rel 1.0000 +- 0.0000   bf16 rel 1.0000 +- 0.0000   bf16 per-window  32.365 s
+  deliverable 8x2 @1.01          fp16 rel 0.7820 +- 0.0004   bf16 rel 0.7818 +- 0.0002   bf16 per-window  25.303 s
+  deliverable 8x1 @1.00          fp16 rel 0.3981 +- 0.0004   bf16 rel 0.3993 +- 0.0001   bf16 per-window  12.923 s
+  deliverable T6 @1.01 (6x2)     fp16 rel 0.5865 +- 0.0003   bf16 rel 0.5864 +- 0.0001   bf16 per-window  18.978 s
+  deliverable T5 @1.01 (5x2)     fp16 rel 0.4888 +- 0.0003   bf16 rel 0.4886 +- 0.0001   bf16 per-window  15.815 s
+  deliverable T5 @1.00 (5x1)     fp16 rel 0.2488 +- 0.0002   bf16 rel 0.2496 +- 0.0001   bf16 per-window   8.077 s
+  origin 8x1 @1.00               fp16 rel 0.5076 +- 0.0004   bf16 rel 0.5086 +- 0.0003   bf16 per-window  16.462 s
+  origin T6 @1.01 (6x2)          fp16 rel 0.7500 +- 0.0000   bf16 rel 0.7500 +- 0.0000   bf16 per-window  24.273 s
+  origin T5 @1.01 (5x2)          fp16 rel 0.6250 +- 0.0000   bf16 rel 0.6250 +- 0.0000   bf16 per-window  20.228 s
+  origin T5 @1.00 (5x1)          fp16 rel 0.3172 +- 0.0002   bf16 rel 0.3179 +- 0.0002   bf16 per-window  10.289 s   [EXCLUDED: failed its quality criterion]
+

@@ -1,0 +1,34 @@
+SKEPTIC INTEGRITY SNAPSHOT 2026-10-03 14:38:17
+--- systemd units of this review ---
+inactive
+inactive
+--- nvidia-smi ---
+index, memory.used [MiB], utilization.gpu [%]
+0, 111 MiB, 0 %
+1, 15 MiB, 0 %
+--- git status --porcelain (repo StereoCrafter, branch attn1_only_version, HEAD 7719174) ---
+?? scripts/distill/runs/clean_controls/
+--- git diff --stat HEAD (empty = no tracked content changed) ---
+--- protected Mamba deliverables ---
+e9c232878319d041680e7fb3be74bf10  /mnt/ssd_data/stereocrafter_weights/_distill_injected/light_lvl0_fulldata333_v2_8k_mamba_only.pt
+08cf44850b8f392efb307e3a48cd82d1  /mnt/ssd_data/stereocrafter_weights/_distill_injected/mamba5slot_plus_stepdistil_up3_train10clip_step800_20261001.pt
+--- pre-existing inputs/checkpoints: mtimes ---
+-rw-rw-r-- 1 kawa kawa 103565941 2026-10-01 02:27 outputs/beyond4_lossless/clips/0204_origin_ll/0204_inpainting_results_sbs.mkv
+-rw-rw-r-- 1 kawa kawa 174752719 2026-10-01 02:25 outputs/beyond4_lossless/clips/0301_origin_ll/0301_inpainting_results_sbs.mkv
+-rw-rw-r-- 1 kawa kawa  37803661 2026-09-24 15:05 outputs/fulldata_v2/clips/0301_origin/0301_inpainting_results_sbs.mp4
+-rw-rw-r-- 1 kawa kawa   4924137 2026-09-29 03:38 scripts/distill/runs/diag_trainer/minift/null/step300.pt
+-rw-rw-r-- 1 kawa kawa   4924137 2026-09-29 03:39 scripts/distill/runs/diag_trainer/minift/pos/step300.pt
+-rw-rw-r-- 1 kawa kawa 183237248 2026-09-23 10:55 video_data/splatting/0301_splatting_results.mp4
+-rw-rw-r-- 1 kawa kawa  54421023 2026-09-23 11:16 video_data/train/0204_train.mp4
+-rw-rw-r-- 1 kawa kawa 246660276 2026-09-23 11:21 video_data/train/0301_train.mp4
+--- files under protected trees modified today (expect none) ---
+(none above = OK)
+--- tracked files with today's mtime (content == HEAD per diff above; touched by the 03:41 submodule commit) ---
+-rw-rw-r-- 1 kawa kawa  406 2026-10-03 03:36 scripts/distill/.gitignore
+-rwxrwxr-x 1 kawa kawa 1020 2026-10-03 03:39 scripts/distill/gt_ft_v2_eval.sh
+-rwxrwxr-x 1 kawa kawa 1546 2026-10-03 03:39 scripts/distill/launch_gt_finetune.sh
+-rwxrwxr-x 1 kawa kawa 1553 2026-10-03 03:39 scripts/distill/launch_gt_finetune_v2.sh
+-rwxrwxr-x 1 kawa kawa 1553 2026-10-03 03:39 scripts/distill/launch_originattn_control.sh
+-rwxrwxr-x 1 kawa kawa 1585 2026-10-03 03:39 scripts/distill/launch_originattn_control_v3.sh
+-rwxrwxr-x 1 kawa kawa 2670 2026-10-03 03:39 scripts/distill/originattn_ctrl_eval.sh
+-rwxrwxr-x 1 kawa kawa 3023 2026-10-03 03:39 scripts/distill/originattn_ctrl_eval_v3.sh

@@ -1,0 +1,40 @@
+PRE-REGISTRATION ADDENDUM (CONDITIONAL, DIAGNOSTIC, NON-GATING) -- finalcheck_20261004 / bench lane
+Written 2026-10-04 ~09:05 JST, while the main bench (outputs/finalcheck_20261004/bench/run_v1) is still running and
+BEFORE its X1 cross-check has been computed.  Honest status of what was seen first: the smoke run (not counted) gave
+origin BS=1 576x1024 = 0.4836 s/forward in fp16, i.e. ~0.50 of the 2026-10-01 BS=2 time (0.9641), whereas the speed
+lane's deployed path measured ~0.526 s/forward at BS=1 vs ~0.954 at BS=2 (~0.55) from its speed_log.json files.  That
+hint is the reason for this addendum; it cannot change any verdict of PREREG.txt.
+
+WHY
+  The deployed configuration runs the UNet in bf16 (config/0160_overfit_inference_matched.json "precision": "bf16");
+  the published bench, scripts/distill/bench2.py, times fp16.  The UNet input layout is otherwise the same
+  (9 channels: 4 noisy latents + 4 frame latents + 1 mask; pipeline lines ~648-660), so dtype is the main remaining
+  difference between the synthetic bench and the deployed path.
+
+TRIGGER
+  This arm runs IFF the pre-registered X1 cross-check (PREREG.txt) FAILS on the full run_v1 data.  If X1 passes, the
+  arm is not run and this file is reported as "not triggered".
+
+TOOL
+  scripts/distill/runs/finalcheck_20261004/bench/bench2_dtype_diag.py = a copy of scripts/distill/bench2.py with
+  exactly ONE changed line (dt is read from env DT in {fp16, bf16}, default fp16); `diff` shows only line 20.
+
+ARM (same protocol, environment, unit and order as run_v1; new run dir outputs/finalcheck_20261004/bench/dtype_v1)
+  DT=bf16 for all 12 configurations (origin, mamba5) x BS (2, 1) x res (576x1024, 1024x1792, 1024x1920), n=3,
+  reps-outer / BS / config / res inner;  plus, inside every rep, a COPY-IDENTITY control: DT=fp16 origin and mamba5 at
+  BS=1, 576x1024.
+  Gates carried over: B1 (instrumentation) and B4 (exclusivity) as in PREREG.txt.
+  Copy-identity check C0: the fp16 control means reproduce run_v1's fp16 means of the same configurations within
+  +-1.5 %.  If C0 fails, the bf16 numbers are reported but not interpreted.
+
+REPORTED (all POST-HOC, NON-GATING)
+  D1  bf16 seconds per forward per configuration (mean +- half-range, peak VRAM) and the bf16/fp16 ratio.
+  D2  X1-bf16: the X1 rule of PREREG.txt (|pred/meas - 1| <= 0.04 on the relative per-window UNet time at 576x1024,
+      every included row that has a speed-lane measurement), with the predictions taken from the bf16 bench.
+        X1-bf16 PASS -> the dtype explains the X1 gap; the bf16 relative per-window values are reported as the
+                        DEPLOYED-DTYPE ESTIMATE at all three resolutions, next to (never replacing) the published-
+                        methodology fp16 values.
+        X1-bf16 FAIL -> neither bench transfers to the deployed path at the failing rows; the hi-res values of those
+                        rows stay "synthetic only".
+  D3  the Mamba share t(mamba5,BS)/t(origin,BS) in bf16 at every resolution, next to the fp16 share.
+The primary answers to Q1 / Q2 remain those of the UNMODIFIED fp16 bench2.py (PREREG.txt).

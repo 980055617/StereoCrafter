@@ -1,0 +1,157 @@
+PRE-REGISTRATION -- finalcheck_20261004 / lane "independent" (the independent check before the thesis result)
+Written 2026-10-04 ~10:10 JST, BEFORE any scorer, temporal-scorer, decode-md5 or render call in this lane.
+Not edited after the first scorer call; later additions go in dated ADDENDUM sections at the bottom.
+Everything this lane writes lives under
+  scripts/distill/runs/finalcheck_20261004/independent/   and   outputs/finalcheck_20261004/independent/
+Already looked at before writing this (orientation only): the four lanes' summary tables/JSON, the blind key's
+first five entries (printed while inspecting the file format), protected-checkpoint md5s, git status, GT tile sizes.
+
+==================================================================================================================
+P. PROVENANCE / HOUSEKEEPING (reported; P3 failures exclude the affected row from my verdicts)
+==================================================================================================================
+P1  md5 of both protected checkpoints, at start (done 10:00: deliverable 08cf44850b8f392efb307e3a48cd82d1,
+    predecessor e9c232878319d041680e7fb3be74bf10) and again at the end -> must be unchanged.
+P2  git status at the end.  EXPECTED (seen at 10:00, before this lane wrote anything): one modified tracked
+    file docs/agents/model-change-log.md, mtime 2026-10-03 14:52:07 JST, i.e. before the earliest lane file
+    (2026-10-04 03:44) -> pre-existing, not a lane's edit; untracked: scripts/distill/runs/clean_controls/
+    (pre-existing) and scripts/distill/runs/finalcheck_20261004/.  PASS iff nothing else appears.
+P3  for every lane render I score: (a) decord full decode md5 == the sbs line of its writer_md5.txt
+    (lossless round trip, independent of the speed lane's ffmpeg-based check), and the writer_md5 shape tuple
+    (frames,H,W,3) is identical within every compared pair; (b) the render's own .log states the claimed
+    configuration: speed renders -> the "[sk] clip=.. steps=.. guid=.. unet=.. sigmas=.. rng_pad_to=.." line
+    matches the label (deliv_*: unet=<deliverable .pt>; origin_*: unet=None; g100 -> guid=1.0, g101 -> 1.01;
+    T6/T5 -> the T6/T5 sigma lists; *pad -> rng_pad_to=8, *nat / s8 -> None), deliverable rows contain
+    "missing=1428 unexpected=0" and "updated 5 gated modules", origin rows contain no "Partial UNet state load";
+    speed_log.json unet_calls_per_window / batch_sizes = 8/[2] (s8 g101), 8/[1] (g100_s8), 6/[2] (T6 g101),
+    5/[2] (T5 g101), 5/[1] (T5 g100).
+
+==================================================================================================================
+R. RE-SCORING with scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py UNCHANGED, SCORE_STEP=4, FFV1 only
+==================================================================================================================
+R1  576x1024, ALL 12 test clips (0042 0052 0125 0128 0141 0147 0170 0204 0225 0251 0259 0301), one scorer list
+    grouped by clip, rows:
+      origin_ll (deployed 8x2@1.01) | origin_g100_s8 | origin_g101_T6pad | origin_g101_T5pad | origin_g100_T5pad |
+      mamba_ll (shipped 5-slot Mamba) | s25_ll (origin + 25 steps) |
+      mstudent2_step800_deliv_ll (the deliverable, 8x2@1.01) | deliv_g100_s8 | deliv_g101_T6pad | deliv_g101_T5pad |
+      deliv_g100_T5pad | deliv_g100_T5nat | deliv_g101_T5nat (exists for 0052 0147 0204 0301 only).
+    This is a superset of the brief (>= 4 clips for the @1.00 rows, >= 2 clips for every passing merged-step
+    variant); the extreme clips of the lanes' tables (0125, 0301, 0042) are included by construction.
+R2  hi-res: all 16 existing validate renders (0170 0204 0042 0052 x {origin, deliv} x {1024x1792, 1024x1920})
+    (superset of "2 clips per resolution"; covers both crop geometries: 1080p tiles 0170/0204, 4400^2 tiles 0042/0052).
+REPRODUCTION CRITERION  for every (clip,row) a lane reported: |my LPIPS - lane ROW LPIPS| <= 0.0001 and
+    |my sharp - lane sharp| <= 0.0001; for every mean a lane table printed: |my mean - table mean| <= 0.0001.
+    Anything outside -> "NOT REPRODUCED" with both numbers.  Max |diff| is reported either way.
+PAIR CRITERION  within a clip (and resolution), every compared row has identical dy, dx, n and leftPSNR (ROW line),
+    and identical writer_md5 shape tuples (P3a).  A pair failing it is reported and its delta not used.
+VERDICTS RECOMPUTED FROM MY NUMBERS with the lanes' own pre-registered rules, unchanged:
+    speed S1 (a mean <= +0.002, b worst clip <= +0.005, c mean sharp ratio in [0.97,1.03]); speed S2' (a/b) for
+    T6@1.01, T5@1.01, T5@1.00 vs the deployed deliverable; post-hoc unpadded T5@1.00 (same a/b);
+    origin's own levers (reported); validate V2 transfer rule per resolution (mean4 deliv < mean4 origin AND
+    max clip delta <= +0.005).  A verdict that flips is reported as such.
+
+==================================================================================================================
+T. TEMPORAL
+==================================================================================================================
+T1  TRACKED scripts/distill/score_temporal.py, unchanged, STEP unset, CUDA_VISIBLE_DEVICES=1, one process per clip.
+    Clips (rule): the two 1080p-tile clips with the largest deliverable tLP/tLP_GT in validate's V1, excluding
+    0204 (validate already ran the tracked script there) -> 0259 (2.921) and 0225 (1.368).  1080p tiles only, to
+    bound the tracked script's host RAM (~35 GB).  Rows per clip, origin FIRST: origin_ll, mamba_ll, deliv,
+    s25_ll, then deliv_g100_s8, deliv_g100_T5pad, deliv_g100_T5nat.
+    T1-repro: GT/origin/shipped/deliv/s25 tLP, warp, seam, nonseam equal validate's
+    outputs/finalcheck_20261004/validate/v1_temporal/temporal_576_12clip.json at 4 decimals.
+T2  EXTENSION (closes the speed lane's own pre-condition "flicker must be re-run at T5@1.00"; no rendering):
+    validate's equivalence-proven copy scripts/distill/runs/finalcheck_20261004/validate/score_temporal_ll.py,
+    unchanged, all 12 clips, rows per clip origin_ll FIRST, deliv, deliv_g100_s8, deliv_g100_T5pad, deliv_g100_T5nat.
+    T2-a re-run check: origin and deliv values equal validate's JSON at 4 decimals.
+    T2-b the recommended setting KEEPS THE DELIVERABLE'S TEMPORAL PROFILE iff, for X in {T5pad, T5nat} separately,
+         (i)  12-clip mean warp(X)        <= 1.05 x 12-clip mean warp(deliv@1.01)        [F1 analogue]
+         (ii) 12-clip mean seam ratio(X)  <= 1.10 x 12-clip mean seam ratio(deliv@1.01)  [F3 analogue]
+         reported, not gating: clips with warp(X) > warp(deliv) [F2 analogue], tLP closeness
+         c = mean|tLP/tLP_GT - 1| for X vs deliv vs s25 (s25 from validate's JSON), and validate's F1/F2/F3 for X
+         vs origin.  The same readout for deliv_g100_s8 (the fallback) is reported.
+    NOTE stated in advance: T2-b compares against the deliverable at deployed settings, which itself carries
+    validate's pre-registered F1/F2 temporal flags vs origin; passing T2-b does NOT clear those flags.
+
+==================================================================================================================
+B. BLIND SPOT-CHECK (3 items of outputs/finalcheck_20261004/blind/items_v3)
+==================================================================================================================
+Items (rule: cover both A/B sides, both tile geometries, and the unusual shifts): q02 (first item in id order
+whose key puts the deliverable on side A; 0251, 1080p tile), q18 (0170 disocclusion, shift -9 outside the brief's
+-12..-59 range, 1080p tile), q28 (0147 texture, 4400^2 tile, rule-forced global shift).
+For each item, from items_meta.json (clip, frame, window [y,x,s], used_shift, gt_tile_rows/cols) and the renders:
+  B1  each of panel A / panel B (decoded JPEG from items_v3/panels) vs the keyed render's right-half crop
+      [y:y+s, 1024+x:1024+x+s] at that frame: PSNR >= 38 dB, and >= 3 dB above the PSNR vs the other render.
+  B2  GT panel vs the train-tile crop at gt_tile_rows/cols: PSNR >= 38 dB; gt_tile_rows inside [0,H) and
+      gt_tile_cols inside [W,2W) (top-right quadrant = real right eye); the same-coordinates TOP-LEFT (left eye)
+      crop is >= 10 dB lower.
+  B3  registration: recomputed PSNR(GT crop, model's warped input BR crop, holes excluded) at used_shift is higher
+      than at zero shift (the shift registers GT to the model's input).
+  Panels are also opened visually (Read tool).  PASS = B1, B2, B3 on 3/3 items.
+  Because the user has not rated yet, per-item A/B identities and "which looks sharper" go ONLY into a
+  _KEY_*_do_not_open_before_rating file; every other file and the final answer say only match / no match.
+
+==================================================================================================================
+H. HI-RES EXTENSION (closes the remaining pre-condition of the speed lane's recommendation + deployed-path timing)
+==================================================================================================================
+Tool: a NEW hook = copy of speed/infer_ll_hook_speed_v1.py + validate's SK_H/SK_W knob (target_height/width,
+tile_num=1) + validate's lowmem reader rebinding (each proven by its lane); a NEW driver (copy of the speed driver
+with H/W columns).  No tracked file is touched.
+H0  control: 0042 deliverable T5@1.00 RNG-padded at the config resolution -> pre-encode md5 must equal
+    outputs/finalcheck_20261004/speed/clips/0042_deliv_g100_T5pad/writer_md5.txt.  Mismatch -> H stops here.
+H1  controls + timing: 0204 origin 8x2@1.01 and 0204 deliverable 8x2@1.01 at 1024x1792 and 1024x1920 ->
+    md5 must equal validate's renders of the same (clip, model, resolution).  Mismatch -> no H2 verdict.
+H2  main: deliverable T5@1.00 RNG-padded at 1024x1792 and 1024x1920 on 0170 0204 0042 0052 (8 renders), scored
+    with score_clip_ll.py SCORE_STEP=4 together with validate's origin/deliv renders of the same clip/resolution.
+    Gates: decode md5 == writer md5; left half bit-identical to validate's origin render; 0204 per-window
+    initial-latent fingerprints == the H1 deliverable 8x2 render's.
+    RULE, per resolution: T5@1.00 KEEPS THE HI-RES QUALITY CLAIM iff
+      (i)  validate's transfer rule vs origin 8x2@1.01: mean4 LPIPS(T5@1.00) < mean4 LPIPS(origin) AND
+           max clip (T5@1.00 - origin) <= +0.005, AND
+      (ii) the speed lane's lever budget vs the deliverable 8x2@1.01: mean4 delta <= +0.002 and every clip <= +0.005.
+H3  timing (reported, not gated): CUDA-event UNet ms per window from speed_log.json, steady state = median over
+    windows 1..n-2, and whole clip; ratios vs the H1 origin 8x2@1.01 render of the same resolution.  The other GPU
+    may be busy during these renders (bench lane: UNet CUDA-event time unaffected, 2.5067 vs 2.5066 s/window).
+    Also re-computed from the speed lane's speed_log.json files at 576x1024 (same definition) as a check of
+    bench TABLE_COMBINED_v1.txt's "meas" column (tolerance 1 %).
+
+ORDER: R1 (GPU 0) and T1 (GPU 1) first; then H0, T2, H1, H2; R2 + H2 scoring last.  A failed run is retried at most
+once into a new directory; every error is quoted.
+
+==================================================================================================================
+ADDENDUM 1 -- 2026-10-04 ~10:25 JST.  Written after P3 (176/176 PASS) and after seeing the tracked-script rows for
+0259 (T1, which match validate's V1 values), BEFORE any R1/R2 score, any T2 row, any hi-res render result.
+No criterion above is changed.  One timing-only arm is added:
+H4  0204 origin T5@1.00 (RNG-padded, the speed lane's origin_g100_T5pad setting) at 1024x1792 and 1024x1920, run
+    after the H1/H2 renders on the same GPUs, so that the "origin with the same inference settings" row of the final
+    table has a DEPLOYED-PATH UNet time per window at both hi-res resolutions (same statistic as H3).  Its quality is
+    not scored (origin T5@1.00 already fails the lever criterion at 576x1024: speed/TABLE_STEP2_EXT12.txt).
+ADDENDUM 1 correction (clerical only): its header time "~10:25" is wrong; it was appended at 10:17 JST (file mtime
+10:17:3x), after the 0259 T1 rows and P3, before any R1/R2/T2/hi-res result -- as stated.  No criterion changed.
+
+ADDENDUM 2 -- 2026-10-04 10:30 JST, procedure/ordering only, NO criterion changed.  Written after T1 (both clips) and 49
+of 160 R1 rows had been printed, before any analysis of them, any T2 row, any hi-res render result.
+  The R1 scorer runs ~5x slower than the speed lane's (CPU contention with the temporal jobs), so the GPU-0 chain was
+  stopped while it was only waiting and replaced by chain_gpu0_v2.sh: H0 runs now; the three quality-only T5@1.00
+  renders at 1024x1792 (0170 0042 0052) may share GPU 0 with the R1 scorer, so THEIR timing is not used; the timing
+  trio at 1024x1792 (0204 origin 8x2, deliverable 8x2, deliverable T5@1.00) runs only after R1 has finished.
+  The separate R2 re-score is dropped and merged into ONE final hi-res scoring list (validate's 16 renders + this
+  lane's 8 T5@1.00 renders, grouped by clip), same scorer, same criteria.
+
+ADDENDUM 3 -- 2026-10-04 11:07 JST, procedure only, NO criterion changed.  Written after R1, T1, T2 and the blind
+spot-check were analysed (all reproduced / PASS / KEEPS), after H0 PASS and the first H1 md5 control (0204 origin 1792
+== validate's ee30e3f5...), BEFORE any hi-res LPIPS of a T5@1.00 render existed.
+  The "one final hi-res scoring list" of ADDENDUM 2 is split by resolution (scorelist_HIRES_1792.txt, then
+  scorelist_HIRES_1920.txt: per clip validate's origin and deliverable renders + this lane's T5@1.00 render) so the
+  1024x1792 half can be scored while GPU 1 is still rendering 1024x1920.  Same scorer, SCORE_STEP=4, same rules.
+
+ADDENDUM 4 -- 2026-10-04 11:18 JST, procedure only, NO criterion changed.  Written after the H3 timing rows of the
+1792 trio (GPU 0) and of the 1920 origin 8x2 render (GPU 1) were seen, BEFORE any hi-res LPIPS of a T5@1.00 render.
+  Observation: on GPU 1 the 1920 origin 8x2 render's per-window UNet time DRIFTS 33.39 -> 34.89 s over the clip
+  (GPU 1 at 87 C, 399 W), while every GPU-0 render is flat (1792 origin 29.32..29.38 s).  The bench and speed lanes
+  timed on GPU 0 only.  Therefore ALL timing used in this lane's tables comes from GPU 0: the 1920 timing set is
+  re-rendered on GPU 0 alone (0204: origin 8x2@1.01, deliverable 8x2@1.01, deliverable T5@1.00 pad, origin
+  T5@1.00 pad; labels suffixed _g0, new dirs), after H4 at 1792.  GPU 1's 1920 renders keep their roles as md5
+  controls (H1) and quality renders (H2); their timing is reported only as a drift note.  The queued GPU-1 H4 unit and
+  the hi-res scoring chain were stopped while only waiting; scoring moves to GPU 1 (chain_score_hires_v2.sh):
+  1792 list now, 1920 list after GPU 1's renders.  Renders on GPU 0 then share the host CPU with that scorer, not
+  the GPU (bench lane: CUDA-event UNet time unaffected by host load).

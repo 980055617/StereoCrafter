@@ -1,0 +1,15 @@
+clip/config                           offset  leftPSNR    LPIPS    sharp    rPSNR   nf
+--- 0301 GT ---                                          0.0000   0.0505
+0301_origin_nohook_ll                (-28,0)     40.25   0.4351   0.0235   15.467   38
+ROW clip=0301 tag=0301_origin_nohook_ll dy=-28 dx=0 leftPSNR=40.2464 lpips=0.435095 sharp=0.023528 gtSharp=0.050529 rightPSNR=15.4667 n=38 path=scripts/distill/runs/clean_controls/selfA/infer/0301_origin_nohook_ll/0301_inpainting_results_sbs.mkv
+0301_oldmp4vnull_step300             (-28,0)     40.25   0.4942   0.0180   15.633   38
+ROW clip=0301 tag=0301_oldmp4vnull_step300 dy=-28 dx=0 leftPSNR=40.2464 lpips=0.494202 sharp=0.017968 gtSharp=0.050529 rightPSNR=15.6327 n=38 path=scripts/distill/runs/clean_controls/selfA/infer/0301_oldmp4vnull_step300/0301_inpainting_results_sbs.mkv
+0301_oldmp4vnull_step100             (-28,0)     40.25   0.4644   0.0200   15.526   38
+ROW clip=0301 tag=0301_oldmp4vnull_step100 dy=-28 dx=0 leftPSNR=40.2464 lpips=0.464375 sharp=0.019963 gtSharp=0.050529 rightPSNR=15.5261 n=38 path=scripts/distill/runs/clean_controls/selfA/infer/0301_oldmp4vnull_step100/0301_inpainting_results_sbs.mkv
+0301_oldmp4vnull_step200             (-28,0)     40.25   0.4824   0.0186   15.607   38
+ROW clip=0301 tag=0301_oldmp4vnull_step200 dy=-28 dx=0 leftPSNR=40.2464 lpips=0.482368 sharp=0.018585 gtSharp=0.050529 rightPSNR=15.6073 n=38 path=scripts/distill/runs/clean_controls/selfA/infer/0301_oldmp4vnull_step200/0301_inpainting_results_sbs.mkv
+--- 0204 GT ---                                          0.0000   0.0116
+0204_origin_nohook_ll                (-28,0)     41.16   0.2053   0.0065   19.896   38
+ROW clip=0204 tag=0204_origin_nohook_ll dy=-28 dx=0 leftPSNR=41.1620 lpips=0.205310 sharp=0.006527 gtSharp=0.011577 rightPSNR=19.8959 n=38 path=scripts/distill/runs/clean_controls/selfA/infer/0204_origin_nohook_ll/0204_inpainting_results_sbs.mkv
+0204_oldmp4vnull_step300             (-28,0)     41.16   0.2361   0.0054   19.888   38
+ROW clip=0204 tag=0204_oldmp4vnull_step300 dy=-28 dx=0 leftPSNR=41.1620 lpips=0.236134 sharp=0.005427 gtSharp=0.011577 rightPSNR=19.8882 n=38 path=scripts/distill/runs/clean_controls/selfA/infer/0204_oldmp4vnull_step300/0204_inpainting_results_sbs.mkv

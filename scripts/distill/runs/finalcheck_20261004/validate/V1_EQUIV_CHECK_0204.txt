@@ -1,0 +1,16 @@
+GT                                 tLP       tracked=0.0305659290154775       copy=0.0305659290154775       printed(4dp) SAME | exact IDENTICAL
+GT                                 warp      tracked=0.01210169844819281      copy=0.01210169844819281      printed(4dp) SAME | exact IDENTICAL
+GT                                 seam      tracked=0.016465457156300545     copy=0.016465457156300545     printed(4dp) SAME | exact IDENTICAL
+GT                                 nonseam   tracked=0.016867533326148987     copy=0.016867533326148987     printed(4dp) SAME | exact IDENTICAL
+0204_origin_ll                     tLP       tracked=0.029304639399051667     copy=0.029304639399051667     printed(4dp) SAME | exact IDENTICAL
+0204_origin_ll                     warp      tracked=0.010475928996567997     copy=0.010475928996567997     printed(4dp) SAME | exact IDENTICAL
+0204_origin_ll                     seam      tracked=0.018663521856069565     copy=0.018663521856069565     printed(4dp) SAME | exact IDENTICAL
+0204_origin_ll                     nonseam   tracked=0.011777148582041264     copy=0.011777148582041264     printed(4dp) SAME | exact IDENTICAL
+0204_origin_ll                     leftPSNR  tracked=40.80426128453527        copy=40.80426128453527        printed(2dp) SAME | exact IDENTICAL
+0204_mstudent2_step800_deliv_ll    tLP       tracked=0.032764324943224586     copy=0.032764324943224586     printed(4dp) SAME | exact IDENTICAL
+0204_mstudent2_step800_deliv_ll    warp      tracked=0.01409833095627737      copy=0.01409833095627737      printed(4dp) SAME | exact IDENTICAL
+0204_mstudent2_step800_deliv_ll    seam      tracked=0.026211800053715706     copy=0.026211800053715706     printed(4dp) SAME | exact IDENTICAL
+0204_mstudent2_step800_deliv_ll    nonseam   tracked=0.016030658036470413     copy=0.016030658036470413     printed(4dp) SAME | exact IDENTICAL
+0204_mstudent2_step800_deliv_ll    leftPSNR  tracked=40.80426128453527        copy=40.80426128453527        printed(2dp) SAME | exact IDENTICAL
+exact-float identity: ALL IDENTICAL
+EQUIV_PASS

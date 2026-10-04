@@ -1,0 +1,106 @@
+==========================================================================================================================================================================
+Q2 -- EFFECTIVE UNet TIME PER 14-FRAME DENOISING WINDOW, relative to DEPLOYED ORIGIN (8 steps x batch 2), per resolution
+per-window = steps x t(model, BS)   [BS = 2 for guidance 1.01, 1 for guidance 1.00];   rel = per-window / (8 x t(origin, BS=2))
+rel = ratio of the n=3 means; +- = half-range of the 3 per-rep paired ratios (every rep holds every configuration)
+factorisation  rel = step share (steps/8) x guidance share t(origin,BS)/t(origin,2) x Mamba share t(model,BS)/t(origin,BS)
+==========================================================================================================================================================================
+verdicts parsed from the speed lane (inclusion rule fixed in PREREG.txt):
+  deployed origin 8x2 @1.01      reference (deployed)
+  deliverable 8x2 @1.01          the deliverable: 0.3804, -0.0128 vs origin, 12/12 clips
+  deliverable 8x1 @1.00          GATING PASS (+0.0001, worst 0125 +0.0008; TABLE_STEP1_GUIDANCE.txt)
+  deliverable T6 @1.01 (6x2)     GATING PASS (+0.0001, worst 0042 +0.0003; TABLE_STEP2_EXT12.txt)
+  deliverable T5 @1.01 (5x2)     GATING PASS (+0.0011, worst 0042 +0.0020; TABLE_STEP2_EXT12.txt)
+  deliverable T5 @1.00 (5x1)     GATING PASS (+0.0014, worst 0301 +0.0024; TABLE_STEP2_EXT12.txt)
+  origin 8x1 @1.00               reported PASS (+0.0006, worst 0301 +0.0024; TABLE_STEP1_GUIDANCE.txt)
+  origin T6 @1.01 (6x2)          reported PASS (+0.0002, worst 0301 +0.0004; TABLE_STEP2_EXT12.txt)
+  origin T5 @1.01 (5x2)          reported PASS (+0.0014, worst 0301 +0.0040; TABLE_STEP2_EXT12.txt)
+  origin T5 @1.00 (5x1)          reported FAIL (+0.0021, worst 0301 +0.0065; TABLE_STEP2_EXT12.txt)
+  note: deliverable T5 @1.00 UNPADDED (the literal shipped sampler; same 5x1 UNet work as the padded row): reported PASS (+0.0011, worst 0042 +0.0035; TABLE_POSTHOC_T5G100_UNPADDED.txt)
+  not tested: T6 @1.00 (the speed lane did not render it) -> no row
+
+--- 576x1024 (HxW)   deployed origin per-window UNet = 8 x 0.9612 = 7.690 s ---
+  configuration                  elem/win s/forward per-window s     rel     +-   step x  guid.     +- x  Mamba     +-   quality status
+  deployed origin 8x2 @1.01            16    0.9612        7.690  1.0000 0.0000  1.000 x 1.0000 0.0000 x 1.0000 0.0000   reference
+  deliverable 8x2 @1.01                16    0.9103        7.282  0.9470 0.0029  1.000 x 1.0000 0.0000 x 0.9470 0.0029   deliverable; quality covered here
+  deliverable 8x1 @1.00                 8    0.4587        3.670  0.4772 0.0012  1.000 x 0.5053 0.0013 x 0.9445 0.0005   PASS @576x1024
+  deliverable T6 @1.01 (6x2)           12    0.9103        5.462  0.7103 0.0022  0.750 x 1.0000 0.0000 x 0.9470 0.0029   PASS @576x1024
+  deliverable T5 @1.01 (5x2)           10    0.9103        4.551  0.5919 0.0018  0.625 x 1.0000 0.0000 x 0.9470 0.0029   PASS @576x1024
+  deliverable T5 @1.00 (5x1)            5    0.4587        2.294  0.2983 0.0008  0.625 x 0.5053 0.0013 x 0.9445 0.0005   PASS @576x1024
+  origin 8x1 @1.00                      8    0.4857        3.885  0.5053 0.0013  1.000 x 0.5053 0.0013 x 1.0000 0.0000   origin lever, reported PASS @576x1024
+  origin T6 @1.01 (6x2)                12    0.9612        5.767  0.7500 0.0000  0.750 x 1.0000 0.0000 x 1.0000 0.0000   origin lever, reported PASS @576x1024
+  origin T5 @1.01 (5x2)                10    0.9612        4.806  0.6250 0.0000  0.625 x 1.0000 0.0000 x 1.0000 0.0000   origin lever, reported PASS @576x1024
+  EXCLUDED  origin T5 @1.00 (5x1): FAILED its criterion (+0.0021, worst 0301 +0.0065) -> not claimable [speed-only value, shown for the separability argument: rel 0.3158]
+
+--- 1024x1792 (HxW)   deployed origin per-window UNet = 8 x 3.7127 = 29.702 s ---   [lever rows: SPEED-ONLY at this resolution -- their quality was verified at 576x1024 only]
+  configuration                  elem/win s/forward per-window s     rel     +-   step x  guid.     +- x  Mamba     +-   quality status
+  deployed origin 8x2 @1.01            16    3.7127       29.702  1.0000 0.0000  1.000 x 1.0000 0.0000 x 1.0000 0.0000   reference
+  deliverable 8x2 @1.01                16    2.9529       23.623  0.7954 0.0013  1.000 x 1.0000 0.0000 x 0.7954 0.0013   deliverable; hi-res quality TRANSFERS (validate/V2_HIRES_TABLE.txt, 4 clips)
+  deliverable 8x1 @1.00                 8    1.4953       11.963  0.4028 0.0009  1.000 x 0.5062 0.0011 x 0.7957 0.0003   SPEED-ONLY (quality not tested at this res)
+  deliverable T6 @1.01 (6x2)           12    2.9529       17.718  0.5965 0.0010  0.750 x 1.0000 0.0000 x 0.7954 0.0013   SPEED-ONLY (quality not tested at this res)
+  deliverable T5 @1.01 (5x2)           10    2.9529       14.765  0.4971 0.0008  0.625 x 1.0000 0.0000 x 0.7954 0.0013   SPEED-ONLY (quality not tested at this res)
+  deliverable T5 @1.00 (5x1)            5    1.4953        7.477  0.2517 0.0006  0.625 x 0.5062 0.0011 x 0.7957 0.0003   SPEED-ONLY (quality not tested at this res)
+  origin 8x1 @1.00                      8    1.8792       15.034  0.5062 0.0011  1.000 x 0.5062 0.0011 x 1.0000 0.0000   origin lever, reported SPEED-ONLY (quality not tested at this res)
+  origin T6 @1.01 (6x2)                12    3.7127       22.276  0.7500 0.0000  0.750 x 1.0000 0.0000 x 1.0000 0.0000   origin lever, reported SPEED-ONLY (quality not tested at this res)
+  origin T5 @1.01 (5x2)                10    3.7127       18.564  0.6250 0.0000  0.625 x 1.0000 0.0000 x 1.0000 0.0000   origin lever, reported SPEED-ONLY (quality not tested at this res)
+  EXCLUDED  origin T5 @1.00 (5x1): FAILED its criterion (+0.0021, worst 0301 +0.0065) -> not claimable [speed-only value, shown for the separability argument: rel 0.3163]
+
+--- 1024x1920 (HxW)   deployed origin per-window UNet = 8 x 4.0591 = 32.473 s ---   [lever rows: SPEED-ONLY at this resolution -- their quality was verified at 576x1024 only]
+  configuration                  elem/win s/forward per-window s     rel     +-   step x  guid.     +- x  Mamba     +-   quality status
+  deployed origin 8x2 @1.01            16    4.0591       32.473  1.0000 0.0000  1.000 x 1.0000 0.0000 x 1.0000 0.0000   reference
+  deliverable 8x2 @1.01                16    3.1742       25.394  0.7820 0.0004  1.000 x 1.0000 0.0000 x 0.7820 0.0004   deliverable; hi-res quality TRANSFERS (validate/V2_HIRES_TABLE.txt, 4 clips)
+  deliverable 8x1 @1.00                 8    1.6159       12.927  0.3981 0.0004  1.000 x 0.5076 0.0004 x 0.7843 0.0002   SPEED-ONLY (quality not tested at this res)
+  deliverable T6 @1.01 (6x2)           12    3.1742       19.045  0.5865 0.0003  0.750 x 1.0000 0.0000 x 0.7820 0.0004   SPEED-ONLY (quality not tested at this res)
+  deliverable T5 @1.01 (5x2)           10    3.1742       15.871  0.4888 0.0003  0.625 x 1.0000 0.0000 x 0.7820 0.0004   SPEED-ONLY (quality not tested at this res)
+  deliverable T5 @1.00 (5x1)            5    1.6159        8.079  0.2488 0.0002  0.625 x 0.5076 0.0004 x 0.7843 0.0002   SPEED-ONLY (quality not tested at this res)
+  origin 8x1 @1.00                      8    2.0603       16.482  0.5076 0.0004  1.000 x 0.5076 0.0004 x 1.0000 0.0000   origin lever, reported SPEED-ONLY (quality not tested at this res)
+  origin T6 @1.01 (6x2)                12    4.0591       24.354  0.7500 0.0000  0.750 x 1.0000 0.0000 x 1.0000 0.0000   origin lever, reported SPEED-ONLY (quality not tested at this res)
+  origin T5 @1.01 (5x2)                10    4.0591       20.295  0.6250 0.0000  0.625 x 1.0000 0.0000 x 1.0000 0.0000   origin lever, reported SPEED-ONLY (quality not tested at this res)
+  EXCLUDED  origin T5 @1.00 (5x1): FAILED its criterion (+0.0021, worst 0301 +0.0065) -> not claimable [speed-only value, shown for the separability argument: rel 0.3172]
+
+--- MAMBA SHARE per forward (t(mamba5,BS)/t(origin,BS), same batch), steady state ---
+  576x1024    BS2 0.9470 +- 0.0029 (-5.30 %)    BS1 0.9445 +- 0.0005 (-5.55 %)
+  1024x1792   BS2 0.7954 +- 0.0013 (-20.46 %)    BS1 0.7957 +- 0.0003 (-20.43 %)
+  1024x1920   BS2 0.7820 +- 0.0004 (-21.80 %)    BS1 0.7843 +- 0.0002 (-21.57 %)
+  (bench2.py excludes warm-up.  On the deployed path the deliverable pays a one-time first-window warm-up of +4.8..+5.2 s per process at 576x1024 vs origin +0.1 s, speed/TABLE_TIMING_final.txt FIRST-WINDOW section; not measured at hi-res by any lane.)
+
+==========================================================================================================================================================================
+X1 CROSS-CHECK at 576x1024: bench-predicted rel vs the speed lane's MEASURED steady-state UNet s/window on the deployed bf16 path
+measured = median over renders of (median over windows 1..n-2 of CUDA-event UNet ms), from every rc=0 render's speed_log.json,
+           divided by the same for origin_g101_s8;  PASS iff |pred/meas - 1| <= 0.04 for every included row
+==========================================================================================================================================================================
+  meas s/forward = deployed bf16 pipeline (CUDA events); bench s/forward = synthetic fp16 bench2.py; dep/bench = their ratio
+  configuration                  speed label          n meas UNet s/win meas s/forward bench s/forward dep/bench meas rel pred rel pred/meas  X1
+  deployed origin 8x2 @1.01      origin_g101_s8       2           7.627         0.9534          0.9612     0.992   1.0000   1.0000     1.000  ok
+  deliverable 8x2 @1.01          deliv_g101_s8        2           7.246         0.9057          0.9103     0.995   0.9500   0.9470     0.997  ok
+  deliverable 8x1 @1.00          deliv_g100_s8       12           4.012         0.5015          0.4587     1.093   0.5260   0.4772     0.907  OUT
+  deliverable T6 @1.01 (6x2)     deliv_g101_T6pad    12           5.432         0.9053          0.9103     0.994   0.7122   0.7103     0.997  ok
+  deliverable T5 @1.01 (5x2)     deliv_g101_T5pad    12           4.526         0.9051          0.9103     0.994   0.5934   0.5919     0.997  ok
+  deliverable T5 @1.00 (5x1)     deliv_g100_T5pad    12           2.507         0.5013          0.4587     1.093   0.3287   0.2983     0.908  OUT
+  origin 8x1 @1.00               origin_g100_s8      12           4.211         0.5264          0.4857     1.084   0.5522   0.5053     0.915  OUT
+  origin T6 @1.01 (6x2)          origin_g101_T6pad   12           5.721         0.9535          0.9612     0.992   0.7501   0.7500     1.000  ok
+  origin T5 @1.01 (5x2)          origin_g101_T5pad   12           4.765         0.9530          0.9612     0.991   0.6248   0.6250     1.000  ok
+  origin T5 @1.00 (5x1)          origin_g100_T5pad   12           2.631         0.5263          0.4857     1.084   0.3450   0.3158     0.915  excluded row, info only
+  X1: FAIL -> deliverable 8x1 @1.00: pred/meas 0.907; deliverable T5 @1.00 (5x1): pred/meas 0.908; origin 8x1 @1.00: pred/meas 0.915
+  consequence (pre-registered): the hi-res rows are 'fp16 synthetic only; transfer to the deployed path not shown'
+
+==========================================================================================================================================================================
+WALL-CLOCK from the speed lane (576x1024 ONLY; GPU 0, one render at a time, but NOT machine-exclusive: GPU 1 ran other lanes)
+process = python start->exit (load + encode + sampling + VAE decode + FFV1);  in-loop = CUDA-synced pipeline __call__ sum;  UNet = CUDA-event sum (whole clip, includes the deliverable's ~5 s first-window warm-up)
+==========================================================================================================================================================================
+  configuration                  speed label          n  process  in-loop    UNet    median ratio vs deployed origin 8x2 (n=2)   paired vs origin_g101_s8 same clip: process / in-loop / UNet   GPU1 util>0 in the driver's pre-render snapshot
+  deployed origin 8x2 @1.01      origin_g101_s8       2    176.1    118.8   105.3          1.000 / 1.000 / 1.000             -                                                             0/2
+  deliverable 8x2 @1.01          deliv_g101_s8        2    169.6    117.6   105.1          0.963 / 0.990 / 0.998             0204 0.960/0.990/0.999  0301 0.966/0.989/0.997                0/2
+  deliverable 8x1 @1.00          deliv_g100_s8       12    126.5     71.8    60.2          0.719 / 0.605 / 0.571             0204 0.744/0.624/0.584  0301 0.734/0.622/0.575                11/12
+  deliverable T6 @1.01 (6x2)     deliv_g101_T6pad    12    147.9     92.1    80.1          0.840 / 0.775 / 0.760             0204 0.773/0.767/0.759  0301 0.813/0.772/0.759                10/12
+  deliverable T5 @1.01 (5x2)     deliv_g101_T5pad    12    142.3     80.6    67.8          0.808 / 0.678 / 0.644             0204 0.705/0.662/0.640  0301 0.830/0.682/0.644                6/12
+  deliverable T5 @1.00 (5x1)     deliv_g100_T5pad    12    102.3     50.9    39.4          0.581 / 0.428 / 0.374             0204 0.548/0.428/0.374  0301 0.573/0.429/0.373                10/12
+  origin 8x1 @1.00               origin_g100_s8      12    124.3     69.9    58.2          0.706 / 0.588 / 0.552             0204 0.654/0.586/0.553  0301 0.749/0.604/0.553                11/12
+  origin T6 @1.01 (6x2)          origin_g101_T6pad   12    150.5     92.1    79.0          0.855 / 0.775 / 0.750             0204 0.770/0.761/0.750  0301 0.801/0.764/0.749                7/12
+  origin T5 @1.01 (5x2)          origin_g101_T5pad   12    135.8     78.6    65.8          0.771 / 0.662 / 0.625             0204 0.694/0.649/0.625  0301 0.726/0.654/0.625                7/12
+  origin T5 @1.00 (5x1)          origin_g100_T5pad   12     98.9     48.0    36.4          0.562 / 0.404 / 0.345             0204 0.529/0.403/0.345  0301 0.555/0.406/0.345                12/12 [EXCLUDED row]
+  hi-res (1024x1792, 1024x1920) wall-clock: NOT MEASURED for any lever configuration; not extrapolated.
+
+NOTES
+  * Every quality verdict above is the speed lane's (12 clips, lossless FFV1, 576x1024); this lane measures speed only.
+  * The speed lane's recommendation (deliverable T5 @1.00) is conditional on the flicker / hi-res / blind checks being re-run at
+    T5 @1.00 (they were run at 8x2 @1.01) -- unchanged by this lane.

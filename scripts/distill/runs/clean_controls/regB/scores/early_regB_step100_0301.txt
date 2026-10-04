@@ -1,0 +1,6 @@
+clip/config                           offset  leftPSNR    LPIPS    sharp    rPSNR   nf
+--- 0301 GT ---                                          0.0000   0.0505
+0301_origin_ll                       (-28,0)     40.25   0.4351   0.0235   15.467   38
+ROW clip=0301 tag=0301_origin_ll dy=-28 dx=0 leftPSNR=40.2464 lpips=0.435095 sharp=0.023528 gtSharp=0.050529 rightPSNR=15.4667 n=38 path=outputs/beyond4_lossless/clips/0301_origin_ll/0301_inpainting_results_sbs.mkv
+regB_step100_0301                    (-28,0)     40.25   0.6310   0.0178   16.044   38
+ROW clip=0301 tag=regB_step100_0301 dy=-28 dx=0 leftPSNR=40.2464 lpips=0.630977 sharp=0.017779 gtSharp=0.050529 rightPSNR=16.0444 n=38 path=scripts/distill/runs/clean_controls/regB/infer/regB_step100_0301/0301_inpainting_results_sbs.mkv

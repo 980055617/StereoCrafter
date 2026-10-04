@@ -1,0 +1,62 @@
+SKEPTIC RE-SCORE -- every number below was produced by beyond4/score_clip_ll.py (SCORE_STEP=4, LPIPS-alex vs the unregistered real right eye,
+alignment on the pass-through left half) run by the skeptic on the FFV1 renders on disk; files: scores_skeptic_0301.txt, scores_skeptic_0204.txt
+
+variant                                                                  0301 LPIPS 0301 sharp 0204 LPIPS 0204 sharp  what it needs at inference
+deployed origin (8 Euler steps, g1.01, origin weights)                       0.4351     0.0235     0.2053     0.0065  8 steps, shipped weights (1.0x UNet cost)
+origin + s25 (same weights, 25 steps)                                        0.3986     0.0295     0.1897     0.0076  25 steps, shipped weights (3.1x UNet cost)
+step-distilled attn student (origin UNet, 8 steps)                           0.3982     0.0291     0.1883     0.0076  8 steps, swapped attn tensors (1.0x)
+mamba + mstudent1_step600 deliverable (8 steps)                              0.3831     0.0315     0.1867     0.0081  8 steps, Mamba blocks + distilled student (<1.0x UNet time)
+control A step300: lossless self-target fine-tune (llnull)                   0.4741     0.0195     0.2255     0.0057  8 steps, 15 fine-tuned attn1 tensors (1.0x)
+control B best (step200 by sampled LPIPS): registered-GT fine-tune           0.5959     0.0189     0.2332     0.0066  8 steps, 15 fine-tuned attn1 tensors (1.0x)
+
+deltas vs deployed origin (LPIPS):
+  origin + s25 (same weights, 25 steps)                                  0301 -0.0365   0204 -0.0156
+  step-distilled attn student (origin UNet, 8 steps)                     0301 -0.0369   0204 -0.0170
+  mamba + mstudent1_step600 deliverable (8 steps)                        0301 -0.0520   0204 -0.0186
+  control A step300: lossless self-target fine-tune (llnull)             0301 +0.0390   0204 +0.0201
+  control B best (step200 by sampled LPIPS): registered-GT fine-tune     0301 +0.1609   0204 +0.0279
+
+ALL re-scored rows (tag, offset, n, LPIPS, sharp, rPSNR):
+  0204 0204_llnull_step100                  (-28,0) n=38  lpips 0.2146  sharp 0.0060  rPSNR 19.954
+  0204 0204_llnull_step200                  (-28,0) n=38  lpips 0.2194  sharp 0.0058  rPSNR 19.950
+  0204 0204_llnull_step300                  (-28,0) n=38  lpips 0.2255  sharp 0.0057  rPSNR 19.953
+  0204 0204_llsplat_step300                 (-28,0) n=38  lpips 0.2254  sharp 0.0057  rPSNR 19.901
+  0204 0204_mstudent1_step600_ll            (-28,0) n=38  lpips 0.1867  sharp 0.0081  rPSNR 19.407
+  0204 0204_oldmp4vnull_step300             (-28,0) n=38  lpips 0.2361  sharp 0.0054  rPSNR 19.888
+  0204 0204_origin_ll                       (-28,0) n=38  lpips 0.2053  sharp 0.0065  rPSNR 19.896
+  0204 0204_origin_nohook_ll                (-28,0) n=38  lpips 0.2053  sharp 0.0065  rPSNR 19.896
+  0204 0204_s25_ll                          (-28,0) n=38  lpips 0.1897  sharp 0.0076  rPSNR 19.548
+  0204 0204_student_ll                      (-28,0) n=38  lpips 0.1883  sharp 0.0076  rPSNR 19.529
+  0204 regB_step200_0204                    (-28,0) n=38  lpips 0.2332  sharp 0.0066  rPSNR 20.032
+  0204 regB_step300_0204                    (-28,0) n=38  lpips 0.2403  sharp 0.0066  rPSNR 20.038
+  0204 regBpf_step300_0204                  (-28,0) n=38  lpips 0.2388  sharp 0.0066  rPSNR 20.178
+  0301 0301_llnull_step100                  (-28,0) n=38  lpips 0.4480  sharp 0.0215  rPSNR 15.412
+  0301 0301_llnull_step200                  (-28,0) n=38  lpips 0.4629  sharp 0.0202  rPSNR 15.486
+  0301 0301_llnull_step300                  (-28,0) n=38  lpips 0.4741  sharp 0.0195  rPSNR 15.536
+  0301 0301_llnull_step300_e1high           (-28,0) n=38  lpips 0.4364  sharp 0.0233  rPSNR 15.476
+  0301 0301_llnull_step300_e1low            (-28,0) n=38  lpips 0.4723  sharp 0.0197  rPSNR 15.526
+  0301 0301_llsplat_step100                 (-28,0) n=38  lpips 0.4449  sharp 0.0219  rPSNR 15.379
+  0301 0301_llsplat_step200                 (-28,0) n=38  lpips 0.4602  sharp 0.0205  rPSNR 15.481
+  0301 0301_llsplat_step300                 (-28,0) n=38  lpips 0.4722  sharp 0.0196  rPSNR 15.541
+  0301 0301_mstudent1_step600_ll            (-28,0) n=38  lpips 0.3831  sharp 0.0315  rPSNR 14.968
+  0301 0301_oldmp4vnull_step100             (-28,0) n=38  lpips 0.4644  sharp 0.0200  rPSNR 15.526
+  0301 0301_oldmp4vnull_step200             (-28,0) n=38  lpips 0.4824  sharp 0.0186  rPSNR 15.607
+  0301 0301_oldmp4vnull_step300             (-28,0) n=38  lpips 0.4942  sharp 0.0180  rPSNR 15.633
+  0301 0301_origin_ll                       (-28,0) n=38  lpips 0.4351  sharp 0.0235  rPSNR 15.467
+  0301 0301_origin_nohook_ll                (-28,0) n=38  lpips 0.4351  sharp 0.0235  rPSNR 15.467
+  0301 0301_originall_hook_ll               (-28,0) n=38  lpips 0.4351  sharp 0.0235  rPSNR 15.467
+  0301 0301_s25_ll                          (-28,0) n=38  lpips 0.3986  sharp 0.0295  rPSNR 15.013
+  0301 0301_student_ll                      (-28,0) n=38  lpips 0.3982  sharp 0.0291  rPSNR 15.056
+  0301 posUnreg_step100_0301                (-28,0) n=38  lpips 0.8004  sharp 0.0131  rPSNR 16.969
+  0301 posUnreg_step200_0301                (-28,0) n=38  lpips 0.6835  sharp 0.0159  rPSNR 17.272
+  0301 posUnreg_step300_0301                (-28,0) n=38  lpips 0.7237  sharp 0.0149  rPSNR 17.444
+  0301 regB_originall_0301                  (-28,0) n=38  lpips 0.4351  sharp 0.0235  rPSNR 15.467
+  0301 regB_step100_0301                    (-28,0) n=38  lpips 0.6310  sharp 0.0178  rPSNR 16.044
+  0301 regB_step200_0301                    (-28,0) n=38  lpips 0.5959  sharp 0.0189  rPSNR 15.869
+  0301 regB_step200_0301_e1high             (-28,0) n=38  lpips 0.4386  sharp 0.0236  rPSNR 15.489
+  0301 regB_step200_0301_e1low              (-28,0) n=38  lpips 0.5863  sharp 0.0186  rPSNR 15.866
+  0301 regB_step200_0301_s25                (-28,0) n=38  lpips 0.4314  sharp 0.0287  rPSNR 15.263
+  0301 regB_step300_0301                    (-28,0) n=38  lpips 0.6001  sharp 0.0191  rPSNR 15.803
+  0301 regBpf_step100_0301                  (-28,0) n=38  lpips 0.6208  sharp 0.0180  rPSNR 16.065
+  0301 regBpf_step200_0301                  (-28,0) n=38  lpips 0.6291  sharp 0.0175  rPSNR 16.095
+  0301 regBpf_step300_0301                  (-28,0) n=38  lpips 0.6047  sharp 0.0188  rPSNR 16.024

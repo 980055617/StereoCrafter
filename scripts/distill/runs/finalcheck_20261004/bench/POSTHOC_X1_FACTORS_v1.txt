@@ -1,0 +1,30 @@
+============================================================================================================================================
+POST-HOC (non-gating): what fails to transfer in X1, and is it machine load?   576x1024
+deployed = speed lane steady-state UNet seconds per forward (bf16 pipeline, CUDA events); bench = primary fp16 bench2.py run
+============================================================================================================================================
+(1) FACTOR SPLIT
+  per forward (s)          deployed   bench    dep/bench
+  origin BS2                 0.9534   0.9612      0.992
+  origin BS1                 0.5264   0.4857      1.084
+  deliverable/mamba5 BS2     0.9057   0.9103      0.995
+  deliverable/mamba5 BS1     0.5015   0.4587      1.093
+  guidance factor t(BS1)/t(BS2): origin  deployed 0.5522  bench 0.5053  bench/deployed 0.915
+                                 mamba5  deployed 0.5537  bench 0.5039  bench/deployed 0.910
+  Mamba factor t(mamba5)/t(origin): BS2 deployed 0.9500  bench 0.9470  bench/deployed 0.997
+                                    BS1 deployed 0.9526  bench 0.9445  bench/deployed 0.992
+  step factor: exact by construction (per-forward time does not depend on the step count; deployed per-forward of the
+  T6/T5 renders: deliv_g101_T6pad 0.9053, deliv_g101_T5pad 0.9051, deliv_g100_T5pad 0.5013, origin_g101_T6pad 0.9535, origin_g101_T5pad 0.9530, origin_g100_T5pad 0.5263)
+
+(2) MACHINE-LOAD CHECK (GPU 1 state in the speed driver's pre-render snapshot; same UNet work within a label)
+  label                n idle idle med s/win n busy busy med s/win
+  deliv_g100_T5nat         12         2.5067      0            nan
+  deliv_g100_T5pad          2         2.5052     10         2.5066
+  deliv_g100_s8             1         4.0295     11         4.0114
+  origin_g100_s8            1         4.2164     11         4.2111
+  origin_g100_T5pad         0            nan     12         2.6313
+  deliv_g101_T5pad          6         4.5271      6         4.5241
+  origin_g101_T5pad         5         4.7657      7         4.7639
+  deliv_g101_T6pad          2         5.4398     10         5.4316
+  origin_g101_T6pad         5         5.7213      7         5.7204
+  deliv_g100_T5nat and deliv_g100_T5pad do identical UNet work (5 calls x batch 1 per window); the first ran with GPU 1 idle,
+  the second mostly with GPU 1 busy.

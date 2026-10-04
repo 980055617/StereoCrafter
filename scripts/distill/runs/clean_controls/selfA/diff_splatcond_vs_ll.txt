@@ -1,0 +1,66 @@
+--- xcheck_mini_ft_ll.py	2026-10-03 13:03:40.586677711 +0900
++++ xcheck_mini_ft_ll_splatcond.py	2026-10-03 13:08:48.358221358 +0900
+@@ -1,4 +1,8 @@
+-"""CONTROL A (clean self-consistency): copy of scripts/distill/runs/diag_trainer/minift/xcheck_mini_ft.py (2026-09-29) with ONE
++"""CONTROL A2 (contingency, NOT pre-registered): xcheck_mini_ft_ll.py with the cond (BR) and mask (BL) ALSO read from the SPLATTING file
++(video_data/splatting/<clip>_splatting_results.mp4 = the deployed pipeline's own input, read_and_prepare_video), instead of the train tile,
++which sits +2.08/255 DC off the splatting file (target_diff.txt).  With this, (cond, mask, target) is exactly the pipeline's own triple.
++--- below: the CONTROL A docstring ---
++CONTROL A (clean self-consistency): copy of scripts/distill/runs/diag_trainer/minift/xcheck_mini_ft.py (2026-09-29) with ONE
+ functional change -- the "null" target is read from the LOSSLESS FFV1 render of the same deployed origin output instead of the
+ cv2-mp4v render (same pre-encode array, md5 2e533d7755c950d2fc95043f6fb0a51d; beyond4/FAITHFULNESS.txt), so the two runs differ
+ only in the target's codec.  Seed, eps/sigma sequence, windows, steps, LR, clipping, checkpoints: identical to the original.
+@@ -79,6 +83,9 @@
+ def read_tile(s, e):
+     vr = VideoReader(f"video_data/train/{CLIP}_train.mp4", ctx=cpu(0))
+     return torch.from_numpy(vr.get_batch(list(range(s, e))).asnumpy()).permute(0, 3, 1, 2).float() / 255.0
++def read_tile_splat(s, e):   # CONTROL A2: the pipeline's own input tile (TL left, BL mask, BR warped right)
++    vr = VideoReader(f"video_data/splatting/{CLIP}_splatting_results.mp4", ctx=cpu(0))
++    return torch.from_numpy(vr.get_batch(list(range(s, e))).asnumpy()).permute(0, 3, 1, 2).float() / 255.0
+ @torch.no_grad()
+ def encode(cond, mask, target):
+     cond, mask, target = cond.to(dev, dt), mask.to(dev, dt), target.to(dev, dt); H, W = cond.shape[2], cond.shape[3]
+@@ -104,9 +111,10 @@
+ assert mad_left < 3 / 255, f"origin sbs not pixel-aligned with the registered crop: MAD {mad_left*255:.2f}/255"
+ # CONTROL A diagnostic: the lossless sbs left half is the pipeline's pass-through of the SPLATTING input's TL crop -> must be bit-identical (maxabs == 0)
+ spl30 = torch.from_numpy(VideoReader(f"video_data/splatting/{CLIP}_splatting_results.mp4", ctx=cpu(0))[30].asnumpy()).permute(2, 0, 1).float().unsqueeze(0) / 255.0
+-_, _, _, TLs30 = crop_quadrants(spl30); maxabs_spl = (L30 - TLs30).abs().max().item() * 255; mad_spl = (L30 - TLs30).abs().mean().item() * 255
++BRs30, Ms30, _, TLs30 = crop_quadrants(spl30); maxabs_spl = (L30 - TLs30).abs().max().item() * 255; mad_spl = (L30 - TLs30).abs().mean().item() * 255
+ print(f"[sanity-A] frame30 MAD sbs-left vs SPLATTING TL crop = {mad_spl:.4f}/255, maxabs = {maxabs_spl:.4f}/255 (lossless: must be exactly 0)", flush=True)
+ assert maxabs_spl == 0.0, f"lossless sbs left half is not bit-identical to the splatting TL crop: maxabs {maxabs_spl}/255"
++print(f"[sanity-A2] frame30 cond: SPLAT BR vs TRAIN BR MAD = {(BRs30 - BR30).abs().mean().item()*255:.3f}/255 (mean shift {(BRs30 - BR30).mean().item()*255:+.3f}/255); SPLAT mask vs TRAIN mask MAD = {(Ms30 - M30).abs().mean().item()*255:.3f}/255; origin out vs SPLAT BR = {(R30 - BRs30).abs().mean().item()*255:.2f}/255", flush=True)
+ if VARIANT == "null":
+     tgt30 = R30
+     mad_tt = (tgt30 - R30).abs().mean().item(); print(f"[sanity] P1-null target frame30 vs origin output frame30 MAD = {mad_tt*255:.3f}/255", flush=True)
+@@ -115,17 +123,19 @@
+ WINS = []; mask_fracs = []
+ for s in starts:
+     tile = read_tile(s, s + NF); BR, M, TR, TL = crop_quadrants(tile)
++    BRs, Ms, _, TLs = crop_quadrants(read_tile_splat(s, s + NF))   # CONTROL A2: cond + mask from the pipeline's own input
+     if VARIANT == "null":
+         sbs = torch.from_numpy(vr_sbs.get_batch(list(range(s, s + NF))).asnumpy()).permute(0, 3, 1, 2).float() / 255.0
+         target = sbs[:, :, :, 1024:]
+         # every window: left half of sbs must equal the TL crop (registration), codec only
+         assert (sbs[:, :, :, :1024] - TL).abs().mean().item() < 3 / 255
++        assert (sbs[:, :, :, :1024] - TLs).abs().max().item() == 0.0   # CONTROL A2: bit-identical to the splatting TL crop
+     else:
+         target = TR
+-    mf = M.mean().item(); mask_fracs.append(mf)
+-    emb, lat, ml, x0, add = encode(BR, M, target)
++    mf = Ms.mean().item(); mask_fracs.append(mf)
++    emb, lat, ml, x0, add = encode(BRs, Ms, target)   # CONTROL A2: was encode(BR, M, target)
+     WINS.append((s, emb, lat, ml, x0, add))
+-    del tile, BR, M, TR, TL, target
++    del tile, BR, M, TR, TL, BRs, Ms, TLs, target
+ assert min(mask_fracs) > 0, mask_fracs
+ print("[sanity] mask fraction per window (inside 576x1024 crop):", [round(m, 4) for m in mask_fracs], flush=True)
+ print(f"[sanity] latents: lat {tuple(WINS[0][2].shape)} x0 {tuple(WINS[0][4].shape)} mask-latent mean {WINS[0][3].mean().item():.4f}; encode peak {torch.cuda.max_memory_allocated()/2**30:.2f} GiB", flush=True)
+@@ -136,7 +146,7 @@
+            "clip_grad_norm": 1.0, "seed": SEED, "sigmas": SIGMAS, "timesteps": TS, "sigma_spec": SIGSPEC, "cond_latent_scale": 1.0, "x0_scale": pipe.vae.config.scaling_factor,
+            "mask_fracs": mask_fracs, "sanity_mad_left_255": mad_left * 255, "sanity_mad_right_vs_gt_255": mad_right_gt * 255,
+            "sanity_mad_right_vs_cond_255": mad_right_cond * 255,
+-           "control": "A clean self-consistency (lossless target)", "target_codec": "FFV1 lossless (decord bit-exact)", "old_mp4v_target": ORIGIN_SBS_MP4V_OLD,
++           "control": "A2 clean self-consistency (lossless target, cond+mask from the splatting file)", "cond_source": f"video_data/splatting/{CLIP}_splatting_results.mp4 BR/BL", "target_codec": "FFV1 lossless (decord bit-exact)", "old_mp4v_target": ORIGIN_SBS_MP4V_OLD,
+            "sanity_mad_left_vs_splat_TL_255": mad_spl, "sanity_maxabs_left_vs_splat_TL_255": maxabs_spl, "start_point_file": "start_bf16.pt"}, open(os.path.join(OUT, "meta.json"), "w"), indent=1)
+ 
+ # ---- training ----

@@ -1,0 +1,167 @@
+======================================================================================================================================================
+WALL-CLOCK per configuration (GPU 0 = RTX 4090, one render at a time; medians over the renders listed)
+process_s = python start->exit;  inloop_s = sum of CUDA-synced pipeline __call__ (encode + sampling);  unet_s = CUDA-event UNet time
+steady/win, unet/win = median over windows 1..n-2 of one render (drops window 0's warm-up and the shorter last window), then median over renders
+======================================================================================================================================================
+  config                        n UNet calls/win  batch elem/win  process_s  inloop_s   unet_s inloop/win steady/win unet/win windows  clips
+  deliv_g101_s8_t2              1            [8]    [2]       16      178.9     118.6    105.4       8.47       8.20     7.26      14  0301
+  deliv_g101_T8sig_pad8         1            [8]    [2]       16      177.5     118.5    105.4       8.46       8.20     7.25      14  0301
+  origin_g101_s8                2            [8]    [2]       16      176.1     118.8    105.3       8.49       8.54     7.63      14  0204 0301
+  deliv_g101_s8                 2            [8]    [2]       16      169.6     117.6    105.1       8.40       8.13     7.25      14  0204 0301
+  deliv_g101_T6pad             12            [6]    [2]       12      147.9      92.1     80.1       6.55       6.26     5.43      14  0042 0052 0125 0128 0141 0147 0170 0204 0225 0251 0259 0301
+  origin_g101_T6pad            12            [6]    [2]       12      150.5      92.1     79.0       6.49       6.55     5.72      14  0042 0052 0125 0128 0141 0147 0170 0204 0225 0251 0259 0301
+  deliv_g101_T5nat              4            [5]    [2]       10      136.1      82.3     70.1       5.64       5.35     4.52      14  0052 0147 0204 0301
+  deliv_g101_T5pad             12            [5]    [2]       10      142.3      80.6     67.8       5.69       5.36     4.53      14  0042 0052 0125 0128 0141 0147 0170 0204 0225 0251 0259 0301
+  origin_g101_T5pad            12            [5]    [2]       10      135.8      78.6     65.8       5.55       5.60     4.76      14  0042 0052 0125 0128 0141 0147 0170 0204 0225 0251 0259 0301
+  deliv_g100_s8                12            [8]    [1]        8      126.5      71.8     60.2       5.12       4.84     4.01      14  0042 0052 0125 0128 0141 0147 0170 0204 0225 0251 0259 0301
+  deliv_g100_s8_rep2            1            [8]    [1]        8      119.9      71.6     60.2       5.12       4.83     4.01      14  0301
+  origin_g100_s8               12            [8]    [1]        8      124.3      69.9     58.2       4.99       5.04     4.21      14  0042 0052 0125 0128 0141 0147 0170 0204 0225 0251 0259 0301
+  deliv_g100_T5pad             12            [5]    [1]        5      102.3      50.9     39.4       3.63       3.33     2.51      14  0042 0052 0125 0128 0141 0147 0170 0204 0225 0251 0259 0301
+  origin_g100_T5pad            12            [5]    [1]        5       98.9      48.0     36.4       3.43       3.46     2.63      14  0042 0052 0125 0128 0141 0147 0170 0204 0225 0251 0259 0301
+
+======================================================================================================================================================
+PAIRED same-session ratios vs the same model's deployed 8-step @1.01 render of the SAME clip (this session)
+======================================================================================================================================================
+  0204 deliv_g100_T5pad             vs deliv_g101_s8    process   98.6/ 172.6 = 0.571   inloop   51.0/ 118.0 = 0.432   unet   39.3/ 105.2 = 0.374
+  0301 deliv_g100_T5pad             vs deliv_g101_s8    process   98.7/ 166.5 = 0.593   inloop   50.8/ 117.2 = 0.433   unet   39.3/ 105.0 = 0.374
+  0204 deliv_g100_s8                vs deliv_g101_s8    process  133.7/ 172.6 = 0.775   inloop   74.4/ 118.0 = 0.630   unet   61.5/ 105.2 = 0.585
+  0301 deliv_g100_s8                vs deliv_g101_s8    process  126.5/ 166.5 = 0.760   inloop   73.7/ 117.2 = 0.629   unet   60.6/ 105.0 = 0.577
+  0301 deliv_g100_s8_rep2           vs deliv_g101_s8    process  119.9/ 166.5 = 0.720   inloop   71.6/ 117.2 = 0.611   unet   60.2/ 105.0 = 0.573
+  0204 deliv_g101_T5nat             vs deliv_g101_s8    process  127.1/ 172.6 = 0.736   inloop   79.1/ 118.0 = 0.670   unet   67.4/ 105.2 = 0.641
+  0301 deliv_g101_T5nat             vs deliv_g101_s8    process  127.0/ 166.5 = 0.763   inloop   78.9/ 117.2 = 0.673   unet   67.4/ 105.0 = 0.642
+  0204 deliv_g101_T5pad             vs deliv_g101_s8    process  126.7/ 172.6 = 0.734   inloop   78.9/ 118.0 = 0.668   unet   67.4/ 105.2 = 0.641
+  0301 deliv_g101_T5pad             vs deliv_g101_s8    process  143.1/ 166.5 = 0.859   inloop   80.8/ 117.2 = 0.689   unet   67.8/ 105.0 = 0.646
+  0204 deliv_g101_T6pad             vs deliv_g101_s8    process  139.0/ 172.6 = 0.805   inloop   91.4/ 118.0 = 0.774   unet   79.9/ 105.2 = 0.760
+  0301 deliv_g101_T6pad             vs deliv_g101_s8    process  140.1/ 166.5 = 0.841   inloop   91.5/ 117.2 = 0.781   unet   79.9/ 105.0 = 0.761
+  0301 deliv_g101_T8sig_pad8        vs deliv_g101_s8    process  177.5/ 166.5 = 1.066   inloop  118.5/ 117.2 = 1.011   unet  105.4/ 105.0 = 1.003
+  0301 deliv_g101_s8_t2             vs deliv_g101_s8    process  178.9/ 166.5 = 1.074   inloop  118.6/ 117.2 = 1.012   unet  105.4/ 105.0 = 1.004
+  0204 origin_g100_T5pad            vs origin_g101_s8   process   95.1/ 179.8 = 0.529   inloop   48.0/ 119.2 = 0.403   unet   36.4/ 105.3 = 0.345
+  0301 origin_g100_T5pad            vs origin_g101_s8   process   95.6/ 172.4 = 0.555   inloop   48.1/ 118.5 = 0.406   unet   36.4/ 105.3 = 0.345
+  0204 origin_g100_s8               vs origin_g101_s8   process  117.6/ 179.8 = 0.654   inloop   69.9/ 119.2 = 0.586   unet   58.2/ 105.3 = 0.553
+  0301 origin_g100_s8               vs origin_g101_s8   process  129.2/ 172.4 = 0.749   inloop   71.5/ 118.5 = 0.604   unet   58.3/ 105.3 = 0.553
+  0204 origin_g101_T5pad            vs origin_g101_s8   process  124.7/ 179.8 = 0.694   inloop   77.4/ 119.2 = 0.649   unet   65.8/ 105.3 = 0.625
+  0301 origin_g101_T5pad            vs origin_g101_s8   process  125.1/ 172.4 = 0.726   inloop   77.4/ 118.5 = 0.654   unet   65.8/ 105.3 = 0.625
+  0204 origin_g101_T6pad            vs origin_g101_s8   process  138.5/ 179.8 = 0.770   inloop   90.7/ 119.2 = 0.761   unet   79.0/ 105.3 = 0.750
+  0301 origin_g101_T6pad            vs origin_g101_s8   process  138.1/ 172.4 = 0.801   inloop   90.5/ 118.5 = 0.764   unet   78.9/ 105.3 = 0.749
+
+======================================================================================================================================================
+FIRST-WINDOW WARM-UP and STEADY STATE (deliverable vs origin at the same sampler setting; medians over renders)
+window0 = CUDA-synced __call__ seconds of window 0; steady = median of windows 1..n-2; excess = window0 - steady
+======================================================================================================================================================
+  g100_T5pad     deliv n=12 / origin n=12:  window0  8.15 vs  3.58 s (excess +4.83 vs +0.12)   steady/win  3.33 vs  3.46 s (-3.8%)   UNet/win  2.51 vs  2.63 s (-4.7%)   whole-clip inloop   50.9 vs   48.0 s (+5.9%)
+  g100_s8        deliv n=12 / origin n=12:  window0  9.66 vs  5.16 s (excess +4.82 vs +0.11)   steady/win  4.84 vs  5.04 s (-4.1%)   UNet/win  4.01 vs  4.21 s (-4.7%)   whole-clip inloop   71.8 vs   69.9 s (+2.8%)
+  g101_T5pad     deliv n=12 / origin n=12:  window0 10.51 vs  5.73 s (excess +5.15 vs +0.13)   steady/win  5.36 vs  5.60 s (-4.2%)   UNet/win  4.53 vs  4.76 s (-5.0%)   whole-clip inloop   80.6 vs   78.6 s (+2.5%)
+  g101_T6pad     deliv n=12 / origin n=12:  window0 11.35 vs  6.69 s (excess +5.09 vs +0.13)   steady/win  6.26 vs  6.55 s (-4.5%)   UNet/win  5.43 vs  5.72 s (-5.1%)   whole-clip inloop   92.1 vs   92.1 s (+0.0%)
+  g101_s8        deliv n= 2 / origin n= 2:  window0 13.21 vs  8.70 s (excess +5.09 vs +0.16)   steady/win  8.13 vs  8.54 s (-4.9%)   UNet/win  7.25 vs  7.63 s (-5.0%)   whole-clip inloop  117.6 vs  118.8 s (-1.0%)
+
+======================================================================================================================================================
+EVERY RUN (from the driver log; failures included)
+======================================================================================================================================================
+  03:49:07 0301 deliv_g101_s8                rc=0 process=166.5 inloop=117.2 unet=105.0 calls=112 per_win=[8] batch=[2] load=7.7 load1=2.67 gpus=0,0%,111MiB;1,0%,15MiB; md5=3e367e6167e5ae62681f50b86579f6b6
+  03:52:05 0301 deliv_g101_T8sig_pad8        rc=0 process=177.5 inloop=118.5 unet=105.4 calls=112 per_win=[8] batch=[2] load=16.1 load1=13.15 gpus=0,0%,111MiB;1,99%,9451MiB; md5=3e367e6167e5ae62681f50b86579f6b6
+  03:54:38 0301 deliv_g101_T5pad             rc=0 process=143.1 inloop=80.8 unet=67.8 calls=70 per_win=[5] batch=[2] load=16.5 load1=12.52 gpus=0,0%,111MiB;1,0%,9451MiB; md5=ae6922cf1e7e207807a89b9fb4ebc533
+  03:57:37 0301 deliv_g101_s8_t2             rc=0 process=178.9 inloop=118.6 unet=105.4 calls=112 per_win=[8] batch=[2] load=18.2 load1=13.44 gpus=0,0%,111MiB;1,0%,9451MiB; md5=3e367e6167e5ae62681f50b86579f6b6
+  03:59:43 0301 deliv_g100_s8                rc=0 process=126.5 inloop=73.7 unet=60.6 calls=112 per_win=[8] batch=[1] load=9.8 load1=13.89 gpus=0,0%,111MiB;1,99%,9451MiB; md5=d2e3fe2d7c4c7c616fd7a23819dbd49f
+  04:02:36 0301 origin_g101_s8               rc=0 process=172.4 inloop=118.5 unet=105.3 calls=112 per_win=[8] batch=[2] load=9.7 load1=14.34 gpus=0,0%,111MiB;1,0%,9451MiB; md5=2e533d7755c950d2fc95043f6fb0a51d
+  04:04:45 0301 origin_g100_s8               rc=0 process=129.2 inloop=71.5 unet=58.3 calls=112 per_win=[8] batch=[1] load=12.6 load1=16.52 gpus=0,0%,111MiB;1,0%,9451MiB; md5=486dcefba769a992be0342f1f5eea349
+  04:06:55 0301 origin_g100_s8_cli           rc=0 process=129.9 (no speed_log.json) load1=14.99 gpus=0,0%,111MiB;1,0%,9451MiB; md5=486dcefba769a992be0342f1f5eea349
+  04:09:47 0204 deliv_g101_s8                rc=0 process=172.6 inloop=118.0 unet=105.2 calls=112 per_win=[8] batch=[2] load=10.6 load1=15.8 gpus=0,0%,111MiB;1,0%,9451MiB; md5=181547f36e68f7dde7371d9a1ebbad78
+  04:12:01 0204 deliv_g100_s8                rc=0 process=133.7 inloop=74.4 unet=61.5 calls=112 per_win=[8] batch=[1] load=16.1 load1=14.1 gpus=0,0%,111MiB;1,0%,9451MiB; md5=56c74dfd39db98476154e9ff8d8d70c0
+  04:15:01 0204 origin_g101_s8               rc=0 process=179.8 inloop=119.2 unet=105.3 calls=112 per_win=[8] batch=[2] load=15.0 load1=12.19 gpus=0,0%,111MiB;1,0%,9451MiB; md5=e5c5fba479a64801b686f28ba656064f
+  04:16:59 0204 origin_g100_s8               rc=0 process=117.6 inloop=69.9 unet=58.2 calls=112 per_win=[8] batch=[1] load=7.5 load1=10.04 gpus=0,0%,111MiB;1,100%,10047MiB; md5=ddc8ec284c91780c6f1d92e3b9253d91
+  04:18:59 0301 deliv_g100_s8_rep2           rc=0 process=119.9 inloop=71.6 unet=60.2 calls=112 per_win=[8] batch=[1] load=7.8 load1=4.05 gpus=0,0%,111MiB;1,100%,19533MiB; md5=d2e3fe2d7c4c7c616fd7a23819dbd49f
+  04:21:05 0042 deliv_g100_s8                rc=0 process=126.6 inloop=71.6 unet=60.2 calls=112 per_win=[8] batch=[1] load=14.3 load1=5.22 gpus=0,0%,111MiB;1,100%,19633MiB; md5=fdd0548065760642cbc736ec9e62884e
+  04:23:10 0042 origin_g100_s8               rc=0 process=124.4 inloop=69.9 unet=58.2 calls=112 per_win=[8] batch=[1] load=13.9 load1=2.76 gpus=0,0%,111MiB;1,100%,19633MiB; md5=caaf93620e96ddb50de369164b3c0721
+  04:25:26 0052 deliv_g100_s8                rc=0 process=136.6 inloop=77.3 unet=64.9 calls=120 per_win=[8] batch=[1] load=15.3 load1=3.25 gpus=0,0%,111MiB;1,100%,19633MiB; md5=df0473229a32bf400b4bdd880d7b216a
+  04:27:41 0052 origin_g100_s8               rc=0 process=134.6 inloop=75.8 unet=63.2 calls=120 per_win=[8] batch=[1] load=14.6 load1=2.44 gpus=0,15%,111MiB;1,100%,19633MiB; md5=c69ef21073b3f0c7c0174b076ed5abb0
+  04:29:56 0125 deliv_g100_s8                rc=0 process=134.8 inloop=76.6 unet=64.2 calls=120 per_win=[8] batch=[1] load=14.9 load1=4.85 gpus=0,0%,111MiB;1,8%,20005MiB; md5=e67e0002e19f32c5d3c1f40ba21e1607
+  04:32:09 0125 origin_g100_s8               rc=0 process=132.6 inloop=74.9 unet=62.4 calls=120 per_win=[8] batch=[1] load=14.2 load1=3.93 gpus=0,0%,111MiB;1,100%,20105MiB; md5=cbecda0c3696f00c3fefda8a61f21c43
+  04:34:15 0128 deliv_g100_s8                rc=0 process=126.6 inloop=71.6 unet=60.2 calls=112 per_win=[8] batch=[1] load=14.3 load1=2.96 gpus=0,0%,111MiB;1,100%,20105MiB; md5=7cafe8c4ab1931e3c2b48402ec0c1f3d
+  04:36:21 0128 origin_g100_s8               rc=0 process=125.4 inloop=69.7 unet=58.2 calls=112 per_win=[8] batch=[1] load=13.7 load1=3.6 gpus=0,0%,111MiB;1,100%,20105MiB; md5=08b897336ad3e8476e2caa38ce728865
+  04:38:27 0141 deliv_g100_s8                rc=0 process=126.3 inloop=71.6 unet=60.1 calls=112 per_win=[8] batch=[1] load=14.4 load1=6.77 gpus=0,0%,111MiB;1,100%,19533MiB; md5=2b03db9d25a17e7a9388481eb108c1f9
+  04:40:31 0141 origin_g100_s8               rc=0 process=124.2 inloop=69.8 unet=58.2 calls=112 per_win=[8] batch=[1] load=13.7 load1=3.23 gpus=0,0%,111MiB;1,100%,19633MiB; md5=d288fb7a5a4f10d62b4cf68b8a87c9db
+  04:42:54 0147 deliv_g100_s8                rc=0 process=142.8 inloop=81.3 unet=68.2 calls=128 per_win=[8] batch=[1] load=15.5 load1=2.67 gpus=0,0%,111MiB;1,100%,19633MiB; md5=f783fe04943777eb410f701fcffb9cdc
+  04:45:15 0147 origin_g100_s8               rc=0 process=140.8 inloop=79.8 unet=66.6 calls=128 per_win=[8] batch=[1] load=15.0 load1=3.91 gpus=0,0%,111MiB;1,100%,19633MiB; md5=2cdfddcaa87612ab516a6b1bdbf344a1
+  04:47:15 0170 deliv_g100_s8                rc=0 process=120.3 inloop=72.1 unet=60.2 calls=112 per_win=[8] batch=[1] load=7.8 load1=2.49 gpus=0,0%,111MiB;1,100%,19633MiB; md5=b7a04e2cd3995fc7d7dd07d7e3081ef2
+  04:49:13 0170 origin_g100_s8               rc=0 process=117.6 inloop=69.9 unet=58.2 calls=112 per_win=[8] batch=[1] load=7.3 load1=2.98 gpus=0,0%,111MiB;1,100%,20005MiB; md5=8422c3eb6aafa4d579426f51e624a425
+  04:51:13 0225 deliv_g100_s8                rc=0 process=119.8 inloop=71.6 unet=60.2 calls=112 per_win=[8] batch=[1] load=7.9 load1=4.15 gpus=0,0%,111MiB;1,100%,20105MiB; md5=3767f519fca2deec4755c5d99a1ac50f
+  04:53:10 0225 origin_g100_s8               rc=0 process=117.2 inloop=69.9 unet=58.2 calls=112 per_win=[8] batch=[1] load=7.0 load1=4.77 gpus=0,0%,111MiB;1,100%,20105MiB; md5=7716657a1c37cdaef70cb1ef44ac33c7
+  04:55:10 0251 deliv_g100_s8                rc=0 process=119.6 inloop=71.6 unet=60.2 calls=112 per_win=[8] batch=[1] load=7.8 load1=3.2 gpus=0,0%,111MiB;1,100%,20105MiB; md5=6167652a91116a908595ef21645c0c32
+  04:57:07 0251 origin_g100_s8               rc=0 process=117.3 inloop=69.9 unet=58.2 calls=112 per_win=[8] batch=[1] load=7.0 load1=2.26 gpus=0,20%,111MiB;1,100%,20105MiB; md5=b1373cfeb34df9b6ad771f997056f2c4
+  04:59:07 0259 deliv_g100_s8                rc=0 process=119.8 inloop=71.6 unet=60.2 calls=112 per_win=[8] batch=[1] load=7.7 load1=4.66 gpus=0,0%,111MiB;1,100%,19633MiB; md5=5e02e8969e3a950d41d5719cd716d748
+  05:01:04 0259 origin_g100_s8               rc=0 process=117.5 inloop=69.8 unet=58.2 calls=112 per_win=[8] batch=[1] load=7.1 load1=3.37 gpus=0,0%,111MiB;1,100%,19633MiB; md5=4be2437a5ac7ccfa13389b5627bfc438
+  05:03:24 0301 deliv_g101_T6pad             rc=0 process=140.1 inloop=91.5 unet=79.9 calls=84 per_win=[6] batch=[2] load=7.9 load1=2.3 gpus=0,0%,111MiB;1,100%,19633MiB; md5=6eff0ba9d7a898c42fef6e23335e770c
+  05:05:43 0301 origin_g101_T6pad            rc=0 process=138.1 inloop=90.5 unet=78.9 calls=84 per_win=[6] batch=[2] load=7.1 load1=2.19 gpus=0,0%,111MiB;1,100%,19633MiB; md5=4b5035b91e74fe060526c92aff87b6e9
+  05:07:48 0301 origin_g101_T5pad            rc=0 process=125.1 inloop=77.4 unet=65.8 calls=70 per_win=[5] batch=[2] load=7.0 load1=2.18 gpus=0,0%,111MiB;1,100%,19633MiB; md5=033cdd769b3ec59e8ffb4bc169a8a5fd
+  05:09:55 0301 deliv_g101_T5nat             rc=0 process=127.0 inloop=78.9 unet=67.4 calls=70 per_win=[5] batch=[2] load=7.6 load1=2.87 gpus=0,10%,111MiB;1,100%,20105MiB; md5=5a5d7dbd96bc27879716f37a8970eae9
+  05:12:01 0204 deliv_g101_T5pad             rc=0 process=126.7 inloop=78.9 unet=67.4 calls=70 per_win=[5] batch=[2] load=7.7 load1=2.64 gpus=0,0%,111MiB;1,100%,20105MiB; md5=fae69d9bb8087450aa91b34da9c592a9
+  05:14:20 0204 deliv_g101_T6pad             rc=0 process=139.0 inloop=91.4 unet=79.9 calls=84 per_win=[6] batch=[2] load=7.6 load1=2.45 gpus=0,0%,111MiB;1,100%,20105MiB; md5=65e666f256221d9c5d8637215acde2b2
+  05:16:39 0204 origin_g101_T6pad            rc=0 process=138.5 inloop=90.7 unet=79.0 calls=84 per_win=[6] batch=[2] load=7.0 load1=3.87 gpus=0,0%,111MiB;1,100%,20105MiB; md5=5e834769c81e9304283c5c659fa880ed
+  05:18:44 0204 origin_g101_T5pad            rc=0 process=124.7 inloop=77.4 unet=65.8 calls=70 per_win=[5] batch=[2] load=7.1 load1=3.77 gpus=0,0%,111MiB;1,100%,19533MiB; md5=36b9b2cd97c085d6fb6bdbc482ee0f3c
+  05:20:51 0204 deliv_g101_T5nat             rc=0 process=127.1 inloop=79.1 unet=67.4 calls=70 per_win=[5] batch=[2] load=7.9 load1=2.71 gpus=0,0%,111MiB;1,100%,19633MiB; md5=51c69391cb263904a210be0b00013084
+  05:23:17 0052 deliv_g101_T5pad             rc=0 process=146.5 inloop=85.7 unet=72.9 calls=75 per_win=[5] batch=[2] load=15.9 load1=2.52 gpus=0,0%,111MiB;1,100%,19633MiB; md5=703335f7c39623739e7e88851a64078a
+  05:25:56 0052 deliv_g101_T6pad             rc=0 process=158.9 inloop=99.0 unet=86.4 calls=90 per_win=[6] batch=[2] load=16.0 load1=2.92 gpus=0,0%,111MiB;1,100%,19633MiB; md5=1f573a41aebf419eb3f10f56a60d412a
+  05:28:34 0052 origin_g101_T6pad            rc=0 process=157.6 inloop=98.4 unet=85.8 calls=90 per_win=[6] batch=[2] load=14.8 load1=2.9 gpus=0,0%,111MiB;1,100%,19633MiB; md5=cb17debfa0b7886801367b2a311cb015
+  05:30:57 0052 origin_g101_T5pad            rc=0 process=142.9 inloop=84.1 unet=71.5 calls=75 per_win=[5] batch=[2] load=14.8 load1=6.62 gpus=0,0%,111MiB;1,100%,20105MiB; md5=b35d86d45cf3fc9d2466c830b53bf6c9
+  05:33:22 0052 deliv_g101_T5nat             rc=0 process=145.0 inloop=85.4 unet=72.8 calls=75 per_win=[5] batch=[2] load=15.4 load1=2.91 gpus=0,0%,111MiB;1,100%,20105MiB; md5=84f30b363a5e5add9ef19f831c5ce475
+  05:35:54 0147 deliv_g101_T5pad             rc=0 process=152.5 inloop=90.0 unet=76.5 calls=80 per_win=[5] batch=[2] load=16.2 load1=3.82 gpus=0,0%,111MiB;1,100%,20105MiB; md5=1f94c02763b08d5c5585a9097706bb81
+  05:38:41 0147 deliv_g101_T6pad             rc=0 process=166.6 inloop=104.0 unet=90.8 calls=96 per_win=[6] batch=[2] load=16.4 load1=4.04 gpus=0,0%,111MiB;1,100%,20105MiB; md5=4dae07aee612c9279216ba8a121a902b
+  05:41:26 0147 origin_g101_T6pad            rc=0 process=165.1 inloop=103.8 unet=90.4 calls=96 per_win=[6] batch=[2] load=15.1 load1=4.26 gpus=0,0%,111MiB;1,100%,20693MiB; md5=cc64daa991c1023c7c145e9075432cd6
+  05:43:56 0147 origin_g101_T5pad            rc=0 process=150.1 inloop=88.6 unet=75.3 calls=80 per_win=[5] batch=[2] load=15.1 load1=2.39 gpus=0,0%,111MiB;1,100%,20693MiB; md5=859cb191e7610e272460c6b5e47aaf78
+  05:46:28 0147 deliv_g101_T5nat             rc=0 process=151.7 inloop=89.7 unet=76.5 calls=80 per_win=[5] batch=[2] load=15.9 load1=4.31 gpus=0,0%,111MiB;1,100%,20693MiB; md5=0a701212070d2d81d1bb414e9d0af766
+  06:03:31 0301 deliv_g100_T5pad             rc=0 process=98.7 inloop=50.8 unet=39.3 calls=70 per_win=[5] batch=[1] load=7.6 load1=10.9 gpus=0,0%,111MiB;1,100%,20693MiB; md5=f2a35759d425d70e8a9e67508da52387
+  06:05:10 0204 deliv_g100_T5pad             rc=0 process=98.6 inloop=51.0 unet=39.3 calls=70 per_win=[5] batch=[1] load=7.6 load1=4.2 gpus=0,0%,111MiB;1,100%,20693MiB; md5=fdde468b410718548106bc614f66675a
+  06:07:04 0052 deliv_g100_T5pad             rc=0 process=114.1 inloop=55.0 unet=42.3 calls=75 per_win=[5] batch=[1] load=15.2 load1=3.37 gpus=0,0%,111MiB;1,100%,20693MiB; md5=17008da95db27123d24877f6af3e56f9
+  06:09:03 0147 deliv_g100_T5pad             rc=0 process=119.3 inloop=57.7 unet=44.4 calls=80 per_win=[5] batch=[1] load=15.6 load1=4.68 gpus=0,0%,111MiB;1,100%,20693MiB; md5=ce70321aeef9a51415e15f76bb8e5707
+  06:12:27 0042 deliv_g100_T5pad             rc=0 process=107.7 inloop=50.7 unet=39.3 calls=70 per_win=[5] batch=[1] load=16.6 load1=10.13 gpus=0,0%,111MiB;1,0%,20693MiB; md5=b8bda87152df2c23bc83e0e005b11baf
+  06:14:19 0125 deliv_g100_T5pad             rc=0 process=112.4 inloop=54.1 unet=41.9 calls=75 per_win=[5] batch=[1] load=14.9 load1=5.01 gpus=0,0%,111MiB;1,100%,21165MiB; md5=5762adcb39425392301f7ac65ac07cab
+  06:16:05 0128 deliv_g100_T5pad             rc=0 process=105.3 inloop=50.8 unet=39.4 calls=70 per_win=[5] batch=[1] load=14.1 load1=4.36 gpus=0,0%,111MiB;1,0%,21165MiB; md5=ab140ab2f21f83d1ee8a140faffa04b1
+  06:17:50 0141 deliv_g100_T5pad             rc=0 process=105.3 inloop=50.8 unet=39.4 calls=70 per_win=[5] batch=[1] load=14.2 load1=3.05 gpus=0,0%,111MiB;1,100%,21165MiB; md5=1ad9a2cc1f07a8aa4b1f92ce7078dae2
+  06:19:29 0170 deliv_g100_T5pad             rc=0 process=98.8 inloop=50.9 unet=39.4 calls=70 per_win=[5] batch=[1] load=7.8 load1=3.02 gpus=0,0%,111MiB;1,100%,21165MiB; md5=3a97e6e83438e7be6fc77ab981961580
+  06:21:08 0225 deliv_g100_T5pad             rc=0 process=99.3 inloop=51.0 unet=39.4 calls=70 per_win=[5] batch=[1] load=7.7 load1=2.47 gpus=0,0%,111MiB;1,100%,21165MiB; md5=e65d4c872bc875e23679cf6abdcee74c
+  06:22:47 0251 deliv_g100_T5pad             rc=0 process=98.6 inloop=50.8 unet=39.4 calls=70 per_win=[5] batch=[1] load=7.6 load1=3.98 gpus=0,0%,111MiB;1,100%,20573MiB; md5=35517209b11dbf980af22637efc49cec
+  06:24:26 0259 deliv_g100_T5pad             rc=0 process=99.1 inloop=50.9 unet=39.4 calls=70 per_win=[5] batch=[1] load=7.8 load1=4.39 gpus=0,0%,111MiB;1,100%,20693MiB; md5=b65a7fe86f8f07a3eaa86fe3e958b252
+  06:26:02 0301 origin_g100_T5pad            rc=0 process=95.6 inloop=48.1 unet=36.4 calls=70 per_win=[5] batch=[1] load=7.1 load1=2.97 gpus=0,0%,111MiB;1,100%,20693MiB; md5=e5879aa8e8b47e2aa5a00b12982a0114
+  06:27:37 0204 origin_g100_T5pad            rc=0 process=95.1 inloop=48.0 unet=36.4 calls=70 per_win=[5] batch=[1] load=7.0 load1=2.36 gpus=0,0%,111MiB;1,100%,20693MiB; md5=bc47cf2d1b0fdc282b4f9709600e229b
+  06:29:29 0052 origin_g100_T5pad            rc=0 process=111.6 inloop=52.1 unet=39.5 calls=75 per_win=[5] batch=[1] load=15.4 load1=2.43 gpus=0,0%,111MiB;1,100%,20693MiB; md5=32997b2a079b4c416329ee1896231867
+  06:31:25 0147 origin_g100_T5pad            rc=0 process=116.4 inloop=54.9 unet=41.6 calls=80 per_win=[5] batch=[1] load=15.6 load1=2.52 gpus=0,0%,111MiB;1,100%,20693MiB; md5=8f696872c6068033e516468eb89f2f79
+  06:33:08 0042 origin_g100_T5pad            rc=0 process=102.6 inloop=48.2 unet=36.4 calls=70 per_win=[5] batch=[1] load=13.7 load1=2.3 gpus=0,0%,111MiB;1,100%,20693MiB; md5=4ff53850be96a01c438ce0a8c092ab11
+  06:34:57 0125 origin_g100_T5pad            rc=0 process=109.3 inloop=51.5 unet=39.0 calls=75 per_win=[5] batch=[1] load=14.5 load1=4.31 gpus=0,0%,111MiB;1,100%,21065MiB; md5=c99e63d2dd172b56948454ebfc073873
+  06:36:39 0128 origin_g100_T5pad            rc=0 process=102.4 inloop=47.9 unet=36.4 calls=70 per_win=[5] batch=[1] load=14.0 load1=2.8 gpus=0,0%,111MiB;1,100%,21165MiB; md5=b80701820ac9988c69917661a2f834c7
+  06:38:21 0141 origin_g100_T5pad            rc=0 process=101.9 inloop=47.9 unet=36.3 calls=70 per_win=[5] batch=[1] load=13.7 load1=4.31 gpus=0,0%,111MiB;1,100%,21165MiB; md5=275328ca94f94102ed4f5e219ea3a629
+  06:39:57 0170 origin_g100_T5pad            rc=0 process=95.6 inloop=48.0 unet=36.3 calls=70 per_win=[5] batch=[1] load=7.2 load1=2.65 gpus=0,0%,111MiB;1,99%,21165MiB; md5=8c2d869c9970b3319f3d585823c2acce
+  06:41:32 0225 origin_g100_T5pad            rc=0 process=95.4 inloop=47.9 unet=36.4 calls=70 per_win=[5] batch=[1] load=7.0 load1=3.52 gpus=0,0%,111MiB;1,100%,21165MiB; md5=f048044f3b5346808491b45d758f5974
+  06:43:08 0251 origin_g100_T5pad            rc=0 process=95.8 inloop=48.2 unet=36.4 calls=70 per_win=[5] batch=[1] load=7.1 load1=2.81 gpus=0,0%,111MiB;1,100%,21165MiB; md5=80d15a366e50ea206914bc590e8d8c56
+  06:44:44 0259 origin_g100_T5pad            rc=0 process=95.9 inloop=47.9 unet=36.4 calls=70 per_win=[5] batch=[1] load=7.1 load1=5.63 gpus=0,0%,111MiB;1,100%,20573MiB; md5=74ad9f5210141fa9baac80cf49f0d979
+  06:47:10 0042 deliv_g101_T6pad             rc=0 process=146.0 inloop=91.4 unet=79.9 calls=84 per_win=[6] batch=[2] load=14.3 load1=3.16 gpus=0,0%,111MiB;1,0%,20693MiB; md5=0997a025e26fe7a1905e95311cec6d81
+  06:49:24 0042 deliv_g101_T5pad             rc=0 process=133.6 inloop=78.9 unet=67.4 calls=70 per_win=[5] batch=[2] load=14.3 load1=2.27 gpus=0,0%,111MiB;1,100%,20693MiB; md5=09686deb8563e309fed9b365a7f7a85b
+  06:51:48 0042 origin_g101_T6pad            rc=0 process=144.6 inloop=90.5 unet=78.9 calls=84 per_win=[6] batch=[2] load=13.8 load1=2.82 gpus=0,0%,111MiB;1,100%,20693MiB; md5=d174d77d762a23bc636b6b7813fc6a92
+  06:54:00 0042 origin_g101_T5pad            rc=0 process=131.4 inloop=77.4 unet=65.8 calls=70 per_win=[5] batch=[2] load=13.6 load1=3.24 gpus=0,0%,111MiB;1,100%,20693MiB; md5=bb4ee1575f587d1a4be61f03ab60b1b4
+  06:56:36 0125 deliv_g101_T6pad             rc=0 process=156.1 inloop=97.8 unet=85.4 calls=90 per_win=[6] batch=[2] load=14.9 load1=2.98 gpus=0,0%,111MiB;1,100%,20693MiB; md5=5c40405a2a8429b934c66fb3127c610d
+  06:58:58 0125 deliv_g101_T5pad             rc=0 process=142.3 inloop=84.2 unet=72.0 calls=75 per_win=[5] batch=[2] load=14.9 load1=2.55 gpus=0,0%,111MiB;1,100%,21165MiB; md5=efdc43221e5c509b9763e3d1cb0fc7e6
+  07:01:33 0125 origin_g101_T6pad            rc=0 process=154.9 inloop=97.1 unet=84.7 calls=90 per_win=[6] batch=[2] load=14.6 load1=2.16 gpus=0,0%,111MiB;1,100%,21165MiB; md5=8888908d31510890cc4db869d0c0a32a
+  07:03:54 0125 origin_g101_T5pad            rc=0 process=140.4 inloop=83.0 unet=70.5 calls=75 per_win=[5] batch=[2] load=14.2 load1=2.14 gpus=0,0%,111MiB;1,100%,21165MiB; md5=58a1aaa16344f4729c030b5a4a39e8dd
+  07:06:22 0128 deliv_g101_T6pad             rc=0 process=148.3 inloop=91.7 unet=80.0 calls=84 per_win=[6] batch=[2] load=14.5 load1=2.52 gpus=0,0%,111MiB;1,100%,21165MiB; md5=b22a8f06080bd6517a09b3f69a988e81
+  07:08:50 0128 deliv_g101_T5pad             rc=0 process=147.8 inloop=80.5 unet=67.8 calls=70 per_win=[5] batch=[2] load=24.5 load1=7.11 gpus=0,0%,111MiB;1,0%,2543MiB; md5=47564885c20dd0ef7498dc3a8b172800
+  07:11:33 0128 origin_g101_T6pad            rc=0 process=163.0 inloop=93.0 unet=79.0 calls=84 per_win=[6] batch=[2] load=24.1 load1=13.19 gpus=0,0%,111MiB;1,0%,2411MiB; md5=245a32078c3683e0c57a81900acfb33e
+  07:14:06 0128 origin_g101_T5pad            rc=0 process=152.7 inloop=81.2 unet=65.9 calls=70 per_win=[5] batch=[2] load=20.9 load1=16.83 gpus=0,0%,111MiB;1,0%,3225MiB; md5=138d56a042d77f700560e9ea208381c5
+  07:16:49 0141 deliv_g101_T6pad             rc=0 process=163.2 inloop=95.7 unet=80.6 calls=84 per_win=[6] batch=[2] load=20.4 load1=20.91 gpus=0,0%,111MiB;1,0%,3225MiB; md5=6b2602af500073613549c8cef4da0bc6
+  07:19:12 0141 deliv_g101_T5pad             rc=0 process=143.3 inloop=80.0 unet=67.5 calls=70 per_win=[5] batch=[2] load=20.1 load1=15.53 gpus=0,0%,111MiB;1,0%,1121MiB; md5=618bb14490c011b5785b1363d7284234
+  07:21:48 0141 origin_g101_T6pad            rc=0 process=155.4 inloop=91.9 unet=79.0 calls=84 per_win=[6] batch=[2] load=21.5 load1=8.11 gpus=0,0%,111MiB;1,0%,445MiB; md5=faebd0c161502b785eac2cf4d8828687
+  07:24:11 0141 origin_g101_T5pad            rc=0 process=143.4 inloop=79.3 unet=65.8 calls=70 per_win=[5] batch=[2] load=22.3 load1=7.32 gpus=0,0%,111MiB;1,0%,20187MiB; md5=a3c55c2e5158692f120c0c78a00215cf
+  07:26:40 0170 deliv_g101_T6pad             rc=0 process=149.1 inloop=93.7 unet=80.3 calls=84 per_win=[6] batch=[2] load=10.1 load1=8.63 gpus=0,0%,111MiB;1,99%,20187MiB; md5=4f780e7959456f9ee8f75698442ccf7e
+  07:29:02 0170 deliv_g101_T5pad             rc=0 process=141.2 inloop=80.9 unet=67.8 calls=70 per_win=[5] batch=[2] load=15.5 load1=15.58 gpus=0,0%,111MiB;1,0%,20187MiB; md5=3ebe72b5397612865862659773c89580
+  07:31:35 0170 origin_g101_T6pad            rc=0 process=153.0 inloop=93.4 unet=79.0 calls=84 per_win=[6] batch=[2] load=14.0 load1=12.15 gpus=0,0%,111MiB;1,0%,20187MiB; md5=0d58f01a38781cd91e0ed4f10e7b3ef8
+  07:33:47 0170 origin_g101_T5pad            rc=0 process=132.5 inloop=78.0 unet=65.8 calls=70 per_win=[5] batch=[2] load=13.8 load1=16.73 gpus=0,0%,111MiB;1,0%,20187MiB; md5=02e2ce2475b6ebda8ecadb63a7ef30c4
+  07:36:15 0225 deliv_g101_T6pad             rc=0 process=147.4 inloop=92.4 unet=80.1 calls=84 per_win=[6] batch=[2] load=10.6 load1=8.1 gpus=0,0%,111MiB;1,7%,22555MiB; md5=2a7ecd3ee8513fb0d91f0470b640266c
+  07:38:37 0225 deliv_g101_T5pad             rc=0 process=142.3 inloop=81.7 unet=68.0 calls=70 per_win=[5] batch=[2] load=15.4 load1=10.57 gpus=0,0%,111MiB;1,0%,22555MiB; md5=aab71622663c5381447cc8eb8dbd79b6
+  07:41:05 0225 origin_g101_T6pad            rc=0 process=148.0 inloop=92.3 unet=79.0 calls=84 per_win=[6] batch=[2] load=9.3 load1=19.2 gpus=0,0%,111MiB;1,0%,22555MiB; md5=a196c88feada6a8726ba8bb61724c46b
+  07:43:24 0225 origin_g101_T5pad            rc=0 process=139.1 inloop=80.3 unet=65.9 calls=70 per_win=[5] batch=[2] load=17.1 load1=19.03 gpus=0,0%,111MiB;1,0%,22555MiB; md5=ff577b19e081d54c72cb47336d7da938
+  07:45:45 0251 deliv_g101_T6pad             rc=0 process=140.7 inloop=91.8 unet=80.0 calls=84 per_win=[6] batch=[2] load=7.8 load1=11.47 gpus=0,0%,111MiB;1,100%,22555MiB; md5=dea9c94c59252a3b9cb66171032768ff
+  07:47:53 0251 deliv_g101_T5pad             rc=0 process=127.5 inloop=79.2 unet=67.5 calls=70 per_win=[5] batch=[2] load=7.8 load1=6.43 gpus=0,0%,111MiB;1,100%,7329MiB; md5=139bdd9b2393efc9a1c59c1d478db642
+  07:50:12 0251 origin_g101_T6pad            rc=0 process=139.7 inloop=90.9 unet=79.0 calls=84 per_win=[6] batch=[2] load=8.4 load1=4.89 gpus=0,0%,111MiB;1,96%,7329MiB; md5=a7577bfa9e0e3ae17bd8be7a007df996
+  07:52:19 0251 origin_g101_T5pad            rc=0 process=126.4 inloop=77.8 unet=65.8 calls=70 per_win=[5] batch=[2] load=7.5 load1=7.1 gpus=0,0%,111MiB;1,100%,7329MiB; md5=0f5560b08883c2006705b3af11e4ce20
+  07:54:40 0259 deliv_g101_T6pad             rc=0 process=141.6 inloop=91.7 unet=80.0 calls=84 per_win=[6] batch=[2] load=9.2 load1=6.32 gpus=0,0%,111MiB;1,71%,7329MiB; md5=85008468e202924b3516504bba1aa701
+  07:56:47 0259 deliv_g101_T5pad             rc=0 process=127.0 inloop=78.9 unet=67.4 calls=70 per_win=[5] batch=[2] load=7.8 load1=5.58 gpus=0,0%,111MiB;1,0%,15MiB; md5=d72ebf0e32d8a22d718af94155005f4c
+  07:59:06 0259 origin_g101_T6pad            rc=0 process=138.1 inloop=90.5 unet=79.0 calls=84 per_win=[6] batch=[2] load=7.1 load1=2.79 gpus=0,0%,111MiB;1,0%,15MiB; md5=cb37f49b0db47f443379ebb0289f2a6d
+  08:01:10 0259 origin_g101_T5pad            rc=0 process=124.8 inloop=77.4 unet=65.8 calls=70 per_win=[5] batch=[2] load=7.0 load1=1.26 gpus=0,0%,111MiB;1,0%,15MiB; md5=d96adeb2a93da6abff828943f5b6743d
