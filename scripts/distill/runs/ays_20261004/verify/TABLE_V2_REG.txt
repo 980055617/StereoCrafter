@@ -1,0 +1,38 @@
+ays_20261004 / verify -- V2 REGISTERED RE-SCORE, clips 0042 0259 (GPU 1, this lane)
+scorer scripts/distill/runs/more_20261004/eval_robustness/score_registered_v1.py UNCHANGED, SCORE_STEP=4; mine: outputs/ays_20261004/verify/score_reg_v1/<clip>.json; reference: outputs/ays_20261004/robust/score_reg_v1/ and score_reg_ays5_v1/ (read only)
+
+GATE G2 (6 variants within 1e-5 of the robust lane, identical registration arrays and md5_left; UNREG within 2e-6 of the published ROW)
+  G2 0042: PASS  max |d| vs robust (all variants, shared rows) 0.0e+00; md5_left distinct across my 9 rows: 1
+  G2 0259: PASS  max |d| vs robust (all variants, shared rows) 0.0e+00; md5_left distinct across my 9 rows: 1
+
+--- per-clip deltas A - B (mine | robust; same sign?) ---
+  C1 deliverable 8x2 - AYS8 origin @1.01 (16 v 16)
+    0042: UNREG +0.0021 | +0.0021 same   REG_CLIP +0.0042 | +0.0042 same   REG_FRAME +0.0044 | +0.0044 same
+    0259: UNREG +0.0022 | +0.0022 same   REG_CLIP +0.0055 | +0.0055 same   REG_FRAME +0.0056 | +0.0056 same
+  C2 deliverable T5pad - origin Karras-T5pad (5 v 5)
+    0042: UNREG -0.0051 | -0.0051 same   REG_CLIP -0.0027 | -0.0027 same   REG_FRAME -0.0021 | -0.0021 same
+    0259: UNREG -0.0045 | -0.0045 same   REG_CLIP -0.0010 | -0.0010 same   REG_FRAME -0.0008 | -0.0008 same
+  C3 AYS8 origin @1.01 - Karras origin (16 v 16)
+    0042: UNREG -0.0082 | -0.0082 same   REG_CLIP -0.0083 | -0.0083 same   REG_FRAME -0.0078 | -0.0078 same
+    0259: UNREG -0.0041 | -0.0041 same   REG_CLIP -0.0038 | -0.0038 same   REG_FRAME -0.0037 | -0.0037 same
+  C4 deliverable 8x2 - Karras origin (16 v 16)
+    0042: UNREG -0.0061 | -0.0061 same   REG_CLIP -0.0041 | -0.0041 same   REG_FRAME -0.0034 | -0.0034 same
+    0259: UNREG -0.0019 | -0.0019 same   REG_CLIP +0.0018 | +0.0018 same   REG_FRAME +0.0019 | +0.0019 same
+  C5 deliverable T5pad - AYS8 origin @1.01 (5 v 16)
+    0042: UNREG +0.0044 | +0.0044 same   REG_CLIP +0.0068 | +0.0068 same   REG_FRAME +0.0069 | +0.0069 same
+    0259: UNREG +0.0036 | +0.0036 same   REG_CLIP +0.0088 | +0.0088 same   REG_FRAME +0.0090 | +0.0090 same
+  C6 deliverable T5pad - AYS5 origin (5 v 5)
+    0042: UNREG -0.0035 | -0.0035 same   REG_CLIP -0.0009 | -0.0009 same   REG_FRAME -0.0003 | -0.0003 same
+    0259: UNREG -0.0030 | -0.0030 same   REG_CLIP +0.0007 | +0.0007 same   REG_FRAME +0.0008 | +0.0008 same
+  C6b AYS5 origin - origin Karras-T5pad (5 v 5)
+    0042: UNREG -0.0016 | -0.0016 same   REG_CLIP -0.0018 | -0.0018 same   REG_FRAME -0.0018 | -0.0018 same
+    0259: UNREG -0.0015 | -0.0015 same   REG_CLIP -0.0017 | -0.0017 same   REG_FRAME -0.0017 | -0.0017 same
+  C7 s25 - AYS8 origin @1.01 (50 v 16)
+    0042: UNREG -0.0022 | -0.0022 same   REG_CLIP +0.0016 | +0.0016 same   REG_FRAME +0.0023 | +0.0023 same
+    0259: UNREG +0.0032 | +0.0032 same   REG_CLIP +0.0042 | +0.0042 same   REG_FRAME +0.0038 | +0.0038 same
+  C8 deliverable T5nat (ships) - AYS8 origin @1.01 (5 v 16)
+    0042: UNREG +0.0057 | +0.0057 same   REG_CLIP +0.0087 | +0.0087 same   REG_FRAME +0.0088 | +0.0088 same
+    0259: UNREG +0.0013 | +0.0013 same   REG_CLIP +0.0052 | +0.0052 same   REG_FRAME +0.0052 | +0.0052 same
+  C9 NEW: deliverable T5pad - AYS8 origin @1.00 (5 v 8) = 3a registered
+    0042: UNREG +0.0042 | (none)   REG_CLIP +0.0064 | (none)   REG_FRAME +0.0065 | (none)
+    0259: UNREG +0.0036 | (none)   REG_CLIP +0.0085 | (none)   REG_FRAME +0.0087 | (none)

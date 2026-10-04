@@ -1,0 +1,2 @@
+# ays5 lane C0 control (PREREG): verbatim AYS5 line of judge/jobs_J3c_ays_regime.txt for 0204; must reproduce md5 768339b8be14069225a409321b4c5834
+0204 AYS5pad8_origin_g100 origin 1.00 700.0,11.25711441040039,1.7890000343322754,0.26404356956481934,0.0020000000949949026 8

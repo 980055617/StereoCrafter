@@ -1,0 +1,2 @@
+92a4af38cc9f834e8a620441d856be8a  PREREG.txt
+recorded 2026-10-05_01:13:56, batch still waiting for the GPU-1 lock (no scorer call yet)

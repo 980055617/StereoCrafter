@@ -1,0 +1,1731 @@
+{
+ "seed": 20261004,
+ "nboot": 10000,
+ "tol": 2e-06,
+ "gates": {
+  "S2_0042": {
+   "ok": true,
+   "checks": [
+    "origin_ll vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "origin_ll vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0042.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0042.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "origin_g100_T5pad vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "origin_g100_T5pad vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0042.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "deliv_g100_T5nat vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_POSTHOC_T5G100NAT.txt: d=+0.0e+00 off=(-12,-12) n=38 ok"
+   ]
+  },
+  "S2_0052": {
+   "ok": true,
+   "checks": [
+    "origin_ll vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "origin_ll vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0052.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "AYS5pad8_origin_g100 vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0052.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_T5G100_4clip.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0052.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "origin_g100_T5pad vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "origin_g100_T5pad vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0052.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "deliv_g100_T5nat vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_POSTHOC_T5G100NAT.txt: d=+0.0e+00 off=(-12,-12) n=38 ok"
+   ]
+  },
+  "S2_0125": {
+   "ok": true,
+   "checks": [
+    "origin_ll vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "origin_ll vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0125.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0125.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "origin_g100_T5pad vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "origin_g100_T5pad vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0125.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "deliv_g100_T5nat vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_POSTHOC_T5G100NAT.txt: d=+0.0e+00 off=(-12,-12) n=38 ok"
+   ]
+  },
+  "S2_0128": {
+   "ok": true,
+   "checks": [
+    "origin_ll vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "origin_ll vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0128.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0128.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "origin_g100_T5pad vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "origin_g100_T5pad vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0128.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "deliv_g100_T5nat vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_POSTHOC_T5G100NAT.txt: d=+0.0e+00 off=(-12,-12) n=38 ok"
+   ]
+  },
+  "S2_0141": {
+   "ok": true,
+   "checks": [
+    "origin_ll vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "origin_ll vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0141.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0141.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "origin_g100_T5pad vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "origin_g100_T5pad vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0141.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "deliv_g100_T5nat vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_POSTHOC_T5G100NAT.txt: d=+0.0e+00 off=(-12,-12) n=38 ok"
+   ]
+  },
+  "S2_0147": {
+   "ok": true,
+   "checks": [
+    "origin_ll vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "origin_ll vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0147.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "AYS5pad8_origin_g100 vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0147.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_T5G100_4clip.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0147.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "origin_g100_T5pad vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "origin_g100_T5pad vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0147.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "deliv_g100_T5nat vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_POSTHOC_T5G100NAT.txt: d=+0.0e+00 off=(-12,-12) n=38 ok"
+   ]
+  },
+  "S2_0170": {
+   "ok": true,
+   "checks": [
+    "origin_ll vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "origin_ll vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0170.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0170.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "origin_g100_T5pad vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "origin_g100_T5pad vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0170.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "deliv_g100_T5nat vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_POSTHOC_T5G100NAT.txt: d=+0.0e+00 off=(-28,0) n=38 ok"
+   ]
+  },
+  "S2_0204": {
+   "ok": true,
+   "checks": [
+    "origin_ll vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "origin_ll vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0204.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "AYS5pad8_origin_g100 vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0204.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_T5G100_4clip.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0204.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "origin_g100_T5pad vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "origin_g100_T5pad vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0204.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "deliv_g100_T5nat vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_POSTHOC_T5G100NAT.txt: d=+0.0e+00 off=(-28,0) n=38 ok"
+   ]
+  },
+  "S2_0225": {
+   "ok": true,
+   "checks": [
+    "origin_ll vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "origin_ll vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0225.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0225.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "origin_g100_T5pad vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "origin_g100_T5pad vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0225.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "deliv_g100_T5nat vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_POSTHOC_T5G100NAT.txt: d=+0.0e+00 off=(-28,0) n=38 ok"
+   ]
+  },
+  "S2_0251": {
+   "ok": true,
+   "checks": [
+    "origin_ll vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "origin_ll vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0251.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0251.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "origin_g100_T5pad vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "origin_g100_T5pad vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0251.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "deliv_g100_T5nat vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_POSTHOC_T5G100NAT.txt: d=+0.0e+00 off=(-28,0) n=38 ok"
+   ]
+  },
+  "S2_0259": {
+   "ok": true,
+   "checks": [
+    "origin_ll vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "origin_ll vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0259.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0259.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "origin_g100_T5pad vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "origin_g100_T5pad vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0259.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "deliv_g100_T5nat vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_POSTHOC_T5G100NAT.txt: d=+0.0e+00 off=(-28,0) n=38 ok"
+   ]
+  },
+  "S2_0301": {
+   "ok": true,
+   "checks": [
+    "origin_ll vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "origin_ll vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_0301.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "AYS5pad8_origin_g100 vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_0301.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_T5G100_4clip.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_0301.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "origin_g100_T5pad vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "origin_g100_T5pad vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_0301.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "deliv_g100_T5nat vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_POSTHOC_T5G100NAT.txt: d=+0.0e+00 off=(-28,0) n=38 ok"
+   ]
+  },
+  "S3_0042": {
+   "ok": true,
+   "checks": [
+    "deliv_g100_T5pad vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0042.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0042.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "AYS8_origin_g101 vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0042.txt: d=+0.0e+00 off=(-12,-12) n=38 ok"
+   ]
+  },
+  "S3_0052": {
+   "ok": true,
+   "checks": [
+    "deliv_g100_T5pad vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_T5G100_4clip.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0052.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0052.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "AYS8_origin_g101 vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0052.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "AYS5pad8_origin_g100 vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0052.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "AYS5pad8_origin_g100 vs scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0052.txt: d=+0.0e+00 off=(-12,-12) n=38 ok"
+   ]
+  },
+  "S3_0125": {
+   "ok": true,
+   "checks": [
+    "deliv_g100_T5pad vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0125.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0125.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "AYS8_origin_g101 vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0125.txt: d=+0.0e+00 off=(-12,-12) n=38 ok"
+   ]
+  },
+  "S3_0128": {
+   "ok": true,
+   "checks": [
+    "deliv_g100_T5pad vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0128.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0128.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "AYS8_origin_g101 vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0128.txt: d=+0.0e+00 off=(-12,-12) n=38 ok"
+   ]
+  },
+  "S3_0141": {
+   "ok": true,
+   "checks": [
+    "deliv_g100_T5pad vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0141.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0141.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "AYS8_origin_g101 vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0141.txt: d=+0.0e+00 off=(-12,-12) n=38 ok"
+   ]
+  },
+  "S3_0147": {
+   "ok": true,
+   "checks": [
+    "deliv_g100_T5pad vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_T5G100_4clip.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0147.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0147.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "AYS8_origin_g101 vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0147.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "AYS5pad8_origin_g100 vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0147.txt: d=+0.0e+00 off=(-12,-12) n=38 ok",
+    "AYS5pad8_origin_g100 vs scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0147.txt: d=+0.0e+00 off=(-12,-12) n=38 ok"
+   ]
+  },
+  "S3_0170": {
+   "ok": true,
+   "checks": [
+    "deliv_g100_T5pad vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0170.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0170.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "AYS8_origin_g101 vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0170.txt: d=+0.0e+00 off=(-28,0) n=38 ok"
+   ]
+  },
+  "S3_0204": {
+   "ok": true,
+   "checks": [
+    "deliv_g100_T5pad vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_T5G100_4clip.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0204.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0204.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "AYS8_origin_g101 vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0204.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "AYS5pad8_origin_g100 vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0204.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "AYS5pad8_origin_g100 vs scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0204.txt: d=+0.0e+00 off=(-28,0) n=38 ok"
+   ]
+  },
+  "S3_0225": {
+   "ok": true,
+   "checks": [
+    "deliv_g100_T5pad vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0225.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0225.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "AYS8_origin_g101 vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0225.txt: d=+0.0e+00 off=(-28,0) n=38 ok"
+   ]
+  },
+  "S3_0251": {
+   "ok": true,
+   "checks": [
+    "deliv_g100_T5pad vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0251.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0251.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "AYS8_origin_g101 vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0251.txt: d=+0.0e+00 off=(-28,0) n=38 ok"
+   ]
+  },
+  "S3_0259": {
+   "ok": true,
+   "checks": [
+    "deliv_g100_T5pad vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0259.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0259.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "AYS8_origin_g101 vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0259.txt: d=+0.0e+00 off=(-28,0) n=38 ok"
+   ]
+  },
+  "S3_0301": {
+   "ok": true,
+   "checks": [
+    "deliv_g100_T5pad vs scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_T5G100_4clip.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_0301.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "deliv_g100_T5pad vs scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0301.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "AYS8_origin_g101 vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_0301.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "AYS5pad8_origin_g100 vs scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_0301.txt: d=+0.0e+00 off=(-28,0) n=38 ok",
+    "AYS5pad8_origin_g100 vs scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0301.txt: d=+0.0e+00 off=(-28,0) n=38 ok"
+   ]
+  }
+ },
+ "contrasts": {
+  "PRIMARY": {
+   "a": "deliv_g100_T5pad",
+   "b": "AYS5pad8_origin_g100",
+   "clips": [
+    "0042",
+    "0052",
+    "0125",
+    "0128",
+    "0141",
+    "0147",
+    "0170",
+    "0204",
+    "0225",
+    "0251",
+    "0259",
+    "0301"
+   ],
+   "delta": [
+    -0.00345899999999999,
+    -0.00628200000000001,
+    -0.010786000000000018,
+    -0.01594200000000001,
+    -0.012651000000000023,
+    -0.0012860000000000094,
+    -0.004431000000000018,
+    -0.019621,
+    -0.014919000000000016,
+    -0.00949300000000003,
+    -0.0030449999999999644,
+    -0.03229599999999999
+   ],
+   "mean": -0.011184250000000007,
+   "n": 12,
+   "neg": 12,
+   "worst_clip": "0147",
+   "worst": -0.0012860000000000094,
+   "boot95": [
+    -0.016324997916666677,
+    -0.006796964583333341
+   ],
+   "t95": [
+    -0.016776657460091403,
+    -0.005591842539908611
+   ],
+   "p_sign": 0.00048828125,
+   "p_signflip": 0.00048828125,
+   "mean_a": 0.38182125000000006,
+   "mean_b": 0.39300550000000006,
+   "sharp_ratio": [
+    1.1869707575928643,
+    1.060294461322739,
+    1.1167074858907464,
+    1.1913911230265115,
+    1.2031667694838577,
+    1.1312005170463726,
+    1.071393280632411,
+    1.159851874710693,
+    1.1165723108594956,
+    1.1630056415796424,
+    1.0891340458206662,
+    1.202638454619437
+   ],
+   "src": {
+    "0042": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0042.txt"
+    ],
+    "0052": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0052.txt"
+    ],
+    "0125": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0125.txt"
+    ],
+    "0128": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0128.txt"
+    ],
+    "0141": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0141.txt"
+    ],
+    "0147": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0147.txt"
+    ],
+    "0170": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0170.txt"
+    ],
+    "0204": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0204.txt"
+    ],
+    "0225": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0225.txt"
+    ],
+    "0251": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0251.txt"
+    ],
+    "0259": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0259.txt"
+    ],
+    "0301": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0301.txt"
+    ]
+   },
+   "path_a": {
+    "0042": "outputs/finalcheck_20261004/speed/clips/0042_deliv_g100_T5pad/0042_inpainting_results_sbs.mkv",
+    "0052": "outputs/finalcheck_20261004/speed/clips/0052_deliv_g100_T5pad/0052_inpainting_results_sbs.mkv",
+    "0125": "outputs/finalcheck_20261004/speed/clips/0125_deliv_g100_T5pad/0125_inpainting_results_sbs.mkv",
+    "0128": "outputs/finalcheck_20261004/speed/clips/0128_deliv_g100_T5pad/0128_inpainting_results_sbs.mkv",
+    "0141": "outputs/finalcheck_20261004/speed/clips/0141_deliv_g100_T5pad/0141_inpainting_results_sbs.mkv",
+    "0147": "outputs/finalcheck_20261004/speed/clips/0147_deliv_g100_T5pad/0147_inpainting_results_sbs.mkv",
+    "0170": "outputs/finalcheck_20261004/speed/clips/0170_deliv_g100_T5pad/0170_inpainting_results_sbs.mkv",
+    "0204": "outputs/finalcheck_20261004/speed/clips/0204_deliv_g100_T5pad/0204_inpainting_results_sbs.mkv",
+    "0225": "outputs/finalcheck_20261004/speed/clips/0225_deliv_g100_T5pad/0225_inpainting_results_sbs.mkv",
+    "0251": "outputs/finalcheck_20261004/speed/clips/0251_deliv_g100_T5pad/0251_inpainting_results_sbs.mkv",
+    "0259": "outputs/finalcheck_20261004/speed/clips/0259_deliv_g100_T5pad/0259_inpainting_results_sbs.mkv",
+    "0301": "outputs/finalcheck_20261004/speed/clips/0301_deliv_g100_T5pad/0301_inpainting_results_sbs.mkv"
+   },
+   "path_b": {
+    "0042": "outputs/ays_20261004/ays5/clips/0042_AYS5pad8_origin_g100/0042_inpainting_results_sbs.mkv",
+    "0052": "outputs/more_20261004/judge/ays/clips/0052_AYS5pad8_origin_g100/0052_inpainting_results_sbs.mkv",
+    "0125": "outputs/ays_20261004/ays5/clips/0125_AYS5pad8_origin_g100/0125_inpainting_results_sbs.mkv",
+    "0128": "outputs/ays_20261004/ays5/clips/0128_AYS5pad8_origin_g100/0128_inpainting_results_sbs.mkv",
+    "0141": "outputs/ays_20261004/ays5/clips/0141_AYS5pad8_origin_g100/0141_inpainting_results_sbs.mkv",
+    "0147": "outputs/more_20261004/judge/ays/clips/0147_AYS5pad8_origin_g100/0147_inpainting_results_sbs.mkv",
+    "0170": "outputs/ays_20261004/ays5/clips/0170_AYS5pad8_origin_g100/0170_inpainting_results_sbs.mkv",
+    "0204": "outputs/more_20261004/judge/ays/clips/0204_AYS5pad8_origin_g100/0204_inpainting_results_sbs.mkv",
+    "0225": "outputs/ays_20261004/ays5/clips/0225_AYS5pad8_origin_g100/0225_inpainting_results_sbs.mkv",
+    "0251": "outputs/ays_20261004/ays5/clips/0251_AYS5pad8_origin_g100/0251_inpainting_results_sbs.mkv",
+    "0259": "outputs/ays_20261004/ays5/clips/0259_AYS5pad8_origin_g100/0259_inpainting_results_sbs.mkv",
+    "0301": "outputs/more_20261004/judge/ays/clips/0301_AYS5pad8_origin_g100/0301_inpainting_results_sbs.mkv"
+   }
+  },
+  "AYS5pad8_origin_g100-origin_g100_T5pad": {
+   "a": "AYS5pad8_origin_g100",
+   "b": "origin_g100_T5pad",
+   "clips": [
+    "0042",
+    "0052",
+    "0125",
+    "0128",
+    "0141",
+    "0147",
+    "0170",
+    "0204",
+    "0225",
+    "0251",
+    "0259",
+    "0301"
+   ],
+   "delta": [
+    -0.0016349999999999976,
+    -0.0009529999999999816,
+    -0.003493999999999997,
+    -0.0023299999999999987,
+    -0.0004289999999999572,
+    -0.0003340000000000565,
+    -0.003241999999999967,
+    -0.0009810000000000096,
+    -0.0018439999999999568,
+    -0.0014659999999999673,
+    -0.001483000000000012,
+    -0.010481999999999991
+   ],
+   "mean": -0.0023894166666666578,
+   "n": 12,
+   "neg": 12,
+   "worst_clip": "0147",
+   "worst": -0.0003340000000000565,
+   "boot95": [
+    -0.004094347916666654,
+    -0.0012450000000000096
+   ],
+   "t95": [
+    -0.004125196924643736,
+    -0.0006536364086895798
+   ],
+   "p_sign": 0.00048828125,
+   "p_signflip": 0.00048828125,
+   "mean_a": 0.39300550000000006,
+   "mean_b": 0.3953949166666666,
+   "sharp_ratio": [
+    1.0004518242403706,
+    1.0013260530421217,
+    1.0153530111363391,
+    1.008941317905177,
+    1.0070407951956928,
+    1.0021049222797926,
+    1.005464480874317,
+    1.0093443388880237,
+    1.0074317317663324,
+    1.0013221153846155,
+    0.9920405434816404,
+    1.023273141654979
+   ],
+   "src": {
+    "0042": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0042.txt"
+    ],
+    "0052": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0052.txt"
+    ],
+    "0125": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0125.txt"
+    ],
+    "0128": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0128.txt"
+    ],
+    "0141": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0141.txt"
+    ],
+    "0147": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0147.txt"
+    ],
+    "0170": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0170.txt"
+    ],
+    "0204": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0204.txt"
+    ],
+    "0225": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0225.txt"
+    ],
+    "0251": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0251.txt"
+    ],
+    "0259": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0259.txt"
+    ],
+    "0301": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0301.txt"
+    ]
+   },
+   "path_a": {
+    "0042": "outputs/ays_20261004/ays5/clips/0042_AYS5pad8_origin_g100/0042_inpainting_results_sbs.mkv",
+    "0052": "outputs/more_20261004/judge/ays/clips/0052_AYS5pad8_origin_g100/0052_inpainting_results_sbs.mkv",
+    "0125": "outputs/ays_20261004/ays5/clips/0125_AYS5pad8_origin_g100/0125_inpainting_results_sbs.mkv",
+    "0128": "outputs/ays_20261004/ays5/clips/0128_AYS5pad8_origin_g100/0128_inpainting_results_sbs.mkv",
+    "0141": "outputs/ays_20261004/ays5/clips/0141_AYS5pad8_origin_g100/0141_inpainting_results_sbs.mkv",
+    "0147": "outputs/more_20261004/judge/ays/clips/0147_AYS5pad8_origin_g100/0147_inpainting_results_sbs.mkv",
+    "0170": "outputs/ays_20261004/ays5/clips/0170_AYS5pad8_origin_g100/0170_inpainting_results_sbs.mkv",
+    "0204": "outputs/more_20261004/judge/ays/clips/0204_AYS5pad8_origin_g100/0204_inpainting_results_sbs.mkv",
+    "0225": "outputs/ays_20261004/ays5/clips/0225_AYS5pad8_origin_g100/0225_inpainting_results_sbs.mkv",
+    "0251": "outputs/ays_20261004/ays5/clips/0251_AYS5pad8_origin_g100/0251_inpainting_results_sbs.mkv",
+    "0259": "outputs/ays_20261004/ays5/clips/0259_AYS5pad8_origin_g100/0259_inpainting_results_sbs.mkv",
+    "0301": "outputs/more_20261004/judge/ays/clips/0301_AYS5pad8_origin_g100/0301_inpainting_results_sbs.mkv"
+   },
+   "path_b": {
+    "0042": "outputs/finalcheck_20261004/speed/clips/0042_origin_g100_T5pad/0042_inpainting_results_sbs.mkv",
+    "0052": "outputs/finalcheck_20261004/speed/clips/0052_origin_g100_T5pad/0052_inpainting_results_sbs.mkv",
+    "0125": "outputs/finalcheck_20261004/speed/clips/0125_origin_g100_T5pad/0125_inpainting_results_sbs.mkv",
+    "0128": "outputs/finalcheck_20261004/speed/clips/0128_origin_g100_T5pad/0128_inpainting_results_sbs.mkv",
+    "0141": "outputs/finalcheck_20261004/speed/clips/0141_origin_g100_T5pad/0141_inpainting_results_sbs.mkv",
+    "0147": "outputs/finalcheck_20261004/speed/clips/0147_origin_g100_T5pad/0147_inpainting_results_sbs.mkv",
+    "0170": "outputs/finalcheck_20261004/speed/clips/0170_origin_g100_T5pad/0170_inpainting_results_sbs.mkv",
+    "0204": "outputs/finalcheck_20261004/speed/clips/0204_origin_g100_T5pad/0204_inpainting_results_sbs.mkv",
+    "0225": "outputs/finalcheck_20261004/speed/clips/0225_origin_g100_T5pad/0225_inpainting_results_sbs.mkv",
+    "0251": "outputs/finalcheck_20261004/speed/clips/0251_origin_g100_T5pad/0251_inpainting_results_sbs.mkv",
+    "0259": "outputs/finalcheck_20261004/speed/clips/0259_origin_g100_T5pad/0259_inpainting_results_sbs.mkv",
+    "0301": "outputs/finalcheck_20261004/speed/clips/0301_origin_g100_T5pad/0301_inpainting_results_sbs.mkv"
+   }
+  },
+  "AYS5pad8_origin_g100-origin_ll": {
+   "a": "AYS5pad8_origin_g100",
+   "b": "origin_ll",
+   "clips": [
+    "0042",
+    "0052",
+    "0125",
+    "0128",
+    "0141",
+    "0147",
+    "0170",
+    "0204",
+    "0225",
+    "0251",
+    "0259",
+    "0301"
+   ],
+   "delta": [
+    -0.00041000000000002146,
+    -0.00020999999999998797,
+    -0.0014310000000000156,
+    -0.00039800000000000946,
+    -0.0006139999999999479,
+    -0.0001100000000000545,
+    -0.0013929999999999776,
+    0.0019440000000000013,
+    0.0008270000000000222,
+    0.00016399999999999748,
+    0.002593000000000012,
+    -0.003942000000000001
+   ],
+   "mean": -0.0002483333333333319,
+   "n": 12,
+   "neg": 8,
+   "worst_clip": "0259",
+   "worst": 0.002593000000000012,
+   "boot95": [
+    -0.0011855354166666727,
+    0.0006465916666666769
+   ],
+   "t95": [
+    -0.0013108414285982184,
+    0.0008141747619315545
+   ],
+   "p_sign": 0.3876953125,
+   "p_signflip": 0.63232421875,
+   "mean_a": 0.39300550000000006,
+   "mean_b": 0.39325383333333325,
+   "sharp_ratio": [
+    1.0065916581429708,
+    0.9890592495569767,
+    0.9981930272108844,
+    0.9942247889826744,
+    0.9900244299674268,
+    1.0016183848519178,
+    0.9876784189337564,
+    0.9929523517695725,
+    0.9904842820730672,
+    1.0043399638336348,
+    1.0233818718327024,
+    0.9923070384223053
+   ],
+   "src": {
+    "0042": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0042.txt"
+    ],
+    "0052": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0052.txt"
+    ],
+    "0125": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0125.txt"
+    ],
+    "0128": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0128.txt"
+    ],
+    "0141": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0141.txt"
+    ],
+    "0147": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0147.txt"
+    ],
+    "0170": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0170.txt"
+    ],
+    "0204": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0204.txt"
+    ],
+    "0225": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0225.txt"
+    ],
+    "0251": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0251.txt"
+    ],
+    "0259": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0259.txt"
+    ],
+    "0301": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0301.txt"
+    ]
+   },
+   "path_a": {
+    "0042": "outputs/ays_20261004/ays5/clips/0042_AYS5pad8_origin_g100/0042_inpainting_results_sbs.mkv",
+    "0052": "outputs/more_20261004/judge/ays/clips/0052_AYS5pad8_origin_g100/0052_inpainting_results_sbs.mkv",
+    "0125": "outputs/ays_20261004/ays5/clips/0125_AYS5pad8_origin_g100/0125_inpainting_results_sbs.mkv",
+    "0128": "outputs/ays_20261004/ays5/clips/0128_AYS5pad8_origin_g100/0128_inpainting_results_sbs.mkv",
+    "0141": "outputs/ays_20261004/ays5/clips/0141_AYS5pad8_origin_g100/0141_inpainting_results_sbs.mkv",
+    "0147": "outputs/more_20261004/judge/ays/clips/0147_AYS5pad8_origin_g100/0147_inpainting_results_sbs.mkv",
+    "0170": "outputs/ays_20261004/ays5/clips/0170_AYS5pad8_origin_g100/0170_inpainting_results_sbs.mkv",
+    "0204": "outputs/more_20261004/judge/ays/clips/0204_AYS5pad8_origin_g100/0204_inpainting_results_sbs.mkv",
+    "0225": "outputs/ays_20261004/ays5/clips/0225_AYS5pad8_origin_g100/0225_inpainting_results_sbs.mkv",
+    "0251": "outputs/ays_20261004/ays5/clips/0251_AYS5pad8_origin_g100/0251_inpainting_results_sbs.mkv",
+    "0259": "outputs/ays_20261004/ays5/clips/0259_AYS5pad8_origin_g100/0259_inpainting_results_sbs.mkv",
+    "0301": "outputs/more_20261004/judge/ays/clips/0301_AYS5pad8_origin_g100/0301_inpainting_results_sbs.mkv"
+   },
+   "path_b": {
+    "0042": "outputs/beyond4_lossless/clips/0042_origin_ll/0042_inpainting_results_sbs.mkv",
+    "0052": "outputs/beyond4_lossless/clips/0052_origin_ll/0052_inpainting_results_sbs.mkv",
+    "0125": "outputs/beyond4_lossless/clips/0125_origin_ll/0125_inpainting_results_sbs.mkv",
+    "0128": "outputs/beyond4_lossless/clips/0128_origin_ll/0128_inpainting_results_sbs.mkv",
+    "0141": "outputs/beyond4_lossless/clips/0141_origin_ll/0141_inpainting_results_sbs.mkv",
+    "0147": "outputs/beyond4_lossless/clips/0147_origin_ll/0147_inpainting_results_sbs.mkv",
+    "0170": "outputs/beyond4_lossless/clips/0170_origin_ll/0170_inpainting_results_sbs.mkv",
+    "0204": "outputs/beyond4_lossless/clips/0204_origin_ll/0204_inpainting_results_sbs.mkv",
+    "0225": "outputs/beyond4_lossless/clips/0225_origin_ll/0225_inpainting_results_sbs.mkv",
+    "0251": "outputs/beyond4_lossless/clips/0251_origin_ll/0251_inpainting_results_sbs.mkv",
+    "0259": "outputs/beyond4_lossless/clips/0259_origin_ll/0259_inpainting_results_sbs.mkv",
+    "0301": "outputs/beyond4_lossless/clips/0301_origin_ll/0301_inpainting_results_sbs.mkv"
+   }
+  },
+  "deliv_g100_T5nat-AYS5pad8_origin_g100": {
+   "a": "deliv_g100_T5nat",
+   "b": "AYS5pad8_origin_g100",
+   "clips": [
+    "0042",
+    "0052",
+    "0125",
+    "0128",
+    "0141",
+    "0147",
+    "0170",
+    "0204",
+    "0225",
+    "0251",
+    "0259",
+    "0301"
+   ],
+   "delta": [
+    -0.0021689999999999765,
+    -0.006551000000000029,
+    -0.010357000000000005,
+    -0.016141000000000016,
+    -0.013231000000000048,
+    -0.001686999999999994,
+    -0.005694000000000005,
+    -0.019877000000000006,
+    -0.01528400000000002,
+    -0.009431999999999996,
+    -0.005324999999999969,
+    -0.031737000000000015
+   ],
+   "mean": -0.01145708333333334,
+   "n": 12,
+   "neg": 12,
+   "worst_clip": "0147",
+   "worst": -0.001686999999999994,
+   "boot95": [
+    -0.016443589583333352,
+    -0.007155104166666667
+   ],
+   "t95": [
+    -0.016888493886936466,
+    -0.006025672779730214
+   ],
+   "p_sign": 0.00048828125,
+   "p_signflip": 0.00048828125,
+   "mean_a": 0.38154841666666667,
+   "mean_b": 0.39300550000000006,
+   "sharp_ratio": [
+    1.2094388619171277,
+    1.0645010516475812,
+    1.1045682035991908,
+    1.2100089365504914,
+    1.2000822537528275,
+    1.1337857489093552,
+    1.0828804347826086,
+    1.1586174972997996,
+    1.12206210327672,
+    1.1554435241867722,
+    1.0856551853825178,
+    1.2139889493296783
+   ],
+   "src": {
+    "0042": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0042.txt"
+    ],
+    "0052": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0052.txt"
+    ],
+    "0125": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0125.txt"
+    ],
+    "0128": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0128.txt"
+    ],
+    "0141": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0141.txt"
+    ],
+    "0147": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0147.txt"
+    ],
+    "0170": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0170.txt"
+    ],
+    "0204": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0204.txt"
+    ],
+    "0225": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0225.txt"
+    ],
+    "0251": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0251.txt"
+    ],
+    "0259": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0259.txt"
+    ],
+    "0301": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0301.txt"
+    ]
+   },
+   "path_a": {
+    "0042": "outputs/finalcheck_20261004/speed/clips/0042_deliv_g100_T5nat/0042_inpainting_results_sbs.mkv",
+    "0052": "outputs/finalcheck_20261004/speed/clips/0052_deliv_g100_T5nat/0052_inpainting_results_sbs.mkv",
+    "0125": "outputs/finalcheck_20261004/speed/clips/0125_deliv_g100_T5nat/0125_inpainting_results_sbs.mkv",
+    "0128": "outputs/finalcheck_20261004/speed/clips/0128_deliv_g100_T5nat/0128_inpainting_results_sbs.mkv",
+    "0141": "outputs/finalcheck_20261004/speed/clips/0141_deliv_g100_T5nat/0141_inpainting_results_sbs.mkv",
+    "0147": "outputs/finalcheck_20261004/speed/clips/0147_deliv_g100_T5nat/0147_inpainting_results_sbs.mkv",
+    "0170": "outputs/finalcheck_20261004/speed/clips/0170_deliv_g100_T5nat/0170_inpainting_results_sbs.mkv",
+    "0204": "outputs/finalcheck_20261004/speed/clips/0204_deliv_g100_T5nat/0204_inpainting_results_sbs.mkv",
+    "0225": "outputs/finalcheck_20261004/speed/clips/0225_deliv_g100_T5nat/0225_inpainting_results_sbs.mkv",
+    "0251": "outputs/finalcheck_20261004/speed/clips/0251_deliv_g100_T5nat/0251_inpainting_results_sbs.mkv",
+    "0259": "outputs/finalcheck_20261004/speed/clips/0259_deliv_g100_T5nat/0259_inpainting_results_sbs.mkv",
+    "0301": "outputs/finalcheck_20261004/speed/clips/0301_deliv_g100_T5nat/0301_inpainting_results_sbs.mkv"
+   },
+   "path_b": {
+    "0042": "outputs/ays_20261004/ays5/clips/0042_AYS5pad8_origin_g100/0042_inpainting_results_sbs.mkv",
+    "0052": "outputs/more_20261004/judge/ays/clips/0052_AYS5pad8_origin_g100/0052_inpainting_results_sbs.mkv",
+    "0125": "outputs/ays_20261004/ays5/clips/0125_AYS5pad8_origin_g100/0125_inpainting_results_sbs.mkv",
+    "0128": "outputs/ays_20261004/ays5/clips/0128_AYS5pad8_origin_g100/0128_inpainting_results_sbs.mkv",
+    "0141": "outputs/ays_20261004/ays5/clips/0141_AYS5pad8_origin_g100/0141_inpainting_results_sbs.mkv",
+    "0147": "outputs/more_20261004/judge/ays/clips/0147_AYS5pad8_origin_g100/0147_inpainting_results_sbs.mkv",
+    "0170": "outputs/ays_20261004/ays5/clips/0170_AYS5pad8_origin_g100/0170_inpainting_results_sbs.mkv",
+    "0204": "outputs/more_20261004/judge/ays/clips/0204_AYS5pad8_origin_g100/0204_inpainting_results_sbs.mkv",
+    "0225": "outputs/ays_20261004/ays5/clips/0225_AYS5pad8_origin_g100/0225_inpainting_results_sbs.mkv",
+    "0251": "outputs/ays_20261004/ays5/clips/0251_AYS5pad8_origin_g100/0251_inpainting_results_sbs.mkv",
+    "0259": "outputs/ays_20261004/ays5/clips/0259_AYS5pad8_origin_g100/0259_inpainting_results_sbs.mkv",
+    "0301": "outputs/more_20261004/judge/ays/clips/0301_AYS5pad8_origin_g100/0301_inpainting_results_sbs.mkv"
+   }
+  },
+  "deliv_g100_T5pad-origin_g100_T5pad": {
+   "a": "deliv_g100_T5pad",
+   "b": "origin_g100_T5pad",
+   "clips": [
+    "0042",
+    "0052",
+    "0125",
+    "0128",
+    "0141",
+    "0147",
+    "0170",
+    "0204",
+    "0225",
+    "0251",
+    "0259",
+    "0301"
+   ],
+   "delta": [
+    -0.005093999999999987,
+    -0.0072349999999999914,
+    -0.014280000000000015,
+    -0.01827200000000001,
+    -0.01307999999999998,
+    -0.0016200000000000658,
+    -0.007672999999999985,
+    -0.02060200000000001,
+    -0.016762999999999972,
+    -0.010958999999999997,
+    -0.0045279999999999765,
+    -0.04277799999999998
+   ],
+   "mean": -0.013573666666666664,
+   "n": 12,
+   "neg": 12,
+   "worst_clip": "0147",
+   "worst": -0.0016200000000000658,
+   "boot95": [
+    -0.020178006249999988,
+    -0.008396685416666662
+   ],
+   "t95": [
+    -0.020517293341739067,
+    -0.0066300399915942615
+   ],
+   "p_sign": 0.00048828125,
+   "p_signflip": 0.00048828125,
+   "mean_a": 0.38182125000000006,
+   "mean_b": 0.3953949166666666,
+   "sharp_ratio": [
+    1.1875070597537558,
+    1.0617004680187208,
+    1.1338523083576602,
+    1.2020437298068976,
+    1.2116380202940569,
+    1.1335816062176167,
+    1.0772478887232986,
+    1.1706899236878991,
+    1.1248703767715174,
+    1.1645432692307693,
+    1.0804651307402917,
+    1.2306276297335204
+   ],
+   "src": {
+    "0042": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0042.txt"
+    ],
+    "0052": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0052.txt"
+    ],
+    "0125": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0125.txt"
+    ],
+    "0128": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0128.txt"
+    ],
+    "0141": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0141.txt"
+    ],
+    "0147": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0147.txt"
+    ],
+    "0170": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0170.txt"
+    ],
+    "0204": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0204.txt"
+    ],
+    "0225": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0225.txt"
+    ],
+    "0251": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0251.txt"
+    ],
+    "0259": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0259.txt"
+    ],
+    "0301": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0301.txt"
+    ]
+   },
+   "path_a": {
+    "0042": "outputs/finalcheck_20261004/speed/clips/0042_deliv_g100_T5pad/0042_inpainting_results_sbs.mkv",
+    "0052": "outputs/finalcheck_20261004/speed/clips/0052_deliv_g100_T5pad/0052_inpainting_results_sbs.mkv",
+    "0125": "outputs/finalcheck_20261004/speed/clips/0125_deliv_g100_T5pad/0125_inpainting_results_sbs.mkv",
+    "0128": "outputs/finalcheck_20261004/speed/clips/0128_deliv_g100_T5pad/0128_inpainting_results_sbs.mkv",
+    "0141": "outputs/finalcheck_20261004/speed/clips/0141_deliv_g100_T5pad/0141_inpainting_results_sbs.mkv",
+    "0147": "outputs/finalcheck_20261004/speed/clips/0147_deliv_g100_T5pad/0147_inpainting_results_sbs.mkv",
+    "0170": "outputs/finalcheck_20261004/speed/clips/0170_deliv_g100_T5pad/0170_inpainting_results_sbs.mkv",
+    "0204": "outputs/finalcheck_20261004/speed/clips/0204_deliv_g100_T5pad/0204_inpainting_results_sbs.mkv",
+    "0225": "outputs/finalcheck_20261004/speed/clips/0225_deliv_g100_T5pad/0225_inpainting_results_sbs.mkv",
+    "0251": "outputs/finalcheck_20261004/speed/clips/0251_deliv_g100_T5pad/0251_inpainting_results_sbs.mkv",
+    "0259": "outputs/finalcheck_20261004/speed/clips/0259_deliv_g100_T5pad/0259_inpainting_results_sbs.mkv",
+    "0301": "outputs/finalcheck_20261004/speed/clips/0301_deliv_g100_T5pad/0301_inpainting_results_sbs.mkv"
+   },
+   "path_b": {
+    "0042": "outputs/finalcheck_20261004/speed/clips/0042_origin_g100_T5pad/0042_inpainting_results_sbs.mkv",
+    "0052": "outputs/finalcheck_20261004/speed/clips/0052_origin_g100_T5pad/0052_inpainting_results_sbs.mkv",
+    "0125": "outputs/finalcheck_20261004/speed/clips/0125_origin_g100_T5pad/0125_inpainting_results_sbs.mkv",
+    "0128": "outputs/finalcheck_20261004/speed/clips/0128_origin_g100_T5pad/0128_inpainting_results_sbs.mkv",
+    "0141": "outputs/finalcheck_20261004/speed/clips/0141_origin_g100_T5pad/0141_inpainting_results_sbs.mkv",
+    "0147": "outputs/finalcheck_20261004/speed/clips/0147_origin_g100_T5pad/0147_inpainting_results_sbs.mkv",
+    "0170": "outputs/finalcheck_20261004/speed/clips/0170_origin_g100_T5pad/0170_inpainting_results_sbs.mkv",
+    "0204": "outputs/finalcheck_20261004/speed/clips/0204_origin_g100_T5pad/0204_inpainting_results_sbs.mkv",
+    "0225": "outputs/finalcheck_20261004/speed/clips/0225_origin_g100_T5pad/0225_inpainting_results_sbs.mkv",
+    "0251": "outputs/finalcheck_20261004/speed/clips/0251_origin_g100_T5pad/0251_inpainting_results_sbs.mkv",
+    "0259": "outputs/finalcheck_20261004/speed/clips/0259_origin_g100_T5pad/0259_inpainting_results_sbs.mkv",
+    "0301": "outputs/finalcheck_20261004/speed/clips/0301_origin_g100_T5pad/0301_inpainting_results_sbs.mkv"
+   }
+  },
+  "deliv_g100_T5pad-origin_ll": {
+   "a": "deliv_g100_T5pad",
+   "b": "origin_ll",
+   "clips": [
+    "0042",
+    "0052",
+    "0125",
+    "0128",
+    "0141",
+    "0147",
+    "0170",
+    "0204",
+    "0225",
+    "0251",
+    "0259",
+    "0301"
+   ],
+   "delta": [
+    -0.0038690000000000113,
+    -0.006491999999999998,
+    -0.012217000000000033,
+    -0.01634000000000002,
+    -0.013264999999999971,
+    -0.0013960000000000639,
+    -0.005823999999999996,
+    -0.017677,
+    -0.014091999999999993,
+    -0.009329000000000032,
+    -0.00045199999999995244,
+    -0.03623799999999999
+   ],
+   "mean": -0.011432583333333338,
+   "n": 12,
+   "neg": 12,
+   "worst_clip": "0259",
+   "worst": -0.00045199999999995244,
+   "boot95": [
+    -0.01720400208333333,
+    -0.006700741666666668
+   ],
+   "t95": [
+    -0.017575563821312767,
+    -0.005289602845353909
+   ],
+   "p_sign": 0.00048828125,
+   "p_signflip": 0.00048828125,
+   "mean_a": 0.38182125000000006,
+   "mean_b": 0.39325383333333325,
+   "sharp_ratio": [
+    1.1947948630526197,
+    1.048694044225287,
+    1.1146896258503403,
+    1.184510587886865,
+    1.1911644951140066,
+    1.1330312348276421,
+    1.05819202147127,
+    1.15167764669833,
+    1.1059473237043331,
+    1.168053044002411,
+    1.1146000384886778,
+    1.1933866031961917
+   ],
+   "src": {
+    "0042": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0042.txt"
+    ],
+    "0052": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0052.txt"
+    ],
+    "0125": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0125.txt"
+    ],
+    "0128": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0128.txt"
+    ],
+    "0141": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0141.txt"
+    ],
+    "0147": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0147.txt"
+    ],
+    "0170": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0170.txt"
+    ],
+    "0204": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0204.txt"
+    ],
+    "0225": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0225.txt"
+    ],
+    "0251": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0251.txt"
+    ],
+    "0259": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0259.txt"
+    ],
+    "0301": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0301.txt"
+    ]
+   },
+   "path_a": {
+    "0042": "outputs/finalcheck_20261004/speed/clips/0042_deliv_g100_T5pad/0042_inpainting_results_sbs.mkv",
+    "0052": "outputs/finalcheck_20261004/speed/clips/0052_deliv_g100_T5pad/0052_inpainting_results_sbs.mkv",
+    "0125": "outputs/finalcheck_20261004/speed/clips/0125_deliv_g100_T5pad/0125_inpainting_results_sbs.mkv",
+    "0128": "outputs/finalcheck_20261004/speed/clips/0128_deliv_g100_T5pad/0128_inpainting_results_sbs.mkv",
+    "0141": "outputs/finalcheck_20261004/speed/clips/0141_deliv_g100_T5pad/0141_inpainting_results_sbs.mkv",
+    "0147": "outputs/finalcheck_20261004/speed/clips/0147_deliv_g100_T5pad/0147_inpainting_results_sbs.mkv",
+    "0170": "outputs/finalcheck_20261004/speed/clips/0170_deliv_g100_T5pad/0170_inpainting_results_sbs.mkv",
+    "0204": "outputs/finalcheck_20261004/speed/clips/0204_deliv_g100_T5pad/0204_inpainting_results_sbs.mkv",
+    "0225": "outputs/finalcheck_20261004/speed/clips/0225_deliv_g100_T5pad/0225_inpainting_results_sbs.mkv",
+    "0251": "outputs/finalcheck_20261004/speed/clips/0251_deliv_g100_T5pad/0251_inpainting_results_sbs.mkv",
+    "0259": "outputs/finalcheck_20261004/speed/clips/0259_deliv_g100_T5pad/0259_inpainting_results_sbs.mkv",
+    "0301": "outputs/finalcheck_20261004/speed/clips/0301_deliv_g100_T5pad/0301_inpainting_results_sbs.mkv"
+   },
+   "path_b": {
+    "0042": "outputs/beyond4_lossless/clips/0042_origin_ll/0042_inpainting_results_sbs.mkv",
+    "0052": "outputs/beyond4_lossless/clips/0052_origin_ll/0052_inpainting_results_sbs.mkv",
+    "0125": "outputs/beyond4_lossless/clips/0125_origin_ll/0125_inpainting_results_sbs.mkv",
+    "0128": "outputs/beyond4_lossless/clips/0128_origin_ll/0128_inpainting_results_sbs.mkv",
+    "0141": "outputs/beyond4_lossless/clips/0141_origin_ll/0141_inpainting_results_sbs.mkv",
+    "0147": "outputs/beyond4_lossless/clips/0147_origin_ll/0147_inpainting_results_sbs.mkv",
+    "0170": "outputs/beyond4_lossless/clips/0170_origin_ll/0170_inpainting_results_sbs.mkv",
+    "0204": "outputs/beyond4_lossless/clips/0204_origin_ll/0204_inpainting_results_sbs.mkv",
+    "0225": "outputs/beyond4_lossless/clips/0225_origin_ll/0225_inpainting_results_sbs.mkv",
+    "0251": "outputs/beyond4_lossless/clips/0251_origin_ll/0251_inpainting_results_sbs.mkv",
+    "0259": "outputs/beyond4_lossless/clips/0259_origin_ll/0259_inpainting_results_sbs.mkv",
+    "0301": "outputs/beyond4_lossless/clips/0301_origin_ll/0301_inpainting_results_sbs.mkv"
+   }
+  },
+  "3a": {
+   "a": "deliv_g100_T5pad",
+   "b": "AYS8_origin_g100",
+   "clips": [
+    "0042",
+    "0052",
+    "0125",
+    "0128",
+    "0141",
+    "0147",
+    "0170",
+    "0204",
+    "0225",
+    "0251",
+    "0259",
+    "0301"
+   ],
+   "delta": [
+    0.0042200000000000015,
+    -0.001996999999999971,
+    0.005556999999999979,
+    -0.005485999999999991,
+    -0.004172999999999982,
+    0.0010419999999999874,
+    2.8000000000000247e-05,
+    -0.005470000000000003,
+    -0.003008999999999984,
+    -0.0032460000000000266,
+    0.003640000000000032,
+    -0.006046999999999969
+   ],
+   "mean": -0.0012450833333333272,
+   "n": 12,
+   "neg": 7,
+   "worst_clip": "0125",
+   "worst": 0.005556999999999979,
+   "boot95": [
+    -0.0033891958333333253,
+    0.0009858437500000095
+   ],
+   "t95": [
+    -0.0038295218333973583,
+    0.0013393551667307039
+   ],
+   "p_sign": 0.7744140625,
+   "p_signflip": 0.3017578125,
+   "mean_a": 0.38182125000000006,
+   "mean_b": 0.38306633333333334,
+   "sharp_ratio": [
+    1.1423448875366728,
+    1.029888014527845,
+    1.0410999702174129,
+    1.1153872969392733,
+    1.1258418318260535,
+    1.0932229856339788,
+    1.0324346842825687,
+    1.0723252496433666,
+    1.04052757793765,
+    1.1064291424003654,
+    1.0914944406055656,
+    1.072989911342097
+   ],
+   "src": {
+    "0042": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0042.txt"
+    ],
+    "0052": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0052.txt"
+    ],
+    "0125": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0125.txt"
+    ],
+    "0128": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0128.txt"
+    ],
+    "0141": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0141.txt"
+    ],
+    "0147": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0147.txt"
+    ],
+    "0170": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0170.txt"
+    ],
+    "0204": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0204.txt"
+    ],
+    "0225": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0225.txt"
+    ],
+    "0251": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0251.txt"
+    ],
+    "0259": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0259.txt"
+    ],
+    "0301": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0301.txt"
+    ]
+   },
+   "path_a": {
+    "0042": "outputs/finalcheck_20261004/speed/clips/0042_deliv_g100_T5pad/0042_inpainting_results_sbs.mkv",
+    "0052": "outputs/finalcheck_20261004/speed/clips/0052_deliv_g100_T5pad/0052_inpainting_results_sbs.mkv",
+    "0125": "outputs/finalcheck_20261004/speed/clips/0125_deliv_g100_T5pad/0125_inpainting_results_sbs.mkv",
+    "0128": "outputs/finalcheck_20261004/speed/clips/0128_deliv_g100_T5pad/0128_inpainting_results_sbs.mkv",
+    "0141": "outputs/finalcheck_20261004/speed/clips/0141_deliv_g100_T5pad/0141_inpainting_results_sbs.mkv",
+    "0147": "outputs/finalcheck_20261004/speed/clips/0147_deliv_g100_T5pad/0147_inpainting_results_sbs.mkv",
+    "0170": "outputs/finalcheck_20261004/speed/clips/0170_deliv_g100_T5pad/0170_inpainting_results_sbs.mkv",
+    "0204": "outputs/finalcheck_20261004/speed/clips/0204_deliv_g100_T5pad/0204_inpainting_results_sbs.mkv",
+    "0225": "outputs/finalcheck_20261004/speed/clips/0225_deliv_g100_T5pad/0225_inpainting_results_sbs.mkv",
+    "0251": "outputs/finalcheck_20261004/speed/clips/0251_deliv_g100_T5pad/0251_inpainting_results_sbs.mkv",
+    "0259": "outputs/finalcheck_20261004/speed/clips/0259_deliv_g100_T5pad/0259_inpainting_results_sbs.mkv",
+    "0301": "outputs/finalcheck_20261004/speed/clips/0301_deliv_g100_T5pad/0301_inpainting_results_sbs.mkv"
+   },
+   "path_b": {
+    "0042": "outputs/ays_20261004/ays5/clips/0042_AYS8_origin_g100/0042_inpainting_results_sbs.mkv",
+    "0052": "outputs/ays_20261004/ays5/clips/0052_AYS8_origin_g100/0052_inpainting_results_sbs.mkv",
+    "0125": "outputs/ays_20261004/ays5/clips/0125_AYS8_origin_g100/0125_inpainting_results_sbs.mkv",
+    "0128": "outputs/ays_20261004/ays5/clips/0128_AYS8_origin_g100/0128_inpainting_results_sbs.mkv",
+    "0141": "outputs/ays_20261004/ays5/clips/0141_AYS8_origin_g100/0141_inpainting_results_sbs.mkv",
+    "0147": "outputs/ays_20261004/ays5/clips/0147_AYS8_origin_g100/0147_inpainting_results_sbs.mkv",
+    "0170": "outputs/ays_20261004/ays5/clips/0170_AYS8_origin_g100/0170_inpainting_results_sbs.mkv",
+    "0204": "outputs/ays_20261004/ays5/clips/0204_AYS8_origin_g100_r1/0204_inpainting_results_sbs.mkv",
+    "0225": "outputs/ays_20261004/ays5/clips/0225_AYS8_origin_g100/0225_inpainting_results_sbs.mkv",
+    "0251": "outputs/ays_20261004/ays5/clips/0251_AYS8_origin_g100/0251_inpainting_results_sbs.mkv",
+    "0259": "outputs/ays_20261004/ays5/clips/0259_AYS8_origin_g100/0259_inpainting_results_sbs.mkv",
+    "0301": "outputs/ays_20261004/ays5/clips/0301_AYS8_origin_g100/0301_inpainting_results_sbs.mkv"
+   }
+  },
+  "AYS8_origin_g100-AYS8_origin_g101": {
+   "a": "AYS8_origin_g100",
+   "b": "AYS8_origin_g101",
+   "clips": [
+    "0042",
+    "0052",
+    "0125",
+    "0128",
+    "0141",
+    "0147",
+    "0170",
+    "0204",
+    "0225",
+    "0251",
+    "0259",
+    "0301"
+   ],
+   "delta": [
+    0.00014300000000000423,
+    0.00019399999999997197,
+    0.0006390000000000007,
+    0.0005189999999999917,
+    -0.00020100000000000673,
+    -0.00017100000000003224,
+    0.00022300000000000098,
+    0.0003459999999999852,
+    0.00025199999999997447,
+    0.000256000000000034,
+    -1.4000000000014001e-05,
+    0.0010819999999999719
+   ],
+   "mean": 0.0002723333333333235,
+   "n": 12,
+   "neg": 3,
+   "worst_clip": "0301",
+   "worst": 0.0010819999999999719,
+   "boot95": [
+    9.241458333332172e-05,
+    0.00048116874999998846
+   ],
+   "t95": [
+    4.689326910827776e-05,
+    0.0004977733975583692
+   ],
+   "p_sign": 0.14599609375,
+   "p_signflip": 0.0146484375,
+   "mean_a": 0.38306633333333334,
+   "mean_b": 0.382794,
+   "sharp_ratio": [
+    0.9967507852269034,
+    0.9958556250470952,
+    0.99368649501825,
+    0.9936954413191076,
+    0.9969307500479572,
+    0.9975077881619937,
+    0.9957333333333331,
+    0.9975807599259996,
+    0.996415770609319,
+    0.9959058341862844,
+    0.9965880990390332,
+    0.9919636087945413
+   ],
+   "src": {
+    "0042": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0042.txt"
+    ],
+    "0052": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0052.txt"
+    ],
+    "0125": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0125.txt"
+    ],
+    "0128": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0128.txt"
+    ],
+    "0141": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0141.txt"
+    ],
+    "0147": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0147.txt"
+    ],
+    "0170": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0170.txt"
+    ],
+    "0204": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0204.txt"
+    ],
+    "0225": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0225.txt"
+    ],
+    "0251": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0251.txt"
+    ],
+    "0259": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0259.txt"
+    ],
+    "0301": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0301.txt"
+    ]
+   },
+   "path_a": {
+    "0042": "outputs/ays_20261004/ays5/clips/0042_AYS8_origin_g100/0042_inpainting_results_sbs.mkv",
+    "0052": "outputs/ays_20261004/ays5/clips/0052_AYS8_origin_g100/0052_inpainting_results_sbs.mkv",
+    "0125": "outputs/ays_20261004/ays5/clips/0125_AYS8_origin_g100/0125_inpainting_results_sbs.mkv",
+    "0128": "outputs/ays_20261004/ays5/clips/0128_AYS8_origin_g100/0128_inpainting_results_sbs.mkv",
+    "0141": "outputs/ays_20261004/ays5/clips/0141_AYS8_origin_g100/0141_inpainting_results_sbs.mkv",
+    "0147": "outputs/ays_20261004/ays5/clips/0147_AYS8_origin_g100/0147_inpainting_results_sbs.mkv",
+    "0170": "outputs/ays_20261004/ays5/clips/0170_AYS8_origin_g100/0170_inpainting_results_sbs.mkv",
+    "0204": "outputs/ays_20261004/ays5/clips/0204_AYS8_origin_g100_r1/0204_inpainting_results_sbs.mkv",
+    "0225": "outputs/ays_20261004/ays5/clips/0225_AYS8_origin_g100/0225_inpainting_results_sbs.mkv",
+    "0251": "outputs/ays_20261004/ays5/clips/0251_AYS8_origin_g100/0251_inpainting_results_sbs.mkv",
+    "0259": "outputs/ays_20261004/ays5/clips/0259_AYS8_origin_g100/0259_inpainting_results_sbs.mkv",
+    "0301": "outputs/ays_20261004/ays5/clips/0301_AYS8_origin_g100/0301_inpainting_results_sbs.mkv"
+   },
+   "path_b": {
+    "0042": "outputs/more_20261004/judge/ays/clips/0042_AYS8_origin_g101/0042_inpainting_results_sbs.mkv",
+    "0052": "outputs/more_20261004/judge/ays/clips/0052_AYS8_origin_g101/0052_inpainting_results_sbs.mkv",
+    "0125": "outputs/more_20261004/judge/ays/clips/0125_AYS8_origin_g101/0125_inpainting_results_sbs.mkv",
+    "0128": "outputs/more_20261004/judge/ays/clips/0128_AYS8_origin_g101/0128_inpainting_results_sbs.mkv",
+    "0141": "outputs/more_20261004/judge/ays/clips/0141_AYS8_origin_g101/0141_inpainting_results_sbs.mkv",
+    "0147": "outputs/more_20261004/judge/ays/clips/0147_AYS8_origin_g101/0147_inpainting_results_sbs.mkv",
+    "0170": "outputs/more_20261004/judge/ays/clips/0170_AYS8_origin_g101/0170_inpainting_results_sbs.mkv",
+    "0204": "outputs/more_20261004/judge/ays/clips/0204_AYS8_origin_g101/0204_inpainting_results_sbs.mkv",
+    "0225": "outputs/more_20261004/judge/ays/clips/0225_AYS8_origin_g101/0225_inpainting_results_sbs.mkv",
+    "0251": "outputs/more_20261004/judge/ays/clips/0251_AYS8_origin_g101/0251_inpainting_results_sbs.mkv",
+    "0259": "outputs/more_20261004/judge/ays/clips/0259_AYS8_origin_g101/0259_inpainting_results_sbs.mkv",
+    "0301": "outputs/more_20261004/judge/ays/clips/0301_AYS8_origin_g101/0301_inpainting_results_sbs.mkv"
+   }
+  },
+  "AYS8_origin_g100-AYS5pad8_origin_g100": {
+   "a": "AYS8_origin_g100",
+   "b": "AYS5pad8_origin_g100",
+   "clips": [
+    "0042",
+    "0052",
+    "0125",
+    "0128",
+    "0141",
+    "0147",
+    "0170",
+    "0204",
+    "0225",
+    "0251",
+    "0259",
+    "0301"
+   ],
+   "delta": [
+    -0.007678999999999991,
+    -0.004285000000000039,
+    -0.016342999999999996,
+    -0.01045600000000002,
+    -0.008478000000000041,
+    -0.0023279999999999967,
+    -0.0044590000000000185,
+    -0.014150999999999997,
+    -0.011910000000000032,
+    -0.0062470000000000026,
+    -0.0066849999999999965,
+    -0.026249000000000022
+   ],
+   "mean": -0.00993916666666668,
+   "n": 12,
+   "neg": 12,
+   "worst_clip": "0147",
+   "worst": -0.0023279999999999967,
+   "boot95": [
+    -0.013752958333333351,
+    -0.006699616666666683
+   ],
+   "t95": [
+    -0.014137652413225617,
+    -0.005740680920107742
+   ],
+   "p_sign": 0.00048828125,
+   "p_signflip": 0.00048828125,
+   "mean_a": 0.38306633333333334,
+   "mean_b": 0.39300550000000006,
+   "sharp_ratio": [
+    1.0390651462120355,
+    1.0295240320947263,
+    1.0726227238845705,
+    1.0681411974977657,
+    1.0686818836109397,
+    1.03473905315883,
+    1.0377346837944663,
+    1.0816232062953248,
+    1.0730828615542976,
+    1.0511343176089305,
+    0.997837465133043,
+    1.1208292285946804
+   ],
+   "src": {
+    "0042": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0042.txt",
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0042.txt"
+    ],
+    "0052": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0052.txt",
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0052.txt"
+    ],
+    "0125": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0125.txt",
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0125.txt"
+    ],
+    "0128": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0128.txt",
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0128.txt"
+    ],
+    "0141": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0141.txt",
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0141.txt"
+    ],
+    "0147": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0147.txt",
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0147.txt"
+    ],
+    "0170": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0170.txt",
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0170.txt"
+    ],
+    "0204": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0204.txt",
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0204.txt"
+    ],
+    "0225": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0225.txt",
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0225.txt"
+    ],
+    "0251": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0251.txt",
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0251.txt"
+    ],
+    "0259": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0259.txt",
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0259.txt"
+    ],
+    "0301": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0301.txt",
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0301.txt"
+    ]
+   },
+   "path_a": {
+    "0042": "outputs/ays_20261004/ays5/clips/0042_AYS8_origin_g100/0042_inpainting_results_sbs.mkv",
+    "0052": "outputs/ays_20261004/ays5/clips/0052_AYS8_origin_g100/0052_inpainting_results_sbs.mkv",
+    "0125": "outputs/ays_20261004/ays5/clips/0125_AYS8_origin_g100/0125_inpainting_results_sbs.mkv",
+    "0128": "outputs/ays_20261004/ays5/clips/0128_AYS8_origin_g100/0128_inpainting_results_sbs.mkv",
+    "0141": "outputs/ays_20261004/ays5/clips/0141_AYS8_origin_g100/0141_inpainting_results_sbs.mkv",
+    "0147": "outputs/ays_20261004/ays5/clips/0147_AYS8_origin_g100/0147_inpainting_results_sbs.mkv",
+    "0170": "outputs/ays_20261004/ays5/clips/0170_AYS8_origin_g100/0170_inpainting_results_sbs.mkv",
+    "0204": "outputs/ays_20261004/ays5/clips/0204_AYS8_origin_g100_r1/0204_inpainting_results_sbs.mkv",
+    "0225": "outputs/ays_20261004/ays5/clips/0225_AYS8_origin_g100/0225_inpainting_results_sbs.mkv",
+    "0251": "outputs/ays_20261004/ays5/clips/0251_AYS8_origin_g100/0251_inpainting_results_sbs.mkv",
+    "0259": "outputs/ays_20261004/ays5/clips/0259_AYS8_origin_g100/0259_inpainting_results_sbs.mkv",
+    "0301": "outputs/ays_20261004/ays5/clips/0301_AYS8_origin_g100/0301_inpainting_results_sbs.mkv"
+   },
+   "path_b": {
+    "0042": "outputs/ays_20261004/ays5/clips/0042_AYS5pad8_origin_g100/0042_inpainting_results_sbs.mkv",
+    "0052": "outputs/more_20261004/judge/ays/clips/0052_AYS5pad8_origin_g100/0052_inpainting_results_sbs.mkv",
+    "0125": "outputs/ays_20261004/ays5/clips/0125_AYS5pad8_origin_g100/0125_inpainting_results_sbs.mkv",
+    "0128": "outputs/ays_20261004/ays5/clips/0128_AYS5pad8_origin_g100/0128_inpainting_results_sbs.mkv",
+    "0141": "outputs/ays_20261004/ays5/clips/0141_AYS5pad8_origin_g100/0141_inpainting_results_sbs.mkv",
+    "0147": "outputs/more_20261004/judge/ays/clips/0147_AYS5pad8_origin_g100/0147_inpainting_results_sbs.mkv",
+    "0170": "outputs/ays_20261004/ays5/clips/0170_AYS5pad8_origin_g100/0170_inpainting_results_sbs.mkv",
+    "0204": "outputs/more_20261004/judge/ays/clips/0204_AYS5pad8_origin_g100/0204_inpainting_results_sbs.mkv",
+    "0225": "outputs/ays_20261004/ays5/clips/0225_AYS5pad8_origin_g100/0225_inpainting_results_sbs.mkv",
+    "0251": "outputs/ays_20261004/ays5/clips/0251_AYS5pad8_origin_g100/0251_inpainting_results_sbs.mkv",
+    "0259": "outputs/ays_20261004/ays5/clips/0259_AYS5pad8_origin_g100/0259_inpainting_results_sbs.mkv",
+    "0301": "outputs/more_20261004/judge/ays/clips/0301_AYS5pad8_origin_g100/0301_inpainting_results_sbs.mkv"
+   }
+  },
+  "AYS8_origin_g100-origin_ll": {
+   "a": "AYS8_origin_g100",
+   "b": "origin_ll",
+   "clips": [
+    "0042",
+    "0052",
+    "0125",
+    "0128",
+    "0141",
+    "0147",
+    "0170",
+    "0204",
+    "0225",
+    "0251",
+    "0259",
+    "0301"
+   ],
+   "delta": [
+    -0.008089000000000013,
+    -0.004495000000000027,
+    -0.017774000000000012,
+    -0.01085400000000003,
+    -0.009091999999999989,
+    -0.0024380000000000512,
+    -0.005851999999999996,
+    -0.012206999999999996,
+    -0.01108300000000001,
+    -0.006083000000000005,
+    -0.0040919999999999845,
+    -0.030191000000000023
+   ],
+   "mean": -0.01018750000000001,
+   "n": 12,
+   "neg": 12,
+   "worst_clip": "0147",
+   "worst": -0.0024380000000000512,
+   "boot95": [
+    -0.014683995833333345,
+    -0.006622560416666673
+   ],
+   "t95": [
+    -0.015010719522998178,
+    -0.005364280477001843
+   ],
+   "p_sign": 0.00048828125,
+   "p_signflip": 0.00048828125,
+   "mean_a": 0.38306633333333334,
+   "mean_b": 0.39325383333333325,
+   "sharp_ratio": [
+    1.0459143084441413,
+    1.0182602665844827,
+    1.070684523809524,
+    1.0619724566859172,
+    1.0580211726384365,
+    1.0364136591681503,
+    1.02494815176284,
+    1.0740003064194883,
+    1.0628717077315208,
+    1.0556962025316454,
+    1.0211687728526524,
+    1.1122067324039442
+   ],
+   "src": {
+    "0042": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0042.txt",
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0042.txt"
+    ],
+    "0052": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0052.txt",
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0052.txt"
+    ],
+    "0125": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0125.txt",
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0125.txt"
+    ],
+    "0128": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0128.txt",
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0128.txt"
+    ],
+    "0141": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0141.txt",
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0141.txt"
+    ],
+    "0147": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0147.txt",
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0147.txt"
+    ],
+    "0170": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0170.txt",
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0170.txt"
+    ],
+    "0204": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0204.txt",
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0204.txt"
+    ],
+    "0225": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0225.txt",
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0225.txt"
+    ],
+    "0251": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0251.txt",
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0251.txt"
+    ],
+    "0259": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0259.txt",
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0259.txt"
+    ],
+    "0301": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0301.txt",
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0301.txt"
+    ]
+   },
+   "path_a": {
+    "0042": "outputs/ays_20261004/ays5/clips/0042_AYS8_origin_g100/0042_inpainting_results_sbs.mkv",
+    "0052": "outputs/ays_20261004/ays5/clips/0052_AYS8_origin_g100/0052_inpainting_results_sbs.mkv",
+    "0125": "outputs/ays_20261004/ays5/clips/0125_AYS8_origin_g100/0125_inpainting_results_sbs.mkv",
+    "0128": "outputs/ays_20261004/ays5/clips/0128_AYS8_origin_g100/0128_inpainting_results_sbs.mkv",
+    "0141": "outputs/ays_20261004/ays5/clips/0141_AYS8_origin_g100/0141_inpainting_results_sbs.mkv",
+    "0147": "outputs/ays_20261004/ays5/clips/0147_AYS8_origin_g100/0147_inpainting_results_sbs.mkv",
+    "0170": "outputs/ays_20261004/ays5/clips/0170_AYS8_origin_g100/0170_inpainting_results_sbs.mkv",
+    "0204": "outputs/ays_20261004/ays5/clips/0204_AYS8_origin_g100_r1/0204_inpainting_results_sbs.mkv",
+    "0225": "outputs/ays_20261004/ays5/clips/0225_AYS8_origin_g100/0225_inpainting_results_sbs.mkv",
+    "0251": "outputs/ays_20261004/ays5/clips/0251_AYS8_origin_g100/0251_inpainting_results_sbs.mkv",
+    "0259": "outputs/ays_20261004/ays5/clips/0259_AYS8_origin_g100/0259_inpainting_results_sbs.mkv",
+    "0301": "outputs/ays_20261004/ays5/clips/0301_AYS8_origin_g100/0301_inpainting_results_sbs.mkv"
+   },
+   "path_b": {
+    "0042": "outputs/beyond4_lossless/clips/0042_origin_ll/0042_inpainting_results_sbs.mkv",
+    "0052": "outputs/beyond4_lossless/clips/0052_origin_ll/0052_inpainting_results_sbs.mkv",
+    "0125": "outputs/beyond4_lossless/clips/0125_origin_ll/0125_inpainting_results_sbs.mkv",
+    "0128": "outputs/beyond4_lossless/clips/0128_origin_ll/0128_inpainting_results_sbs.mkv",
+    "0141": "outputs/beyond4_lossless/clips/0141_origin_ll/0141_inpainting_results_sbs.mkv",
+    "0147": "outputs/beyond4_lossless/clips/0147_origin_ll/0147_inpainting_results_sbs.mkv",
+    "0170": "outputs/beyond4_lossless/clips/0170_origin_ll/0170_inpainting_results_sbs.mkv",
+    "0204": "outputs/beyond4_lossless/clips/0204_origin_ll/0204_inpainting_results_sbs.mkv",
+    "0225": "outputs/beyond4_lossless/clips/0225_origin_ll/0225_inpainting_results_sbs.mkv",
+    "0251": "outputs/beyond4_lossless/clips/0251_origin_ll/0251_inpainting_results_sbs.mkv",
+    "0259": "outputs/beyond4_lossless/clips/0259_origin_ll/0259_inpainting_results_sbs.mkv",
+    "0301": "outputs/beyond4_lossless/clips/0301_origin_ll/0301_inpainting_results_sbs.mkv"
+   }
+  },
+  "3b": {
+   "a": "AYS5pad8_deliv_g100",
+   "b": "deliv_g100_T5pad",
+   "clips": [
+    "0052",
+    "0147",
+    "0204",
+    "0301"
+   ],
+   "delta": [
+    -0.0013839999999999963,
+    -0.00115899999999991,
+    -0.00022900000000000698,
+    -0.0050140000000000184
+   ],
+   "mean": -0.001946499999999983,
+   "n": 4,
+   "neg": 4,
+   "worst_clip": "0204",
+   "worst": -0.00022900000000000698,
+   "boot95": [
+    -0.004050249999999991,
+    -0.0005177500000000043
+   ],
+   "t95": [
+    -0.005295913995010931,
+    0.0014029139950109647
+   ],
+   "p_sign": 0.125,
+   "p_signflip": 0.125,
+   "mean_a": 0.38611075,
+   "mean_b": 0.38805724999999996,
+   "sharp_ratio": [
+    1.0116817280141062,
+    1.0007141836880444,
+    1.023413595849408,
+    1.03604245316618
+   ],
+   "src": {
+    "0052": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0052.txt"
+    ],
+    "0147": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0147.txt"
+    ],
+    "0204": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0204.txt"
+    ],
+    "0301": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0301.txt"
+    ]
+   },
+   "path_a": {
+    "0052": "outputs/ays_20261004/ays5/clips/0052_AYS5pad8_deliv_g100/0052_inpainting_results_sbs.mkv",
+    "0147": "outputs/ays_20261004/ays5/clips/0147_AYS5pad8_deliv_g100/0147_inpainting_results_sbs.mkv",
+    "0204": "outputs/ays_20261004/ays5/clips/0204_AYS5pad8_deliv_g100/0204_inpainting_results_sbs.mkv",
+    "0301": "outputs/ays_20261004/ays5/clips/0301_AYS5pad8_deliv_g100/0301_inpainting_results_sbs.mkv"
+   },
+   "path_b": {
+    "0052": "outputs/finalcheck_20261004/speed/clips/0052_deliv_g100_T5pad/0052_inpainting_results_sbs.mkv",
+    "0147": "outputs/finalcheck_20261004/speed/clips/0147_deliv_g100_T5pad/0147_inpainting_results_sbs.mkv",
+    "0204": "outputs/finalcheck_20261004/speed/clips/0204_deliv_g100_T5pad/0204_inpainting_results_sbs.mkv",
+    "0301": "outputs/finalcheck_20261004/speed/clips/0301_deliv_g100_T5pad/0301_inpainting_results_sbs.mkv"
+   }
+  },
+  "AYS5pad8_deliv_g100-AYS5pad8_origin_g100": {
+   "a": "AYS5pad8_deliv_g100",
+   "b": "AYS5pad8_origin_g100",
+   "clips": [
+    "0052",
+    "0147",
+    "0204",
+    "0301"
+   ],
+   "delta": [
+    -0.007666000000000006,
+    -0.0024449999999999195,
+    -0.019850000000000007,
+    -0.03731000000000001
+   ],
+   "mean": -0.016817749999999985,
+   "n": 4,
+   "neg": 4,
+   "worst_clip": "0147",
+   "worst": -0.0024449999999999195,
+   "boot95": [
+    -0.02989900000000001,
+    -0.005055499999999963
+   ],
+   "t95": [
+    -0.04145612553036175,
+    0.007820625530361777
+   ],
+   "p_sign": 0.125,
+   "p_signflip": 0.125,
+   "mean_a": 0.38611075,
+   "mean_b": 0.4029285,
+   "sharp_ratio": [
+    1.0726805328347744,
+    1.1320084020035548,
+    1.1870081777503472,
+    1.2459844947959053
+   ],
+   "src": {
+    "0052": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0052.txt"
+    ],
+    "0147": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0147.txt"
+    ],
+    "0204": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0204.txt"
+    ],
+    "0301": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0301.txt"
+    ]
+   },
+   "path_a": {
+    "0052": "outputs/ays_20261004/ays5/clips/0052_AYS5pad8_deliv_g100/0052_inpainting_results_sbs.mkv",
+    "0147": "outputs/ays_20261004/ays5/clips/0147_AYS5pad8_deliv_g100/0147_inpainting_results_sbs.mkv",
+    "0204": "outputs/ays_20261004/ays5/clips/0204_AYS5pad8_deliv_g100/0204_inpainting_results_sbs.mkv",
+    "0301": "outputs/ays_20261004/ays5/clips/0301_AYS5pad8_deliv_g100/0301_inpainting_results_sbs.mkv"
+   },
+   "path_b": {
+    "0052": "outputs/more_20261004/judge/ays/clips/0052_AYS5pad8_origin_g100/0052_inpainting_results_sbs.mkv",
+    "0147": "outputs/more_20261004/judge/ays/clips/0147_AYS5pad8_origin_g100/0147_inpainting_results_sbs.mkv",
+    "0204": "outputs/more_20261004/judge/ays/clips/0204_AYS5pad8_origin_g100/0204_inpainting_results_sbs.mkv",
+    "0301": "outputs/more_20261004/judge/ays/clips/0301_AYS5pad8_origin_g100/0301_inpainting_results_sbs.mkv"
+   }
+  }
+ },
+ "mode": "reuse",
+ "verdict_step2": {
+  "holds": true,
+  "neg": 12,
+  "void": [],
+  "boot_hi": -0.006796964583333341
+ },
+ "verdict_3a": {
+  "at_least_as_good": true,
+  "noninferior_0007": false
+ },
+ "verdict_3b": {
+  "stacks": false
+ }
+}

@@ -10960,3 +10960,29 @@ INPUT (stripeE/GT input 1.80-10.07 vs deliverable 0.98-5.49); the models reduce 
 with one seed each (a re-seed moved 0259 by 0.0038); the regime clips were reused for design; right-eye PSNR is
 0.20-0.22 dB lower than origin's. Next step (judge): AYS5 origin on the remaining 8 test clips to settle the equal-cost
 5-evaluation claim.
+
+## 2026-10-05 - Equal-cost check settled: the deliverable's own claim is at 5 UNet evaluations; the 16-evaluation lead and the speed-up belong to the sampler
+
+`scripts/distill/runs/ays_20261004/{ays5,robust,verdict}/` (final table: `verdict/TABLE_FINAL.txt`). All paired by
+per-window noise, lossless, re-scored independently.
+
+| contrast (12 test clips) | LPIPS delta | clips | t95 | registered |
+| --- | ---: | ---: | --- | --- |
+| deliverable 5 evals @1.00 vs AYS5 origin (5 evals) | **-0.0112** | **12/12** | [-0.0168, -0.0056], p 0.0005 | -0.0113, 11/12 |
+| deliverable 8x2 vs AYS8 origin 8x2 (16 evals) | -0.0024 | 9/12 | [-0.0047, +0.0000] | -0.0018, 9/12 |
+| deliverable 5 evals vs AYS8 origin 8x1 (8 evals) | -0.0013 | 7/12 | [-0.0038, +0.0013] | - |
+| AYS5 origin (5 evals) vs deployed origin (16 evals) | -0.0003 | 8/12 | [-0.0013, +0.0008] | -0.0001 |
+| AYS8 origin vs deployed origin | -0.0105 | 12/12 | | -0.0114, 12/12 |
+
+Thesis sentences this supports: (1) at the shipped cost of 5 UNet evaluations per window the deliverable beats origin
+run with the best known 5-evaluation schedule by 0.0112 LPIPS on 12/12 clips - this is the result that belongs to the
+deliverable; (2) at the deployed 16 evaluations it is statistically indistinguishable from AYS8-scheduled origin, so
+"better than origin at equal cost" must NOT be written for 16 evaluations; (3) "5 instead of 16 evaluations" is available
+to origin through the schedule alone (AYS5 origin = deployed origin), so the speed-up is a sampler result; step
+distillation buys quality at low call counts (about 1.6x fewer UNet calls than AYS8 origin at equal quality, not
+statistically resolved); Mamba is about neutral end-to-end at 576x1024 (~5 s first-window warm-up) and -20.3 % per UNet
+call at 1024x1792. Stacking AYS5 sigmas on the deliverable gives -0.0020 on 4/4 regime clips, just below the pre-registered
+stacking rule. Flicker: AYS8 origin raises warp error +8.0 % at a rate per unit of sharpness (1.32, CI [1.11, 1.65]) that
+contains the deliverable/25-step rate (1.55) and excludes an unsharp mask's (0.76), so the deliverable's +22 % is the cost
+of generated detail, not an instability of distillation; at matched 5 evaluations it is +22.6 % warp vs AYS5 origin
+(which is not sharper). Right-eye PSNR -0.21 dB vs AYS5 origin (weak evidence; misregistered GT penalises sharpness).

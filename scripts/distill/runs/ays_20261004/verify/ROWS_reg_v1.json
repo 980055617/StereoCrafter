@@ -1,0 +1,267 @@
+{
+ "clips": [
+  "0042",
+  "0259"
+ ],
+ "labels": [
+  "origin_ll",
+  "AYS8_origin_g101",
+  "mstudent2_step800_deliv_ll",
+  "deliv_g100_T5pad",
+  "origin_g100_T5pad",
+  "deliv_g100_T5nat",
+  "s25_ll",
+  "AYS5pad8_origin_g100",
+  "AYS8_origin_g100"
+ ],
+ "cells": {
+  "0042": {
+   "origin_ll": {
+    "path": "outputs/beyond4_lossless/clips/0042_origin_ll/0042_inpainting_results_sbs.mkv",
+    "dy": -12,
+    "dx": -12,
+    "lpips": 0.427856,
+    "sharp": 0.008799,
+    "n": 38,
+    "rightPSNR": 17.3374,
+    "sources": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0042.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0042.txt"
+    ],
+    "writer_md5": "13ca5217581aebdb1ef0183da4f90c85"
+   },
+   "AYS8_origin_g101": {
+    "path": "outputs/more_20261004/judge/ays/clips/0042_AYS8_origin_g101/0042_inpainting_results_sbs.mkv",
+    "dy": -12,
+    "dx": -12,
+    "lpips": 0.419624,
+    "sharp": 0.009233,
+    "n": 38,
+    "rightPSNR": 17.3215,
+    "sources": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0042.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0042.txt"
+    ],
+    "writer_md5": "0f97c78169799fac4396df6a330efdb1"
+   },
+   "mstudent2_step800_deliv_ll": {
+    "path": "outputs/beyond_distil_mamba_scaled/clips/0042_mstudent2_step800_deliv_ll/0042_inpainting_results_sbs.mkv",
+    "dy": -12,
+    "dx": -12,
+    "lpips": 0.421762,
+    "sharp": 0.010242,
+    "n": 38,
+    "rightPSNR": 17.1805,
+    "sources": [
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0042.txt"
+    ],
+    "writer_md5": "9344fe73fa3fe970a11357867c64fe6a"
+   },
+   "deliv_g100_T5pad": {
+    "path": "outputs/finalcheck_20261004/speed/clips/0042_deliv_g100_T5pad/0042_inpainting_results_sbs.mkv",
+    "dy": -12,
+    "dx": -12,
+    "lpips": 0.423987,
+    "sharp": 0.010513,
+    "n": 38,
+    "rightPSNR": 17.0646,
+    "sources": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0042.txt",
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0042.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0042.txt"
+    ],
+    "writer_md5": "b8bda87152df2c23bc83e0e005b11baf"
+   },
+   "origin_g100_T5pad": {
+    "path": "outputs/finalcheck_20261004/speed/clips/0042_origin_g100_T5pad/0042_inpainting_results_sbs.mkv",
+    "dy": -12,
+    "dx": -12,
+    "lpips": 0.429081,
+    "sharp": 0.008853,
+    "n": 38,
+    "rightPSNR": 17.2805,
+    "sources": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0042.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0042.txt"
+    ],
+    "writer_md5": "4ff53850be96a01c438ce0a8c092ab11"
+   },
+   "deliv_g100_T5nat": {
+    "path": "outputs/finalcheck_20261004/speed/clips/0042_deliv_g100_T5nat/0042_inpainting_results_sbs.mkv",
+    "dy": -12,
+    "dx": -12,
+    "lpips": 0.425277,
+    "sharp": 0.010712,
+    "n": 38,
+    "rightPSNR": 16.9984,
+    "sources": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0042.txt"
+    ],
+    "writer_md5": "d1246a42fe76f87406392afaea57ff0d"
+   },
+   "s25_ll": {
+    "path": "outputs/skeptic1_stack/clips/0042_s25_ll/0042_inpainting_results_sbs.mkv",
+    "dy": -12,
+    "dx": -12,
+    "lpips": 0.417468,
+    "sharp": 0.009738,
+    "n": 38,
+    "rightPSNR": 17.3033,
+    "sources": [
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0042.txt"
+    ],
+    "writer_md5": "723c4df3a1d3f6ce3fa57490d1a62fdf"
+   },
+   "AYS5pad8_origin_g100": {
+    "path": "outputs/ays_20261004/ays5/clips/0042_AYS5pad8_origin_g100/0042_inpainting_results_sbs.mkv",
+    "dy": -12,
+    "dx": -12,
+    "lpips": 0.427446,
+    "sharp": 0.008857,
+    "n": 38,
+    "rightPSNR": 17.3004,
+    "sources": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0042.txt"
+    ],
+    "writer_md5": "6e821fb888a3d797def7000b8571e6f8"
+   },
+   "AYS8_origin_g100": {
+    "path": "outputs/ays_20261004/ays5/clips/0042_AYS8_origin_g100/0042_inpainting_results_sbs.mkv",
+    "dy": -12,
+    "dx": -12,
+    "lpips": 0.419767,
+    "sharp": 0.009203,
+    "n": 38,
+    "rightPSNR": 17.3266,
+    "sources": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0042.txt"
+    ],
+    "writer_md5": "d0eadc33dce1dd3bcd5eef15a007122d"
+   }
+  },
+  "0259": {
+   "origin_ll": {
+    "path": "outputs/beyond4_lossless/clips/0259_origin_ll/0259_inpainting_results_sbs.mkv",
+    "dy": -28,
+    "dx": 0,
+    "lpips": 0.437586,
+    "sharp": 0.031178,
+    "n": 38,
+    "rightPSNR": 13.3021,
+    "sources": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0259.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0259.txt"
+    ],
+    "writer_md5": "adfa31a700a66a026cc08be4e4db8255"
+   },
+   "AYS8_origin_g101": {
+    "path": "outputs/more_20261004/judge/ays/clips/0259_AYS8_origin_g101/0259_inpainting_results_sbs.mkv",
+    "dy": -28,
+    "dx": 0,
+    "lpips": 0.433508,
+    "sharp": 0.031947,
+    "n": 38,
+    "rightPSNR": 13.271,
+    "sources": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0259.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0259.txt"
+    ],
+    "writer_md5": "15d9e13d4607c5b944f8c2128f1077d9"
+   },
+   "mstudent2_step800_deliv_ll": {
+    "path": "outputs/beyond_distil_mamba_scaled/clips/0259_mstudent2_step800_deliv_ll/0259_inpainting_results_sbs.mkv",
+    "dy": -28,
+    "dx": 0,
+    "lpips": 0.435708,
+    "sharp": 0.033213,
+    "n": 38,
+    "rightPSNR": 13.2143,
+    "sources": [
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0259.txt"
+    ],
+    "writer_md5": "46ed02faa338d8e61a6d0623a28bea4d"
+   },
+   "deliv_g100_T5pad": {
+    "path": "outputs/finalcheck_20261004/speed/clips/0259_deliv_g100_T5pad/0259_inpainting_results_sbs.mkv",
+    "dy": -28,
+    "dx": 0,
+    "lpips": 0.437134,
+    "sharp": 0.034751,
+    "n": 38,
+    "rightPSNR": 13.076,
+    "sources": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0259.txt",
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0259.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0259.txt"
+    ],
+    "writer_md5": "b65a7fe86f8f07a3eaa86fe3e958b252"
+   },
+   "origin_g100_T5pad": {
+    "path": "outputs/finalcheck_20261004/speed/clips/0259_origin_g100_T5pad/0259_inpainting_results_sbs.mkv",
+    "dy": -28,
+    "dx": 0,
+    "lpips": 0.441662,
+    "sharp": 0.032163,
+    "n": 38,
+    "rightPSNR": 13.1998,
+    "sources": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0259.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0259.txt"
+    ],
+    "writer_md5": "74ad9f5210141fa9baac80cf49f0d979"
+   },
+   "deliv_g100_T5nat": {
+    "path": "outputs/finalcheck_20261004/speed/clips/0259_deliv_g100_T5nat/0259_inpainting_results_sbs.mkv",
+    "dy": -28,
+    "dx": 0,
+    "lpips": 0.434854,
+    "sharp": 0.03464,
+    "n": 38,
+    "rightPSNR": 13.0874,
+    "sources": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0259.txt"
+    ],
+    "writer_md5": "cb98bb94294e4c1217fb9a5a3ceeeb1d"
+   },
+   "s25_ll": {
+    "path": "outputs/skeptic1_stack/clips/0259_s25_ll/0259_inpainting_results_sbs.mkv",
+    "dy": -28,
+    "dx": 0,
+    "lpips": 0.436699,
+    "sharp": 0.03192,
+    "n": 38,
+    "rightPSNR": 13.3189,
+    "sources": [
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0259.txt"
+    ],
+    "writer_md5": "29568c34b3822f704aa395e230b04e8c"
+   },
+   "AYS5pad8_origin_g100": {
+    "path": "outputs/ays_20261004/ays5/clips/0259_AYS5pad8_origin_g100/0259_inpainting_results_sbs.mkv",
+    "dy": -28,
+    "dx": 0,
+    "lpips": 0.440179,
+    "sharp": 0.031907,
+    "n": 38,
+    "rightPSNR": 13.2406,
+    "sources": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0259.txt"
+    ],
+    "writer_md5": "cf43c15f616491b844b48566e1ba4686"
+   },
+   "AYS8_origin_g100": {
+    "path": "outputs/ays_20261004/ays5/clips/0259_AYS8_origin_g100/0259_inpainting_results_sbs.mkv",
+    "dy": -28,
+    "dx": 0,
+    "lpips": 0.433494,
+    "sharp": 0.031838,
+    "n": 38,
+    "rightPSNR": 13.2811,
+    "sources": [
+     "scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S3_0259.txt"
+    ],
+    "writer_md5": "177d82e042956762a501dd8a4607ac5a"
+   }
+  }
+ }
+}

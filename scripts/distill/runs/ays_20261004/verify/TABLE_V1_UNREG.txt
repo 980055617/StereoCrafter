@@ -1,0 +1,33 @@
+ays_20261004 / verify -- V1 UNREGISTERED RE-SCORE (GPU 1, this lane)
+scorer scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py UNCHANGED, SCORE_STEP=4, FFV1 renders; t95 = Student-t (thesis CI); boot95 = percentile, 10000 resamples of clips, default_rng(20261004) (ays5 spec, code check)
+
+GATE G1 (each ROW within 2e-6 of the ays5 lane's ROW value for the same file; same offset and n)
+  G1 0042: PASS  max |d| 0.0e+00  [scripts/distill/runs/ays_20261004/verify/SCORES_V1_0042.txt]
+  G1 0052: PASS  max |d| 0.0e+00  [scripts/distill/runs/ays_20261004/verify/SCORES_V1_0052.txt]
+  G1 0125: PASS  max |d| 0.0e+00  [scripts/distill/runs/ays_20261004/verify/SCORES_V1_0125.txt]
+  G1 0128: PASS  max |d| 0.0e+00  [scripts/distill/runs/ays_20261004/verify/SCORES_V1_0128.txt]
+  G1 0141: PASS  max |d| 0.0e+00  [scripts/distill/runs/ays_20261004/verify/SCORES_V1_0141.txt]
+  G1 0147: PASS  max |d| 0.0e+00  [scripts/distill/runs/ays_20261004/verify/SCORES_V1_0147.txt]
+  G1 0170: PASS  max |d| 0.0e+00  [scripts/distill/runs/ays_20261004/verify/SCORES_V1_0170.txt]
+  G1 0204: PASS  max |d| 0.0e+00  [scripts/distill/runs/ays_20261004/verify/SCORES_V1_0204.txt]
+  G1 0225: PASS  max |d| 0.0e+00  [scripts/distill/runs/ays_20261004/verify/SCORES_V1_0225.txt]
+  G1 0251: PASS  max |d| 0.0e+00  [scripts/distill/runs/ays_20261004/verify/SCORES_V1_0251.txt]
+  G1 0259: PASS  max |d| 0.0e+00  [scripts/distill/runs/ays_20261004/verify/SCORES_V1_0259.txt]
+  G1 0301: PASS  max |d| 0.0e+00  [scripts/distill/runs/ays_20261004/verify/SCORES_V1_0301.txt]
+
+=== PRIMARY: deliverable T5@1.00 pad8 - AYS5 origin @1.00 pad8 (5 evaluations each, same per-window noise) ===
+[deliv_g100_T5pad - AYS5pad8_origin_g100]  n=12
+    per clip: 0042:-0.0035 0052:-0.0063 0125:-0.0108 0128:-0.0159 0141:-0.0127 0147:-0.0013 0170:-0.0044 0204:-0.0196 0225:-0.0149 0251:-0.0095 0259:-0.0030 0301:-0.0323
+    mean -0.01118  negative 12/12  worst 0147 -0.0013  t95 [-0.01678,-0.00559]  boot95 [-0.01632,-0.00680]  p_sign 0.00049  p_flip 0.00049   means 0.3818 vs 0.3930
+    sharpness ratio deliverable/AYS5 (mean of per-clip ratios) 1.141
+  VERDICT: negative 12/12 (need >= 10), boot95 upper -0.00680 (need < 0), mean -0.01118 vs the ays5 lane's -0.01118 (|d| 4.3e-06, need <= 1e-5), VOID none  ->  CONFIRMED
+
+--- secondary (descriptive; must reproduce the ays5 tables) ---
+3a  [deliv_g100_T5pad (5 evals) - AYS8_origin_g100 (8 evals)]   ays5: -0.00125, 7/12  n=12
+    per clip: 0042:+0.0042 0052:-0.0020 0125:+0.0056 0128:-0.0055 0141:-0.0042 0147:+0.0010 0170:+0.0000 0204:-0.0055 0225:-0.0030 0251:-0.0032 0259:+0.0036 0301:-0.0060
+    mean -0.00125  negative 7/12  worst 0125 +0.0056  t95 [-0.00383,+0.00134]  boot95 [-0.00339,+0.00099]  p_sign 0.77441  p_flip 0.30176   means 0.3818 vs 0.3831
+S-b [AYS5pad8_origin_g100 (5 evals) - origin_ll (16 evals)]     ays5: -0.00025, 8/12  n=12
+    per clip: 0042:-0.0004 0052:-0.0002 0125:-0.0014 0128:-0.0004 0141:-0.0006 0147:-0.0001 0170:-0.0014 0204:+0.0019 0225:+0.0008 0251:+0.0002 0259:+0.0026 0301:-0.0039
+    mean -0.00025  negative 8/12  worst 0259 +0.0026  t95 [-0.00131,+0.00081]  boot95 [-0.00119,+0.00065]  p_sign 0.38770  p_flip 0.63232   means 0.3930 vs 0.3933
+
+12-clip means: origin_ll 0.3933  AYS5pad8_origin_g100 0.3930  deliv_g100_T5pad 0.3818  AYS8_origin_g100 0.3831

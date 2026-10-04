@@ -1,0 +1,2 @@
+# ays5 lane C0b (ONLY if C0 fails): 0301 AYS5 (judge rendered it on GPU 0); must reproduce md5 c00eb301e7e4becfa7ffea30f852527d
+0301 AYS5pad8_origin_g100 origin 1.00 700.0,11.25711441040039,1.7890000343322754,0.26404356956481934,0.0020000000949949026 8

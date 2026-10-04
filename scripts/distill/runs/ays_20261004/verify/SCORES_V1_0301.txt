@@ -1,0 +1,20 @@
+SCORE_START 2026-10-05_01:36:51 scorer=scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py SCORE_STEP=4 gpu=1 stage=V1
+/home/kawa/miniconda3/envs/stereocrafter/lib/python3.11/site-packages/torchvision/models/_utils.py:208: UserWarning: The parameter 'pretrained' is deprecated since 0.13 and may be removed in the future, please use 'weights' instead.
+  warnings.warn(
+/home/kawa/miniconda3/envs/stereocrafter/lib/python3.11/site-packages/torchvision/models/_utils.py:223: UserWarning: Arguments other than a weight enum or `None` for 'weights' are deprecated since 0.13 and may be removed in the future. The current behavior is equivalent to passing `weights=AlexNet_Weights.IMAGENET1K_V1`. You can also use `weights=AlexNet_Weights.DEFAULT` to get the most up-to-date weights.
+  warnings.warn(msg)
+/home/kawa/miniconda3/envs/stereocrafter/lib/python3.11/site-packages/lpips/lpips.py:107: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  self.load_state_dict(torch.load(model_path, map_location='cpu'), strict=False)
+Setting up [LPIPS] perceptual loss: trunk [alex], v[0.1], spatial [off]
+Loading model from: /home/kawa/miniconda3/envs/stereocrafter/lib/python3.11/site-packages/lpips/weights/v0.1/alex.pth
+clip/config                           offset  leftPSNR    LPIPS    sharp    rPSNR   nf
+--- 0301 GT ---                                          0.0000   0.0505
+0301_origin_ll                       (-28,0)     40.25   0.4351   0.0235   15.467   38
+ROW clip=0301 tag=0301_origin_ll dy=-28 dx=0 leftPSNR=40.2464 lpips=0.435095 sharp=0.023528 gtSharp=0.050529 rightPSNR=15.4667 n=38 path=outputs/beyond4_lossless/clips/0301_origin_ll/0301_inpainting_results_sbs.mkv
+0301_AYS5pad8_origin_g100            (-28,0)     40.25   0.4312   0.0233   15.499   38
+ROW clip=0301 tag=0301_AYS5pad8_origin_g100 dy=-28 dx=0 leftPSNR=40.2464 lpips=0.431153 sharp=0.023347 gtSharp=0.050529 rightPSNR=15.4992 n=38 path=outputs/more_20261004/judge/ays/clips/0301_AYS5pad8_origin_g100/0301_inpainting_results_sbs.mkv
+0301_deliv_g100_T5pad                (-28,0)     40.25   0.3989   0.0281   15.123   38
+ROW clip=0301 tag=0301_deliv_g100_T5pad dy=-28 dx=0 leftPSNR=40.2464 lpips=0.398857 sharp=0.028078 gtSharp=0.050529 rightPSNR=15.1229 n=38 path=outputs/finalcheck_20261004/speed/clips/0301_deliv_g100_T5pad/0301_inpainting_results_sbs.mkv
+0301_AYS8_origin_g100                (-28,0)     40.25   0.4049   0.0262   15.305   38
+ROW clip=0301 tag=0301_AYS8_origin_g100 dy=-28 dx=0 leftPSNR=40.2464 lpips=0.404904 sharp=0.026168 gtSharp=0.050529 rightPSNR=15.3055 n=38 path=outputs/ays_20261004/ays5/clips/0301_AYS8_origin_g100/0301_inpainting_results_sbs.mkv
+SCORE_DONE rc=0 2026-10-05_01:37:48

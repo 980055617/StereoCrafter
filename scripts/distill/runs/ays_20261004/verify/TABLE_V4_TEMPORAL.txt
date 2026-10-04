@@ -1,0 +1,39 @@
+ays_20261004 / verify -- V4 FLICKER (score_temporal_ll.py UNCHANGED, every frame, GPU 1, this lane)
+mine: outputs/ays_20261004/verify/temporal_v1/<clip>.json; robust (read only): outputs/ays_20261004/robust/temporal_v1/<clip>.json
+
+GATE T1' (origin_ll and deliverable T5pad warp/tLP/seam/nonseam within 2e-5 of robust; t0/l0/n equal; RAFT loaded; finite)
+  T1' 0042: PASS  max |d| 0.0e+00
+  T1' 0052: PASS  max |d| 0.0e+00
+  T1' 0125: PASS  max |d| 0.0e+00
+  T1' 0128: PASS  max |d| 0.0e+00
+  T1' 0141: PASS  max |d| 0.0e+00
+  T1' 0147: PASS  max |d| 0.0e+00
+  T1' 0170: PASS  max |d| 0.0e+00
+  T1' 0204: PASS  max |d| 0.0e+00
+  T1' 0225: PASS  max |d| 0.0e+00
+  T1' 0251: PASS  max |d| 0.0e+00
+  T1' 0259: PASS  max |d| 0.0e+00
+  T1' 0301: PASS  max |d| 0.0e+00
+
+--- increase = ratio of 12-clip means - 1 (V1 definition); k = clips where the first row is higher ---
+  [warp] AYS5 origin vs Karras origin 8x2                             -1.0 %   higher on 4/12   means 0.01727 vs 0.01745
+  [warp] AYS5 origin vs origin Karras-T5pad                           +0.2 %   higher on 6/12   means 0.01727 vs 0.01723
+  [warp] deliverable T5pad vs AYS5 origin (the 5-evaluation pair)    +22.6 %   higher on 12/12   means 0.02118 vs 0.01727
+  [warp] deliverable T5nat (ships) vs AYS5 origin                    +22.9 %   higher on 12/12   means 0.02123 vs 0.01727
+  [warp] deliverable T5pad vs Karras origin (reproduces robust +21.4 %)  +21.4 %   higher on 12/12   means 0.02118 vs 0.01745
+  [warp] AYS5-sigma deliverable vs deliverable T5pad (4 regime clips)   +2.1 %   higher on 3/4   means 0.02764 vs 0.02707
+  [warp] AYS5-sigma deliverable vs Karras origin (4 regime clips)    +23.1 %   higher on 4/4   means 0.02764 vs 0.02245
+  [warp] deliverable T5pad vs Karras origin (same 4 clips)           +20.6 %   higher on 4/4   means 0.02707 vs 0.02245
+  [warp] AYS5-sigma deliverable vs AYS5 origin (4 regime clips)      +24.9 %   higher on 4/4   means 0.02764 vs 0.02214
+  [tLP] AYS5 origin vs Karras origin 8x2                             -1.0 %   higher on 1/12   means 0.09218 vs 0.09314
+  [tLP] AYS5 origin vs origin Karras-T5pad                           -0.8 %   higher on 2/12   means 0.09218 vs 0.09294
+  [tLP] deliverable T5pad vs AYS5 origin (the 5-evaluation pair)     +9.4 %   higher on 12/12   means 0.10086 vs 0.09218
+  [tLP] deliverable T5nat (ships) vs AYS5 origin                     +9.4 %   higher on 12/12   means 0.10081 vs 0.09218
+  [tLP] deliverable T5pad vs Karras origin (reproduces robust +21.4 %)   +8.3 %   higher on 12/12   means 0.10086 vs 0.09314
+  [tLP] AYS5-sigma deliverable vs deliverable T5pad (4 regime clips)   -0.4 %   higher on 0/4   means 0.13107 vs 0.13155
+  [tLP] AYS5-sigma deliverable vs Karras origin (4 regime clips)     +3.9 %   higher on 4/4   means 0.13107 vs 0.12614
+  [tLP] deliverable T5pad vs Karras origin (same 4 clips)            +4.3 %   higher on 4/4   means 0.13155 vs 0.12614
+  [tLP] AYS5-sigma deliverable vs AYS5 origin (4 regime clips)       +5.2 %   higher on 4/4   means 0.13107 vs 0.12454
+  per clip warp ratio AYS5/Karras: 0042:0.983  0052:0.989  0125:0.993  0128:0.996  0141:1.007  0147:1.002  0170:0.978  0204:0.965  0225:0.969  0251:1.008  0259:1.022  0301:0.986
+  per clip warp ratio T5pad/AYS5:  0042:1.315  0052:1.110  0125:1.275  0128:1.257  0141:1.330  0147:1.171  0170:1.154  0204:1.348  0225:1.280  0251:1.228  0259:1.182  0301:1.256
+  PREDICTION (PREREG, b_gen 1.5475 x ln sharpness 0.998): about -0.3 % vs Karras origin

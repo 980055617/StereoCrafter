@@ -1,0 +1,1626 @@
+{
+ "clips": [
+  "0042",
+  "0052",
+  "0125",
+  "0128",
+  "0141",
+  "0147",
+  "0170",
+  "0204",
+  "0225",
+  "0251",
+  "0259",
+  "0301"
+ ],
+ "labels": [
+  "origin_ll",
+  "AYS8_origin_g101",
+  "mstudent2_step800_deliv_ll",
+  "deliv_g100_T5pad",
+  "origin_g100_T5pad",
+  "deliv_g100_T5nat",
+  "s25_ll"
+ ],
+ "cells": {
+  "0042": {
+   "origin_ll": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.0232,
+    "lpips": 0.427856,
+    "sharp": 0.008799,
+    "gtSharp": 0.007023,
+    "rightPSNR": 17.3374,
+    "n": 38,
+    "path": "outputs/beyond4_lossless/clips/0042_origin_ll/0042_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_12CLIP_A_mstudent1_step600.txt",
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_12CLIP_B_mstudent1_step600.txt",
+     "scripts/distill/runs/beyond_distil_mamba/score_12clip_a_mstudent1_step600.log",
+     "scripts/distill/runs/beyond_distil_mamba/score_12clip_b_mstudent1_step600.log",
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_final.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_g125_12clip.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_origin12.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J1c_LPIPS_0042.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0042.txt",
+     "scripts/distill/runs/more_20261004/temporal/SCORES_LPIPS_T2_0042.txt",
+     "scripts/distill/runs/rung_check_20261001/scores_laneA.txt",
+     "scripts/distill/runs/skeptic1/RESCORE_g125_12clip_lossless.txt",
+     "scripts/distill/runs/skeptic1/SCORES_12CLIP_LOSSLESS.txt",
+     "scripts/distill/runs/slotbudget/SCORES_DOWN0_12CLIP.txt"
+    ]
+   },
+   "s25_ll": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.0232,
+    "lpips": 0.417468,
+    "sharp": 0.009738,
+    "gtSharp": 0.007023,
+    "rightPSNR": 17.3033,
+    "n": 38,
+    "path": "outputs/skeptic1_stack/clips/0042_s25_ll/0042_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_12CLIP_B_mstudent1_step600.txt",
+     "scripts/distill/runs/beyond_distil_mamba/score_12clip_b_mstudent1_step600.log",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0042.txt",
+     "scripts/distill/runs/rung_check_20261001/scores_laneA.txt",
+     "scripts/distill/runs/skeptic1/SCORES_12CLIP_LOSSLESS.txt"
+    ]
+   },
+   "mstudent2_step800_deliv_ll": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.0232,
+    "lpips": 0.421762,
+    "sharp": 0.010242,
+    "gtSharp": 0.007023,
+    "rightPSNR": 17.1805,
+    "n": 38,
+    "path": "outputs/beyond_distil_mamba_scaled/clips/0042_mstudent2_step800_deliv_ll/0042_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/beyond_distil_mamba_scaled/SCORES_12CLIP_DELIV.txt",
+     "scripts/distill/runs/beyond_distil_mamba_scaled/score_12clip_deliv.log",
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0042.txt",
+     "scripts/distill/runs/rung_check_20261001/scores_laneA.txt"
+    ]
+   },
+   "deliv_g100_T5nat": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.0232,
+    "lpips": 0.425277,
+    "sharp": 0.010712,
+    "gtSharp": 0.007023,
+    "rightPSNR": 16.9984,
+    "n": 38,
+    "path": "outputs/finalcheck_20261004/speed/clips/0042_deliv_g100_T5nat/0042_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_POSTHOC_T5G100NAT.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J1c_LPIPS_0042.txt",
+     "scripts/distill/runs/more_20261004/temporal/SCORES_LPIPS_T2_0042.txt"
+    ]
+   },
+   "deliv_g100_T5pad": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.0232,
+    "lpips": 0.423987,
+    "sharp": 0.010513,
+    "gtSharp": 0.007023,
+    "rightPSNR": 17.0646,
+    "n": 38,
+    "path": "outputs/finalcheck_20261004/speed/clips/0042_deliv_g100_T5pad/0042_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt",
+     "scripts/distill/runs/more_20261004/fewer_steps/SCORES_04_T4b_ext8.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0042.txt"
+    ]
+   },
+   "origin_g100_T5pad": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.0232,
+    "lpips": 0.429081,
+    "sharp": 0.008853,
+    "gtSharp": 0.007023,
+    "rightPSNR": 17.2805,
+    "n": 38,
+    "path": "outputs/finalcheck_20261004/speed/clips/0042_origin_g100_T5pad/0042_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0042.txt"
+    ]
+   },
+   "AYS8_origin_g101": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.0232,
+    "lpips": 0.419624,
+    "sharp": 0.009233,
+    "gtSharp": 0.007023,
+    "rightPSNR": 17.3215,
+    "n": 38,
+    "path": "outputs/more_20261004/judge/ays/clips/0042_AYS8_origin_g101/0042_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0042.txt"
+    ]
+   }
+  },
+  "0052": {
+   "origin_ll": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.6982,
+    "lpips": 0.446689,
+    "sharp": 0.012979,
+    "gtSharp": 0.009881,
+    "rightPSNR": 13.2028,
+    "n": 38,
+    "path": "outputs/beyond4_lossless/clips/0052_origin_ll/0052_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_12CLIP_A_mstudent1_step600.txt",
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_12CLIP_B_mstudent1_step600.txt",
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_4CLIP_mstudent1.txt",
+     "scripts/distill/runs/beyond_distil_mamba/score_12clip_a_mstudent1_step600.log",
+     "scripts/distill/runs/beyond_distil_mamba/score_12clip_b_mstudent1_step600.log",
+     "scripts/distill/runs/beyond_distil_mamba/score_4clip_mstudent1.log",
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/CODEC_ONLY_origin.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_final.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_g125_12clip.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_g125_4clip.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_origin12.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_part1.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0052.txt",
+     "scripts/distill/runs/rung_check_20261001/scores_laneA.txt",
+     "scripts/distill/runs/skeptic1/RESCORE_g125_12clip_lossless.txt",
+     "scripts/distill/runs/skeptic1/SCORES_12CLIP_LOSSLESS.txt",
+     "scripts/distill/runs/skeptic1/SCORES_DOWN0.txt",
+     "scripts/distill/runs/skeptic1/SCORES_ORACLEM.txt",
+     "scripts/distill/runs/skeptic1/SCORES_STACK_lossless.txt",
+     "scripts/distill/runs/slotbudget/SCORES_DOWN0_12CLIP.txt"
+    ]
+   },
+   "s25_ll": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.6982,
+    "lpips": 0.438371,
+    "sharp": 0.013702,
+    "gtSharp": 0.009881,
+    "rightPSNR": 13.1772,
+    "n": 38,
+    "path": "outputs/beyond4_lossless/clips/0052_s25_ll/0052_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_12CLIP_B_mstudent1_step600.txt",
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_4CLIP_mstudent1.txt",
+     "scripts/distill/runs/beyond_distil_mamba/score_12clip_b_mstudent1_step600.log",
+     "scripts/distill/runs/beyond_distil_mamba/score_4clip_mstudent1.log",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_final.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_g125_4clip.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_part1.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0052.txt",
+     "scripts/distill/runs/more_20261004/teacher/SCORES_I6_s25.txt",
+     "scripts/distill/runs/rung_check_20261001/scores_laneA.txt",
+     "scripts/distill/runs/skeptic1/SCORES_12CLIP_LOSSLESS.txt",
+     "scripts/distill/runs/skeptic1/SCORES_ORACLEM.txt",
+     "scripts/distill/runs/skeptic1/SCORES_STACK_lossless.txt"
+    ]
+   },
+   "mstudent2_step800_deliv_ll": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.6982,
+    "lpips": 0.439509,
+    "sharp": 0.013776,
+    "gtSharp": 0.009881,
+    "rightPSNR": 13.1495,
+    "n": 38,
+    "path": "outputs/beyond_distil_mamba_scaled/clips/0052_mstudent2_step800_deliv_ll/0052_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/beyond_distil_mamba_scaled/SCORES_12CLIP_DELIV.txt",
+     "scripts/distill/runs/beyond_distil_mamba_scaled/score_12clip_deliv.log",
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0052.txt",
+     "scripts/distill/runs/rung_check_20261001/scores_laneA.txt"
+    ]
+   },
+   "deliv_g100_T5nat": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.6982,
+    "lpips": 0.439928,
+    "sharp": 0.013665,
+    "gtSharp": 0.009881,
+    "rightPSNR": 13.1628,
+    "n": 38,
+    "path": "outputs/finalcheck_20261004/speed/clips/0052_deliv_g100_T5nat/0052_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_POSTHOC_T5G100NAT.txt"
+    ]
+   },
+   "origin_g100_T5pad": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.6982,
+    "lpips": 0.447432,
+    "sharp": 0.01282,
+    "gtSharp": 0.009881,
+    "rightPSNR": 13.2233,
+    "n": 38,
+    "path": "outputs/finalcheck_20261004/speed/clips/0052_origin_g100_T5pad/0052_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0052.txt"
+    ]
+   },
+   "deliv_g100_T5pad": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.6982,
+    "lpips": 0.440197,
+    "sharp": 0.013611,
+    "gtSharp": 0.009881,
+    "rightPSNR": 13.1686,
+    "n": 38,
+    "path": "outputs/finalcheck_20261004/speed/clips/0052_deliv_g100_T5pad/0052_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_T5G100_4clip.txt",
+     "scripts/distill/runs/more_20261004/fewer_steps/SCORES_02_T4b4clip.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0052.txt"
+    ]
+   },
+   "AYS8_origin_g101": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.6982,
+    "lpips": 0.442,
+    "sharp": 0.013271,
+    "gtSharp": 0.009881,
+    "rightPSNR": 13.1987,
+    "n": 38,
+    "path": "outputs/more_20261004/judge/ays/clips/0052_AYS8_origin_g101/0052_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0052.txt"
+    ]
+   }
+  },
+  "0125": {
+   "origin_ll": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.4643,
+    "lpips": 0.479943,
+    "sharp": 0.009408,
+    "gtSharp": 0.011358,
+    "rightPSNR": 16.602,
+    "n": 38,
+    "path": "outputs/beyond4_lossless/clips/0125_origin_ll/0125_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_12CLIP_A_mstudent1_step600.txt",
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_12CLIP_B_mstudent1_step600.txt",
+     "scripts/distill/runs/beyond_distil_mamba/score_12clip_a_mstudent1_step600.log",
+     "scripts/distill/runs/beyond_distil_mamba/score_12clip_b_mstudent1_step600.log",
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_final.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_g125_12clip.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_origin12.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0125.txt",
+     "scripts/distill/runs/rung_check_20261001/scores_laneA.txt",
+     "scripts/distill/runs/skeptic1/RESCORE_g125_12clip_lossless.txt",
+     "scripts/distill/runs/skeptic1/SCORES_12CLIP_LOSSLESS.txt",
+     "scripts/distill/runs/slotbudget/SCORES_DOWN0_12CLIP.txt"
+    ]
+   },
+   "s25_ll": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.4643,
+    "lpips": 0.446941,
+    "sharp": 0.010749,
+    "gtSharp": 0.011358,
+    "rightPSNR": 16.5374,
+    "n": 38,
+    "path": "outputs/skeptic1_stack/clips/0125_s25_ll/0125_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_12CLIP_B_mstudent1_step600.txt",
+     "scripts/distill/runs/beyond_distil_mamba/score_12clip_b_mstudent1_step600.log",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0125.txt",
+     "scripts/distill/runs/rung_check_20261001/scores_laneA.txt",
+     "scripts/distill/runs/skeptic1/SCORES_12CLIP_LOSSLESS.txt"
+    ]
+   },
+   "mstudent2_step800_deliv_ll": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.4643,
+    "lpips": 0.465514,
+    "sharp": 0.010662,
+    "gtSharp": 0.011358,
+    "rightPSNR": 16.4987,
+    "n": 38,
+    "path": "outputs/beyond_distil_mamba_scaled/clips/0125_mstudent2_step800_deliv_ll/0125_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/beyond_distil_mamba_scaled/SCORES_12CLIP_DELIV.txt",
+     "scripts/distill/runs/beyond_distil_mamba_scaled/score_12clip_deliv.log",
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0125.txt",
+     "scripts/distill/runs/rung_check_20261001/scores_laneA.txt"
+    ]
+   },
+   "deliv_g100_T5nat": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.4643,
+    "lpips": 0.468155,
+    "sharp": 0.010373,
+    "gtSharp": 0.011358,
+    "rightPSNR": 16.5439,
+    "n": 38,
+    "path": "outputs/finalcheck_20261004/speed/clips/0125_deliv_g100_T5nat/0125_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_POSTHOC_T5G100NAT.txt"
+    ]
+   },
+   "deliv_g100_T5pad": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.4643,
+    "lpips": 0.467726,
+    "sharp": 0.010487,
+    "gtSharp": 0.011358,
+    "rightPSNR": 16.5167,
+    "n": 38,
+    "path": "outputs/finalcheck_20261004/speed/clips/0125_deliv_g100_T5pad/0125_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt",
+     "scripts/distill/runs/more_20261004/fewer_steps/SCORES_04_T4b_ext8.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0125.txt"
+    ]
+   },
+   "origin_g100_T5pad": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.4643,
+    "lpips": 0.482006,
+    "sharp": 0.009249,
+    "gtSharp": 0.011358,
+    "rightPSNR": 16.6121,
+    "n": 38,
+    "path": "outputs/finalcheck_20261004/speed/clips/0125_origin_g100_T5pad/0125_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0125.txt"
+    ]
+   },
+   "AYS8_origin_g101": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.4643,
+    "lpips": 0.46153,
+    "sharp": 0.010137,
+    "gtSharp": 0.011358,
+    "rightPSNR": 16.552,
+    "n": 38,
+    "path": "outputs/more_20261004/judge/ays/clips/0125_AYS8_origin_g101/0125_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0125.txt"
+    ]
+   }
+  },
+  "0128": {
+   "origin_ll": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 39.7484,
+    "lpips": 0.405492,
+    "sharp": 0.013506,
+    "gtSharp": 0.010493,
+    "rightPSNR": 18.4504,
+    "n": 38,
+    "path": "outputs/beyond4_lossless/clips/0128_origin_ll/0128_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_12CLIP_A_mstudent1_step600.txt",
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_12CLIP_B_mstudent1_step600.txt",
+     "scripts/distill/runs/beyond_distil_mamba/score_12clip_a_mstudent1_step600.log",
+     "scripts/distill/runs/beyond_distil_mamba/score_12clip_b_mstudent1_step600.log",
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_final.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_g125_12clip.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_origin12.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0128.txt",
+     "scripts/distill/runs/rung_check_20261001/scores_laneA.txt",
+     "scripts/distill/runs/skeptic1/RESCORE_g125_12clip_lossless.txt",
+     "scripts/distill/runs/skeptic1/SCORES_12CLIP_LOSSLESS.txt",
+     "scripts/distill/runs/slotbudget/SCORES_DOWN0_12CLIP.txt"
+    ]
+   },
+   "s25_ll": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 39.7484,
+    "lpips": 0.387646,
+    "sharp": 0.015669,
+    "gtSharp": 0.010493,
+    "rightPSNR": 18.2234,
+    "n": 38,
+    "path": "outputs/skeptic1_stack/clips/0128_s25_ll/0128_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_12CLIP_B_mstudent1_step600.txt",
+     "scripts/distill/runs/beyond_distil_mamba/score_12clip_b_mstudent1_step600.log",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0128.txt",
+     "scripts/distill/runs/rung_check_20261001/scores_laneA.txt",
+     "scripts/distill/runs/skeptic1/SCORES_12CLIP_LOSSLESS.txt"
+    ]
+   },
+   "mstudent2_step800_deliv_ll": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 39.7484,
+    "lpips": 0.388215,
+    "sharp": 0.016223,
+    "gtSharp": 0.010493,
+    "rightPSNR": 18.1369,
+    "n": 38,
+    "path": "outputs/beyond_distil_mamba_scaled/clips/0128_mstudent2_step800_deliv_ll/0128_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/beyond_distil_mamba_scaled/SCORES_12CLIP_DELIV.txt",
+     "scripts/distill/runs/beyond_distil_mamba_scaled/score_12clip_deliv.log",
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0128.txt",
+     "scripts/distill/runs/rung_check_20261001/scores_laneA.txt"
+    ]
+   },
+   "deliv_g100_T5nat": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 39.7484,
+    "lpips": 0.388953,
+    "sharp": 0.016248,
+    "gtSharp": 0.010493,
+    "rightPSNR": 18.1248,
+    "n": 38,
+    "path": "outputs/finalcheck_20261004/speed/clips/0128_deliv_g100_T5nat/0128_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_POSTHOC_T5G100NAT.txt"
+    ]
+   },
+   "deliv_g100_T5pad": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 39.7484,
+    "lpips": 0.389152,
+    "sharp": 0.015998,
+    "gtSharp": 0.010493,
+    "rightPSNR": 18.1545,
+    "n": 38,
+    "path": "outputs/finalcheck_20261004/speed/clips/0128_deliv_g100_T5pad/0128_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt",
+     "scripts/distill/runs/more_20261004/fewer_steps/SCORES_04_T4b_ext8.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0128.txt"
+    ]
+   },
+   "origin_g100_T5pad": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 39.7484,
+    "lpips": 0.407424,
+    "sharp": 0.013309,
+    "gtSharp": 0.010493,
+    "rightPSNR": 18.4728,
+    "n": 38,
+    "path": "outputs/finalcheck_20261004/speed/clips/0128_origin_g100_T5pad/0128_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0128.txt"
+    ]
+   },
+   "AYS8_origin_g101": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 39.7484,
+    "lpips": 0.394119,
+    "sharp": 0.014434,
+    "gtSharp": 0.010493,
+    "rightPSNR": 18.3705,
+    "n": 38,
+    "path": "outputs/more_20261004/judge/ays/clips/0128_AYS8_origin_g101/0128_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0128.txt"
+    ]
+   }
+  },
+  "0141": {
+   "origin_ll": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.0934,
+    "lpips": 0.481324,
+    "sharp": 0.004912,
+    "gtSharp": 0.003613,
+    "rightPSNR": 15.5686,
+    "n": 38,
+    "path": "outputs/beyond4_lossless/clips/0141_origin_ll/0141_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_12CLIP_A_mstudent1_step600.txt",
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_12CLIP_B_mstudent1_step600.txt",
+     "scripts/distill/runs/beyond_distil_mamba/score_12clip_a_mstudent1_step600.log",
+     "scripts/distill/runs/beyond_distil_mamba/score_12clip_b_mstudent1_step600.log",
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_final.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_g125_12clip.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_origin12.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0141.txt",
+     "scripts/distill/runs/rung_check_20261001/scores_laneA.txt",
+     "scripts/distill/runs/skeptic1/RESCORE_g125_12clip_lossless.txt",
+     "scripts/distill/runs/skeptic1/SCORES_12CLIP_LOSSLESS.txt",
+     "scripts/distill/runs/slotbudget/SCORES_DOWN0_12CLIP.txt"
+    ]
+   },
+   "s25_ll": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.0934,
+    "lpips": 0.462095,
+    "sharp": 0.005664,
+    "gtSharp": 0.003613,
+    "rightPSNR": 15.5434,
+    "n": 38,
+    "path": "outputs/skeptic1_stack/clips/0141_s25_ll/0141_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_12CLIP_B_mstudent1_step600.txt",
+     "scripts/distill/runs/beyond_distil_mamba/score_12clip_b_mstudent1_step600.log",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0141.txt",
+     "scripts/distill/runs/rung_check_20261001/scores_laneA.txt",
+     "scripts/distill/runs/skeptic1/SCORES_12CLIP_LOSSLESS.txt"
+    ]
+   },
+   "mstudent2_step800_deliv_ll": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.0934,
+    "lpips": 0.468063,
+    "sharp": 0.005939,
+    "gtSharp": 0.003613,
+    "rightPSNR": 15.4732,
+    "n": 38,
+    "path": "outputs/beyond_distil_mamba_scaled/clips/0141_mstudent2_step800_deliv_ll/0141_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/beyond_distil_mamba_scaled/SCORES_12CLIP_DELIV.txt",
+     "scripts/distill/runs/beyond_distil_mamba_scaled/score_12clip_deliv.log",
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0141.txt",
+     "scripts/distill/runs/rung_check_20261001/scores_laneA.txt"
+    ]
+   },
+   "deliv_g100_T5nat": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.0934,
+    "lpips": 0.467479,
+    "sharp": 0.005836,
+    "gtSharp": 0.003613,
+    "rightPSNR": 15.4875,
+    "n": 38,
+    "path": "outputs/finalcheck_20261004/speed/clips/0141_deliv_g100_T5nat/0141_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_POSTHOC_T5G100NAT.txt"
+    ]
+   },
+   "deliv_g100_T5pad": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.0934,
+    "lpips": 0.468059,
+    "sharp": 0.005851,
+    "gtSharp": 0.003613,
+    "rightPSNR": 15.4779,
+    "n": 38,
+    "path": "outputs/finalcheck_20261004/speed/clips/0141_deliv_g100_T5pad/0141_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt",
+     "scripts/distill/runs/more_20261004/fewer_steps/SCORES_04_T4b_ext8.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0141.txt"
+    ]
+   },
+   "origin_g100_T5pad": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.0934,
+    "lpips": 0.481139,
+    "sharp": 0.004829,
+    "gtSharp": 0.003613,
+    "rightPSNR": 15.5794,
+    "n": 38,
+    "path": "outputs/finalcheck_20261004/speed/clips/0141_origin_g100_T5pad/0141_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0141.txt"
+    ]
+   },
+   "AYS8_origin_g101": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.0934,
+    "lpips": 0.472433,
+    "sharp": 0.005213,
+    "gtSharp": 0.003613,
+    "rightPSNR": 15.5606,
+    "n": 38,
+    "path": "outputs/more_20261004/judge/ays/clips/0141_AYS8_origin_g101/0141_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0141.txt"
+    ]
+   }
+  },
+  "0147": {
+   "origin_ll": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.4039,
+    "lpips": 0.526938,
+    "sharp": 0.006179,
+    "gtSharp": 0.003901,
+    "rightPSNR": 15.458,
+    "n": 38,
+    "path": "outputs/beyond4_lossless/clips/0147_origin_ll/0147_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_12CLIP_A_mstudent1_step600.txt",
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_12CLIP_B_mstudent1_step600.txt",
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_4CLIP_mstudent1.txt",
+     "scripts/distill/runs/beyond_distil_mamba/score_12clip_a_mstudent1_step600.log",
+     "scripts/distill/runs/beyond_distil_mamba/score_12clip_b_mstudent1_step600.log",
+     "scripts/distill/runs/beyond_distil_mamba/score_4clip_mstudent1.log",
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/CODEC_ONLY_origin.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_final.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_g125_12clip.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_g125_4clip.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_origin12.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_part1.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0147.txt",
+     "scripts/distill/runs/rung_check_20261001/scores_laneA.txt",
+     "scripts/distill/runs/skeptic1/RESCORE_g125_12clip_lossless.txt",
+     "scripts/distill/runs/skeptic1/SCORES_12CLIP_LOSSLESS.txt",
+     "scripts/distill/runs/skeptic1/SCORES_DOWN0.txt",
+     "scripts/distill/runs/skeptic1/SCORES_STACK_lossless.txt",
+     "scripts/distill/runs/slotbudget/SCORES_DOWN0_12CLIP.txt"
+    ]
+   },
+   "s25_ll": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.4039,
+    "lpips": 0.522009,
+    "sharp": 0.00669,
+    "gtSharp": 0.003901,
+    "rightPSNR": 15.4636,
+    "n": 38,
+    "path": "outputs/beyond4_lossless/clips/0147_s25_ll/0147_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_12CLIP_B_mstudent1_step600.txt",
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_4CLIP_mstudent1.txt",
+     "scripts/distill/runs/beyond_distil_mamba/score_12clip_b_mstudent1_step600.log",
+     "scripts/distill/runs/beyond_distil_mamba/score_4clip_mstudent1.log",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_final.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_g125_4clip.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_part1.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0147.txt",
+     "scripts/distill/runs/more_20261004/teacher/SCORES_I6_s25.txt",
+     "scripts/distill/runs/rung_check_20261001/scores_laneA.txt",
+     "scripts/distill/runs/skeptic1/SCORES_12CLIP_LOSSLESS.txt",
+     "scripts/distill/runs/skeptic1/SCORES_STACK_lossless.txt"
+    ]
+   },
+   "mstudent2_step800_deliv_ll": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.4039,
+    "lpips": 0.524394,
+    "sharp": 0.006935,
+    "gtSharp": 0.003901,
+    "rightPSNR": 15.3577,
+    "n": 38,
+    "path": "outputs/beyond_distil_mamba_scaled/clips/0147_mstudent2_step800_deliv_ll/0147_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/beyond_distil_mamba_scaled/SCORES_12CLIP_DELIV.txt",
+     "scripts/distill/runs/beyond_distil_mamba_scaled/score_12clip_deliv.log",
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0147.txt",
+     "scripts/distill/runs/rung_check_20261001/scores_laneA.txt"
+    ]
+   },
+   "deliv_g100_T5nat": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.4039,
+    "lpips": 0.525141,
+    "sharp": 0.007017,
+    "gtSharp": 0.003901,
+    "rightPSNR": 15.3216,
+    "n": 38,
+    "path": "outputs/finalcheck_20261004/speed/clips/0147_deliv_g100_T5nat/0147_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_POSTHOC_T5G100NAT.txt"
+    ]
+   },
+   "origin_g100_T5pad": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.4039,
+    "lpips": 0.527162,
+    "sharp": 0.006176,
+    "gtSharp": 0.003901,
+    "rightPSNR": 15.4424,
+    "n": 38,
+    "path": "outputs/finalcheck_20261004/speed/clips/0147_origin_g100_T5pad/0147_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0147.txt"
+    ]
+   },
+   "deliv_g100_T5pad": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.4039,
+    "lpips": 0.525542,
+    "sharp": 0.007001,
+    "gtSharp": 0.003901,
+    "rightPSNR": 15.3069,
+    "n": 38,
+    "path": "outputs/finalcheck_20261004/speed/clips/0147_deliv_g100_T5pad/0147_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_T5G100_4clip.txt",
+     "scripts/distill/runs/more_20261004/fewer_steps/SCORES_02_T4b4clip.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0147.txt"
+    ]
+   },
+   "AYS8_origin_g101": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.4039,
+    "lpips": 0.524671,
+    "sharp": 0.00642,
+    "gtSharp": 0.003901,
+    "rightPSNR": 15.4534,
+    "n": 38,
+    "path": "outputs/more_20261004/judge/ays/clips/0147_AYS8_origin_g101/0147_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0147.txt"
+    ]
+   }
+  },
+  "0170": {
+   "origin_ll": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 39.7902,
+    "lpips": 0.251735,
+    "sharp": 0.016394,
+    "gtSharp": 0.032309,
+    "rightPSNR": 17.1683,
+    "n": 38,
+    "path": "outputs/beyond4_lossless/clips/0170_origin_ll/0170_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_12CLIP_A_mstudent1_step600.txt",
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_12CLIP_B_mstudent1_step600.txt",
+     "scripts/distill/runs/beyond_distil_mamba/score_12clip_a_mstudent1_step600.log",
+     "scripts/distill/runs/beyond_distil_mamba/score_12clip_b_mstudent1_step600.log",
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_final.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_g125_12clip.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_origin12.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J1c_LPIPS_0170.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0170.txt",
+     "scripts/distill/runs/more_20261004/temporal/SCORES_LPIPS_T1_SMOKE0170.txt",
+     "scripts/distill/runs/rung_check_20261001/scores_laneB.txt",
+     "scripts/distill/runs/skeptic1/RESCORE_g125_12clip_lossless.txt",
+     "scripts/distill/runs/skeptic1/SCORES_12CLIP_LOSSLESS.txt",
+     "scripts/distill/runs/slotbudget/SCORES_DOWN0_12CLIP.txt"
+    ]
+   },
+   "s25_ll": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 39.7902,
+    "lpips": 0.244962,
+    "sharp": 0.01747,
+    "gtSharp": 0.032309,
+    "rightPSNR": 17.0464,
+    "n": 38,
+    "path": "outputs/skeptic1_stack/clips/0170_s25_ll/0170_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_12CLIP_B_mstudent1_step600.txt",
+     "scripts/distill/runs/beyond_distil_mamba/score_12clip_b_mstudent1_step600.log",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0170.txt",
+     "scripts/distill/runs/rung_check_20261001/scores_laneB.txt",
+     "scripts/distill/runs/skeptic1/SCORES_12CLIP_LOSSLESS.txt"
+    ]
+   },
+   "mstudent2_step800_deliv_ll": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 39.7902,
+    "lpips": 0.244619,
+    "sharp": 0.017661,
+    "gtSharp": 0.032309,
+    "rightPSNR": 16.9118,
+    "n": 38,
+    "path": "outputs/beyond_distil_mamba_scaled/clips/0170_mstudent2_step800_deliv_ll/0170_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/beyond_distil_mamba_scaled/SCORES_12CLIP_DELIV.txt",
+     "scripts/distill/runs/beyond_distil_mamba_scaled/score_12clip_deliv.log",
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0170.txt",
+     "scripts/distill/runs/rung_check_20261001/scores_laneB.txt"
+    ]
+   },
+   "deliv_g100_T5nat": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 39.7902,
+    "lpips": 0.244648,
+    "sharp": 0.017534,
+    "gtSharp": 0.032309,
+    "rightPSNR": 16.9228,
+    "n": 38,
+    "path": "outputs/finalcheck_20261004/speed/clips/0170_deliv_g100_T5nat/0170_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_POSTHOC_T5G100NAT.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J1c_LPIPS_0170.txt",
+     "scripts/distill/runs/more_20261004/temporal/SCORES_LPIPS_T1_SMOKE0170.txt"
+    ]
+   },
+   "deliv_g100_T5pad": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 39.7902,
+    "lpips": 0.245911,
+    "sharp": 0.017348,
+    "gtSharp": 0.032309,
+    "rightPSNR": 16.9584,
+    "n": 38,
+    "path": "outputs/finalcheck_20261004/speed/clips/0170_deliv_g100_T5pad/0170_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt",
+     "scripts/distill/runs/more_20261004/fewer_steps/SCORES_04_T4b_ext8.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0170.txt"
+    ]
+   },
+   "origin_g100_T5pad": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 39.7902,
+    "lpips": 0.253584,
+    "sharp": 0.016104,
+    "gtSharp": 0.032309,
+    "rightPSNR": 17.2217,
+    "n": 38,
+    "path": "outputs/finalcheck_20261004/speed/clips/0170_origin_g100_T5pad/0170_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0170.txt"
+    ]
+   },
+   "AYS8_origin_g101": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 39.7902,
+    "lpips": 0.24566,
+    "sharp": 0.016875,
+    "gtSharp": 0.032309,
+    "rightPSNR": 17.1293,
+    "n": 38,
+    "path": "outputs/more_20261004/judge/ays/clips/0170_AYS8_origin_g101/0170_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0170.txt"
+    ]
+   }
+  },
+  "0204": {
+   "origin_ll": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 41.162,
+    "lpips": 0.20531,
+    "sharp": 0.006527,
+    "gtSharp": 0.011577,
+    "rightPSNR": 19.8959,
+    "n": 38,
+    "path": "outputs/beyond4_lossless/clips/0204_origin_ll/0204_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_12CLIP_A_mstudent1_step600.txt",
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_12CLIP_B_mstudent1_step600.txt",
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_4CLIP_mstudent1.txt",
+     "scripts/distill/runs/beyond_distil_mamba/score_12clip_a_mstudent1_step600.log",
+     "scripts/distill/runs/beyond_distil_mamba/score_12clip_b_mstudent1_step600.log",
+     "scripts/distill/runs/beyond_distil_mamba/score_4clip_mstudent1.log",
+     "scripts/distill/runs/clean_controls/regB/infer/chain_regB_v1.log",
+     "scripts/distill/runs/clean_controls/regB/infer/chain_regB_v1.log",
+     "scripts/distill/runs/clean_controls/regB/infer/chain_regB_v3_extras.log",
+     "scripts/distill/runs/clean_controls/regB/scores/early_regB_all.txt",
+     "scripts/distill/runs/clean_controls/regB/scores/scores_origin_rescore.txt",
+     "scripts/distill/runs/clean_controls/regB/scores/scores_regB_final.txt",
+     "scripts/distill/runs/clean_controls/regB/scores/scores_regB_phaseA.txt",
+     "scripts/distill/runs/clean_controls/regB/scores/scores_regBpf_final.txt",
+     "scripts/distill/runs/clean_controls/selfA/scores_selfA.txt",
+     "scripts/distill/runs/clean_controls/selfA/scores_selfA_s25.txt",
+     "scripts/distill/runs/clean_controls/skeptic/score_0204.log",
+     "scripts/distill/runs/clean_controls/skeptic/scores_skeptic_0204.txt",
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/CODEC_ONLY_origin.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_final.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_g125_12clip.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_g125_4clip.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_origin12.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_part1.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0204.txt",
+     "scripts/distill/runs/rung_check_20261001/scores_laneB.txt",
+     "scripts/distill/runs/skeptic1/RESCORE_g125_12clip_lossless.txt",
+     "scripts/distill/runs/skeptic1/SCORES_12CLIP_LOSSLESS.txt",
+     "scripts/distill/runs/skeptic1/SCORES_DOWN0.txt",
+     "scripts/distill/runs/skeptic1/SCORES_STACK_lossless.txt",
+     "scripts/distill/runs/slotbudget/SCORES_DOWN0_12CLIP.txt"
+    ]
+   },
+   "s25_ll": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 41.162,
+    "lpips": 0.189684,
+    "sharp": 0.007608,
+    "gtSharp": 0.011577,
+    "rightPSNR": 19.5481,
+    "n": 38,
+    "path": "outputs/beyond4_lossless/clips/0204_s25_ll/0204_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_12CLIP_B_mstudent1_step600.txt",
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_4CLIP_mstudent1.txt",
+     "scripts/distill/runs/beyond_distil_mamba/score_12clip_b_mstudent1_step600.log",
+     "scripts/distill/runs/beyond_distil_mamba/score_4clip_mstudent1.log",
+     "scripts/distill/runs/clean_controls/regB/scores/scores_context_std.txt",
+     "scripts/distill/runs/clean_controls/selfA/scores_selfA_s25.txt",
+     "scripts/distill/runs/clean_controls/skeptic/score_0204.log",
+     "scripts/distill/runs/clean_controls/skeptic/scores_skeptic_0204.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_final.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_g125_4clip.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_part1.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0204.txt",
+     "scripts/distill/runs/more_20261004/teacher/SCORES_I6_s25.txt",
+     "scripts/distill/runs/rung_check_20261001/scores_laneB.txt",
+     "scripts/distill/runs/skeptic1/SCORES_12CLIP_LOSSLESS.txt",
+     "scripts/distill/runs/skeptic1/SCORES_STACK_lossless.txt"
+    ]
+   },
+   "mstudent2_step800_deliv_ll": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 41.162,
+    "lpips": 0.186734,
+    "sharp": 0.007719,
+    "gtSharp": 0.011577,
+    "rightPSNR": 19.4154,
+    "n": 38,
+    "path": "outputs/beyond_distil_mamba_scaled/clips/0204_mstudent2_step800_deliv_ll/0204_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/beyond_distil_mamba_scaled/SCORES_12CLIP_DELIV.txt",
+     "scripts/distill/runs/beyond_distil_mamba_scaled/score_12clip_deliv.log",
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0204.txt",
+     "scripts/distill/runs/rung_check_20261001/scores_laneB.txt"
+    ]
+   },
+   "deliv_g100_T5nat": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 41.162,
+    "lpips": 0.187377,
+    "sharp": 0.007509,
+    "gtSharp": 0.011577,
+    "rightPSNR": 19.5044,
+    "n": 38,
+    "path": "outputs/finalcheck_20261004/speed/clips/0204_deliv_g100_T5nat/0204_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_POSTHOC_T5G100NAT.txt"
+    ]
+   },
+   "origin_g100_T5pad": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 41.162,
+    "lpips": 0.208235,
+    "sharp": 0.006421,
+    "gtSharp": 0.011577,
+    "rightPSNR": 19.9444,
+    "n": 38,
+    "path": "outputs/finalcheck_20261004/speed/clips/0204_origin_g100_T5pad/0204_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0204.txt"
+    ]
+   },
+   "deliv_g100_T5pad": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 41.162,
+    "lpips": 0.187633,
+    "sharp": 0.007517,
+    "gtSharp": 0.011577,
+    "rightPSNR": 19.5087,
+    "n": 38,
+    "path": "outputs/finalcheck_20261004/speed/clips/0204_deliv_g100_T5pad/0204_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_T5G100_4clip.txt",
+     "scripts/distill/runs/more_20261004/fewer_steps/SCORES_02_T4b4clip.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0204.txt"
+    ]
+   },
+   "AYS8_origin_g101": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 41.162,
+    "lpips": 0.192757,
+    "sharp": 0.007027,
+    "gtSharp": 0.011577,
+    "rightPSNR": 19.7338,
+    "n": 38,
+    "path": "outputs/more_20261004/judge/ays/clips/0204_AYS8_origin_g101/0204_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0204.txt"
+    ]
+   }
+  },
+  "0225": {
+   "origin_ll": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.9278,
+    "lpips": 0.275038,
+    "sharp": 0.01177,
+    "gtSharp": 0.013156,
+    "rightPSNR": 16.068,
+    "n": 38,
+    "path": "outputs/beyond4_lossless/clips/0225_origin_ll/0225_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_12CLIP_A_mstudent1_step600.txt",
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_12CLIP_B_mstudent1_step600.txt",
+     "scripts/distill/runs/beyond_distil_mamba/score_12clip_a_mstudent1_step600.log",
+     "scripts/distill/runs/beyond_distil_mamba/score_12clip_b_mstudent1_step600.log",
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_final.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_g125_12clip.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_origin12.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0225.txt",
+     "scripts/distill/runs/rung_check_20261001/scores_laneB.txt",
+     "scripts/distill/runs/skeptic1/RESCORE_g125_12clip_lossless.txt",
+     "scripts/distill/runs/skeptic1/SCORES_12CLIP_LOSSLESS.txt",
+     "scripts/distill/runs/slotbudget/SCORES_DOWN0_12CLIP.txt"
+    ]
+   },
+   "s25_ll": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.9278,
+    "lpips": 0.260343,
+    "sharp": 0.013474,
+    "gtSharp": 0.013156,
+    "rightPSNR": 15.8669,
+    "n": 38,
+    "path": "outputs/skeptic1_stack/clips/0225_s25_ll/0225_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_12CLIP_B_mstudent1_step600.txt",
+     "scripts/distill/runs/beyond_distil_mamba/score_12clip_b_mstudent1_step600.log",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0225.txt",
+     "scripts/distill/runs/rung_check_20261001/scores_laneB.txt",
+     "scripts/distill/runs/skeptic1/SCORES_12CLIP_LOSSLESS.txt"
+    ]
+   },
+   "mstudent2_step800_deliv_ll": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.9278,
+    "lpips": 0.258676,
+    "sharp": 0.013372,
+    "gtSharp": 0.013156,
+    "rightPSNR": 15.8566,
+    "n": 38,
+    "path": "outputs/beyond_distil_mamba_scaled/clips/0225_mstudent2_step800_deliv_ll/0225_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/beyond_distil_mamba_scaled/SCORES_12CLIP_DELIV.txt",
+     "scripts/distill/runs/beyond_distil_mamba_scaled/score_12clip_deliv.log",
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0225.txt",
+     "scripts/distill/runs/rung_check_20261001/scores_laneB.txt"
+    ]
+   },
+   "deliv_g100_T5nat": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.9278,
+    "lpips": 0.260581,
+    "sharp": 0.013081,
+    "gtSharp": 0.013156,
+    "rightPSNR": 15.9242,
+    "n": 38,
+    "path": "outputs/finalcheck_20261004/speed/clips/0225_deliv_g100_T5nat/0225_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_POSTHOC_T5G100NAT.txt"
+    ]
+   },
+   "deliv_g100_T5pad": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.9278,
+    "lpips": 0.260946,
+    "sharp": 0.013017,
+    "gtSharp": 0.013156,
+    "rightPSNR": 15.8913,
+    "n": 38,
+    "path": "outputs/finalcheck_20261004/speed/clips/0225_deliv_g100_T5pad/0225_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt",
+     "scripts/distill/runs/more_20261004/fewer_steps/SCORES_04_T4b_ext8.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0225.txt"
+    ]
+   },
+   "origin_g100_T5pad": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.9278,
+    "lpips": 0.277709,
+    "sharp": 0.011572,
+    "gtSharp": 0.013156,
+    "rightPSNR": 16.0808,
+    "n": 38,
+    "path": "outputs/finalcheck_20261004/speed/clips/0225_origin_g100_T5pad/0225_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0225.txt"
+    ]
+   },
+   "AYS8_origin_g101": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.9278,
+    "lpips": 0.263703,
+    "sharp": 0.012555,
+    "gtSharp": 0.013156,
+    "rightPSNR": 15.9815,
+    "n": 38,
+    "path": "outputs/more_20261004/judge/ays/clips/0225_AYS8_origin_g101/0225_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0225.txt"
+    ]
+   }
+  },
+  "0251": {
+   "origin_ll": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 41.234,
+    "lpips": 0.34604,
+    "sharp": 0.008295,
+    "gtSharp": 0.017307,
+    "rightPSNR": 18.5801,
+    "n": 38,
+    "path": "outputs/beyond4_lossless/clips/0251_origin_ll/0251_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_12CLIP_A_mstudent1_step600.txt",
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_12CLIP_B_mstudent1_step600.txt",
+     "scripts/distill/runs/beyond_distil_mamba/score_12clip_a_mstudent1_step600.log",
+     "scripts/distill/runs/beyond_distil_mamba/score_12clip_b_mstudent1_step600.log",
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_final.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_g125_12clip.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_origin12.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0251.txt",
+     "scripts/distill/runs/rung_check_20261001/scores_laneB.txt",
+     "scripts/distill/runs/skeptic1/RESCORE_g125_12clip_lossless.txt",
+     "scripts/distill/runs/skeptic1/SCORES_12CLIP_LOSSLESS.txt",
+     "scripts/distill/runs/slotbudget/SCORES_DOWN0_12CLIP.txt"
+    ]
+   },
+   "s25_ll": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 41.234,
+    "lpips": 0.338475,
+    "sharp": 0.00932,
+    "gtSharp": 0.017307,
+    "rightPSNR": 18.5031,
+    "n": 38,
+    "path": "outputs/skeptic1_stack/clips/0251_s25_ll/0251_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_12CLIP_B_mstudent1_step600.txt",
+     "scripts/distill/runs/beyond_distil_mamba/score_12clip_b_mstudent1_step600.log",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0251.txt",
+     "scripts/distill/runs/rung_check_20261001/scores_laneB.txt",
+     "scripts/distill/runs/skeptic1/SCORES_12CLIP_LOSSLESS.txt"
+    ]
+   },
+   "mstudent2_step800_deliv_ll": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 41.234,
+    "lpips": 0.335513,
+    "sharp": 0.009642,
+    "gtSharp": 0.017307,
+    "rightPSNR": 18.4686,
+    "n": 38,
+    "path": "outputs/beyond_distil_mamba_scaled/clips/0251_mstudent2_step800_deliv_ll/0251_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/beyond_distil_mamba_scaled/SCORES_12CLIP_DELIV.txt",
+     "scripts/distill/runs/beyond_distil_mamba_scaled/score_12clip_deliv.log",
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0251.txt",
+     "scripts/distill/runs/rung_check_20261001/scores_laneB.txt"
+    ]
+   },
+   "deliv_g100_T5nat": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 41.234,
+    "lpips": 0.336772,
+    "sharp": 0.009626,
+    "gtSharp": 0.017307,
+    "rightPSNR": 18.4456,
+    "n": 38,
+    "path": "outputs/finalcheck_20261004/speed/clips/0251_deliv_g100_T5nat/0251_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_POSTHOC_T5G100NAT.txt"
+    ]
+   },
+   "deliv_g100_T5pad": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 41.234,
+    "lpips": 0.336711,
+    "sharp": 0.009689,
+    "gtSharp": 0.017307,
+    "rightPSNR": 18.4204,
+    "n": 38,
+    "path": "outputs/finalcheck_20261004/speed/clips/0251_deliv_g100_T5pad/0251_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt",
+     "scripts/distill/runs/more_20261004/fewer_steps/SCORES_04_T4b_ext8.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0251.txt"
+    ]
+   },
+   "origin_g100_T5pad": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 41.234,
+    "lpips": 0.34767,
+    "sharp": 0.00832,
+    "gtSharp": 0.017307,
+    "rightPSNR": 18.5338,
+    "n": 38,
+    "path": "outputs/finalcheck_20261004/speed/clips/0251_origin_g100_T5pad/0251_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0251.txt"
+    ]
+   },
+   "AYS8_origin_g101": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 41.234,
+    "lpips": 0.339701,
+    "sharp": 0.008793,
+    "gtSharp": 0.017307,
+    "rightPSNR": 18.546,
+    "n": 38,
+    "path": "outputs/more_20261004/judge/ays/clips/0251_AYS8_origin_g101/0251_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0251.txt"
+    ]
+   }
+  },
+  "0259": {
+   "origin_ll": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.7219,
+    "lpips": 0.437586,
+    "sharp": 0.031178,
+    "gtSharp": 0.044964,
+    "rightPSNR": 13.3021,
+    "n": 38,
+    "path": "outputs/beyond4_lossless/clips/0259_origin_ll/0259_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_12CLIP_A_mstudent1_step600.txt",
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_12CLIP_B_mstudent1_step600.txt",
+     "scripts/distill/runs/beyond_distil_mamba/score_12clip_a_mstudent1_step600.log",
+     "scripts/distill/runs/beyond_distil_mamba/score_12clip_b_mstudent1_step600.log",
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_final.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_g125_12clip.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_origin12.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J1c_LPIPS_0259.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0259.txt",
+     "scripts/distill/runs/more_20261004/temporal/SCORES_LPIPS_T2_0259.txt",
+     "scripts/distill/runs/rung_check_20261001/scores_laneB.txt",
+     "scripts/distill/runs/skeptic1/RESCORE_g125_12clip_lossless.txt",
+     "scripts/distill/runs/skeptic1/SCORES_12CLIP_LOSSLESS.txt",
+     "scripts/distill/runs/slotbudget/SCORES_DOWN0_12CLIP.txt"
+    ]
+   },
+   "s25_ll": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.7219,
+    "lpips": 0.436699,
+    "sharp": 0.03192,
+    "gtSharp": 0.044964,
+    "rightPSNR": 13.3189,
+    "n": 38,
+    "path": "outputs/skeptic1_stack/clips/0259_s25_ll/0259_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_12CLIP_B_mstudent1_step600.txt",
+     "scripts/distill/runs/beyond_distil_mamba/score_12clip_b_mstudent1_step600.log",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0259.txt",
+     "scripts/distill/runs/rung_check_20261001/scores_laneB.txt",
+     "scripts/distill/runs/skeptic1/SCORES_12CLIP_LOSSLESS.txt"
+    ]
+   },
+   "mstudent2_step800_deliv_ll": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.7219,
+    "lpips": 0.435708,
+    "sharp": 0.033213,
+    "gtSharp": 0.044964,
+    "rightPSNR": 13.2143,
+    "n": 38,
+    "path": "outputs/beyond_distil_mamba_scaled/clips/0259_mstudent2_step800_deliv_ll/0259_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/beyond_distil_mamba_scaled/SCORES_12CLIP_DELIV.txt",
+     "scripts/distill/runs/beyond_distil_mamba_scaled/score_12clip_deliv.log",
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0259.txt",
+     "scripts/distill/runs/rung_check_20261001/scores_laneB.txt"
+    ]
+   },
+   "deliv_g100_T5nat": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.7219,
+    "lpips": 0.434854,
+    "sharp": 0.03464,
+    "gtSharp": 0.044964,
+    "rightPSNR": 13.0874,
+    "n": 38,
+    "path": "outputs/finalcheck_20261004/speed/clips/0259_deliv_g100_T5nat/0259_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_POSTHOC_T5G100NAT.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J1c_LPIPS_0259.txt",
+     "scripts/distill/runs/more_20261004/temporal/SCORES_LPIPS_T2_0259.txt"
+    ]
+   },
+   "deliv_g100_T5pad": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.7219,
+    "lpips": 0.437134,
+    "sharp": 0.034751,
+    "gtSharp": 0.044964,
+    "rightPSNR": 13.076,
+    "n": 38,
+    "path": "outputs/finalcheck_20261004/speed/clips/0259_deliv_g100_T5pad/0259_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt",
+     "scripts/distill/runs/more_20261004/fewer_steps/SCORES_04_T4b_ext8.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0259.txt"
+    ]
+   },
+   "origin_g100_T5pad": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.7219,
+    "lpips": 0.441662,
+    "sharp": 0.032163,
+    "gtSharp": 0.044964,
+    "rightPSNR": 13.1998,
+    "n": 38,
+    "path": "outputs/finalcheck_20261004/speed/clips/0259_origin_g100_T5pad/0259_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0259.txt"
+    ]
+   },
+   "AYS8_origin_g101": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.7219,
+    "lpips": 0.433508,
+    "sharp": 0.031947,
+    "gtSharp": 0.044964,
+    "rightPSNR": 13.271,
+    "n": 38,
+    "path": "outputs/more_20261004/judge/ays/clips/0259_AYS8_origin_g101/0259_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_ext8_0259.txt"
+    ]
+   }
+  },
+  "0301": {
+   "origin_ll": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.2464,
+    "lpips": 0.435095,
+    "sharp": 0.023528,
+    "gtSharp": 0.050529,
+    "rightPSNR": 15.4667,
+    "n": 38,
+    "path": "outputs/beyond4_lossless/clips/0301_origin_ll/0301_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_12CLIP_A_mstudent1_step600.txt",
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_12CLIP_B_mstudent1_step600.txt",
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_4CLIP_mstudent1.txt",
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_early_0301.txt",
+     "scripts/distill/runs/beyond_distil_mamba/score_12clip_a_mstudent1_step600.log",
+     "scripts/distill/runs/beyond_distil_mamba/score_12clip_b_mstudent1_step600.log",
+     "scripts/distill/runs/beyond_distil_mamba/score_4clip_mstudent1.log",
+     "scripts/distill/runs/clean_controls/regB/infer/chain_regB_v1.log",
+     "scripts/distill/runs/clean_controls/regB/infer/chain_regB_v1.log",
+     "scripts/distill/runs/clean_controls/regB/infer/chain_regB_v3_extras.log",
+     "scripts/distill/runs/clean_controls/regB/infer/chain_regB_v3_extras.log",
+     "scripts/distill/runs/clean_controls/regB/infer/chain_regB_v3_extras.log",
+     "scripts/distill/runs/clean_controls/regB/scores/early_regB_all.txt",
+     "scripts/distill/runs/clean_controls/regB/scores/early_regB_step100_0301.txt",
+     "scripts/distill/runs/clean_controls/regB/scores/scores_origin_rescore.txt",
+     "scripts/distill/runs/clean_controls/regB/scores/scores_regB_final.txt",
+     "scripts/distill/runs/clean_controls/regB/scores/scores_regB_phaseA.txt",
+     "scripts/distill/runs/clean_controls/regB/scores/scores_regB_s25.txt",
+     "scripts/distill/runs/clean_controls/regB/scores/scores_regBpf_0301.txt",
+     "scripts/distill/runs/clean_controls/regB/scores/scores_regBpf_final.txt",
+     "scripts/distill/runs/clean_controls/selfA/scores_selfA.txt",
+     "scripts/distill/runs/clean_controls/selfA/scores_selfA_s25.txt",
+     "scripts/distill/runs/clean_controls/skeptic/score_0301.log",
+     "scripts/distill/runs/clean_controls/skeptic/scores_skeptic_0301.txt",
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/CODEC_ONLY_origin.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_final.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_g125_12clip.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_g125_4clip.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_origin12.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_part1.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J1c_LPIPS_0301.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_0301.txt",
+     "scripts/distill/runs/more_20261004/temporal/SCORES_LPIPS_T2_0301.txt",
+     "scripts/distill/runs/rung_check_20261001/scores_laneB.txt",
+     "scripts/distill/runs/skeptic1/RESCORE_g125_12clip_lossless.txt",
+     "scripts/distill/runs/skeptic1/SCORES_12CLIP_LOSSLESS.txt",
+     "scripts/distill/runs/skeptic1/SCORES_DOWN0.txt",
+     "scripts/distill/runs/skeptic1/SCORES_ORACLEM.txt",
+     "scripts/distill/runs/skeptic1/SCORES_STACK_lossless.txt",
+     "scripts/distill/runs/slotbudget/SCORES_DOWN0_12CLIP.txt"
+    ]
+   },
+   "s25_ll": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.2464,
+    "lpips": 0.398593,
+    "sharp": 0.029482,
+    "gtSharp": 0.050529,
+    "rightPSNR": 15.013,
+    "n": 38,
+    "path": "outputs/beyond4_lossless/clips/0301_s25_ll/0301_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_12CLIP_B_mstudent1_step600.txt",
+     "scripts/distill/runs/beyond_distil_mamba/SCORES_4CLIP_mstudent1.txt",
+     "scripts/distill/runs/beyond_distil_mamba/score_12clip_b_mstudent1_step600.log",
+     "scripts/distill/runs/beyond_distil_mamba/score_4clip_mstudent1.log",
+     "scripts/distill/runs/clean_controls/regB/infer/chain_regB_v3_extras.log",
+     "scripts/distill/runs/clean_controls/regB/scores/scores_context_std.txt",
+     "scripts/distill/runs/clean_controls/regB/scores/scores_regB_s25.txt",
+     "scripts/distill/runs/clean_controls/selfA/scores_selfA_s25.txt",
+     "scripts/distill/runs/clean_controls/skeptic/score_0301.log",
+     "scripts/distill/runs/clean_controls/skeptic/scores_skeptic_0301.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_final.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_g125_4clip.txt",
+     "scripts/distill/runs/fulldata_v2/beyond4/SCORES_part1.txt",
+     "scripts/distill/runs/more_20261004/teacher/SCORES_I6_s25.txt",
+     "scripts/distill/runs/rung_check_20261001/scores_laneB.txt",
+     "scripts/distill/runs/skeptic1/SCORES_12CLIP_LOSSLESS.txt",
+     "scripts/distill/runs/skeptic1/SCORES_ORACLEM.txt",
+     "scripts/distill/runs/skeptic1/SCORES_STACK_lossless.txt"
+    ]
+   },
+   "mstudent2_step800_deliv_ll": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.2464,
+    "lpips": 0.396496,
+    "sharp": 0.028548,
+    "gtSharp": 0.050529,
+    "rightPSNR": 15.0831,
+    "n": 38,
+    "path": "outputs/beyond_distil_mamba_scaled/clips/0301_mstudent2_step800_deliv_ll/0301_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/beyond_distil_mamba_scaled/SCORES_12CLIP_DELIV.txt",
+     "scripts/distill/runs/beyond_distil_mamba_scaled/score_12clip_deliv.log",
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt",
+     "scripts/distill/runs/rung_check_20261001/scores_laneB.txt"
+    ]
+   },
+   "deliv_g100_T5nat": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.2464,
+    "lpips": 0.399416,
+    "sharp": 0.028343,
+    "gtSharp": 0.050529,
+    "rightPSNR": 15.0913,
+    "n": 38,
+    "path": "outputs/finalcheck_20261004/speed/clips/0301_deliv_g100_T5nat/0301_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_POSTHOC_T5G100NAT.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J1c_LPIPS_0301.txt",
+     "scripts/distill/runs/more_20261004/temporal/SCORES_LPIPS_T2_0301.txt"
+    ]
+   },
+   "origin_g100_T5pad": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.2464,
+    "lpips": 0.441635,
+    "sharp": 0.022816,
+    "gtSharp": 0.050529,
+    "rightPSNR": 15.5264,
+    "n": 38,
+    "path": "outputs/finalcheck_20261004/speed/clips/0301_origin_g100_T5pad/0301_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_0301.txt"
+    ]
+   },
+   "deliv_g100_T5pad": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.2464,
+    "lpips": 0.398857,
+    "sharp": 0.028078,
+    "gtSharp": 0.050529,
+    "rightPSNR": 15.1229,
+    "n": 38,
+    "path": "outputs/finalcheck_20261004/speed/clips/0301_deliv_g100_T5pad/0301_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_T5G100_4clip.txt",
+     "scripts/distill/runs/more_20261004/fewer_steps/SCORES_01a_0301early.txt",
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_0301.txt"
+    ]
+   },
+   "AYS8_origin_g101": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.2464,
+    "lpips": 0.403822,
+    "sharp": 0.02638,
+    "gtSharp": 0.050529,
+    "rightPSNR": 15.2828,
+    "n": 38,
+    "path": "outputs/more_20261004/judge/ays/clips/0301_AYS8_origin_g101/0301_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_0301.txt"
+    ]
+   }
+  }
+ },
+ "means": {
+  "origin_ll": 0.39325383333333325,
+  "AYS8_origin_g101": 0.382794,
+  "mstudent2_step800_deliv_ll": 0.3804335833333334,
+  "deliv_g100_T5pad": 0.38182125000000006,
+  "origin_g100_T5pad": 0.39539491666666665,
+  "deliv_g100_T5nat": 0.38154841666666667,
+  "s25_ll": 0.37860716666666666
+ }
+}

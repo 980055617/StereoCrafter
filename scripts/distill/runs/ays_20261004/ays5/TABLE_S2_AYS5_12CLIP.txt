@@ -1,0 +1,47 @@
+ays_20261004 / ays5 -- deliverable T5@1.00 vs origin with the Align-Your-Steps 5-evaluation schedule (AYS5)
+scorer scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py UNCHANGED, SCORE_STEP=4, FFV1 renders; bootstrap: percentile, 10000 resamples of clips, numpy default_rng(20261004) fresh per contrast; sign test exact two-sided (ties dropped); sign-flip exact over all 2^n sign assignments
+
+AYS5-origin render mode (C0 control outcome): reuse
+REPRODUCTION GATES stage S2 (|dLPIPS| <= 2e-6 on the 6-dp ROW values, same offset and n, against every earlier score of the same file)
+  S2 0042: PASS (7 reference comparisons)
+  S2 0052: PASS (8 reference comparisons)
+  S2 0125: PASS (7 reference comparisons)
+  S2 0128: PASS (7 reference comparisons)
+  S2 0141: PASS (7 reference comparisons)
+  S2 0147: PASS (8 reference comparisons)
+  S2 0170: PASS (7 reference comparisons)
+  S2 0204: PASS (8 reference comparisons)
+  S2 0225: PASS (7 reference comparisons)
+  S2 0251: PASS (7 reference comparisons)
+  S2 0259: PASS (7 reference comparisons)
+  S2 0301: PASS (8 reference comparisons)
+
+=== STEP 2 PRIMARY (pre-registered): deliverable T5@1.00 pad8 vs AYS5 origin @1.00 pad8 -- same 5 evaluations/window, same per-window noise ===
+PRIMARY   [deliv_g100_T5pad - AYS5pad8_origin_g100]  n=12
+  per clip: 0042:-0.0035 0052:-0.0063 0125:-0.0108 0128:-0.0159 0141:-0.0127 0147:-0.0013 0170:-0.0044 0204:-0.0196 0225:-0.0149 0251:-0.0095 0259:-0.0030 0301:-0.0323
+  mean -0.01118  negative on 12/12  worst 0147 -0.0013  boot95 [-0.01632,-0.00680]  t95 [-0.01678,-0.00559]  p_sign 0.00049  p_signflip 0.00049
+  means: deliv_g100_T5pad 0.3818  AYS5pad8_origin_g100 0.3930   sharpness ratio a/b mean 1.141
+  VERDICT: negative on 12/12 (need >= 10; VOID clips count as not negative: none), bootstrap 95% CI upper -0.00680 (need < 0)  ->  CLAIM HOLDS
+
+--- step 2 secondary (descriptive; the judge's 12-clip rule is applied to AYS5 vs Karras-T5 on origin) ---
+AYS5 vs Karras-T5, both origin @1.00 pad8 (same cost, same noise)   [AYS5pad8_origin_g100 - origin_g100_T5pad]  n=12
+  per clip: 0042:-0.0016 0052:-0.0010 0125:-0.0035 0128:-0.0023 0141:-0.0004 0147:-0.0003 0170:-0.0032 0204:-0.0010 0225:-0.0018 0251:-0.0015 0259:-0.0015 0301:-0.0105
+  mean -0.00239  negative on 12/12  worst 0147 -0.0003  boot95 [-0.00409,-0.00125]  t95 [-0.00413,-0.00065]  p_sign 0.00049  p_signflip 0.00049
+  means: AYS5pad8_origin_g100 0.3930  origin_g100_T5pad 0.3954   sharpness ratio a/b mean 1.006
+  judge 12-clip rule (mean12 <= -0.002 and no clip > +0.005): PASS (free gain)
+AYS5 origin @1.00 pad8 (5 evals) vs deployed origin 8x2@1.01 (16 evals)   [AYS5pad8_origin_g100 - origin_ll]  n=12
+  per clip: 0042:-0.0004 0052:-0.0002 0125:-0.0014 0128:-0.0004 0141:-0.0006 0147:-0.0001 0170:-0.0014 0204:+0.0019 0225:+0.0008 0251:+0.0002 0259:+0.0026 0301:-0.0039
+  mean -0.00025  negative on 8/12  worst 0259 +0.0026  boot95 [-0.00119,+0.00065]  t95 [-0.00131,+0.00081]  p_sign 0.38770  p_signflip 0.63232
+  means: AYS5pad8_origin_g100 0.3930  origin_ll 0.3933   sharpness ratio a/b mean 0.998
+deliverable T5@1.00 UNPADDED (what ships) vs AYS5 origin pad8 (window 0 paired only)   [deliv_g100_T5nat - AYS5pad8_origin_g100]  n=12
+  per clip: 0042:-0.0022 0052:-0.0066 0125:-0.0104 0128:-0.0161 0141:-0.0132 0147:-0.0017 0170:-0.0057 0204:-0.0199 0225:-0.0153 0251:-0.0094 0259:-0.0053 0301:-0.0317
+  mean -0.01146  negative on 12/12  worst 0147 -0.0017  boot95 [-0.01644,-0.00716]  t95 [-0.01689,-0.00603]  p_sign 0.00049  p_signflip 0.00049
+  means: deliv_g100_T5nat 0.3815  AYS5pad8_origin_g100 0.3930   sharpness ratio a/b mean 1.145
+consistency: deliverable T5pad vs origin Karras-T5pad (judge J4a: -0.01357, 12/12)   [deliv_g100_T5pad - origin_g100_T5pad]  n=12
+  per clip: 0042:-0.0051 0052:-0.0072 0125:-0.0143 0128:-0.0183 0141:-0.0131 0147:-0.0016 0170:-0.0077 0204:-0.0206 0225:-0.0168 0251:-0.0110 0259:-0.0045 0301:-0.0428
+  mean -0.01357  negative on 12/12  worst 0147 -0.0016  boot95 [-0.02018,-0.00840]  t95 [-0.02052,-0.00663]  p_sign 0.00049  p_signflip 0.00049
+  means: deliv_g100_T5pad 0.3818  origin_g100_T5pad 0.3954   sharpness ratio a/b mean 1.148
+context: deliverable T5pad (5 evals) vs deployed origin (16 evals)   [deliv_g100_T5pad - origin_ll]  n=12
+  per clip: 0042:-0.0039 0052:-0.0065 0125:-0.0122 0128:-0.0163 0141:-0.0133 0147:-0.0014 0170:-0.0058 0204:-0.0177 0225:-0.0141 0251:-0.0093 0259:-0.0005 0301:-0.0362
+  mean -0.01143  negative on 12/12  worst 0259 -0.0005  boot95 [-0.01720,-0.00670]  t95 [-0.01758,-0.00529]  p_sign 0.00049  p_signflip 0.00049
+  means: deliv_g100_T5pad 0.3818  origin_ll 0.3933   sharpness ratio a/b mean 1.138

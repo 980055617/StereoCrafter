@@ -1,0 +1,13 @@
+PASS 0042: mine UNREG 0.427446 vs ROW 0.427446 (|d| 2.7e-07) offset mine (-12,-12) n 38 vs ROW (-12,-12) n 38  sharp 0.008857  [scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0042.txt]
+PASS 0052: mine UNREG 0.446479 vs ROW 0.446479 (|d| 2.2e-07) offset mine (-12,-12) n 38 vs ROW (-12,-12) n 38  sharp 0.012837  [scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0052.txt, scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0052.txt]
+PASS 0125: mine UNREG 0.478512 vs ROW 0.478512 (|d| 1.7e-07) offset mine (-12,-12) n 38 vs ROW (-12,-12) n 38  sharp 0.009391  [scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0125.txt]
+PASS 0128: mine UNREG 0.405094 vs ROW 0.405094 (|d| 2.8e-07) offset mine (-12,-12) n 38 vs ROW (-12,-12) n 38  sharp 0.013428  [scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0128.txt]
+PASS 0141: mine UNREG 0.480710 vs ROW 0.480710 (|d| 3.6e-07) offset mine (-12,-12) n 38 vs ROW (-12,-12) n 38  sharp 0.004863  [scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0141.txt]
+PASS 0147: mine UNREG 0.526828 vs ROW 0.526828 (|d| 1.1e-07) offset mine (-12,-12) n 38 vs ROW (-12,-12) n 38  sharp 0.006189  [scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0147.txt, scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0147.txt]
+PASS 0170: mine UNREG 0.250342 vs ROW 0.250342 (|d| 6.1e-08) offset mine (-28,0) n 38 vs ROW (-28,0) n 38  sharp 0.016192  [scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0170.txt]
+PASS 0204: mine UNREG 0.207254 vs ROW 0.207254 (|d| 1.4e-07) offset mine (-28,0) n 38 vs ROW (-28,0) n 38  sharp 0.006481  [scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0204.txt, scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_regime_0204.txt]
+PASS 0225: mine UNREG 0.275865 vs ROW 0.275865 (|d| 3.1e-07) offset mine (-28,0) n 38 vs ROW (-28,0) n 38  sharp 0.011658  [scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0225.txt]
+PASS 0251: mine UNREG 0.346204 vs ROW 0.346204 (|d| 2.7e-07) offset mine (-28,0) n 38 vs ROW (-28,0) n 38  sharp 0.008331  [scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0251.txt]
+PASS 0259: mine UNREG 0.440179 vs ROW 0.440179 (|d| 2.1e-08) offset mine (-28,0) n 38 vs ROW (-28,0) n 38  sharp 0.031907  [scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0259.txt]
+PASS 0301: mine UNREG 0.431153 vs ROW 0.431153 (|d| 4.9e-08) offset mine (-28,0) n 38 vs ROW (-28,0) n 38  sharp 0.023347  [scripts/distill/runs/ays_20261004/ays5/SCORES_AYS5_S2_0301.txt, scripts/distill/runs/more_20261004/judge/SCORES_J3c_AYS_0301.txt]
+R0' PASS: 12/12 checked within 1e-4 (max |d| 3.6e-07); failing none; unchecked none

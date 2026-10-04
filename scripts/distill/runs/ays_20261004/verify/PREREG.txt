@@ -1,0 +1,176 @@
+PRE-REGISTRATION -- ays_20261004 / lane "verify" (GPU 1; scoring only: NO render, no checkpoint opened)
+Written 2026-10-05 01:10 JST (last pre-scoring edit 01:14; no scorer call of this lane had started), BEFORE any scorer call.  Not edited after the first scorer call; later
+additions go in dated ADDENDUM sections at the bottom.
+Files: scripts/distill/runs/ays_20261004/verify/ and outputs/ays_20261004/verify/ (new dirs only).  No tracked file is
+edited.  Every other lane's script is used READ-ONLY (run from its own path, never pointed at its own output dir).
+Existing outputs are never overwritten or deleted.
+
+PURPOSE  Re-score independently, from the renders on disk: (1) the 12-clip primary contrast deliverable T5@1.00 pad8
+minus AYS5 origin @1.00 pad8 (unregistered); (2) two clips of every registered contrast; (3) RNG pairing on two clips.
+Then write which thesis sentence each result supports, the final thesis table, and whether re-distilling at
+AYS-spaced sigmas (~5.6 GPU-h) is justified.
+
+NOT BLIND.  Read before writing this file: judge PREREG.txt (ADDENDA 1-6), TABLE_J3c_AYS_12CLIP / _4CLIP,
+TABLE_J4_MATCHED_SAMPLER, TABLE_J2_TIMING_576; ays5 lane PREREG.txt (ADDENDA 1-3), TABLE_S2_AYS5_12CLIP,
+TABLE_S3_AYS5_FULL, PAIRING_S1; robust lane PREREG.txt (ADDENDA 1-2), TABLE_REG_v1_final, TABLE_TEMPORAL_v1;
+eval_robustness RESULTS.txt; finalcheck speed TABLE_TIMING_final and PREREG G3/G7; mamba_scope TABLE_v1;
+beyond_distil_mamba_scaled/chainA_train.sh.  So every unregistered and registered value re-scored here is already
+known to me: V1-V3 are REPRODUCTIONS, not blind tests.  New measurements: V4 (flicker of AYS5 origin and of the
+AYS5-sigma deliverable; none exists anywhere) and the registered AYS8_origin_g100 values on 2 clips (V2, descriptive).
+RULE SLIP already incurred before this file: one read-only `python3` JSON read of another lane's file (deep_20261004
+scale_gt spec_main_v1.json, to estimate how long GPU 1 stays locked) ran with the system python before conda was
+activated.  Nothing was written.  A second slip at ~01:11 (still before this file was final and before any scorer
+call): a stray empty `python3 - <<EOF` (no code) was run with the system python in a shell line that then edited
+build_rows_verify_v1.py with sed.  It executed nothing.  Every later python runs in the stereocrafter env.
+
+=====================================================================================================================
+RENDERS (lossless FFV1, read only; path <root>/clips/<c>_<label>/<c>_inpainting_results_sbs.mkv)
+=====================================================================================================================
+  origin_ll                  Karras origin 8 steps @1.01  (8 calls x batch 2 = 16 / window)  outputs/beyond4_lossless
+  AYS8_origin_g101           AYS8 origin @1.01            (8 x 2 = 16)                         outputs/more_20261004/judge/ays
+  AYS8_origin_g100           AYS8 origin @1.00            (8 x 1 = 8)                          outputs/ays_20261004/ays5
+                             (0204 from 0204_AYS8_origin_g100_r1; the EMPTY dir 0204_AYS8_origin_g100 is never read)
+  AYS5pad8_origin_g100       AYS5 origin @1.00, RNG pad 8 (5 x 1 = 5)   MODE_S1 = reuse: outputs/more_20261004/judge/ays
+                             for 0052 0147 0204 0301, outputs/ays_20261004/ays5 for the other 8 clips
+  mstudent2_step800_deliv_ll deliverable 8 steps @1.01    (16)                                 outputs/beyond_distil_mamba_scaled
+  deliv_g100_T5pad           deliverable T5@1.00, pad 8   (5)                                  outputs/finalcheck_20261004/speed
+  deliv_g100_T5nat           deliverable T5@1.00 unpadded = what ships (5)                     outputs/finalcheck_20261004/speed
+  origin_g100_T5pad          origin Karras-T5@1.00, pad 8 (5)                                  outputs/finalcheck_20261004/speed
+  s25_ll                     origin 25 steps (teacher; context only)                           outputs/skeptic1_stack
+  AYS5pad8_deliv_g100        deliverable with the AYS5 sigmas @1.00 pad 8 (5), ONLY 0052 0147 0204 0301
+                                                                                                outputs/ays_20261004/ays5
+Scorers, UNCHANGED, run from their own paths, md5-guarded at the start of the batch:
+  S_U  scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py                 a6695eb066971e1ca211e4ad9c85fac7  SCORE_STEP=4
+  S_R  scripts/distill/runs/more_20261004/eval_robustness/score_registered_v1.py c9532d5a5cde42f7024a2caebb855c3f  SCORE_STEP=4
+  S_T  scripts/distill/runs/finalcheck_20261004/validate/score_temporal_ll.py    24bf1bcbdf11b454038f89bd96f70701  STEP unset
+GPU: ONE batch (batch_verify_v1.sh) as a transient systemd user unit holding ONE outer `flock /tmp/claude-gpu1.lock`,
+CUDA_VISIBLE_DEVICES=1 for every GPU step, no inner flock.  Order V1 -> V2 -> V4.  (ays5 scored on GPU 0 and robust on
+GPU 1, so V1 is also a cross-GPU reproduction of the ays5 values.)
+
+=====================================================================================================================
+V0 BOOKKEEPING (CPU, before the batch): for every render V1/V2/V4 read, the first field of its .mkv.md5 equals the sbs
+   md5 in writer_md5.txt.  A mismatch is reported and flags that render's numbers (it does not stop the batch).
+=====================================================================================================================
+
+V1  UNREGISTERED 12-CLIP RE-SCORE (S_U; one call per clip) -> SCORES_V1_<clip>.txt in this dir
+    Rows, in this order: origin_ll, AYS5pad8_origin_g100, deliv_g100_T5pad, AYS8_origin_g100.
+    GATE G1: every ROW lpips within 2e-6 of the ays5 lane's ROW value for the same file (SCORES_AYS5_S2_<c> for the
+      first three rows, SCORES_AYS5_S3_<c> for AYS8_origin_g100), with the same (dy,dx) and n.  A clip that fails G1
+      is re-scored once (tag V1r, its own file); if it fails again it is VOID (counts as not negative, left out of the
+      CI) and the failure is quoted.
+    PRIMARY  d_c = LPIPS(deliv_g100_T5pad) - LPIPS(AYS5pad8_origin_g100), 12 clips.  Reported: per-clip d, mean12,
+      clips d<0, Student-t 95 % CI (the CI that goes in the thesis table: the percentile bootstrap under-covers at
+      n=12, eval_robustness RESULTS.txt section 3), the percentile bootstrap with the ays5 lane's exact spec (10000
+      resamples of clip indices, numpy default_rng(20261004), np.percentile linear, 2.5/97.5) as a check of my code,
+      exact two-sided sign test (ties dropped), exact sign-flip over 2^12 (two-sided on |mean|, tol 1e-15).
+    VERDICT  "CONFIRMED" iff d<0 on >= 10/12 AND bootstrap upper < 0 AND |mean12 - (-0.01118)| <= 1e-5 (the ays5
+      value).  Otherwise "NOT CONFIRMED", with the differing clips quoted.
+    Secondary from the same calls (descriptive; must reproduce the ays5 tables): 3a = deliv_g100_T5pad -
+      AYS8_origin_g100 (-0.00125, 7/12); S-b = AYS5pad8_origin_g100 - origin_ll (-0.00025, 8/12).
+
+V2  REGISTERED, TWO CLIPS: 0042 and 0259 (S_R; one process per clip) -> outputs/ays_20261004/verify/score_reg_v1/
+    Why these two (fixed now): they decide the registered counts.  0259 is the only clip whose sign flips under
+    registration for C6 (+0.0008) and C4 (+0.0019), and it is positive for C1/C5; 0042 is the clip nearest zero for
+    C6 (REG_FRAME -0.0003) and C2 (-0.0021) and positive for C1/C5/C8.  0125 is excluded (its per-frame registration
+    is ill-posed and needs the widened grid).
+    Rows (ROWS_reg_v1.json, written by build_rows_verify_v1.py from the ROW lines of the score files; origin_ll first
+    because S_R asserts the scoring window from the first label): origin_ll, AYS8_origin_g101,
+    mstudent2_step800_deliv_ll, deliv_g100_T5pad, origin_g100_T5pad, deliv_g100_T5nat, s25_ll, AYS5pad8_origin_g100,
+    AYS8_origin_g100.
+    GATE G2: for every (clip,row) the robust lane also scored (outputs/ays_20261004/robust/score_reg_v1/<c>.json and
+      score_reg_ays5_v1/<c>.json): all 6 lpips_clip variants within 1e-5, md5_left equal, registration arrays
+      (clip_ddy/ddx, smooth_ddy/ddx, raw_ddy/ddx) identical; md5_left identical across my 9 rows of a clip; UNREG of
+      every row within 2e-6 of its published ROW lpips.  One retry (tag v1r) on failure, then reported as failed.
+    Reported per clip under UNREG / REG_CLIP / REG_FRAME: C1 deliv 8x2 - AYS8@1.01; C2 T5pad - origin T5pad;
+      C3 AYS8@1.01 - Karras origin; C4 deliv 8x2 - Karras origin; C5 T5pad - AYS8@1.01; C6 T5pad - AYS5 origin;
+      C6b AYS5 origin - origin T5pad; C7 s25 - AYS8@1.01; C8 T5nat - AYS8@1.01; and NEW (descriptive, 2 clips only)
+      C9 = T5pad - AYS8_origin_g100 (= the ays5 lane's 3a, registered).  Sign agreement with the robust lane per clip.
+
+V3  PAIRING (CPU; own code check_pairing_verify_v1.py) on 0204 and 0259 -> PAIRING_V3.txt
+    Why: 0204 mixes provenances (the judge's GPU-1 AYS5 render and the ays5 lane's bit-identical GPU-0 C0 re-render,
+    the _r1 AYS8@1.00 retry, the 3b AYS5 deliverable, and finalcheck's 8-step @1.01 renders that carry the speed_log
+    link to origin_ll and the deliverable 8x2); 0259 is the clip that decides the registered counts.
+    (a) per-window init_md5 identical, window for window and in number, across every RNG-paired render with a
+        speed_log: AYS5 origin (+ the C0 duplicate on 0204), AYS8@1.00, AYS8@1.01, deliverable and origin T5pad,
+        finalcheck 8-step renders, AYS5 deliverable (0204); T5nat identical at window 0 only (expected to differ later).
+    (b) config per render: guid, sigmas (exact), calls/window, batch sizes, pad draws, rng_pad_to, unet_state.
+    (c) ffmpeg rgb24 decode of every render read for the clip (incl. origin_ll, deliverable 8x2, s25_ll): full-array
+        md5 == writer md5; left-half md5 identical across all renders; frame counts equal.
+    (d) 0204 only: origin_ll md5 == finalcheck 0204_origin_g101_s8 md5 and mstudent2_step800_deliv_ll md5 ==
+        finalcheck 0204_deliv_g101_s8 md5 (ties the 16-evaluation renders, which have no speed_log, to the 8-step
+        stream).  On 0259 this tie rests on finalcheck G3/G7 (verified on 0204/0301), stated as such.
+    PASS = every check; any failure quoted.
+
+V4  FLICKER (S_T; the only NEW measurement; descriptive, gates nothing in V1-V3; LAST in the batch)
+    Rows per clip, origin first: origin_ll, deliv_g100_T5pad, AYS5pad8_origin_g100, and on 0052 0147 0204 0301 also
+    AYS5pad8_deliv_g100.  Out outputs/ays_20261004/verify/temporal_v1/<c>.json (refuses an existing file).
+    GATE T1': "[temporal] RAFT loaded" in every log; origin_ll and deliv_g100_T5pad warp, tLP, seam and nonseam within
+      2e-5 of outputs/ays_20261004/robust/temporal_v1/<c>.json with equal t0/l0/n; a NaN warp = NOT EVALUATED.
+    Reported: AYS5 origin warp increase vs Karras origin = mean12 warp(AYS5)/mean12 warp(origin_ll) - 1 (the
+      definition behind V1's +22.4 %) and clips higher k/12; tLP likewise; deliverable T5pad vs AYS5 origin, paired
+      warp ratio of means and k/12 (the flicker side of the primary 5-evaluation claim); AYS5 deliverable vs deliverable
+      T5pad (4 clips; the flicker cost of the 3b schedule swap).
+    PREDICTION (written now, from b_gen = 1.5475 and the S2 sharpness ratio AYS5 origin / origin_ll = 0.998): AYS5
+      origin warp about -0.3 % vs Karras origin, i.e. NOT the deliverable's +22 %.
+
+=====================================================================================================================
+THESIS TABLE (TABLE_FINAL.txt; definitions fixed now)
+=====================================================================================================================
+ rows   Karras origin 8x2 @1.01 | AYS8 origin 8x2 @1.01 | AYS8 origin 8x1 @1.00 (context) | AYS5 origin 5x1 @1.00 |
+        deliverable 8x2 @1.01 | deliverable T5 5x1 @1.00 (paired statistics from T5pad; absolute LPIPS and flicker
+        also for T5nat = what ships) | AYS5-sigma deliverable 5x1 @1.00 (4 regime clips only; flagged)
+ cols   12-clip mean LPIPS UNREG (V1 where re-scored, else the gated published ROW values) and REG_FRAME (robust
+        lane per-clip JSONs, 0125 from the widened file as in its primary analysis; my V2 2-clip values are a
+        reproduction check only) | clips better than the matching-cost best origin, UNREG and REG_FRAME (deliverable
+        8x2 vs AYS8 origin 8x2 @1.01; deliverable T5 vs AYS5 origin; AYS8 @1.01 vs Karras origin; AYS5 origin vs
+        Karras-T5 origin) | Student-t 95 % CI of that paired delta (percentile bootstrap alongside) | UNet evaluations
+        per window as calls x batch | flicker warp vs Karras origin (ratio of 12-clip means - 1; robust
+        TABLE_TEMPORAL_v1 or V4)
+
+=====================================================================================================================
+Q3  RE-DISTILLATION AT AYS-SPACED SIGMAS (~5.6 GPU-h = mstudent2's measured cost, more_20261004/teacher/PREREG.txt)
+=====================================================================================================================
+ Criteria fixed now.  "Justified now" only if ALL hold:
+  (i)   a thesis sentence would change under a plausible outcome;
+  (ii)  the plausible 12-clip upside exceeds the re-seed proxy median 0.0007 (eval_robustness
+        SUPPLEMENT_seed_yardstick.txt);
+  (iii) no cheaper experiment answers the same question first.
+ Upper-bound reasoning used: origin's own AYS5-over-Karras-T5 gain at 5 evaluations (S-a, -0.00239 on 12 clips) is
+ taken as the most the schedule can be worth at 5 evaluations; the no-retrain swap (3b, -0.00195 on 4 clips) already
+ captures part of it.  Checked before the verdict: the deliverable's actual distillation sigmas
+ (beyond_distil_mamba_scaled/chainA_train.sh: BD_STEP_SUBSET=4,5,6 of the 8-step Karras grid, M=4 substeps).
+
+BUDGET  GPU 1 only, one lock acquisition: V1 ~12 x 70 s, V2 ~2 x 150 s, V4 ~12 x 150 s (about 50 GPU-min).
+Training loss is never used; no checkpoint is opened.  Every number reported is quoted with its file.
+
+ADDENDUM 1 -- 2026-10-05 01:18 JST.  Record only; NO criterion changes.  Written while the GPU batch is still waiting for
+/tmp/claude-gpu1.lock (batch_verify_v1.log: QUEUED 01:13:40, no BATCH_START yet), i.e. BEFORE any scorer call.
+ (a) V3 v1 (check_pairing_verify_v1.py) crashed before writing anything:
+     "subprocess.CalledProcessError: Command '[... ffprobe ... outputs/skeptic1_stack/clips/0204_s25_ll/0204_inpainting_results_sbs.mkv]'
+     returned non-zero exit status 1" ("No such file or directory").  The 0204 s25 render lives in
+     outputs/beyond4_lossless/clips/0204_s25_ll (as in the robust lane's ROWS_pass1.json); the RENDERS table above is wrong
+     for 0204's s25 only.  V2 is unaffected (its clips 0042/0259 have s25 in outputs/skeptic1_stack, per their ROW lines).
+ (b) The one allowed retry, check_pairing_verify_v2.py (= v1 with only that path resolved), wrote PAIRING_V3.txt:
+     SUMMARY checks_failed=0 (0204: 12 speed_log renders paired 14/14 or window-0 for T5nat, 15 decodes == writer md5,
+     1 distinct left half, origin_ll == finalcheck origin_g101_s8 and deliverable 8x2 == deliv_g101_s8, judge AYS5 ==
+     ays5 C0 re-render; 0259: 8 speed_log renders paired, 11 decodes == writer md5, 1 distinct left half).
+ (c) The V1 analysis code was dry-run (printed only, nothing written) on the ays5 lane's own S2/S3 ROW lines: it
+     reproduces their primary mean -0.01118, boot95 [-0.01632,-0.00680], t95 [-0.01678,-0.00559], 3a and S-b exactly.
+
+ADDENDUM 2 -- 2026-10-05 02:05 JST.  RECORD ONLY (written after all scores; no criterion changed at any point).
+ GPU: one acquisition of /tmp/claude-gpu1.lock, BATCH_START 01:23:22 -> BATCH_DONE 02:04:26 (41 min: V1 14.4 min, V2 3.6 min,
+   V4 23.0 min); queued from 01:13:40 behind the deep_20261004 scale_gt contrast training.
+ V1 (TABLE_V1_UNREG.txt): G1 PASS 12/12, all 48 ROW cells equal the ays5 lane's GPU-0 values at the printed 6 dp, same offsets
+   and n.  PRIMARY deliv_g100_T5pad - AYS5pad8_origin_g100 = -0.01118, 12/12, boot95 [-0.01632,-0.00680], t95 [-0.01678,
+   -0.00559], p_sign = p_flip = 0.00049 -> CONFIRMED.  3a -0.00125 (7/12) and S-b -0.00025 (8/12) reproduced.
+ V2 (TABLE_V2_REG.txt): G2 PASS on 0042 and 0259 -- every shared (row, variant) equals the robust lane's value (max |d| 0.0),
+   registration arrays identical, one md5_left across the 9 rows; UNREG within 4.9e-7 of the published ROW lines.  Every
+   per-clip sign of C1-C8, C6, C6b agrees with the robust lane (incl. C6 0259 +0.0008 and C4 0259 +0.0019 under REG_FRAME).
+   NEW C9 (= 3a registered, 2 clips only): 0042 +0.0065, 0259 +0.0087 (REG_FRAME); both clips are positive unregistered too.
+ V3 (PAIRING_V3.txt, v2 script): PASS, see ADDENDUM 1.
+ V4 (TABLE_V4_TEMPORAL.txt): T1' PASS 12/12 (origin_ll and deliverable T5pad equal the robust lane's values, max |d| 0.0).
+   AYS5 origin warp vs Karras origin -1.0 % (higher on 4/12; prediction -0.3 %); deliverable T5pad vs AYS5 origin +22.6 %
+   (12/12), tLP +9.4 % (12/12); AYS5-sigma deliverable vs deliverable T5pad (4 regime clips) warp +2.1 % (3/4), tLP -0.4 %.
+ FINAL (TABLE_FINAL.txt): analyze_verify_v1.py FINAL crashed before writing anything ("KeyError: '0052'" at the V1-vs-robust
+   cross-check, because AYS8_origin_g100 has no robust row); analyze_verify_v2.py = v1 with only that membership test fixed
+   produced TABLE_FINAL.txt/.json.  V1, V2 and V4 tables come from v1 (v2's V1/V2/V4 code is identical).

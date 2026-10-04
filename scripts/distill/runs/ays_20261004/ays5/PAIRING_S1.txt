@@ -1,0 +1,14 @@
+ays5 pairing check stage=S1 mode=reuse (reference: finalcheck <c>_deliv_g100_T5pad)
+PASS 0042 0042_AYS5pad8_origin_g100: init_md5 14/14 identical to 0042_deliv_g100_T5pad; n_windows=14 calls/win=[5] batch=[1] pad_draws=42 guid=1.0 unet_state=None dir=outputs/ays_20261004/ays5/clips/0042_AYS5pad8_origin_g100
+PASS 0052 0052_AYS5pad8_origin_g100: init_md5 15/15 identical to 0052_deliv_g100_T5pad; n_windows=15 calls/win=[5] batch=[1] pad_draws=45 guid=1.0 unet_state=None dir=outputs/more_20261004/judge/ays/clips/0052_AYS5pad8_origin_g100
+PASS 0125 0125_AYS5pad8_origin_g100: init_md5 15/15 identical to 0125_deliv_g100_T5pad; n_windows=15 calls/win=[5] batch=[1] pad_draws=45 guid=1.0 unet_state=None dir=outputs/ays_20261004/ays5/clips/0125_AYS5pad8_origin_g100
+PASS 0128 0128_AYS5pad8_origin_g100: init_md5 14/14 identical to 0128_deliv_g100_T5pad; n_windows=14 calls/win=[5] batch=[1] pad_draws=42 guid=1.0 unet_state=None dir=outputs/ays_20261004/ays5/clips/0128_AYS5pad8_origin_g100
+PASS 0141 0141_AYS5pad8_origin_g100: init_md5 14/14 identical to 0141_deliv_g100_T5pad; n_windows=14 calls/win=[5] batch=[1] pad_draws=42 guid=1.0 unet_state=None dir=outputs/ays_20261004/ays5/clips/0141_AYS5pad8_origin_g100
+PASS 0147 0147_AYS5pad8_origin_g100: init_md5 16/16 identical to 0147_deliv_g100_T5pad; n_windows=16 calls/win=[5] batch=[1] pad_draws=48 guid=1.0 unet_state=None dir=outputs/more_20261004/judge/ays/clips/0147_AYS5pad8_origin_g100
+PASS 0170 0170_AYS5pad8_origin_g100: init_md5 14/14 identical to 0170_deliv_g100_T5pad; n_windows=14 calls/win=[5] batch=[1] pad_draws=42 guid=1.0 unet_state=None dir=outputs/ays_20261004/ays5/clips/0170_AYS5pad8_origin_g100
+PASS 0204 0204_AYS5pad8_origin_g100: init_md5 14/14 identical to 0204_deliv_g100_T5pad; n_windows=14 calls/win=[5] batch=[1] pad_draws=42 guid=1.0 unet_state=None dir=outputs/more_20261004/judge/ays/clips/0204_AYS5pad8_origin_g100
+PASS 0225 0225_AYS5pad8_origin_g100: init_md5 14/14 identical to 0225_deliv_g100_T5pad; n_windows=14 calls/win=[5] batch=[1] pad_draws=42 guid=1.0 unet_state=None dir=outputs/ays_20261004/ays5/clips/0225_AYS5pad8_origin_g100
+PASS 0251 0251_AYS5pad8_origin_g100: init_md5 14/14 identical to 0251_deliv_g100_T5pad; n_windows=14 calls/win=[5] batch=[1] pad_draws=42 guid=1.0 unet_state=None dir=outputs/ays_20261004/ays5/clips/0251_AYS5pad8_origin_g100
+PASS 0259 0259_AYS5pad8_origin_g100: init_md5 14/14 identical to 0259_deliv_g100_T5pad; n_windows=14 calls/win=[5] batch=[1] pad_draws=42 guid=1.0 unet_state=None dir=outputs/ays_20261004/ays5/clips/0259_AYS5pad8_origin_g100
+PASS 0301 0301_AYS5pad8_origin_g100: init_md5 14/14 identical to 0301_deliv_g100_T5pad; n_windows=14 calls/win=[5] batch=[1] pad_draws=42 guid=1.0 unet_state=None dir=outputs/more_20261004/judge/ays/clips/0301_AYS5pad8_origin_g100
+SUMMARY stage=S1 checked=12 failed=0

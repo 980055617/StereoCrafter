@@ -1,0 +1,17 @@
+ays_20261004 / verify -- FINAL THESIS TABLE (12 test clips; lossless FFV1; LPIPS-alex vs the real right eye, SCORE_STEP=4)
+UNREG: score_clip_ll.py (V1 re-score for Karras/AYS8@1.00/AYS5/T5pad; robust R0-gated values for the rest).  REG_FRAME: score_registered_v1.py per-frame registered GT (robust lane per-clip JSONs, 0125 widened grid).  'better' = clips where the row beats its matching-cost best origin; CI = Student-t 95 % of that paired delta (percentile bootstrap in brackets).  Evaluations = UNet calls x batch per 14-frame window.  Flicker = warp error, ratio of 12-clip means vs Karras origin - 1.
+
+row                                                LPIPS     REG   vs matching-cost best origin      d UNREG better                    t95 CI (boot95)    d REG better           t95 CI REG       evals  flicker
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Karras origin 8x2 @1.01 (deployed)                0.3933  0.2432   reference                                                                                                                                 8 x 2 = 16    +0.0%
+AYS8 origin 8x2 @1.01                             0.3828  0.2317   Karras origin 8x2                 -0.0105  12/12 [-0.0155,-0.0054] ([-0.0151,-0.0067])  -0.0114  12/12 [-0.0167,-0.0062]                  8 x 2 = 16    +8.0%
+AYS8 origin 8x1 @1.00 (context)                   0.3831     n/a   n/a (best 8-eval origin known)                                                        (2 clips only, V2)                                   8 x 1 = 8      n/m
+AYS5 origin 5x1 @1.00                             0.3930  0.2431   Karras-T5 origin 5x1              -0.0024  12/12 [-0.0041,-0.0007] ([-0.0041,-0.0012])  -0.0027  12/12 [-0.0046,-0.0008]                   5 x 1 = 5    -1.0%
+deliverable 8x2 @1.01                             0.3804  0.2300   AYS8 origin 8x2                   -0.0024   9/12 [-0.0047,+0.0000] ([-0.0043,-0.0003])  -0.0018   9/12 [-0.0049,+0.0013]                  8 x 2 = 16   +22.4%
+deliverable T5 5x1 @1.00, paired (pad8)           0.3818  0.2318   AYS5 origin 5x1                   -0.0112  12/12 [-0.0168,-0.0056] ([-0.0163,-0.0068])  -0.0113  11/12 [-0.0175,-0.0051]                   5 x 1 = 5   +21.4%
+deliverable T5 5x1 @1.00, as shipped (unpadded)   0.3815  0.2312   AYS5 origin (window-0 pairing)    -0.0115  12/12 [-0.0169,-0.0060] ([-0.0164,-0.0072])                                                     5 x 1 = 5   +21.7%
+AYS5-sigma deliverable 5x1 @1.00 (n=4 ONLY)       0.3861     n/m   AYS5 origin 5x1 (4 clips)         -0.0168   4/4  [-0.0415,+0.0078] ([-0.0299,-0.0051])                                 5 x 1 = 5   +23.1% (4-clip)
+                                                 4-clip context: deliverable T5pad 0.3881, AYS5 origin 0.4029, Karras origin 0.4035; AYS5-sigma minus T5pad -0.00195 (4/4)
+
+n/a = not applicable; n/m = not measured.  AYS8 8x1 @1.00 flicker n/m (its @1.01 twin: see AYS8 8x2 row).
+Sources: TABLE_V1_UNREG.json (this lane), outputs/ays_20261004/robust/score_reg_v1*/ and score_reg_ays5_v1*/ (per-clip JSONs), outputs/ays_20261004/robust/temporal_v1/, TABLE_V4_TEMPORAL.json (this lane), ays5 SCORES_AYS5_S3_<c>.txt.

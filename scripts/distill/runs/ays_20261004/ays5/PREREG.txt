@@ -1,0 +1,176 @@
+PRE-REGISTRATION -- ays_20261004 / lane "ays5" (GPU 0)
+Written 2026-10-04 21:36 JST, BEFORE any render, scorer call or analysis of this lane.  Not edited after the first
+scorer call; later additions go in dated ADDENDUM sections at the bottom.
+Files: scripts/distill/runs/ays_20261004/ays5/ and outputs/ays_20261004/ays5/ (new dirs only).  No tracked file is
+edited.  Other lanes' scripts are used read-only or copied (copies listed below).  Existing outputs are never
+overwritten or deleted.
+
+QUESTION  At the shipped cost (5 UNet evaluations per window, guidance 1.00), does the deliverable beat origin run with
+the best 5-evaluation schedule (Align-Your-Steps, AYS5) on all 12 test clips
+(0042 0052 0125 0128 0141 0147 0170 0204 0225 0251 0259 0301)?
+
+WHAT I HAVE ALREADY SEEN (so this is NOT fully blind)
+ - judge (scripts/distill/runs/more_20261004/judge/): TABLE_J3c_AYS_12CLIP.txt, TABLE_J3c_AYS_4CLIP.txt,
+   TABLE_J4_MATCHED_SAMPLER.txt, PREREG.txt with ADDENDA 1-6, J3c_AYS_PAIRING*.txt.
+ - The PRIMARY delta on the 4 regime clips is ALREADY KNOWN, from the judge's renders that this lane reuses:
+   0052 -0.0063, 0147 -0.0013, 0204 -0.0196, 0301 -0.0323 (mean4 -0.01487, 4/4).  One third of the data is not blind.
+   The other 8 clips have no AYS5 render anywhere (outputs/more_20261004/judge/ays/clips holds AYS5 only for
+   0052 0147 0204 0301), so their primary delta is unknown to me.
+ - Known for the 8 new clips: deliverable T5pad - origin Karras-T5pad (judge J4a) 0042 -0.0051, 0125 -0.0143,
+   0128 -0.0183, 0141 -0.0131, 0170 -0.0077, 0225 -0.0168, 0251 -0.0110, 0259 -0.0045.  AYS5 vs Karras-T5 on origin
+   is known only on the 4 regime clips (-0.0010 -0.0003 -0.0010 -0.0105).
+ - A dry run of analyze_ays5_v1.py / check_pairing_ays5_v1.py on the judge's 4 regime score files (scratchpad only;
+   nothing written to this lane) reproduced the judge's 4-clip numbers (mean -0.01487, t95 [-0.0371,+0.0073],
+   p 0.125) and PASSED the pairing check of the 4 reused renders against deliv_g100_T5pad (14/14 15/15 16/16 14/14).
+
+FIXED CONFIGURATION
+ checkpoint (READ only): /mnt/ssd_data/stereocrafter_weights/_distill_injected/
+   mamba5slot_plus_stepdistil_up3_train10clip_step800_20261001.pt  md5 08cf44850b8f392efb307e3a48cd82d1
+   (re-checked at the start and end of every chain).
+ config/0160_overfit_inference_matched.json (md5 ad1387b97a56bb48c917a0d2355aace4), its own seed; lossless FFV1 writer
+   scripts/distill/runs/fulldata_v2/beyond4/infer_lossless.py (md5 bff52cfe569cf7f329f2217e2dac3486).
+ hook   infer_ll_hook_ays_v1.py = byte-identical copy of judge/infer_ll_hook_ays_v1.py (md5 48924a205766e108bd05ded5a415a86f).
+ driver run_driver_ays5_v1.sh = copy of judge/run_driver_ays_v1.sh (md5 1f7618ff76609b1cbee78d3a7259b4e5) with ONLY
+        RUN (the hook copy) and OUT (outputs/ays_20261004/ays5) changed; each render runs under
+        flock /tmp/claude-gpu0.lock with CUDA_VISIBLE_DEVICES=0; an existing output dir is skipped, never overwritten.
+ AYS5 = 700.0,11.25711441040039,1.7890000343322754,0.26404356956481934,0.0020000000949949026 (the exact strings of
+        judge/jobs_J3c_ays_regime.txt; the hook appends the trailing 0), guidance min = max = 1.00, SK_RNG_PAD_TO=8.
+ AYS8 = 700.0,32.1326904296875,8.801949501037598,3.318009376525879,1.1647257804870605,0.35714080929756165,
+        0.06827998906373978,0.0020000000949949026.
+ Deliverable comparison row = the EXISTING finalcheck render outputs/finalcheck_20261004/speed/clips/<c>_deliv_g100_T5pad
+        (T5 = 700, 7.276163, 1.167571, 0.0973877, 0.002 then 0; guidance 1.00; RNG padded to 8).  Not re-rendered.
+
+C0 CONTROL (the first GPU job; chain_S12_v1.sh)
+ Re-render 0204 AYS5pad8_origin_g100 on GPU 0 with the copied driver + hook (job line verbatim from
+ judge/jobs_J3c_ays_regime.txt).  The judge rendered 0204 on GPU 1.
+   PASS = writer md5 768339b8be14069225a409321b4c5834  -> MODE=reuse: the judge's AYS5 renders of 0052 0147 0204 0301
+          are used as they are; this lane renders the other 8.
+   FAIL -> C0b: re-render 0301 (the judge rendered it on GPU 0; md5 must be c00eb301e7e4becfa7ffea30f852527d).
+          C0b PASS -> the difference is cross-GPU only -> MODE=own: re-render 0052 and 0147 on GPU 0 as well; then ALL
+                      12 AYS5 rows come from this lane's renders (0204 = C0, 0301 = C0b); no judge render enters a number.
+          C0b FAIL -> the setup is broken -> STOP, no further render, reported.
+ The outcome is written to MODE_S1.txt by the chain and read by every later script.
+
+STEP 1 RENDERS  origin AYS5 @1.00 pad 8 on 0042 0125 0128 0141 0170 0225 0251 0259 (jobs_S1_ays5_8clip.txt), GPU 0.
+ A failed render is retried at most once, into a NEW dir (label suffix _r1, scripts versioned v2 for that path); the
+ error is quoted.
+
+P  PAIRING + CONFIGURATION CHECK (CPU, BEFORE any scorer call; check_pairing_ays5_v1.py S1 -> PAIRING_S1.txt)
+ For each of the 12 AYS5 renders used: the per-window initial-latent fingerprints (speed_log.json windows[k].init_md5)
+ are identical, window for window and in number, to finalcheck <c>_deliv_g100_T5pad AND to <c>_origin_g100_T5pad;
+ speed_log.json shows unet_state None, batch_sizes [1], unet_calls_per_window [5], pad_draws_total = 3 x n_windows,
+ rng_pad_to 8, guid 1.0, sigmas == AYS5 exactly, and the installed schedule's repr strings == AYS5 + '0.0'.
+ Any FAIL -> the chain stops before scoring; reported.
+
+STEP 2 SCORING (GPU 0 under its lock; score_ays5_v1.sh, NEW tag S2 -> SCORES_AYS5_S2_<clip>.txt in this dir)
+ scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py UNCHANGED (md5 a6695eb066971e1ca211e4ad9c85fac7),
+ SCORE_STEP=4, ONE call per clip with the rows: origin_ll (beyond4), AYS5pad8_origin_g100, deliv_g100_T5pad,
+ origin_g100_T5pad, deliv_g100_T5nat.
+ REPRODUCTION GATE: every row whose exact file was scored before (finalcheck speed SCORES_STEP1 / STEP2_4clip /
+ STEP2_EXT12 / STEP2_T5G100_4clip / POSTHOC_T5G100NAT, judge SCORES_J3c_AYS_*) must reproduce |dLPIPS| <= 2e-6 on the
+ printed 6-dp values (print rounding; the project's G0 precedent was 4.9e-7 unrounded), with the same (dy,dx) offset
+ and the same n.  A clip that fails the gate is re-scored once (tag S2r); if it fails again it is VOID: it counts as
+ NOT negative in the primary count and is left out of the CI.
+
+PRIMARY CONTRAST AND RULE (the judge's rule, fixed now)
+ d_c = LPIPS(deliv_g100_T5pad) - LPIPS(AYS5pad8_origin_g100) for each of the 12 clips; negative = deliverable better.
+ Reported: per-clip d, 12-clip mean, clips with d < 0, bootstrap 95 % CI, exact two-sided sign test, sign-flip
+ permutation p, plus the Student-t 95 % CI (only for comparability with the judge's tables).
+   bootstrap: percentile CI; 10000 resamples of the 12 clip indices with replacement; statistic = mean;
+              numpy.random.default_rng(20261004), a fresh generator per contrast; np.percentile (default linear) at 2.5/97.5.
+   sign test: exact binomial, two-sided, ties (d = 0) dropped.
+   sign-flip: exact over all 2^12 = 4096 sign assignments, two-sided on |mean| (tolerance 1e-15, as the judge).
+ CLAIM HOLDS  iff  d < 0 on >= 10 of 12 clips  AND  the bootstrap 95 % CI upper bound < 0 (strictly).
+
+SECONDARY (descriptive; gate nothing)
+ S-a AYS5 origin - Karras-T5 origin, both @1.00 pad8, 12 clips.  This is the judge's pre-declared AYS5 12-clip stage
+     (ADDENDA 3-5), which the judge did not run; its rule is applied: "free gain" iff mean12 <= -0.002 and no clip > +0.005.
+ S-b AYS5 origin (5 evals) - deployed origin 8x2@1.01 (16 evals).
+ S-c deliverable T5@1.00 UNPADDED (what ships) - AYS5 origin (window 0 paired only).
+ S-d consistency: deliv T5pad - origin T5pad must reproduce judge J4a (-0.01357, 12/12) once the gates pass.
+ S-e context: deliv T5pad - origin_ll.
+
+STEP 3 -- ONLY IF THE CLAIM HOLDS (chain_S3_v1.sh starts automatically only if the claim holds with all 12 S2 gates
+passing and no VOID clip; otherwise I decide by hand after a re-score, under the same criteria)
+ 3a render origin AYS8 @1.00 on all 12 clips (jobs_S3a_ays8g100_12clip.txt): 8 steps, no pad (8 steps consume the
+    8-step stream), batch 1, 8 calls per window.
+ 3b render the deliverable with the AYS5 sigmas @1.00 pad 8 on the 4 regime clips 0301 0204 0052 0147
+    (jobs_S3b_delivays5_4clip.txt).
+ Pairing (check_pairing_ays5_v1.py S3 -> PAIRING_S3.txt, before scoring): per-window init_md5 identical to
+    <c>_deliv_g100_T5pad for all 16 renders; AYS8@1.00 also identical to the judge's AYS8@1.01; deliverable AYS5 also
+    identical to the AYS5 origin render.  3a: unet_state None, batch [1], calls/window [8], pad_draws 0.  3b: unet_state =
+    the deliverable checkpoint, batch [1], calls/window [5], pad_draws 3 per window.
+ Scoring: ONE call per clip (tag S3): deliv_g100_T5pad, AYS8_origin_g100, AYS8_origin_g101 (judge), and on the regime
+    clips AYS5pad8_deliv_g100 + AYS5pad8_origin_g100.  Same gate, also against this lane's S2 values.
+ 3a  e_c = LPIPS(deliv_g100_T5pad) - LPIPS(AYS8_origin_g100).  "The deliverable at 5 evaluations is at least as good as
+     origin at 8" iff mean12(e) <= 0; then the equal-quality evaluation ratio is >= 8/5 = 1.6 (origin with its best known
+     8-step schedule at the same guidance still does not beat it).  Otherwise the ratio lies between 1 (AYS5 origin,
+     beaten) and 1.6.  CI / sign test / sign-flip are descriptive.  Secondary non-inferiority reading: bootstrap upper
+     <= +0.0007 (the re-seed proxy median of eval_robustness SUPPLEMENT_seed_yardstick.txt; labelled as a proxy).
+     Restated for context: the existing 5-vs-16 row deliv T5pad - AYS8 origin @1.01 = -0.00097, 7/12, t95 [-0.0035,+0.0016].
+ 3b  f_c = LPIPS(AYS5pad8_deliv_g100) - LPIPS(deliv_g100_T5pad), 4 regime clips.  "The gains stack" iff mean4 <= -0.002
+     and no clip > +0.005 (the judge's 4-clip free-gain rule).  n = 4 -> a direction check (sign-test floor p = 0.125).
+
+OPTIONAL (gates nothing; only if the claim holds and after step 3): registered-GT rescore with
+ scripts/distill/runs/more_20261004/eval_robustness/score_registered_v1.py UNCHANGED (own rows JSON in this dir,
+ origin_ll as the first label) of origin_ll, mstudent2_step800_deliv_ll, deliv_g100_T5pad, AYS5pad8_origin_g100
+ (+ AYS8_origin_g100 if rendered); reported: REG_FRAME per-clip deltas and count for the primary contrast (and 3a).
+
+BUDGET  C0 ~2 min + 8 renders ~15 min + scoring ~17 min; step 3 ~33 min renders + ~17 min scoring; optional ~16 min.
+Training loss is never used.  Checkpoints are only read.  Every number reported is quoted with its score file.
+
+ADDENDUM 1 -- 2026-10-04 22:47 JST.  Written after the step-2 verdict (TABLE_S2_AYS5_12CLIP.txt: CLAIM HOLDS) and while
+the step-3 renders run, BEFORE any S3 scorer call.  No criterion of steps 2 or 3 changes.
+ - The OPTIONAL registered-GT rescore is DROPPED from this lane's GPU work: the ays_20261004 "robust" lane (GPU 1) is
+   already scoring exactly these AYS5pad8_origin_g100 renders (this lane's 8 + the judge's 4) together with origin_ll,
+   mstudent2_step800_deliv_ll, deliv_g100_T5pad and origin_g100_T5pad, with the same unchanged score_registered_v1.py
+   (scripts/distill/runs/ays_20261004/robust/ROWS_ays5.json -> outputs/ays_20261004/robust/score_reg_ays5_v1/).
+   GPU 0 is shared by several other lanes (lock waits stretched two S3 renders to 336 s and 900 s), so duplicating it
+   here would only delay step 3.  Instead, at the end, this lane READS those per-clip JSONs (read-only, CPU) and reports
+   the registered version of the PRIMARY contrast descriptively, citing the robust lane's files; their UNREG values must
+   reproduce this lane's S2 ROW values within 1e-6, else the registered numbers are not quoted.  A registered 3a
+   (AYS8_origin_g100) is not computed.  build_rows_registered_v1.py / run_registered_v1.sh / analyze_registered_v1.py
+   stay unused.
+
+ADDENDUM 2 -- 2026-10-04 23:27 JST.  Written BEFORE any S3 scorer call (no SCORES_AYS5_S3_* file exists).  No criterion
+changes.
+ - Why: /tmp/claude-gpu0.lock is shared by ~12 waiters from several lanes and flock is not first-come-first-served, so
+   per-job acquisitions starved.  The S3 renders 0141 / 0147 / 0170 took 336 / 900 / 1050 s of driver wall time (lock
+   wait included) for ~140 s of work, and 0204 AYS8_origin_g100 waited from 22:57 to 23:15 without starting; ~21 more
+   acquisitions were needed.
+ - What was stopped: chain_S12_v1.sh (unit ays5-chain-s12) at 23:14:59-23:15:01, while 0204 AYS8_origin_g100 was only
+   waiting for the lock (its .log 0 bytes, its dir empty, no python process).  The empty dir and the 0-byte log stay in
+   place (never deleted).  The chain log also holds a FALSE "CHAIN_S12_STOPPED_BY_HAND" line written at 23:14:47 by a
+   shell slip before the real stop; two CORRECTION lines follow it.  The 7 finished AYS8@1.00 renders (0042 0052 0125
+   0128 0141 0147 0170) each have an sbs.mkv, writer_md5.txt and speed_log.json and are used as they are.
+ - 0204 is re-rendered into AYS8_origin_g100_r1 under the PREREG retry clause (the one allowed retry; if it fails, 3a is
+   reported with n = 11 and the reason).
+ - Batch: the remaining 3a jobs (0204_r1 0225 0251 0259 0301) and all 3b jobs (0301 0204 0052 0147), the S3 pairing check
+   (stop on fail), the S3 scoring (12 clips, the same rows) and the analysis run as ONE systemd unit under ONE outer
+   `flock /tmp/claude-gpu0.lock` (batch_S3_v2.sh; it aborts if the lock is not held).  v2 copies, each with exactly:
+     run_driver_ays5_nolock_v2.sh  = run_driver_ays5_v1.sh minus the inner flock
+     score_ays5_nolock_v2.sh       = score_ays5_v1.sh minus the inner flock, + 0204's AYS8 row read from _r1
+     check_pairing_ays5_v2.py      = check_pairing_ays5_v1.py with 0204's AYS8 dir resolved to _r1
+     analyze_ays5_v2.py            = analyze_ays5_v1.py with a score tag ending in _r1 filed under its label (real path
+                                     printed in the table)
+   jobs_S3_batch_v2.txt holds the jobs_S3a / jobs_S3b lines verbatim except 0204's 3a label (+_r1).
+ - The drivers' "secs" are not used for any timing claim (v1 secs include lock waits).
+ - analyze_ays5_v2.py was dry-run in the scratchpad on FAKE S3 rows (incl. an _r1 path): 3a reported n = 12.  Those fake
+   numbers are meaningless and appear nowhere in this lane.
+
+NOTE 2026-10-04 23:27: timestamp correction -- ADDENDUM 2 was written at 23:16:50 JST (file mtime), not "23:27" as its header says; the batch unit ays5-batch-s3 started at 23:16:58 and was then waiting for /tmp/claude-gpu0.lock.  Still before any S3 scorer call.
+
+ADDENDUM 3 -- 2026-10-05 01:00 JST.  RECORD ONLY (no criterion changes; written after all scores).
+ STEP 2 (TABLE_S2_AYS5_12CLIP.txt; C0 PASS md5 768339b8 -> MODE=reuse; PAIRING_S1 12/12 PASS; S2 gates 12/12 PASS):
+   deliv_g100_T5pad - AYS5pad8_origin_g100: mean12 -0.01118, negative 12/12, bootstrap95 [-0.01632,-0.00680],
+   p_sign 0.00049, p_signflip 0.00049  -> CLAIM HOLDS.
+   S-a AYS5 - Karras-T5 (origin): -0.00239, 12/12, worst -0.0003 -> judge 12-clip rule PASS (free gain).
+   S-b AYS5 origin (5 evals) - deployed origin (16 evals): -0.00025, 8/12, bootstrap95 [-0.00119,+0.00065].
+ Registered GT (TABLE_ROBUST_REG_PRIMARY_v1.txt, read-only from the robust lane, G0 48/48): primary REG_FRAME -0.01129,
+   11/12 (0259 +0.0008), bootstrap95 [-0.01687,-0.00638]; S-b REG_FRAME -0.00005, 8/12.
+ STEP 3 (TABLE_S3_AYS5_FULL.txt; PAIRING_S3 16/16 PASS; S3 gates 12/12 PASS; 0204 AYS8 from _r1):
+   3a deliv_g100_T5pad - AYS8_origin_g100: mean12 -0.00125 (<= 0 -> "at least as good", ratio >= 8/5), 7/12,
+      bootstrap95 [-0.00339,+0.00099] (not resolved; secondary non-inferiority +0.0007 NOT MET).
+   3b AYS5pad8_deliv_g100 - deliv_g100_T5pad: mean4 -0.00195, 4/4, worst -0.0002 -> DOES NOT STACK (rule -0.002).
+ Checkpoint md5 08cf44850b8f392efb307e3a48cd82d1 at every chain start/end.  GPU: 25 renders (51.9 min process time),
+ 24 scorer calls (30.9 min wall incl. S2 lock waits).
