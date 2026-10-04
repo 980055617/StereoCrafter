@@ -1,0 +1,5 @@
+# CONTEXT ONLY: origin at deployed settings (8 steps, guidance 1.01) with decode_chunk_size 14, 4 clips
+0170 origin_g101_s8_dcs14 origin 1.01 - - - - 14 -
+0259 origin_g101_s8_dcs14 origin 1.01 - - - - 14 -
+0042 origin_g101_s8_dcs14 origin 1.01 - - - - 14 -
+0301 origin_g101_s8_dcs14 origin 1.01 - - - - 14 -

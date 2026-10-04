@@ -1,0 +1,105 @@
+PRE-REGISTRATION -- more_20261004 / lane "mamba_scope"  (GPU 0 only, synthetic UNet benches, no weights, speed only)
+Written 2026-10-04 13:25 JST, BEFORE any GPU process of this lane has been started.  No timing number of this lane exists
+at the time of writing.  The smoke run (outputs/more_20261004/mamba_scope/smoke_v1/) is started after this file and is
+never counted.
+
+QUESTION
+  Would replacing MORE spatial attn1 slots with Mamba -- level 1 = down_blocks.1.attentions.{0,1} and
+  up_blocks.2.attentions.{0,1,2} (5 slots, 640 channels, latent grid H/16 x W/16) -- buy a meaningful further hi-res
+  UNet speedup over the shipped 5-slot level-0 model, and is the distillation recipe likely to carry over?
+
+PRIOR (disclosed; already seen before writing this file -- the expected outcome is FAIL on speed)
+  docs/agents/model-change-log.md, 2026-09-10 "Benchmark audit" (lines ~9230-9300), bench2.py, BS=1, d_state 64 (NOT
+  the deliverable's 128):
+    1024x1792: origin 1.876 s, light all-16 1.452 s (-22.6 %), light level-0 only -20.9 % (~1.484 s)
+               -> ALL 11 remaining slots together bought only ~2.2 % over level-0 only.
+    576x1024 : light level-1 only (down1+up2) 0.4861 s vs origin 0.4844 = +0.4 % (net SLOWER).
+    profile  : attn1 spatial share of origin's forward = 13.6 % at 576x1024 (level-0 10.6 / level-1 2.0 / level-2 0.9 /
+               mid 0.1 %), 29.1 % at 1024x1792 with level-0 alone 24.4 % -> levels 1+2+mid <= ~4.7 % of origin.
+  That prior is NOT a bound for level 1 alone (level-2 / mid replacements might be net-slower and hide part of a level-1
+  gain), so this lane measures (i) the level-1 attention CEILING directly and (ii) the level-0+1 model's total time.
+
+TOOLS
+  Pass A: scripts/distill/bench2.py UNMODIFIED (md5 c439daf2f5829a2dfd7d1802fc985f73) -- the published methodology:
+    synthetic UNet forward, 14 frames, fp16, latent (H/8, W/8) 8+1 channels, NO checkpoint (architecture timed via env),
+    3 untimed warm-up forwards then 10 timed forwards bracketed by torch.cuda.synchronize, sec = mean s per forward,
+    peak_MiB = max_memory_allocated over the timed loop; per-forward call counters (origin_attn / mamba_core / plain_attn1).
+  Pass B: scripts/distill/runs/more_20261004/mamba_scope/bench_slots16_v1.py = copy of
+    scripts/distill/runs/slotbudget/bench_slots_v2.py (md5 c1ae5d4c40e60fc461bdadce542cf728) whose ONLY changes are:
+    the hooked slot list = all 16 spatial attn1 slots (not the 5 level-0 ones), the module-count assert 5 -> 16, and
+    the default JSON directory.  Phase 1 = the pass-A protocol without hooks; phase 2 = CUDA-event forward hooks
+    (utils/module_timing.install_cuda_module_timer) on the 16 slots, 1 hooked warm-up, 10 timed forwards.  Module time
+    is inclusive (a replaced slot = the whole GatedResidualMambaSelfAttention adapter).
+  Mamba hyper-parameters = the deliverable's, for every replaced slot: MODE gated_residual, GATE=1.0, DS=128, EXP=1,
+  BIDIR=fwd, headdim 64 (-> 10 Mamba heads at the 640-channel level-1 slots).  EXCLUDE=__nomatch__.
+
+CONFIGURATIONS (MAMBA_SELF_ATTN_INCLUDE)
+  origin   __nomatch__                                                      0 slots
+  mamba5   down_blocks.0.*,up_blocks.3.*                                    5 slots  (the shipped deliverable)
+  mamba10  down_blocks.0.*,up_blocks.3.*,down_blocks.1.*,up_blocks.2.*      10 slots (level 0 + level 1)  <- the candidate
+  all16    *                                                                16 slots (informational: re-anchors the 09-10
+                                                                             all-16 record at d_state 128; non-gating)
+  BS = 1 (guidance 1.00, the T5 @1.00 setting) everywhere.  The finalcheck bench lane measured the Mamba share as
+  batch-invariant (1024x1792: BS1 0.7957 vs BS2 0.7954), so BS=2 is not re-run.
+  Resolutions (HxW): 1024x1792 (GATING), 1024x1920 (secondary), 576x1024 (context, the deployed resolution).
+
+RUN PLAN  (one transient systemd user unit; the whole timed measurement -- pass A then pass B -- runs inside ONE
+  `flock /tmp/claude-gpu0.lock`, CUDA_VISIBLE_DEVICES=0, conda env stereocrafter activated inside the unit so its hook
+  sets PYTHONPATH; PYTORCH_CUDA_ALLOC_CONF and every MAMBA_* variable unset before the bench)
+  Pass A: reps 1..3 outer, config (origin, mamba5, mamba10, all16), resolution (576x1024, 1024x1792, 1024x1920) inner
+          -> 36 processes.  Every rep holds every configuration, so per-rep paired ratios cancel slow drift.
+  Pass B: reps 1..2 outer, config (origin, mamba10, all16), resolution inner -> 18 processes.
+  A failed process is retried at most once (tag _retry); its error is quoted.
+
+GATES  (a failure invalidates / flags the affected rows; reported, never silently dropped)
+  G1 instrumentation, every process (bench2.py counters + adapter log + pass-B slot classes):
+       RESULT line present, rc=0, batch == 1, tokens == (H/8)*(W/8) = 9216 / 28672 / 30720;
+       per_fwd_calls {origin_attn, mamba_core, plain_attn1} and adapter total_replaced:
+         origin {0, 0, 16} gates []      total_replaced=0
+         mamba5 {0, 5, 11} gates [1.0]   total_replaced=5
+         mamba10 {0, 10, 6} gates [1.0]  total_replaced=10
+         all16 {0, 16, 0} gates [1.0]    total_replaced=16
+       pass B: exactly 16 hooked modules, 10 calls each, and the class of every slot as the config implies
+       (GatedResidualMambaSelfAttention on replaced slots, Attention elsewhere).
+  G2 VRAM anchor (deterministic): origin / mamba5 peak_MiB within +-4 MiB of the finalcheck BS=1 values
+       (outputs/finalcheck_20261004/bench/run_v1): 576x1024 5075 / 5081, 1024x1792 9570 / 9575, 1024x1920 10040 / 10047.
+  G3 timing anchor (contamination check; GPU 1 is shared with other lanes and cannot be kept idle): origin / mamba5 means
+       within +-1.5 % of the finalcheck BS=1 means 0.4857 / 0.4587, 1.8792 / 1.4953, 2.0603 / 1.6159 s, AND the
+       mamba5 share t(mamba5)/t(origin) within +-1.0 point of 0.9445 / 0.7957 / 0.7843.  A G3 failure flags every row of
+       that resolution as "possibly contaminated"; the paired within-rep ratios are still reported.
+  G4 exclusivity record: nvidia-smi sampler (2 s, both GPUs) over the whole bench; before every process,
+       nvidia-smi --query-compute-apps must list nothing on GPU 0 except the desktop processes.  GPU 1 utilisation is
+       REPORTED (other lanes may run there) and cited next to G3.
+  G5 precision (reported): half-range as % of mean per configuration; > 1.0 % flagged.
+
+METRICS  (fixed now)
+  t(c, res) = mean over the 3 pass-A processes of bench2.py's sec (BS=1); +- = half-range (max-min)/2.
+  PRIMARY  E = 1 - t(mamba10) / t(mamba5)  at 1024x1792  -- the EXTRA UNet saving relative to the shipped 5-slot model
+           (ratio of the n=3 means; +- = half-range of the 3 per-rep paired ratios).  This is the more generous of the two
+           readings (its denominator is the smaller one), so a FAIL under it cannot be argued away.
+  ALSO     E_pts = (t(mamba5) - t(mamba10)) / t(origin)   (the same saving in points of origin's forward)
+           mamba10 vs origin  1 - t(mamba10)/t(origin), and the same for all16 (informational)
+           dVRAM of mamba10 / all16 vs mamba5 and vs origin (peak_MiB)
+           per-window UNet time of "T5 @1.00" (5 steps x BS 1) relative to deployed origin 8 x BS 2, for mamba5 and
+           mamba10, using t(origin, BS=2) from finalcheck run_v1 (3.7127 / 4.0591 / 0.9612 s) -- CROSS-RUN, labelled so.
+  CEILING  C = sum over the 5 level-1 slots of the origin attn1 module time (pass B, origin, mean over 2 reps)
+               / t(mamba5)  at 1024x1792  = the extra saving a ZERO-COST level-1 mixer would buy.
+           also C_pts = same sum / t(origin), and the per-level attn1 budget (level 0 / 1 / 2 / mid) of origin.
+  LEVEL-1 MIXER COST  per-slot Mamba time at the 640-channel slots (pass B, mamba10) vs the origin attention time of
+           the same slot -> per-slot speedup; and the attribution check: sum of level-1 slot savings (pass B) vs the
+           pass-A total saving t(mamba5) - t(mamba10).
+
+PASS CRITERION  (as given by the lane brief)
+  PASS iff  E >= 0.10 at 1024x1792 (BS=1)  AND  a plausible distillation path exists.
+  Corollary fixed now: if C < 0.10, no level-1 mixer of ANY cost can reach the speed bar -> verdict "closed" on speed,
+  and the distillation half is reported for completeness only (it cannot rescue the lane).
+  Distillation half = a RECORDS-ONLY judgment (no GPU time is spent on it): feature-distillation floors (relMSE per slot),
+  per-slot noise sensitivity, attention statistics (scripts/distill/runs/attn_stats/) and the capture/fit code.  Those
+  records cover the five level-0 slots only; anything said about level 1 is labelled "not measured".  The e102/e140-era
+  up_blocks.2 ablations are NOT used as difficulty evidence (the change log, 2026-09-01 follow-up 9, declares those
+  findings checkpoint-specific).
+
+OUTPUT FOLDERS (new; nothing existing is touched)
+  scripts/distill/runs/more_20261004/mamba_scope/   PREREG, scripts, tables
+  outputs/more_20261004/mamba_scope/smoke_v1/        smoke (never counted)
+  outputs/more_20261004/mamba_scope/run_v1/          pass A + pass B raw RESULT lines, logs, profiles, GPU monitor

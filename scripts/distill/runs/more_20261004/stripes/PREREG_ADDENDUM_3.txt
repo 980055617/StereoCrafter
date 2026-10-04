@@ -1,0 +1,18 @@
+PRE-REGISTRATION ADDENDUM 3 (MECHANISM TEST, reported only) -- stripes lane.  Written 2026-10-04 ~14:55 JST, after the
+0301 smoke was scored (origin A rowlin -0.0225 LPIPS vs origin baseline; the gain came with LESS haze over the whole
+frame, not only near cracks: far-from-hole |dx| on the render's own flat half rose 0.27 -> 0.30 of GT's) and BEFORE
+the renders below exist.
+
+QUESTION  Through which consumer does the crack fill act?  The pipeline hands the warped frames to two consumers:
+  (1) the VAE encode of all 14 frames of a window (frame latents concatenated to the UNet input), and
+  (2) the CLIP image embedding of the window's FIRST frame (cross-attention conditioning of every UNet block).
+  (The third input, the mask channel, is multiplied by exactly-zero conv_in weights -- ADDENDUM 1.)
+DESIGN  hook v2 (infer_ll_hook_stripes_v2.py; STRIPE_ROUTE): origin 8x2 @1.01, clip 0301, rowlin fill, mask keep,
+  RNG-paired like every other render.
+    CLIPonly  VAE sees the UNFILLED frames, CLIP sees the FILLED first frame
+    VAEonly   VAE sees the FILLED frames,   CLIP sees the UNFILLED first frame
+  Integrity: every _encode_image call substituted (asserted in the hook), K2 fingerprints equal the 8-step reference.
+REPORTED  LPIPS (score_clip_ll.py, SCORE_STEP=4) of both, with share = (L_base - L_route) / (L_base - L_A) where
+  L_A = origin A rowlin (both consumers filled, 0.412622) and L_base = origin_ll (0.435095), both from
+  SCORES_smoke0301.txt.  Shares near 1/0 say which consumer carries the gain; they need not sum to 1 (interaction).
+  Outputs: outputs/more_20261004/stripes/mechanism/.

@@ -1,0 +1,30 @@
+SCORE_START 2026-10-04_14:12:44 list=scripts/distill/runs/more_20261004/temporal/lpips_list_t1_smoke0170.txt scorer=scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py SCORE_STEP=4
+/home/kawa/miniconda3/envs/stereocrafter/lib/python3.11/site-packages/torchvision/models/_utils.py:208: UserWarning: The parameter 'pretrained' is deprecated since 0.13 and may be removed in the future, please use 'weights' instead.
+  warnings.warn(
+/home/kawa/miniconda3/envs/stereocrafter/lib/python3.11/site-packages/torchvision/models/_utils.py:223: UserWarning: Arguments other than a weight enum or `None` for 'weights' are deprecated since 0.13 and may be removed in the future. The current behavior is equivalent to passing `weights=AlexNet_Weights.IMAGENET1K_V1`. You can also use `weights=AlexNet_Weights.DEFAULT` to get the most up-to-date weights.
+  warnings.warn(msg)
+/home/kawa/miniconda3/envs/stereocrafter/lib/python3.11/site-packages/lpips/lpips.py:107: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  self.load_state_dict(torch.load(model_path, map_location='cpu'), strict=False)
+Setting up [LPIPS] perceptual loss: trunk [alex], v[0.1], spatial [off]
+Loading model from: /home/kawa/miniconda3/envs/stereocrafter/lib/python3.11/site-packages/lpips/weights/v0.1/alex.pth
+clip/config                           offset  leftPSNR    LPIPS    sharp    rPSNR   nf
+--- 0170 GT ---                                          0.0000   0.0323
+0170_origin_ll                       (-28,0)     39.79   0.2517   0.0164   17.168   38
+ROW clip=0170 tag=0170_origin_ll dy=-28 dx=0 leftPSNR=39.7902 lpips=0.251735 sharp=0.016394 gtSharp=0.032309 rightPSNR=17.1683 n=38 path=outputs/beyond4_lossless/clips/0170_origin_ll/0170_inpainting_results_sbs.mkv
+0170_deliv_g100_T5nat                (-28,0)     39.79   0.2446   0.0175   16.923   38
+ROW clip=0170 tag=0170_deliv_g100_T5nat dy=-28 dx=0 leftPSNR=39.7902 lpips=0.244648 sharp=0.017534 gtSharp=0.032309 rightPSNR=16.9228 n=38 path=outputs/finalcheck_20261004/speed/clips/0170_deliv_g100_T5nat/0170_inpainting_results_sbs.mkv
+0170_ctrl_T5nat                      (-28,0)     39.79   0.2446   0.0175   16.923   38
+ROW clip=0170 tag=0170_ctrl_T5nat dy=-28 dx=0 leftPSNR=39.7902 lpips=0.244648 sharp=0.017534 gtSharp=0.032309 rightPSNR=16.9228 n=38 path=outputs/more_20261004/temporal/clips/0170_ctrl_T5nat/0170_inpainting_results_sbs.mkv
+0170_T5nat_ov5                       (-28,0)     39.79   0.2457   0.0176   16.906   38
+ROW clip=0170 tag=0170_T5nat_ov5 dy=-28 dx=0 leftPSNR=39.7902 lpips=0.245673 sharp=0.017633 gtSharp=0.032309 rightPSNR=16.9063 n=38 path=outputs/more_20261004/temporal/clips/0170_T5nat_ov5/0170_inpainting_results_sbs.mkv
+0170_T5nat_ov7                       (-28,0)     39.79   0.2477   0.0173   16.940   38
+ROW clip=0170 tag=0170_T5nat_ov7 dy=-28 dx=0 leftPSNR=39.7902 lpips=0.247689 sharp=0.017327 gtSharp=0.032309 rightPSNR=16.9398 n=38 path=outputs/more_20261004/temporal/clips/0170_T5nat_ov7/0170_inpainting_results_sbs.mkv
+0170_T5nat_pw03                      (-28,0)     39.79   0.2473   0.0172   16.926   38
+ROW clip=0170 tag=0170_T5nat_pw03 dy=-28 dx=0 leftPSNR=39.7902 lpips=0.247308 sharp=0.017198 gtSharp=0.032309 rightPSNR=16.9260 n=38 path=outputs/more_20261004/temporal/clips/0170_T5nat_pw03/0170_inpainting_results_sbs.mkv
+0170_T5nat_pw05                      (-28,0)     39.79   0.2476   0.0171   16.911   38
+ROW clip=0170 tag=0170_T5nat_pw05 dy=-28 dx=0 leftPSNR=39.7902 lpips=0.247641 sharp=0.017073 gtSharp=0.032309 rightPSNR=16.9107 n=38 path=outputs/more_20261004/temporal/clips/0170_T5nat_pw05/0170_inpainting_results_sbs.mkv
+0170_T5nat_nsfa                      (-28,0)     39.79   0.2451   0.0175   16.930   38
+ROW clip=0170 tag=0170_T5nat_nsfa dy=-28 dx=0 leftPSNR=39.7902 lpips=0.245143 sharp=0.017476 gtSharp=0.032309 rightPSNR=16.9297 n=38 path=outputs/more_20261004/temporal/clips/0170_T5nat_nsfa/0170_inpainting_results_sbs.mkv
+0170_T5nat_dcs14                     (-28,0)     39.79   0.2376   0.0179   16.885   38
+ROW clip=0170 tag=0170_T5nat_dcs14 dy=-28 dx=0 leftPSNR=39.7902 lpips=0.237561 sharp=0.017920 gtSharp=0.032309 rightPSNR=16.8846 n=38 path=outputs/more_20261004/temporal/clips/0170_T5nat_dcs14/0170_inpainting_results_sbs.mkv
+SCORE_DONE rc=0 2026-10-04_14:16:52

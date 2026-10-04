@@ -1,0 +1,26 @@
+config                                         n calls/win  batch  unet/win steady/win process_s  clips
+fewer_steps:deliv_g100_T3bpad                  1       [3]    [1]     1.504      2.324      87.9  0301
+fewer_steps:deliv_g100_T3cpad                  1       [3]    [1]     1.504      2.331      85.2  0301
+fewer_steps:deliv_g100_T3dpad                  1       [3]    [1]     1.504      2.326      84.9  0301
+fewer_steps:deliv_g100_T3pad                   1       [3]    [1]     1.504      2.323      86.1  0301
+fewer_steps:deliv_g100_T4apad                  1       [4]    [1]     2.005      2.835      92.5  0301
+fewer_steps:deliv_g100_T4bpad                 12       [4]    [1]     2.005      2.829      96.8  0042 0052 0125 0128 0141 0147 0170 0204 0225 0251 0259 0301
+fewer_steps:deliv_g100_T5pad_orcC2nosubst      1       [5]    [1]     2.507      3.332      98.4  0301
+fewer_steps:deliv_g100_T5pad_rep               1       [5]    [1]     2.507      3.327      98.5  0301
+fewer_steps:mamba_g100_T4apad_oracle12         1  [15, 19]    [1]     8.613      9.446     185.2  0301
+fewer_steps:origin_g100_T3pad                  1       [3]    [1]     1.579      2.413      81.3  0301
+fewer_steps:origin_g100_T4apad                 1       [4]    [1]     2.102      2.923      89.2  0301
+fewer_steps:origin_g100_T4bpad                 1       [4]    [1]     2.105      2.937      87.8  0301
+speed:deliv_g100_T5pad                        12       [5]    [1]     2.507      3.329     101.7  0042 0052 0125 0128 0141 0147 0170 0204 0225 0251 0259 0301
+speed:deliv_g101_s8                            2       [8]    [2]     7.246      8.126     168.5  0204 0301
+speed:origin_g100_T5pad                       12       [5]    [1]     2.631      3.462      98.3  0042 0052 0125 0128 0141 0147 0170 0204 0225 0251 0259 0301
+speed:origin_g101_s8                           2       [8]    [2]     7.627      8.543     174.4  0204 0301
+
+PAIRED same-session (this lane), clip 0301: T4b vs the two T5 @1.00 pad renders made in this lane
+  T4b / deliv_g100_T5pad_rep             unet/win 2.006/2.507 = 0.800   steady/win 2.828/3.327 = 0.850   process 91.8/98.5 = 0.931
+  T4b / deliv_g100_T5pad_orcC2nosubst    unet/win 2.006/2.507 = 0.800   steady/win 2.828/3.332 = 0.849   process 91.8/98.4 = 0.932
+
+CROSS-SESSION (indicative only): medians of this lane's 12 T4b renders vs the speed lane's 12-clip medians
+  T4b / speed:deliv_g100_T5pad       unet/win 2.005/2.507 = 0.800   steady/win 2.829/3.329 = 0.850   process 96.8/101.7 = 0.952
+  T4b / speed:origin_g101_s8         unet/win 2.005/7.627 = 0.263   steady/win 2.829/8.543 = 0.331   process 96.8/174.4 = 0.555
+  T4b / speed:deliv_g101_s8          unet/win 2.005/7.246 = 0.277   steady/win 2.829/8.126 = 0.348   process 96.8/168.5 = 0.574

@@ -1,0 +1,14 @@
+PASS outputs/more_20261004/judge/ays/clips/0204_AYS8_origin_g101 vs outputs/finalcheck_20261004/speed/clips/0204_origin_g101_s8: 14/14 windows identical
+PASS outputs/more_20261004/judge/ays/clips/0204_AYS5pad8_origin_g100 vs outputs/finalcheck_20261004/speed/clips/0204_origin_g100_T5pad: 14/14 windows identical
+PASS outputs/more_20261004/judge/ays/clips/0052_AYS8_origin_g101 vs outputs/finalcheck_20261004/speed/clips/0052_origin_g100_s8: 15/15 windows identical
+PASS outputs/more_20261004/judge/ays/clips/0052_AYS5pad8_origin_g100 vs outputs/finalcheck_20261004/speed/clips/0052_origin_g100_T5pad: 15/15 windows identical
+PASS outputs/more_20261004/judge/ays/clips/0147_AYS8_origin_g101 vs outputs/finalcheck_20261004/speed/clips/0147_origin_g100_s8: 16/16 windows identical
+PASS outputs/more_20261004/judge/ays/clips/0147_AYS5pad8_origin_g100 vs outputs/finalcheck_20261004/speed/clips/0147_origin_g100_T5pad: 16/16 windows identical
+PASS outputs/more_20261004/judge/ays/clips/0042_AYS8_origin_g101 vs outputs/finalcheck_20261004/speed/clips/0042_origin_g100_s8: 14/14 windows identical
+PASS outputs/more_20261004/judge/ays/clips/0125_AYS8_origin_g101 vs outputs/finalcheck_20261004/speed/clips/0125_origin_g100_s8: 15/15 windows identical
+PASS outputs/more_20261004/judge/ays/clips/0128_AYS8_origin_g101 vs outputs/finalcheck_20261004/speed/clips/0128_origin_g100_s8: 14/14 windows identical
+PASS outputs/more_20261004/judge/ays/clips/0141_AYS8_origin_g101 vs outputs/finalcheck_20261004/speed/clips/0141_origin_g100_s8: 14/14 windows identical
+PASS outputs/more_20261004/judge/ays/clips/0170_AYS8_origin_g101 vs outputs/finalcheck_20261004/speed/clips/0170_origin_g100_s8: 14/14 windows identical
+PASS outputs/more_20261004/judge/ays/clips/0225_AYS8_origin_g101 vs outputs/finalcheck_20261004/speed/clips/0225_origin_g100_s8: 14/14 windows identical
+PASS outputs/more_20261004/judge/ays/clips/0251_AYS8_origin_g101 vs outputs/finalcheck_20261004/speed/clips/0251_origin_g100_s8: 14/14 windows identical
+PASS outputs/more_20261004/judge/ays/clips/0259_AYS8_origin_g101 vs outputs/finalcheck_20261004/speed/clips/0259_origin_g100_s8: 14/14 windows identical

@@ -1,0 +1,86 @@
+PRE-REGISTRATION -- more_20261004 / stripes lane (GPU 0 only, every GPU job under flock /tmp/claude-gpu0.lock)
+Written 2026-10-04, BEFORE any render of this lane and BEFORE any scorer / decomposition / temporal call of this lane.
+(What was looked at before writing: the inputs only -- hole-run statistics of the splatting mp4 mask quadrant and
+zoomed before/after crops of the crack fill on 2 frames, outputs/more_20261004/stripes/inputcheck/.  No render of
+any config was scored or decomposed by this lane before this file was written.)
+
+QUESTION  Can the depth-splatting stripe artefact be removed at the INPUT, so that every config gains quality and
+          less stripe gets amplified?
+
+TREATMENT  crackfill.py, called from infer_ll_hook_stripes_v1.py (a copy of the finalcheck speed hook + a wrapper
+  around inpainting_inference.read_and_prepare_video; nothing tracked is edited).
+  hole pixel  = mask >= 0.5 (the pipeline's own mask_processor binarisation; the mask quadrant is lossy h264).
+  crack pixel = hole pixel inside a HORIZONTAL run of hole pixels of length <= 3 in its row.  Longer runs
+                (disocclusion areas) are untouched.  Work region = deployed 576x1024 centre-crop window + 16 px.
+  Variants (each applied to the warped right-eye frames before VAE encode / CLIP embedding):
+    A  rowlin / keep    row-wise linear interpolation between the nearest non-hole pixels left and right of the run
+    B  telea  / keep    cv2.inpaint(uint8 RGB, crack mask, radius 3, INPAINT_TELEA), per frame
+    C  rowlin / shrink  A's fill + mask set to 0 on the filled crack pixels (only runs > 3 px stay masked)
+  Fill-free pixels are bit-identical (asserted at runtime: changed_outside_crack_region == 0).
+
+CONFIGS and their own (unfilled) BASELINES -- already on disk, NOT re-rendered:
+  origin  8 Euler steps x batch 2, guidance 1.01 (deployed)   outputs/beyond4_lossless/clips/<clip>_origin_ll
+          md5 0301 2e533d7755c950d2fc95043f6fb0a51d  0204 e5c5fba479a64801b686f28ba656064f
+              0052 302ff6642b506396547d3b818c143e4d  0147 90637b7ea7521ff0b5358a60bef029ce
+  deliv   deliverable .pt (md5 08cf4485...), T5 schedule (700, 7.276163101196289, 1.1675708293914795,
+          0.09738767892122269, 0.0020000000949949026), guidance 1.00, UNPADDED RNG (the 0.3815 config)
+                                                                outputs/finalcheck_20261004/speed/clips/<clip>_deliv_g100_T5nat
+          md5 0301 a41b432baeb25393bb12d39b4f2e6a21  0204 bc7123b939915198fd0b8d90631c8700
+              0052 331e977752af5617b2ed690bffda95cd  0147 715a046be356de66f123fc5985cb4c54
+  The fill changes no tensor shape and draws no random number, so every variant render is RNG-PAIRED with its
+  baseline (K2 verifies it).  Clips: the 4-clip regime set 0301 0204 0052 0147.  Smoke = 0301 first.
+  Renders planned: K1 control + 3 variants x 2 configs x 4 clips = 25 (~65 GPU-min).  No variant is dropped on
+  the basis of smoke QUALITY numbers; only an integrity failure (crash, K1-K4) stops a variant.
+
+-------------------------------------------------------------------------------------------------------------------
+K. INTEGRITY GATES (a failure blocks the affected rows)
+-------------------------------------------------------------------------------------------------------------------
+K1 control: STRIPE_FILL=none STRIPE_MASK=keep, 0301 deliv T5nat via this lane's driver/hook reproduces the writer
+   md5 a41b432baeb25393bb12d39b4f2e6a21 (the wrapper is inert when off).
+K2 RNG pairing: per-window initial-latent fingerprints (speed_log.json init_md5) of every variant render equal
+   the reference list of its config: origin -> <clip>_origin_g100_s8, deliv -> <clip>_deliv_g100_T5nat
+   (outputs/finalcheck_20261004/speed/clips/*/speed_log.json).
+K3 pass-through: scripts/distill/runs/finalcheck_20261004/speed/check_passthrough_v1.py (unchanged): decoded
+   FFV1 md5 == writer md5; decoded left half bit-identical to origin_ll's; same frame count.
+K4 fill logs: every filled render changed > 0 window pixels and 0 pixels outside the crack set; keep-variants
+   have the control's binarised-mask md5, the shrink variant a different one.
+K5 scorer reproduction: the baselines are re-scored in the same scorer runs and must reproduce the published
+   per-clip LPIPS within +-0.0001 -- origin_ll 0.4351 0.2053 0.4467 0.5269 (TABLE_HEADLINE_12CLIP.txt),
+   deliv T5nat 0.3994 0.1874 0.4399 0.5251 (TABLE_POSTHOC_T5G100_UNPADDED.txt), clips 0301 0204 0052 0147.
+   Decomposition: the registration frame and shift equal outputs/review_20261001/metrics.json for 0301 0204 0147
+   (asserted in decomp_v1.py), and origin_ll's registered stripeE / edgeHF reproduce
+   outputs/review_20261001/METRICS_WHOLEFRAME.txt to the printed 5 decimals for 0301 0204 0147.
+K6 temporal reproduction: origin_ll warp error reproduces V1_TEMPORAL_576_12CLIP.txt (0301 0.0493, 0204 0.0105,
+   0052 0.0217, 0147 0.0083) to 4 decimals.
+
+-------------------------------------------------------------------------------------------------------------------
+M. MEASUREMENTS
+-------------------------------------------------------------------------------------------------------------------
+M1 LPIPS  scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py UNCHANGED, SCORE_STEP=4, FFV1 only; ROW lpips
+   (6 decimals) and sharp.
+M2 decomposition  decomp_v1.py = reviewlib.py operators + build_review.py registration/whole-frame procedure:
+   whole 576x1024 window, frames range(0, nvalid, 8) (n=19 on all 4 clips), GT regions from the
+   DISPARITY-REGISTERED real right eye.  stripeE (mean |horizontal diff| in GT-flat = artefact), edgeHF (mean
+   |Laplacian| in GT top-decile gradient = detail), flatHF, haloFrac.  Also reported (not gated): stripeE split
+   into GT-flat pixels within 2 px of a hole pixel vs farther, for every render and for the warped INPUT itself
+   (none / rowlin / telea).
+M3 temporal  scripts/distill/runs/finalcheck_20261004/validate/score_temporal_ll.py UNCHANGED (copy of
+   score_temporal.py): warp error (RAFT flow on the GT window), tLP, seam ratio.  Reported, not gated.
+
+-------------------------------------------------------------------------------------------------------------------
+P. PASS CRITERIA, per variant V in {A, B, C} and config K in {origin, deliv}, V vs K's own unfilled baseline,
+   on the 4 regime clips (0301 0204 0052 0147)
+-------------------------------------------------------------------------------------------------------------------
+P1 LPIPS improves: LPIPS(V) < LPIPS(base) on >= 3 of 4 clips.
+P2 stripe energy falls: stripeE(V) < stripeE(base) on >= 3 of 4 clips AND the 4-clip mean of the per-clip ratio
+   stripeE(V)/stripeE(base) < 1.000.
+P3 edge energy does not fall: 4-clip mean of edgeHF(V)/edgeHF(base) >= 0.995 AND every clip >= 0.990.
+PASS(V, K) = P1 and P2 and P3.
+Size label (reported, not gating): 4-clip mean LPIPS delta; |delta| < 0.0005 is labelled "negligible".
+LANE VERDICT: YES if some variant passes for BOTH configs; PARTIAL if a variant passes for one config only;
+NO otherwise.  Temporal (M3) is reported beside it: a variant whose 4-clip mean warp error rises > 5 % vs its
+baseline is flagged (F1-style), not failed.
+
+Expectation stated in advance (not a criterion): cracks are 0.03 % (0204) to 3.6 % (0301) of the window, and
+0204 has almost no holes yet a stripeE/GT of 1.9-2.5 (review_20261001), so a crack fill can at most remove the
+part of the stripe energy that is hole-borne; small effects on 0204 are expected.

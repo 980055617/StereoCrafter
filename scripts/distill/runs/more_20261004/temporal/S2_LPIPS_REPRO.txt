@@ -1,0 +1,10 @@
+S2 LPIPS-scorer reproduction (PREREG): this lane's rescored rows vs the finalcheck speed-lane rows, printed to 6 dp
+  0170_origin_ll           lpips old 0.251735 new 0.251735  sharp old 0.016394 new 0.016394  IDENTICAL   (old: SCORES_STEP1.txt, new: SCORES_LPIPS_T1_SMOKE0170.txt)
+  0170_deliv_g100_T5nat    lpips old 0.244648 new 0.244648  sharp old 0.017534 new 0.017534  IDENTICAL   (old: SCORES_POSTHOC_T5G100NAT.txt, new: SCORES_LPIPS_T1_SMOKE0170.txt)
+  0259_origin_ll           lpips old 0.437586 new 0.437586  sharp old 0.031178 new 0.031178  IDENTICAL   (old: SCORES_STEP1.txt, new: SCORES_LPIPS_T2_0259.txt)
+  0259_deliv_g100_T5nat    lpips old 0.434854 new 0.434854  sharp old 0.034640 new 0.034640  IDENTICAL   (old: SCORES_POSTHOC_T5G100NAT.txt, new: SCORES_LPIPS_T2_0259.txt)
+  0042_origin_ll           lpips old 0.427856 new 0.427856  sharp old 0.008799 new 0.008799  IDENTICAL   (old: SCORES_STEP1.txt, new: SCORES_LPIPS_T2_0042.txt)
+  0042_deliv_g100_T5nat    lpips old 0.425277 new 0.425277  sharp old 0.010712 new 0.010712  IDENTICAL   (old: SCORES_POSTHOC_T5G100NAT.txt, new: SCORES_LPIPS_T2_0042.txt)
+  0301_origin_ll           lpips old 0.435095 new 0.435095  sharp old 0.023528 new 0.023528  IDENTICAL   (old: SCORES_STEP1.txt, new: SCORES_LPIPS_T2_0301.txt)
+  0301_deliv_g100_T5nat    lpips old 0.399416 new 0.399416  sharp old 0.028343 new 0.028343  IDENTICAL   (old: SCORES_POSTHOC_T5G100NAT.txt, new: SCORES_LPIPS_T2_0301.txt)
+S2 PASS: 8/8 rows identical at 6 dp

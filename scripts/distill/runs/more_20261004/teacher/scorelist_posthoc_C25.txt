@@ -1,0 +1,2 @@
+0147=outputs/more_20261004/teacher/clips/0147_C25/0147_inpainting_results_sbs.mkv
+0052=outputs/more_20261004/teacher/clips/0052_C25/0052_inpainting_results_sbs.mkv

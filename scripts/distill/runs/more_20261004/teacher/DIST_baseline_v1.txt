@@ -1,0 +1,3 @@
+PSNR_right  25.665 dB  meanAbs 7.4345  frames 25  A=outputs/beyond4_lossless/clips/0301_origin_ll/0301_inpainting_results_sbs.mkv  B=outputs/beyond4_lossless/clips/0301_s25_ll/0301_inpainting_results_sbs.mkv
+PSNR_right  22.755 dB  meanAbs 12.2631  frames 151  A=outputs/beyond4_lossless/clips/0301_origin_ll/0301_inpainting_results_sbs.mkv  B=outputs/beyond4_lossless/clips/0301_s25_ll/0301_inpainting_results_sbs.mkv
+PSNR_right  29.260 dB  meanAbs 5.2103  frames 14  A=outputs/beyond4_lossless/clips/0301_origin_ll/0301_inpainting_results_sbs.mkv  B=outputs/beyond4_lossless/clips/0301_s25_ll/0301_inpainting_results_sbs.mkv

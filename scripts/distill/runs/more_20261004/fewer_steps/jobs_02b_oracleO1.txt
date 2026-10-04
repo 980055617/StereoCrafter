@@ -1,0 +1,2 @@
+# O1: the pre-registered oracle. Shipped Mamba (teacher) everywhere; T4a grid @1.00 pad; fine sub-integration at k=1 (M=4) and merged k=2 (M=8)
+0301 mamba_g100_T4apad_oracle12 mamba 1.00 700.0,7.276163101196289,1.1675708293914795,0.0020000000949949026 8

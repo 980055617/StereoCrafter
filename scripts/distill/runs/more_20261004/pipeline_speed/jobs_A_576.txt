@@ -1,0 +1,3 @@
+# A1/A2: 576x1024 baselines (instrumented, timing-grade, one job per lock acquisition). A1 saves latents for screening.
+0301 A1_deliv_T5_576 deliv 1.00 T5 - - SK_SAVE_LAT=1
+0301 A2_origin_s8_576 origin 1.01 - - - -

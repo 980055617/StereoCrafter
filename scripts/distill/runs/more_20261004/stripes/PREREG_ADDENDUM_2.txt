@@ -1,0 +1,17 @@
+PRE-REGISTRATION ADDENDUM 2 (12-clip EXTENSION RULE) -- stripes lane.  Written 2026-10-04 ~14:45 JST, after the 0301
+smoke was scored (SCORES_smoke0301.txt: origin A -0.0225, origin B -0.0168, deliverable A -0.0028, deliverable B -0.0015
+LPIPS vs own baseline) and BEFORE any render of the other three regime clips was scored.  It changes no criterion of
+PREREG.txt; it fixes in advance what is rendered after the 4-clip verdict, so the extension cannot be steered by the
+4-clip numbers beyond the rule below.
+
+RULE  For each config K (deliverable first, then origin): among the fill variants {A rowlin, B telea} that PASS P1
+(LPIPS better on >= 3 of the 4 regime clips), take the one with the lowest 4-clip mean delta LPIPS.  If one exists,
+render it on the 8 remaining test clips 0042 0125 0128 0141 0170 0225 0251 0259 (same driver/hook, same config, fill on,
+mask keep), RNG-paired with the existing baselines (origin_ll in outputs/beyond4_lossless, deliv_g100_T5nat in
+outputs/finalcheck_20261004/speed).  The deliverable extension is run first; the origin extension only if the lane's
+GPU use stays within ~90 GPU-minutes (otherwise reported as not run).  Integrity: K2 fingerprints + K3 pass-through.
+REPORTED (12 clips, not a new gate on the stripe question, which P1-P3 answer on 4 clips):
+  E1 12-clip mean delta LPIPS vs own baseline and clips improved; "fill helps on 12 clips" iff mean delta < 0 AND
+     >= 9 of 12 clips improved.
+  E2 for the deliverable: the filled deliverable vs DEPLOYED origin (0.3933) and vs the unfilled deliverable (0.3815).
+  E3 per-clip delta vs the clip's crack fraction (stripe_fill_log.json crack_frac_window), Spearman rank correlation.

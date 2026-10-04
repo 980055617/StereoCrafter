@@ -1,0 +1,7 @@
+# judge J2b re-timing (PREREG.txt).  Columns for pipeline_speed/run_driver_stage_v3.sh: CLIP LABEL MODEL GUID SIGMAS H W ENVS
+0301 J_A_deliv_T5_576 deliv 1.00 T5 - - -
+0301 J_C_deliv_T5_576_idfix deliv 1.00 T5 - - SK_SKIP_DISCARDED=1,SK_DIRECT_POST=1,SK_NOAUG_SKIP=1,SK_READER=cropfirst,SK_AT_LOAD=/home/kawa/master_project/StereoCrafter/outputs/more_20261004/pipeline_speed/autotune_choices_s0.json
+0301 J_O_origin_s8_576 origin 1.01 - - - -
+0301 J_OC_origin_s8_576_idfix origin 1.01 - - - SK_SKIP_DISCARDED=1,SK_DIRECT_POST=1,SK_NOAUG_SKIP=1,SK_READER=cropfirst
+0301 J_D_deliv_T5_576_dcs14_fix5789 deliv 1.00 T5 - - SK_DECODE_CHUNK=14,SK_DIRECT_POST=1,SK_NOAUG_SKIP=1,SK_READER=cropfirst,SK_AT_LOAD=/home/kawa/master_project/StereoCrafter/outputs/more_20261004/pipeline_speed/autotune_choices_s0.json
+0301 J_OT5_origin_T5g100_576_idfix origin 1.00 T5 - - SK_SKIP_DISCARDED=1,SK_DIRECT_POST=1,SK_NOAUG_SKIP=1,SK_READER=cropfirst

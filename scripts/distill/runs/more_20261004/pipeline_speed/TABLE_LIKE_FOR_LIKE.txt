@@ -1,0 +1,19 @@
+LIKE-FOR-LIKE RATIOS (deliverable vs origin, both with or both without the pipeline fixes)
+
+576x1024 (0301):
+  deployed origin (A2,A2r mean)                           166.16 s
+  deliverable T5@1.00 (A1,A1r mean)                       101.45 s   -> model+schedule only: 1.638x
+  deliverable + F5-F9 (C1a,C1b mean, md5-exact)            88.20 s   -> vs pipeline as deployed: 1.884x
+  origin + F6-F9 MEASURED (C3, CPU-contended load1 25)    163.43 s   -> like-for-like (measured): 1.853x
+  origin + F6-F9 COMPOSED = origin 166.16 + F6 -5.26 + F7 -1.77 + F8 -1.09 (C3 GPU-side deltas)
+        + F9 -1.42 (uncontended reader bench) = 156.62 s   -> like-for-like (composed): 1.776x
+
+1024x1792 (0301):
+  deployed origin (A4)                                    599.03 s
+  deliverable T5@1.00 (A3)                                311.72 s   -> model+schedule only: 1.922x
+  deliverable + F5-F9 (C2, md5-exact)                     278.01 s   -> vs pipeline as deployed: 2.155x
+  origin + F6-F9 ESTIMATE (not rendered) = A4 599.03 + F6 -19.55 + F7 -4.88 + F8 -3.22 + F9 -0.55
+        (the A3->C2 stage deltas; these stages are model-independent) = 570.83 s   -> like-for-like (estimate): 2.053x
+
+F5 (pre-filled Triton autotune choices) only exists for the Mamba model, so it is credited to the deliverable in the
+like-for-like ratio.  Reader bench (CPU only): 576 tracked 4.73 -> crop-first 3.31 s; 1792 7.65 -> 6.37 s.

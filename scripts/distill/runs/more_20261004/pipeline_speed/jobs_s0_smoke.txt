@@ -1,0 +1,2 @@
+# smoke: 2 windows, deliverable T5@1.00 576x1024, latents saved, autotune printing on (diagnosis of the warm-up)
+0301 deliv_T5_smoke2win deliv 1.00 T5 - - SK_MAX_CHUNKS=2,SK_SAVE_LAT=1,TRITON_PRINT_AUTOTUNING=1

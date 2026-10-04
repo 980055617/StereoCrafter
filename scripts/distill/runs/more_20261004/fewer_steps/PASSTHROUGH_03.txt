@@ -1,0 +1,4 @@
+PASS outputs/more_20261004/fewer_steps/clips/0225_deliv_g100_T4bpad  frames=150 (ref 150)  roundtrip(full decode md5 == writer md5)=True [efa04a1b1595e45c770fc77235e9e318]  left==origin@1.01 left=True [aa7ac0c9459989b17b5cc77356dad8a3]  ref_roundtrip=True
+PASS outputs/more_20261004/fewer_steps/clips/0251_deliv_g100_T4bpad  frames=150 (ref 150)  roundtrip(full decode md5 == writer md5)=True [c74a2a099c2e0c539ed299d53dacbb62]  left==origin@1.01 left=True [c4bd2ed1dc8add173434b52f81d2cfd8]  ref_roundtrip=True
+PASS outputs/more_20261004/fewer_steps/clips/0259_deliv_g100_T4bpad  frames=151 (ref 151)  roundtrip(full decode md5 == writer md5)=True [fb3a6290b6aafc5ed62f872026e0aaa1]  left==origin@1.01 left=True [e38d257659f5ebc452357977b53f0bab]  ref_roundtrip=True
+SUMMARY checked=3 failed=0

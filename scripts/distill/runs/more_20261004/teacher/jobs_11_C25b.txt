@@ -1,0 +1,3 @@
+# CLIP LABEL SAMPLER N PAD SCHURN MAXCH  -- PREREG S1 conditional C25b: triggered because C25's 0301 delta vs s25 was
+# -0.0008 (<= +0.002): SCORES_stage1a.txt C25 0.397830 vs SCORES_I6_s25.txt s25 0.398593.
+0301 C25b euler_churn 25 25 10 -

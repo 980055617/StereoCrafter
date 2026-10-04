@@ -1,0 +1,76 @@
+======================================================================================================================
+TEACHER LANE -- origin UNet, guidance 1.01, lossless FFV1, real-GT LPIPS (score_clip_ll.py SCORE_STEP=4)
+regime clips 0301 0204 0052 0147; every candidate RNG-paired with s25 (pad to 25 draws/window)
+======================================================================================================================
+
+row                                        0301     0204     0052     0147   mean(avail)  n
+GT sharpness                             0.0505   0.0116   0.0099   0.0039
+origin deployed 8 steps (CITED headline)   0.4351   0.2053   0.4467   0.5269   0.4035      4
+s25  Euler N=25 (reference, 25x2)        0.3986   0.1897   0.4384   0.5220   0.3872      4
+H13  Heun N=13 (25 evals)                0.5122        -        -        -   0.5122      1
+D16  DPM++2M N=16 (16 evals)             0.4587        -        -        -   0.4587      1
+D25  DPM++2M N=25 (25 evals)             0.4515        -        -        -   0.4515      1
+C25b Euler+churn S_churn=10 (25)         0.4003        -        -        -   0.4003      1
+C25  Euler+churn S_churn=5 (25)          0.3978        -        -        -   0.3978      1
+X1   Euler N=50 (50 evals, paired)       0.4101        -        -        -   0.4101      1
+
+--- delta LPIPS vs s25 (negative = better than s25) ---
+H13  Heun N=13 (25 evals)               +0.1136        -        -        -   +0.1136      1
+D16  DPM++2M N=16 (16 evals)            +0.0601        -        -        -   +0.0601      1
+D25  DPM++2M N=25 (25 evals)            +0.0529        -        -        -   +0.0529      1
+C25b Euler+churn S_churn=10 (25)        +0.0018        -        -        -   +0.0018      1
+C25  Euler+churn S_churn=5 (25)         -0.0008        -        -        -   -0.0008      1
+X1   Euler N=50 (50 evals, paired)      +0.0115        -        -        -   +0.0115      1
+
+--- sharpness / GT sharpness (1.0 = matches the real right eye) ---
+s25  Euler N=25 (reference, 25x2)         0.583    0.657    1.387    1.715
+H13  Heun N=13 (25 evals)                 0.885        -        -        -
+D16  DPM++2M N=16 (16 evals)              0.756        -        -        -
+D25  DPM++2M N=25 (25 evals)              0.737        -        -        -
+C25b Euler+churn S_churn=10 (25)          0.543        -        -        -
+C25  Euler+churn S_churn=5 (25)           0.560        -        -        -
+X1   Euler N=50 (50 evals, paired)        0.639        -        -        -
+
+--- right-eye PSNR vs GT (dB; supplementary) ---
+s25  Euler N=25 (reference, 25x2)        15.013   19.548   13.177   15.464
+H13  Heun N=13 (25 evals)                13.538        -        -        -
+D16  DPM++2M N=16 (16 evals)             14.203        -        -        -
+D25  DPM++2M N=25 (25 evals)             14.286        -        -        -
+C25b Euler+churn S_churn=10 (25)         15.174        -        -        -
+C25  Euler+churn S_churn=5 (25)          15.105        -        -        -
+X1   Euler N=50 (50 evals, paired)       14.759        -        -        -
+
+======================================================================================================================
+PRE-REGISTERED RULES (PREREG.txt)
+======================================================================================================================
+I6 scorer reproduction of the s25 headline row (+-0.0001): 0301 0.3986 vs 0.3986 OK  0204 0.1897 vs 0.1897 OK  0052 0.4384 vs 0.4384 OK  0147 0.5220 vs 0.5220 OK
+P2 overshoot clips (s25 sharp/GT > 1, from this rescore): ['0052', '0147']
+  H13  Heun N=13 (25 evals)
+      F1 0301 delta +0.1136 <= -0.003: FAIL (futility)
+      VERDICT: not on all 4 clips (['0301']) -> cannot PASS
+  D16  DPM++2M N=16 (16 evals)
+      F1 0301 delta +0.0601 <= -0.003: FAIL (futility)
+      VERDICT: not on all 4 clips (['0301']) -> cannot PASS
+  D25  DPM++2M N=25 (25 evals)
+      F1 0301 delta +0.0529 <= -0.003: FAIL (futility)
+      VERDICT: not on all 4 clips (['0301']) -> cannot PASS
+  C25b Euler+churn S_churn=10 (25)
+      F1 0301 delta +0.0018 <= -0.003: FAIL (futility)
+      VERDICT: not on all 4 clips (['0301']) -> cannot PASS
+  C25  Euler+churn S_churn=5 (25)
+      F1 0301 delta -0.0008 <= -0.003: FAIL (futility)
+      VERDICT: not on all 4 clips (['0301']) -> cannot PASS
+  X1   Euler N=50 (50 evals, paired)
+      secondary anchor (PREREG X1 / ADDENDUM 2) -- NON-GATING, not a candidate; delta vs s25 reported above
+
+PROVENANCE (score file per row)
+  C25            0301  scripts/distill/runs/more_20261004/teacher/SCORES_stage1a.txt  outputs/more_20261004/teacher/clips/0301_C25/0301_inpainting_results_sbs.mkv
+  C25b           0301  scripts/distill/runs/more_20261004/teacher/SCORES_C25b.txt  outputs/more_20261004/teacher/clips/0301_C25b/0301_inpainting_results_sbs.mkv
+  D16            0301  scripts/distill/runs/more_20261004/teacher/SCORES_stage1a.txt  outputs/more_20261004/teacher/clips/0301_D16/0301_inpainting_results_sbs.mkv
+  D25            0301  scripts/distill/runs/more_20261004/teacher/SCORES_stage1a.txt  outputs/more_20261004/teacher/clips/0301_D25/0301_inpainting_results_sbs.mkv
+  H13            0301  scripts/distill/runs/more_20261004/teacher/SCORES_stage1a.txt  outputs/more_20261004/teacher/clips/0301_H13/0301_inpainting_results_sbs.mkv
+  X1s50          0301  scripts/distill/runs/more_20261004/teacher/SCORES_X1_s50.txt  outputs/more_20261004/teacher/clips/0301_X1s50/0301_inpainting_results_sbs.mkv
+  s25_ll         0052  scripts/distill/runs/more_20261004/teacher/SCORES_I6_s25.txt  outputs/beyond4_lossless/clips/0052_s25_ll/0052_inpainting_results_sbs.mkv
+  s25_ll         0147  scripts/distill/runs/more_20261004/teacher/SCORES_I6_s25.txt  outputs/beyond4_lossless/clips/0147_s25_ll/0147_inpainting_results_sbs.mkv
+  s25_ll         0204  scripts/distill/runs/more_20261004/teacher/SCORES_I6_s25.txt  outputs/beyond4_lossless/clips/0204_s25_ll/0204_inpainting_results_sbs.mkv
+  s25_ll         0301  scripts/distill/runs/more_20261004/teacher/SCORES_I6_s25.txt  outputs/beyond4_lossless/clips/0301_s25_ll/0301_inpainting_results_sbs.mkv

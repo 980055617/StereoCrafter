@@ -1,0 +1,131 @@
+PRE-REGISTRATION -- more_20261004 / eval_robustness lane (GPU 1, LPIPS only, no renders)
+Written 2026-10-04 13:30 JST, BEFORE any call of this lane's scorer (no LPIPS of any kind has been computed by this
+lane at the time of writing; the only numbers read so far are the PUBLISHED unregistered ROW lines and the published
+registration anchors listed below).
+
+QUESTION  Are the thesis LPIPS numbers robust to the known geometric misregistration of the real right-eye GT, and what
+          should the thesis report?  (1) registered-GT re-score, (2) clip-level CIs and exact tests with and without
+          registration, (3) per-frame concentration of the gain, (4) sample size / is adding the dev clips clean.
+
+-------------------------------------------------------------------------------------------------------------------
+INPUTS -- existing LOSSLESS FFV1 renders only (no new render is made by this lane)
+-------------------------------------------------------------------------------------------------------------------
+12 test clips 0042 0052 0125 0128 0141 0147 0170 0204 0225 0251 0259 0301.  Path pattern
+<root>/clips/<clip>_<label>/<clip>_inpainting_results_sbs.mkv, one file per (clip,label) -- verified unique by ls:
+  PRIMARY rows
+    origin_ll                    deployed origin, 8 Euler steps, guidance 1.01     root outputs/beyond4_lossless
+    mstudent2_step800_deliv_ll   THE DELIVERABLE at deployed settings              root outputs/beyond_distil_mamba_scaled
+    deliv_g100_T5nat             deliverable, guidance 1.00 + T5 schedule, UNPADDED (= what would literally ship,
+                                 the 0.3815 row)                                    root outputs/finalcheck_20261004/speed
+    s25_ll                       origin, 25 steps (the teacher / ceiling)          root outputs/beyond4_lossless for
+                                 0052 0147 0204 0301, outputs/skeptic1_stack for the other 8
+  SECONDARY rows (context / yardsticks, never gating)
+    deliv_g100_T5pad             same as T5nat but RNG-padded (T5nat - T5pad = seed-realisation yardstick)
+    mamba_ll                     the shipped 5-slot Mamba (the deliverable's base)  roots outputs/beyond_distil_mamba,
+                                 outputs/skeptic1_stack
+GT  video_data/train/<clip>_train.mp4  (TL real left, TR real right = the target, BL mask, BR warped right)
+MODEL INPUT  video_data/splatting/<clip>_splatting_results.mp4 (BL = occlusion mask, BR = warped right eye)
+
+-------------------------------------------------------------------------------------------------------------------
+SCORER  scripts/distill/runs/more_20261004/eval_robustness/score_registered_v1.py (new; score_clip_ll.py is unchanged
+        and is the definition being reproduced).  Frames: SCORE_STEP=4, n = min(#render samples, #GT samples), exactly
+        as score_clip_ll.py.  Window (t0,l0) = score_clip_ll.py's own left-eye search (re-run, must equal the
+        published offsets).  LPIPS-alex v0.1, float32, batches of 4 frames, inputs *2-1 -- verbatim.
+GT GEOMETRY VARIANTS (all use the same frames and the same render crops; only the GT crop moves):
+  UNREG          TR[t0:t0+576, l0:l0+1024]                     == score_clip_ll.py (must reproduce, gate G0)
+  REG_FRAME      ** PRIMARY **  per-frame integer shift (ddy_f, ddx_f): raw per-frame argmax of masked PSNR,
+                 computed for EVERY GT frame, then median-5 filtered over consecutive frames (edge-padded,
+                 ddy and ddx filtered separately -- regB's register_gt_perframe_regB.py rule), applied at the
+                 scored frames.
+  REG_CLIP       one shift per clip = argmax over the grid of the MEAN over all GT frames of the per-frame PSNR
+                 (regB's "joint optimum" rule).                                  -- robustness
+  REG_FRAME_RAW  per-frame raw argmax, no temporal filter.                        -- sensitivity
+  BLK_FRAME      EXPLORATORY: LPIPS on a 3x4 grid of 192x256 blocks, averaged with equal weight, GT at the
+                 REG_FRAME shift (block-metric twin of REG_FRAME).
+  BLK_LOCAL      EXPLORATORY: as BLK_FRAME but every block gets its own shift, searched within ddy +-3 / ddx +-16
+                 of that frame's REG_FRAME shift (blocks with < 50 % non-hole pixels keep the frame shift).  Addresses
+                 the depth-dependent residual disparity that no single shift can register (regB per-block evidence).
+                 Its absolute values are only comparable with BLK_FRAME, not with full-frame LPIPS.
+REGISTRATION (identical for every config, estimated ONLY from model-independent data, never from any render):
+  target   = the MODEL INPUT: splatting video BR quadrant at the deployed window (t0,l0) (576x1024)
+  moving   = train tile TR quadrant, window shifted by (ddy, ddx)
+  excluded = disocclusion holes: splatting video BL quadrant, channel mean > 127.5
+  score    = PSNR over valid pixels x 3 channels, 10*log10(255^2/MSE)
+  search   = EXHAUSTIVE integer grid ddy in [-10,+10], ddx in [-120,+40] (reviewlib's range; regB's +-64 was too
+             close to 0141's -59/-60).  A shifted window must stay inside the quadrant (asserted, no fill).
+  check    = the same estimator run against the TRAIN-tile BR + train BL mask (regB's target) at the scored frames, to
+             reproduce the published anchors and to measure what the choice of target changes.
+
+-------------------------------------------------------------------------------------------------------------------
+GATES (a failure blocks the affected numbers until it is fixed; one retry allowed, errors quoted)
+-------------------------------------------------------------------------------------------------------------------
+G0  UNREG reproduces every published per-clip ROW lpips of the 72 (clip,label) cells within +-0.0001, and the
+    12-clip means origin 0.3933, deliverable 0.3804, T5nat 0.3815, T5pad 0.3818, s25 0.3786, mamba 0.3927 (4 dp);
+    the left-eye offset (dy,dx) equals the published one on every clip.  G0 failing blocks EVERYTHING.
+G1  registration anchors, train-BR target (regB / review definitions):
+    (a) review GEOMETRY.txt full-window optima: 0147 f8 (-1,-41), 0141 f72 (0,-59), 0042 f32 (-1,-36),
+        0128 f116 (-1,-34), 0301 f40 (1,-15), 0204 f64 (-1,-17): reproduced within 1 px in ddy and 2 px in ddx
+        (the review searched coarse-to-fine with the splatting mask).
+    (b) regB 0301 per_frame_raw (registration_perframe.json) at the scored frames: same (ddy,ddx) on >= 90 % of the
+        frames (exhaustive search, same target and mask; regB limited |ddy|<=3).
+    (c) regB clip optima 0301 (0,-12), 0204 (-1,-17) within 1 px (regB used every 10th frame).
+G2  per clip: mean registered PSNR(TR,BR) >= unregistered for REG_FRAME and REG_CLIP; no raw or clip optimum on the
+    search boundary (|ddy| = 10, ddx = -120 or +40) -- if one is, the range is widened once for that clip;
+    the decoded left halves of all configs of a clip are bit-identical (one window serves all).
+
+-------------------------------------------------------------------------------------------------------------------
+PRIMARY VERDICTS (paired, clip = unit, Delta_c = clip-mean LPIPS(row) - clip-mean LPIPS(origin_ll), negative = better)
+-------------------------------------------------------------------------------------------------------------------
+V1  deliverable (deployed) vs origin: "SURVIVES REGISTRATION" iff under REG_FRAME ALL of
+      (a) mean Delta < 0
+      (b) 95 % percentile bootstrap CI over clips (B = 100,000 paired resamples, seed 20261004) has upper bound < 0
+      (c) >= 10/12 clips improved  (exact two-sided sign test p = 0.039; 11/12 p = 0.0063; 12/12 p = 0.00049)
+    "ROBUST" iff V1 also holds under REG_CLIP.  Whether 12/12 survives is reported separately under every variant.
+V2  the same rule for T5nat vs origin.          V3  the same rule for s25 vs origin.
+V4  ordering s25 < deliverable < origin (12-clip mean LPIPS) under REG_FRAME: reported as preserved / not preserved.
+MAGNITUDE  ratio Delta(REG_FRAME)/Delta(UNREG) per row; "magnitude preserved" iff the ratio is in [0.5, 2.0].
+ABSOLUTE   12-clip mean LPIPS per row and variant, and its change vs UNREG (descriptive).
+
+SECONDARY STATISTICS (reported, not gating; at n = 12 the bootstrap CI is labelled DESCRIPTIVE -- percentile
+bootstrap under-covers at this n): BCa and Student-t 95 % CIs; exact Wilcoxon signed-rank (two-sided); exact
+sign-flip permutation test of the mean Delta (all 4096 sign patterns, two-sided); two-level bootstrap (clips, then
+frames within clip, B = 20,000).  Contrasts: {deliverable, T5nat, s25, T5pad, mamba} - origin; deliverable - s25;
+T5nat - deliverable; T5nat - T5pad.  Every contrast under UNREG, REG_CLIP, REG_FRAME, REG_FRAME_RAW, BLK_FRAME,
+BLK_LOCAL.  No frame-pooled significance test is run anywhere (frames within a clip are autocorrelated).
+
+-------------------------------------------------------------------------------------------------------------------
+PER-FRAME ANALYSIS (descriptive; deliverable - origin; UNREG and REG_FRAME)
+-------------------------------------------------------------------------------------------------------------------
+Per clip: n frames, fraction of frames with Delta_f < 0, mean and median Delta_f, and the TOP-20 % SHARE =
+(sum of Delta_f over the 20 % most-improved frames, ceil) / (sum of Delta_f over all frames)  [0.20 = perfectly
+uniform; 1.0 = all of the net gain in one fifth of the frames; > 1 = the rest of the frames net-lose].
+RULE  "UNIFORM" iff the median clip has fraction improved >= 0.75 AND top-20 % share <= 0.40;
+      "CONCENTRATED" iff the median clip has top-20 % share > 0.60 OR fraction improved < 0.60;
+      otherwise "INTERMEDIATE".
+Also reported (no rule): Delta_f by sampler window (window 0 vs later; windows are 14 frames, overlap 3, stride 11,
+replicated from inpainting_inference.py) and by position inside the window; within-clip Spearman of Delta_f vs the
+frame's disocclusion fraction and vs its registration PSNR; first vs second half of each clip.  For T5nat,
+windows >= 1 carry a different noise realisation than the 8-step renders, so window effects there mix schedule
+and seed.
+
+-------------------------------------------------------------------------------------------------------------------
+QUESTION (4) is answered from the records (split file, training/selection logs); no dev clip is rendered by this
+lane (no origin render exists on any dev clip; 0082 0268 0311 0351 have no render at all).
+-------------------------------------------------------------------------------------------------------------------
+PREDICTION (written down so it can be wrong; not a criterion): every row's absolute LPIPS falls under registration,
+and the deliverable's Delta stays negative on >= 10/12 clips.
+
+--- recorded by the shell at 2026-10-04T13:29:32+0900 ---
+files in the lane dirs at this moment (no score output may exist):
+outputs/more_20261004/eval_robustness/:
+total 8
+drwxrwxr-x 2 kawa kawa 4096 Oct  4 13:28 .
+drwxrwxr-x 6 kawa kawa 4096 Oct  4 13:28 ..
+
+scripts/distill/runs/more_20261004/eval_robustness/:
+total 20
+drwxrwxr-x 2 kawa kawa  4096 Oct  4 13:29 .
+drwxrwxr-x 6 kawa kawa  4096 Oct  4 13:28 ..
+-rw-rw-r-- 1 kawa kawa 10953 Oct  4 13:29 PREREG.txt
+md5 of the scorer being reproduced:
+a6695eb066971e1ca211e4ad9c85fac7  scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py

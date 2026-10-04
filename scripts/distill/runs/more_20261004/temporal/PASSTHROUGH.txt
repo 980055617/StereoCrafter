@@ -1,0 +1,40 @@
+PASS outputs/more_20261004/temporal/clips/0170_ctrl_T5nat  frames=151 (ref 151)  roundtrip(full decode md5 == writer md5)=True [07c1dd4fc9f34ed3d236c11c52c2e7b7]  left==origin@1.01 left=True [d758b40e054ce51c354586239676ffb4]  ref_roundtrip=True
+SUMMARY checked=1 failed=0
+PASS outputs/more_20261004/temporal/clips/0170_T5nat_ov5  frames=151 (ref 151)  roundtrip(full decode md5 == writer md5)=True [46e6cab7ee4df90241a95266031f466c]  left==origin@1.01 left=True [d758b40e054ce51c354586239676ffb4]  ref_roundtrip=True
+PASS outputs/more_20261004/temporal/clips/0170_T5nat_ov7  frames=151 (ref 151)  roundtrip(full decode md5 == writer md5)=True [6084e5c2f95595ac2fd14c83517d3cf7]  left==origin@1.01 left=True [d758b40e054ce51c354586239676ffb4]  ref_roundtrip=True
+PASS outputs/more_20261004/temporal/clips/0170_T5nat_pw03  frames=151 (ref 151)  roundtrip(full decode md5 == writer md5)=True [82e59043ad6cd9d135988b37c97c5bbd]  left==origin@1.01 left=True [d758b40e054ce51c354586239676ffb4]  ref_roundtrip=True
+PASS outputs/more_20261004/temporal/clips/0170_T5nat_pw05  frames=151 (ref 151)  roundtrip(full decode md5 == writer md5)=True [1c5c1a655eb867856a38be6ae478b7d4]  left==origin@1.01 left=True [d758b40e054ce51c354586239676ffb4]  ref_roundtrip=True
+PASS outputs/more_20261004/temporal/clips/0170_T5nat_nsfa  frames=151 (ref 151)  roundtrip(full decode md5 == writer md5)=True [42627b3ad1672ba7f5b962d3ec7f50e5]  left==origin@1.01 left=True [d758b40e054ce51c354586239676ffb4]  ref_roundtrip=True
+PASS outputs/more_20261004/temporal/clips/0170_T5nat_dcs14  frames=151 (ref 151)  roundtrip(full decode md5 == writer md5)=True [c97ce06eac1115fa85721da4bd29d550]  left==origin@1.01 left=True [d758b40e054ce51c354586239676ffb4]  ref_roundtrip=True
+SUMMARY checked=6 failed=0
+PASS outputs/more_20261004/temporal/clips/0259_T5nat_dcs14  frames=151 (ref 151)  roundtrip(full decode md5 == writer md5)=True [39aa6003fccff99ff6b9225978d5f25c]  left==origin@1.01 left=True [e38d257659f5ebc452357977b53f0bab]  ref_roundtrip=True
+PASS outputs/more_20261004/temporal/clips/0042_T5nat_dcs14  frames=153 (ref 153)  roundtrip(full decode md5 == writer md5)=True [2ed47dc8f3ffba6c07d9afff09ff2bcc]  left==origin@1.01 left=True [91c0da975c81757485e5a9cdc42f4c11]  ref_roundtrip=True
+PASS outputs/more_20261004/temporal/clips/0301_T5nat_dcs14  frames=151 (ref 151)  roundtrip(full decode md5 == writer md5)=True [88551bf11359f5a0b6891094b0dd42e6]  left==origin@1.01 left=True [7ca2a3ff1c13c342c8662191d82a9141]  ref_roundtrip=True
+SUMMARY checked=3 failed=0
+PASS outputs/more_20261004/temporal/clips/0259_T5nat_ov5  frames=151 (ref 151)  roundtrip(full decode md5 == writer md5)=True [b72c3363970dccd5256081cfaedec380]  left==origin@1.01 left=True [e38d257659f5ebc452357977b53f0bab]  ref_roundtrip=True
+PASS outputs/more_20261004/temporal/clips/0259_T5nat_ov7  frames=151 (ref 151)  roundtrip(full decode md5 == writer md5)=True [451168a965c4ad8af7e5c51d2b2323d8]  left==origin@1.01 left=True [e38d257659f5ebc452357977b53f0bab]  ref_roundtrip=True
+PASS outputs/more_20261004/temporal/clips/0259_T5nat_pw03  frames=151 (ref 151)  roundtrip(full decode md5 == writer md5)=True [50ba787fa734ac74c14bd60f24b80f24]  left==origin@1.01 left=True [e38d257659f5ebc452357977b53f0bab]  ref_roundtrip=True
+SUMMARY checked=3 failed=0
+PASS outputs/more_20261004/temporal/clips/0259_T5nat_pw05  frames=151 (ref 151)  roundtrip(full decode md5 == writer md5)=True [38399ac9d8b30a037bcc6dc072600285]  left==origin@1.01 left=True [e38d257659f5ebc452357977b53f0bab]  ref_roundtrip=True
+PASS outputs/more_20261004/temporal/clips/0259_T5nat_nsfa  frames=151 (ref 151)  roundtrip(full decode md5 == writer md5)=True [57d0d475ff88f2fe3f9cb64dd8c5e4db]  left==origin@1.01 left=True [e38d257659f5ebc452357977b53f0bab]  ref_roundtrip=True
+SUMMARY checked=2 failed=0
+PASS outputs/more_20261004/temporal/clips/0170_origin_g101_s8_dcs14  frames=151 (ref 151)  roundtrip(full decode md5 == writer md5)=True [c6d3db18a56ef703f7d8bc6decc5adea]  left==origin@1.01 left=True [d758b40e054ce51c354586239676ffb4]  ref_roundtrip=True
+SUMMARY checked=1 failed=0
+PASS outputs/more_20261004/temporal/clips/0259_origin_g101_s8_dcs14  frames=151 (ref 151)  roundtrip(full decode md5 == writer md5)=True [e631c16f94a6bcd7222ab5896610f6df]  left==origin@1.01 left=True [e38d257659f5ebc452357977b53f0bab]  ref_roundtrip=True
+SUMMARY checked=1 failed=0
+PASS outputs/more_20261004/temporal/clips/0042_origin_g101_s8_dcs14  frames=153 (ref 153)  roundtrip(full decode md5 == writer md5)=True [daab9d9723c43a6b2cebf92cce08e306]  left==origin@1.01 left=True [91c0da975c81757485e5a9cdc42f4c11]  ref_roundtrip=True
+PASS outputs/more_20261004/temporal/clips/0301_origin_g101_s8_dcs14  frames=151 (ref 151)  roundtrip(full decode md5 == writer md5)=True [cb495639c59f978ca422a1671eec031a]  left==origin@1.01 left=True [7ca2a3ff1c13c342c8662191d82a9141]  ref_roundtrip=True
+SUMMARY checked=2 failed=0
+PASS outputs/more_20261004/temporal/clips/0042_T5nat_ov5  frames=153 (ref 153)  roundtrip(full decode md5 == writer md5)=True [ab654bcb96eb1d3bafeaf5e7ef5de187]  left==origin@1.01 left=True [91c0da975c81757485e5a9cdc42f4c11]  ref_roundtrip=True
+PASS outputs/more_20261004/temporal/clips/0042_T5nat_ov7  frames=153 (ref 153)  roundtrip(full decode md5 == writer md5)=True [7f46c498b3ac9e9282f26ffcbe996709]  left==origin@1.01 left=True [91c0da975c81757485e5a9cdc42f4c11]  ref_roundtrip=True
+PASS outputs/more_20261004/temporal/clips/0042_T5nat_pw03  frames=153 (ref 153)  roundtrip(full decode md5 == writer md5)=True [c8139a4e60467e0fa46ea900e4c85e54]  left==origin@1.01 left=True [91c0da975c81757485e5a9cdc42f4c11]  ref_roundtrip=True
+PASS outputs/more_20261004/temporal/clips/0042_T5nat_pw05  frames=153 (ref 153)  roundtrip(full decode md5 == writer md5)=True [48563f7838caa705cf4ce41212adaeff]  left==origin@1.01 left=True [91c0da975c81757485e5a9cdc42f4c11]  ref_roundtrip=True
+SUMMARY checked=4 failed=0
+PASS outputs/more_20261004/temporal/clips/0042_T5nat_nsfa  frames=153 (ref 153)  roundtrip(full decode md5 == writer md5)=True [f208f3f2b6bad0e552cdca642b85fac4]  left==origin@1.01 left=True [91c0da975c81757485e5a9cdc42f4c11]  ref_roundtrip=True
+PASS outputs/more_20261004/temporal/clips/0301_T5nat_ov5  frames=151 (ref 151)  roundtrip(full decode md5 == writer md5)=True [d985a6ef40e3ab348fe1e2b266deb604]  left==origin@1.01 left=True [7ca2a3ff1c13c342c8662191d82a9141]  ref_roundtrip=True
+PASS outputs/more_20261004/temporal/clips/0301_T5nat_ov7  frames=151 (ref 151)  roundtrip(full decode md5 == writer md5)=True [825f7b746c1beb0662732ba1d23b30fd]  left==origin@1.01 left=True [7ca2a3ff1c13c342c8662191d82a9141]  ref_roundtrip=True
+SUMMARY checked=3 failed=0
+PASS outputs/more_20261004/temporal/clips/0301_T5nat_pw03  frames=151 (ref 151)  roundtrip(full decode md5 == writer md5)=True [d845e8d43d36e0a5b98f88691ff95b7b]  left==origin@1.01 left=True [7ca2a3ff1c13c342c8662191d82a9141]  ref_roundtrip=True
+PASS outputs/more_20261004/temporal/clips/0301_T5nat_pw05  frames=151 (ref 151)  roundtrip(full decode md5 == writer md5)=True [1fe409603774093402665a4bd2950acd]  left==origin@1.01 left=True [7ca2a3ff1c13c342c8662191d82a9141]  ref_roundtrip=True
+PASS outputs/more_20261004/temporal/clips/0301_T5nat_nsfa  frames=151 (ref 151)  roundtrip(full decode md5 == writer md5)=True [74524426912982e80fe9635a5ce3913e]  left==origin@1.01 left=True [7ca2a3ff1c13c342c8662191d82a9141]  ref_roundtrip=True
+SUMMARY checked=3 failed=0

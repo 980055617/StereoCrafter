@@ -1,0 +1,28 @@
+PRE-REGISTRATION ADDENDUM -- G2 boundary trigger (eval_robustness lane)
+Written 2026-10-04 ~14:05 JST, while score_v1 is still running, BEFORE any LPIPS value of clip 0125 has been read
+(the scorer log prints them; only its "REG splat-BR" registration line has been read).  It changes nothing in
+PREREG.txt; it executes PREREG.txt's own G2 rule ("if one is, the range is widened once for that clip") and fixes
+in advance how the result is used.
+
+TRIGGER  0125: 26 per-frame raw optima on the search boundary (frames 60-68, 70-75, 78-79, 82-89, 92: ddy = +10 or
+ddx = -120); the clip optimum (0,-32) is interior.
+CAUSE (inspected on frames 40/64/72/86/100, BR vs GT; panel saved by hand in the session scratchpad, not an output):
+the camera passes a tree trunk very close to the lens.  The trunk fills most of the window and has a real disparity
+of about -120 px or beyond, while the background stays near -32 px.  No single integer shift registers both
+layers.  Max-PSNR therefore follows the trunk to the ddx boundary, and on transition frames it drifts along a flat
+vertical ridge (vertical bark texture and a water stream) to the ddy boundary.  This is a known limit of a global
+shift in a scene with depth layers.  It is not a code fault: on 0301 the same estimator reproduced regB exactly,
+38/38 frames.
+
+ACTION (applies to EVERY clip whose score_v1 has a raw or clip optimum on the boundary, decided now for all):
+  1. re-score that clip ONCE in a new directory outputs/more_20261004/eval_robustness/score_v1_wide/ with the grid
+     widened to ddy in [-20,+20], ddx in [-240,+40]; everything else identical.  The script is a copy,
+     score_registered_v1w.py, that differs from v1 only in reading the grid from env REG_DDY / REG_DDX.  v1 is not
+     edited while it runs.
+  2. PRIMARY analysis uses the widened result for such a clip, as PREREG.txt prescribes.
+  3. if boundary optima REMAIN after widening, REG_FRAME of that clip is flagged ILL-POSED (multi-plane scene), and
+     V1-V3 are reported both with the clip (n=12, the verdict of record) and without it (n=11, sensitivity).
+     REG_CLIP is the robustness variant; it needs no change while its optimum is interior.
+  4. the original-range (score_v1) numbers of the clip are also reported, so the effect of widening is visible.
+No other rule, threshold or variant changes.
+--- recorded by the shell at 2026-10-04T14:00:17+0900; score_v1 progress: 3/12 clips done ---

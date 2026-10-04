@@ -1,0 +1,19 @@
+# regime set (rest): 0204 0052 0147 -- variant-major order (A, then B, then C) so complete variants land first
+0204 deliv_g100_T5nat_A_rowlin deliv 1.00 700.0,7.276163101196289,1.1675708293914795,0.09738767892122269,0.0020000000949949026 - rowlin keep
+0204 origin_g101_s8_A_rowlin origin 1.01 - - rowlin keep
+0052 deliv_g100_T5nat_A_rowlin deliv 1.00 700.0,7.276163101196289,1.1675708293914795,0.09738767892122269,0.0020000000949949026 - rowlin keep
+0052 origin_g101_s8_A_rowlin origin 1.01 - - rowlin keep
+0147 deliv_g100_T5nat_A_rowlin deliv 1.00 700.0,7.276163101196289,1.1675708293914795,0.09738767892122269,0.0020000000949949026 - rowlin keep
+0147 origin_g101_s8_A_rowlin origin 1.01 - - rowlin keep
+0204 deliv_g100_T5nat_B_telea deliv 1.00 700.0,7.276163101196289,1.1675708293914795,0.09738767892122269,0.0020000000949949026 - telea keep
+0204 origin_g101_s8_B_telea origin 1.01 - - telea keep
+0052 deliv_g100_T5nat_B_telea deliv 1.00 700.0,7.276163101196289,1.1675708293914795,0.09738767892122269,0.0020000000949949026 - telea keep
+0052 origin_g101_s8_B_telea origin 1.01 - - telea keep
+0147 deliv_g100_T5nat_B_telea deliv 1.00 700.0,7.276163101196289,1.1675708293914795,0.09738767892122269,0.0020000000949949026 - telea keep
+0147 origin_g101_s8_B_telea origin 1.01 - - telea keep
+#DROPPED(C==A by construction: UNet conv_in mask-channel weights are exactly 0; 0301 deliv C md5 == A md5) 0204 deliv_g100_T5nat_C_rowlinshrink deliv 1.00 700.0,7.276163101196289,1.1675708293914795,0.09738767892122269,0.0020000000949949026 - rowlin shrink
+#DROPPED(C==A by construction: UNet conv_in mask-channel weights are exactly 0; 0301 deliv C md5 == A md5) 0204 origin_g101_s8_C_rowlinshrink origin 1.01 - - rowlin shrink
+#DROPPED(C==A by construction: UNet conv_in mask-channel weights are exactly 0; 0301 deliv C md5 == A md5) 0052 deliv_g100_T5nat_C_rowlinshrink deliv 1.00 700.0,7.276163101196289,1.1675708293914795,0.09738767892122269,0.0020000000949949026 - rowlin shrink
+#DROPPED(C==A by construction: UNet conv_in mask-channel weights are exactly 0; 0301 deliv C md5 == A md5) 0052 origin_g101_s8_C_rowlinshrink origin 1.01 - - rowlin shrink
+#DROPPED(C==A by construction: UNet conv_in mask-channel weights are exactly 0; 0301 deliv C md5 == A md5) 0147 deliv_g100_T5nat_C_rowlinshrink deliv 1.00 700.0,7.276163101196289,1.1675708293914795,0.09738767892122269,0.0020000000949949026 - rowlin shrink
+#DROPPED(C==A by construction: UNet conv_in mask-channel weights are exactly 0; 0301 deliv C md5 == A md5) 0147 origin_g101_s8_C_rowlinshrink origin 1.01 - - rowlin shrink

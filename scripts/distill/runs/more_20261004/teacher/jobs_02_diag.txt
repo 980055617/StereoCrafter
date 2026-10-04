@@ -1,0 +1,4 @@
+# CLIP LABEL SAMPLER N PAD SCHURN MAXCH   -- window-0 convergence diagnostic (truncated, NEVER scored)
+0301 diag1w_heun25 heun 25 - - 1
+0301 diag1w_dpm50 dpmpp2m 50 - - 1
+0301 diag1w_euler100 euler 100 - - 1

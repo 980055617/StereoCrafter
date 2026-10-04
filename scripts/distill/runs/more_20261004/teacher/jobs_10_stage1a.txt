@@ -1,0 +1,7 @@
+# CLIP LABEL SAMPLER N PAD SCHURN MAXCH   -- Stage 1a (PREREG S1): full 0301 renders, RNG-paired with s25 (pad 25)
+# order changed 2026-10-04 ~14:20 (before chain B opened this file): H13 moved last so the window-0 convergence
+# diagnostic (INVESTIGATION_smoke_alarm.txt) can be read before Heun spends GPU time.
+0301 D16 dpmpp2m 16 25 - -
+0301 D25 dpmpp2m 25 25 - -
+0301 C25 euler_churn 25 25 5 -
+0301 H13 heun 13 25 - -

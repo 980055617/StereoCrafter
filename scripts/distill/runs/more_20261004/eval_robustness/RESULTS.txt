@@ -1,0 +1,236 @@
+================================================================================================================
+EVAL ROBUSTNESS -- are the thesis LPIPS numbers robust, and what should be reported?        2026-10-04
+lane more_20261004/eval_robustness (GPU 1, LPIPS only, NO renders, no checkpoint touched)
+================================================================================================================
+Every number below is quoted from the file named in brackets (lane-dir files unless a path is given).  Pre-registration: PREREG.txt
+(13:30, before any score), PREREG_ADDENDUM_boundary.txt (14:00, before any 0125 LPIPS value was read).
+
+----------------------------------------------------------------------------------------------------------------
+0. THE ANSWER IN FIVE LINES
+----------------------------------------------------------------------------------------------------------------
+- The published GT is misregistered by 10-60 px against the renders, and that misregistration is about 40 % of the
+  published absolute LPIPS.  Registering the real right eye to the model's own input lowers origin from 0.3933 to
+  0.2432 (-38 %; -47 % on the 4400-px clips).  So the absolute numbers are NOT robust.
+- The DELTAS are robust.  Deliverable vs origin: -0.0128 unregistered, -0.0132 registered per frame, -0.0133
+  registered per clip.  The 95 % CI excludes 0 under all six GT variants.  Every pre-registered verdict passes
+  (V1-V4).
+- "12/12 clips improved" is NOT robust: it is 11/12 under every registered variant.  Clip 0259 flips to +0.0019.
+  That is smaller than the change one re-seed produced on 0259 (0.0038, measured on the T5 configuration).
+- The gain is spread evenly over frames: UNIFORM by the pre-registered rule.  It does not depend on sampler windows
+  and is not concentrated in disocclusion frames.
+- The claim rests on n = 12 clips, not 456 frames.  Adding "the 8 dev clips" is NOT clean: only 0082 and 0268
+  qualify, and neither has been rendered.
+
+----------------------------------------------------------------------------------------------------------------
+1. WHAT WAS DONE, AND THE GATES
+----------------------------------------------------------------------------------------------------------------
+Scorer: score_registered_v1.py.  The UNREG column is score_clip_ll.py verbatim: same frames, same left-eye window
+search, same LPIPS-alex calls.  The registered columns move only the GT crop.  Each shift is the integer
+(ddy, ddx) that maximises PSNR between the real right eye TR and the MODEL INPUT BR (the splatting video, holes
+excluded).  It is estimated from model-independent data only, so it is identical for all six rows and cannot favour
+any of them.
+  GT variants: UNREG (published) | REG_CLIP (one shift per clip) | REG_FRAME (per-frame shift, median-5 filtered,
+  PRIMARY) | REG_FRAME_RAW | BLK_FRAME / BLK_LOCAL (exploratory: 3x4 blocks, local shifts within +-16 px, for the
+  depth-dependent residual).
+  Rows: origin_ll, mstudent2_step800_deliv_ll, deliv_g100_T5nat (primary T5), s25_ll, deliv_g100_T5pad, mamba_ll.
+  The existing lossless FFV1 renders were used; paths come from the published ROW lines [PUBLISHED_ROWS.json].
+GATES [TABLE_ROBUSTNESS_v1.txt, "GATES"]
+  G0 PASS  UNREG reproduces all 72 published (clip, row) cells, max |dev| 4.9e-07, with the same offsets and n.
+           The 12-clip means are equal at 4 dp (0.3933 / 0.3804 / 0.3815 / 0.3818 / 0.3786 / 0.3927).
+  G1 PASS  The registration estimator reproduces every published anchor EXACTLY:
+           - all 6 review GEOMETRY.txt frames (0147 f8 (-1,-41) ... 0204 f64 (-1,-17));
+           - regB's 0301 per-frame shifts on 38/38 frames, identical PSNR to 3 dp;
+           - regB's clip optima 0301 (0,-12) and 0204 (-1,-17).
+           Registering against the splatting BR instead of the train-tile BR changes a shift on 0-1 frames of 38
+           (6 on the two-layer 0125); the two BRs agree to 39-41 dB.
+  G2 PASS  under PREREG_ADDENDUM_boundary.txt.  Registered PSNR > unregistered on every clip, and the left halves
+           are bit-identical across rows.  0125 hit the search boundary on 26 frames: the camera passes a tree
+           trunk close to the lens, real disparity about -130 px against about -32 px for the background.  It
+           was re-scored once with a wider grid [score_v1_wide/]; the vertical ridge drift persisted (27
+           frames), so its REG_FRAME is flagged ILL-POSED.  Its deltas hardly move with the grid (deliverable
+           -0.0163 -> -0.0164; REG_CLIP identical), and an n=11 sensitivity is reported.
+GPU use: about 22 GPU-min on GPU 1 (12 x ~85 s + 0125-wide 179 s + smoke 83 s), one flock per clip.
+
+----------------------------------------------------------------------------------------------------------------
+2. QUESTION (1) -- REGISTERED-GT RE-SCORE                                      [TABLE_ROBUSTNESS_v1.txt]
+----------------------------------------------------------------------------------------------------------------
+GT shift found (clip, model input as target):
+  4400-px clips: -31 to -60 px (0042 -35, 0052 -40, 0125 -32, 0128 -31, 0141 -60, 0147 -44)
+  2160-px clips: -10 to -19 px
+  The clip-level ddy is -1 or 0 everywhere.
+  PSNR(TR, BR) rises from 12.9-18.6 dB unregistered to 16.5-26.5 dB with the clip shift and 16.9-26.6 dB with the
+  per-frame shift.  The renders' stereo disparity is much smaller than the real camera baseline.
+
+12-CLIP MEAN LPIPS               UNREG   REG_CLIP  REG_FRAME   delta vs origin (UNREG -> REG_FRAME)   improved
+  origin (deployed 8 st @1.01)  0.3933    0.2454    0.2432
+  DELIVERABLE (deployed)        0.3804    0.2320    0.2300      -0.0128 -> -0.0132                     12/12 -> 11/12
+  deliverable T5 @1.00 (unpad)  0.3815    0.2334    0.2312      -0.0117 -> -0.0119                     12/12 -> 10/12
+  origin 25 steps (teacher)     0.3786    0.2301    0.2279      -0.0146 -> -0.0152                     12/12 -> 11/12
+  deliverable T5 @1.00 (padded) 0.3818    0.2339    0.2318      -0.0114 -> -0.0113                     12/12 -> 11/12
+  shipped 5-slot Mamba          0.3927    0.2448    0.2426      -0.0006 -> -0.0006 (CI spans 0)         8/12 -> 5/12
+  origin change vs UNREG                  -0.1479   -0.1501  (-38.2 %);  per format: 4400 0.4614 -> 0.2452
+                                                              (-47 %), 2160 0.3251 -> 0.2411 (-26 %)
+- MAGNITUDE survives: REG_FRAME/UNREG = 1.03 for the deliverable, 1.02 for T5, 1.04 for s25 (all inside the
+  pre-registered [0.5, 2.0]).  The relative gain GROWS because the denominator shrinks: the deliverable's mean
+  per-clip change is -3.6 % unregistered and -5.6 % registered [SUPPLEMENT_seed_yardstick.txt].
+- ORDERING s25 < deliverable < origin is preserved (0.2279 < 0.2300 < 0.2432).
+- THE 12/12 COUNTS DO NOT SURVIVE.
+  - Deliverable: 11/12 under all five registered variants.  0259 goes to +0.0019 (REG_CLIP +0.0018).
+  - T5@1.00: 10/12.  0042 goes to +0.0010, 0259 to +0.0015.
+  - s25: 11/12.  0259 goes to +0.0001.
+  0259 is a two-depth scene: a very close dandelion that is defocused in the real right eye, in front of dense
+  foliage [score_v1/0259_inspect_f076.png].  Even the 25-step teacher only ties origin there.
+- Distortion side: registered right-eye PSNR is origin 20.715 dB, deliverable 20.492 dB (-0.22 dB).  The
+  unregistered values are 16.425 dB and 16.229 dB (-0.20 dB).  The perception/distortion trade survives
+  registration unchanged.
+- Shipped 5-slot Mamba (the base) stays origin-equivalent: -0.0006, CI [-0.0030, +0.0013].
+
+----------------------------------------------------------------------------------------------------------------
+3. QUESTION (2) -- CIs AND EXACT TESTS, n = 12 clips (paired)                    [TABLE_ROBUSTNESS_v1.txt]
+----------------------------------------------------------------------------------------------------------------
+                         mean d   impr   pct95 boot CI*      BCa95 CI            p_sign    p_signflip  p_Wilcoxon
+deliverable - origin
+  UNREG                  -0.0128  12/12  [-0.0187,-0.0081]   [-0.0203,-0.0087]   0.00049   0.00049     0.00049
+  REG_CLIP               -0.0133  11/12  [-0.0196,-0.0081]   [-0.0210,-0.0088]   0.0063    0.00098     0.00098
+  REG_FRAME (primary)    -0.0132  11/12  [-0.0196,-0.0079]   [-0.0210,-0.0086]   0.0063    0.00098     0.00098
+  BLK_LOCAL (explor.)    -0.0127  11/12  [-0.0191,-0.0075]   [-0.0208,-0.0083]   0.0063    0.00098     0.00098
+T5@1.00 - origin
+  UNREG                  -0.0117  12/12  [-0.0173,-0.0072]   [-0.0186,-0.0078]   0.00049   0.00049     0.00049
+  REG_FRAME              -0.0119  10/12  [-0.0182,-0.0066]   [-0.0192,-0.0072]   0.039     0.0020      0.0024
+s25 - origin
+  UNREG                  -0.0146  12/12  [-0.0209,-0.0091]   [-0.0218,-0.0097]   0.00049   0.00049     0.00049
+  REG_FRAME              -0.0152  11/12  [-0.0223,-0.0091]   [-0.0234,-0.0098]   0.0063    0.00098     0.00098
+deliverable - s25        +0.0018 (UNREG) / +0.0021 (REG_FRAME), CI [-0.0010,+0.0064]: indistinguishable from the
+                         teacher at n=12; the point estimate is 87-88 % of the teacher's gain.
+T5nat - deliverable      +0.0011, CI [+0.0004,+0.0019] (UNREG) / +0.0012, CI [+0.0005,+0.0021] (REG_FRAME):
+                         T5@1.00 is measurably, slightly worse than the deployed deliverable, under every GT.
+T5nat - T5pad (seed)     -0.0003 / -0.0006, CI spans 0
+* With n = 12 the percentile bootstrap under-covers, so it is DESCRIPTIVE.  The Student-t and two-level
+  (clips x frames) CIs agree; for example, REG_FRAME deliverable t95 is [-0.0200,-0.0063] and the two-level CI is
+  [-0.0195,-0.0079].  Frame resampling adds almost nothing because the between-clip spread dominates.
+VERDICTS (pre-registered rule: mean < 0, CI upper bound < 0, >= 10/12):
+  V1 deliverable SURVIVES + ROBUST
+  V2 T5@1.00 SURVIVES + ROBUST at n=12, AT THE THRESHOLD (exactly 10/12).  Without the ill-posed 0125 it is 9/11,
+     p_sign 0.065, and "does not meet".  Treat it as fragile.
+  V3 s25 SURVIVES + ROBUST
+  V4 ordering PRESERVED
+  The n=11 sensitivity (without 0125) keeps V1 and V3: 10/11, p_sign 0.012, CI excludes 0.
+SEED YARDSTICK, a PROXY [SUPPLEMENT_seed_yardstick.txt, descriptive, not pre-registered].
+  T5nat and T5pad share model, schedule and guidance and differ only in the noise of windows >= 1, with origin
+  held fixed.  Their per-clip difference therefore shows how much re-seeding ONE configuration moves a clip's
+  LPIPS: median 0.0007, max 0.0038 (0259).
+  It is NOT the seed variance of the paired deliverable - origin delta.  Both of those renders share seed 1234,
+  and re-seeding both was not measured.
+  On 10/12 clips the deliverable's registered delta is negative and >= 3x this proxy.  On 0042 (1.8x) and
+  0259 (0.5x) it is not, so one seed cannot settle the sign of those two clips.
+
+----------------------------------------------------------------------------------------------------------------
+4. QUESTION (3) -- PER FRAME: UNIFORM                  [TABLE_ROBUSTNESS_v1.txt, analysis_v1_final/ figure + csv]
+----------------------------------------------------------------------------------------------------------------
+- The pre-registered rule gives UNIFORM under both UNREG and REG_FRAME, for the deliverable, T5 and s25.
+- Median clip: 100 % of frames improved, top-20 % share of the gain 0.30.  A perfectly uniform gain would give
+  0.20; "concentrated" starts at 0.60.
+- Pooled over frames: 92 % of 456 frames improve registered, 96 % unregistered.
+- 10 clips are uniform.  The exceptions are the two clips whose delta is within the re-seed proxy: 0259 (39 % of
+  frames improved, deltas swing +-0.02) and 0042 (71 %, top-20 % share 0.61).
+- No sampler-window structure: window 0 averages -0.0133, later windows -0.0132; clip-centred position bins all
+  sit within +-0.0011.
+- Weak link to disocclusion area: median within-clip Spearman(delta, hole fraction) is -0.13 (9 of 11 clips
+  negative).  The gain is frame-wide, consistent with the review finding that the extra sharpness is frame-wide.
+- Why the clip is the unit: the within-clip SD of per-frame deltas is 0.0070, the between-clip SD of clip means
+  0.0108, and the lag-1 autocorrelation (frames 4 apart) +0.38.
+Figure: outputs/more_20261004/eval_robustness/analysis_v1_final/perframe_delta_deliverable_vs_origin.png
+
+----------------------------------------------------------------------------------------------------------------
+5. QUESTION (4) -- SAMPLE SIZE, AND ARE THE 8 DEV CLIPS A CLEAN ADDITION?                  (from the records)
+----------------------------------------------------------------------------------------------------------------
+SAMPLE SIZE.  The claim rests on n = 12 clips: 6 from 4400x4400 tiles and 6 from 2160x3840.
+  - Each clip is one 576x1024 centre crop with 150-172 frames, scored on every 4th frame (38 frames; 456 in total).
+  - Each clip is ONE noise seed (1234).
+  - Frames are autocorrelated replicates of 12 scenes, not 456 samples (section 4).
+  - The strongest exact statement n=12 allows is 12/12, p = 0.00049; registered it is 11/12, p = 0.0063.
+HELD-OUT STATUS OF THE 12 TEST CLIPS, per stage of the deliverable:
+  base Mamba    CLEAN.  The protected light_lvl0_fulldata333_v2_8k_mamba_only.pt (md5 e9c23287...) is byte-identical
+                to scripts/distill/runs/fulldata_v2/fits/all_8k_v2.best.pt.
+                - Its fit: init=fresh, train=all 333 TRAIN clips (fits/all_8k_v2.json); distill_fulldata.py asserts
+                  train and (dev or test) are disjoint.
+                - Its "best" is step 8000 = the last step on all 5 slots, so the dev-relMSE monitor never selected
+                  anything.
+                - This CORRECTS beyond_distil_mamba_scaled/RESULTS.txt section 6, which says the base "may already
+                  have seen the other nine test clips".  That note is about pre-fulldata experiments, not this
+                  fresh fit.
+  step-distil   CLEAN weights.  Trained on 10 TRAIN clips (mstudent2/meta.json: 0094 0011 0177 0144 0179 0105 0286
+                0078 0165 0114; none in dev or test).  The rung was selected on dev 0040 0091 0184 0245 by
+                sampled LPIPS (PREREGISTRATION.txt).
+  design        NOT held out.  The recipe (objective, step subset {4,5,6}, lr, up_blocks.3 only) comes from
+                mstudent1, which trained on test 0301+0204 and selected on test 0052+0147.  The s25 opening was
+                also found on these 12 clips.  The 12 clips are a reused development-test set.
+  T5@1.00       chosen ON these 12 clips by the speed lane's non-inferiority rule
+                (finalcheck_20261004/speed/PREREG.txt).  Its 12-clip row is a selection-set result.
+THE 8 DEV CLIPS (fulldata_v1.json "dev"; clip_inventory.json; no render of 0082/0268/0311/0351 exists):
+  0040 0091 0184 0245   NOT CLEAN for the deliverable: they selected step800 (ladder span 0.0008, so the bias is
+                        small, but nonzero).  They have mamba/mstudent renders, no origin render.
+  0311                  UNUSABLE: gt=False (7779 frames, no real right eye), so it cannot be scored with real-GT LPIPS.
+  0351                  clean but OUT OF REGIME: 1163 frames against the test set's <=200-frame rule.  It needs about
+                        8x the render cost, or a pre-declared excerpt.
+  0082 0268             CLEAN and in regime: 4400 tile with 168 frames, and 2160 tile with 151 frames, both with GT.
+                        Their only exposure is the base fit's non-binding dev-relMSE monitor.  They need new renders
+                        (origin + deliverable, plus T5/s25 if wanted: 4-8 renders of about 2-4 min each).
+  The dev regime also differs: GT sharpness 0.0093 vs 0.0164, and mamba LPIPS 0.50-0.65 on the 4 selection clips
+  vs about 0.39 on test.  So: do NOT pool "8 dev clips" into the headline.  Adding 0082+0268 (n 12 -> 14) buys
+  little power; their value is as a never-inspected CONFIRMATION set, reported separately.
+
+----------------------------------------------------------------------------------------------------------------
+6. WHAT THE THESIS SHOULD REPORT
+----------------------------------------------------------------------------------------------------------------
+(a) Keep the published unregistered table as the headline, for comparability with every earlier number, and add
+    one registered row plus one sentence:
+      "The real right eye is horizontally misregistered against the renders by 10-60 px.  With a GT registered to
+       the model input, absolute LPIPS falls by 38 % (origin 0.393 -> 0.243), and the deliverable's improvement is
+       unchanged: -0.0128 -> -0.0132, 95 % CI [-0.0196, -0.0079], 11/12 clips."
+(b) Replace "12/12 clips" with: "12/12 (11/12 with registered GT; the one exception, 0259 at +0.0019, is smaller
+    than the change a single re-seed produced on that clip, 0.0038, measured on the T5 configuration)".  Do not
+    present 12/12 as a robust property.
+(c) Give CIs and exact tests: -0.0128 [-0.0187, -0.0081], sign test p = 0.00049 (registered: 0.0063); state n = 12
+    clips as the unit and that the bootstrap CI is descriptive at this n.
+(d) Absolute LPIPS values (0.39 / 0.24) should not be compared with external literature without saying which GT
+    geometry was used.
+(e) Report T5@1.00 as a SPEED configuration that is non-inferior within the pre-registered margin:
+    +0.0011 [+0.0004, +0.0019] vs the deployed deliverable, the same registered.  It still improves on origin,
+    but registered that is 10/12 and fragile, and it was selected on these clips.  Do not headline its "12/12".
+(f) "Matches the 25-step teacher": the deliverable - s25 difference is +0.0018 to +0.0021, CI spans 0, i.e. about
+    87-88 % of the teacher's gain.  "Statistically indistinguishable at n=12" is fair; "equal" is not.
+(g) State that the test clips are held out for the weights (both stages clean, base included) but were reused for
+    design decisions.  The clean confirmation would be renders on dev 0082 + 0268, reported separately.
+
+----------------------------------------------------------------------------------------------------------------
+7. LIMITATIONS OF THIS CHECK
+----------------------------------------------------------------------------------------------------------------
+- An integer global shift registers ONE depth layer.  0125 (near trunk) and 0259 (near dandelion) are two-layer
+  scenes where no global shift is right.  The block-local variant (BLK_LOCAL) agrees with REG_FRAME (-0.0127,
+  11/12), so the conclusion does not hinge on this, but absolute registered values carry about 0.002-0.004 of
+  shift-choice sensitivity per clip.  For example, on 0042 origin is 0.1564 REG_CLIP vs 0.1599 REG_FRAME.
+- LPIPS is still the only quality axis here.  FLICKER (RAFT warp error +22 %) and the stripe amplification from the
+  review are untouched by registration.
+- One seed per clip.  The seed yardstick is a proxy: it is measured on T5, not on the paired delta, and window 0
+  shares its noise.  A real seed study (re-render origin and deliverable with 2-3 seeds on 0042/0259) is outside
+  this LPIPS-only lane.
+
+----------------------------------------------------------------------------------------------------------------
+8. FILES (all new; nothing tracked was modified, no previous output was touched)
+----------------------------------------------------------------------------------------------------------------
+scripts/distill/runs/more_20261004/eval_robustness/
+  PREREG.txt, PREREG_ADDENDUM_boundary.txt     pre-registration (time-stamped by the shell)
+  score_registered_v1.py (+ v1w widened copy)  scorer;  run_score_v1.sh / run_score_v1w.sh  drivers
+  collect_published_v1.py -> PUBLISHED_ROWS.json   the 72 published cells and their render paths
+  analyze_v1.py -> TABLE_ROBUSTNESS_v1.txt (FINAL) and TABLE_ROBUSTNESS_v1_origrange.txt (0125 un-widened)
+  supplement_v1.py -> SUPPLEMENT_seed_yardstick.txt;  figure_perframe_v1.py;  logs score_v1.log, score_v1_wide.log,
+  smoke_0301_v1.log
+outputs/more_20261004/eval_robustness/
+  score_v1/            per-clip JSON (per-frame LPIPS for 6 rows x 6 GT variants, shifts, windows), PSNR grids,
+                       <clip>_inspect_fNNN.png = model input | GT unreg | GT registered | origin | deliverable
+  score_v1_wide/       0125 re-scored on the widened grid (addendum)
+  smoke_0301_v1/       smoke test (identical to score_v1's 0301)
+  analysis_v1_final/   stats_final.json, perframe_final.csv (456 frames x 36 columns),
+                       perframe_delta_deliverable_vs_origin.png
+  analysis_v1_origrange/  the same analysis with 0125 un-widened

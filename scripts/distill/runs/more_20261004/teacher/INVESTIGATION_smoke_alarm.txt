@@ -1,0 +1,21 @@
+SMOKE ALARM (PREREG "SMOKE" paragraph) -- investigated 2026-10-04 ~14:15 JST, before any Stage-1a render / any candidate score.
+
+Observed (DIST_smoke_v1.txt + inline check, decoded right halves, clip 0301, vs the s25 render):
+  window 0 (frames 0-13, all configs paired):  origin 8-step 29.26 dB | Heun-13 23.82 dB | DPM++2M-16 28.13 dB
+  window 1 (frames 14-24; origin-8 UNPAIRED):   origin 8-step 23.32 dB | Heun-13 23.16 dB | DPM++2M-16 27.40 dB
+The alarm premise was "a deterministic higher-order solver lands closer to s25 than 8-step Euler does".
+
+Test of the premise with KNOWN-CORRECT solvers (toy_distances_v1.py -> toy_distances_v1.log; the analytic
+Gaussian-mixture denoiser on which test_cpu_v2/v3 verified global orders 1 / 2 / 2 through the same interface):
+  RMS distance to the ODE limit: E8 0.377  E25 0.103  E50 0.051  H13 0.187  H25 0.033  D16 0.151  D25 0.051  D50 0.010
+  RMS distance to E25 (= s25):   E8 0.280  H13 0.276  D16 0.240  D25 0.143  H25 0.132  E50 0.052
+  -> a CORRECT Heun-13 sits as far from Euler-25 as Euler-8 does, and is itself a WORSE ODE approximation than
+     Euler-25 (0.187 vs 0.103): at 13 steps Heun is not yet in its 2nd-order regime.  The premise is false, so the
+     alarm does not indicate a bug.  Implementation evidence stands on: CPU order test, GPU bit-exact Euler and
+     churn(S_churn=0) vs live diffusers, Heun timesteps bitwise == diffusers' interleaved device timesteps, in-process
+     t == 0.25 ln sigma_eval assertion on every UNet call, gate md5 MATCH.
+Additional real-model check (NON-GATING diagnostic, window 0 only, never scored -- jobs_02_diag.txt):
+  Heun N=25 (49 evals), DPM++2M N=50 (50 evals), Euler N=100 (100 evals) on 0301 window 0.  Expected if correct:
+  the three families approach a COMMON limit (H25, D50, E100 mutually much closer than H13/D16/E25 are to it).
+Decision: proceed with Stage 1a as pre-registered; the diagnostic runs first in the same chain and Stage 1a is
+stopped if it shows non-convergence.

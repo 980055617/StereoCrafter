@@ -1,0 +1,20 @@
+{
+ "0147": {
+  "full": "90637b7ea7521ff0b5358a60bef029ce",
+  "left": "06033ea9d37e1f8efa7551d5e17377f4",
+  "n": 172,
+  "W": 2048,
+  "H": 576,
+  "writer": "90637b7ea7521ff0b5358a60bef029ce",
+  "roundtrip_ok": true
+ },
+ "0052": {
+  "full": "302ff6642b506396547d3b818c143e4d",
+  "left": "0f969d30cc63354f7bfdcf4d5f6bcfc7",
+  "n": 168,
+  "W": 2048,
+  "H": 576,
+  "writer": "302ff6642b506396547d3b818c143e4d",
+  "roundtrip_ok": true
+ }
+}

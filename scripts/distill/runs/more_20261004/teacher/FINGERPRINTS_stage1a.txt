@@ -1,0 +1,5 @@
+PASS outputs/more_20261004/teacher/clips/0301_H13 vs outputs/more_20261004/teacher/clips/0301_gate_euler25: windows 14 (ref 14), identical 14/14  sampler=heun N=13 pad=25 draws/window=[25] unet_calls/window=[25] batch=[2]
+PASS outputs/more_20261004/teacher/clips/0301_D16 vs outputs/more_20261004/teacher/clips/0301_gate_euler25: windows 14 (ref 14), identical 14/14  sampler=dpmpp2m N=16 pad=25 draws/window=[25] unet_calls/window=[16] batch=[2]
+PASS outputs/more_20261004/teacher/clips/0301_D25 vs outputs/more_20261004/teacher/clips/0301_gate_euler25: windows 14 (ref 14), identical 14/14  sampler=dpmpp2m N=25 pad=25 draws/window=[25] unet_calls/window=[25] batch=[2]
+PASS outputs/more_20261004/teacher/clips/0301_C25 vs outputs/more_20261004/teacher/clips/0301_gate_euler25: windows 14 (ref 14), identical 14/14  sampler=euler_churn N=25 pad=25 draws/window=[25] unet_calls/window=[25] batch=[2]
+SUMMARY checked=4 failed=0

@@ -1,0 +1,7 @@
+# B2 screens (2 windows, latents saved; compared bit-wise with s0 and timed per window): cuDNN / channels_last levers
+0301 B2a_cudnnbench deliv 1.00 T5 - - SK_MAX_CHUNKS=2,SK_SAVE_LAT=1,SK_CUDNN_BENCH=1
+0301 B2b_cl_unet deliv 1.00 T5 - - SK_MAX_CHUNKS=2,SK_SAVE_LAT=1,SK_CHANNELS_LAST=unet
+0301 B2c_cl_vae deliv 1.00 T5 - - SK_MAX_CHUNKS=2,SK_SAVE_LAT=1,SK_CHANNELS_LAST=vae
+0301 B2d_cl_both_bench deliv 1.00 T5 - - SK_MAX_CHUNKS=2,SK_SAVE_LAT=1,SK_CHANNELS_LAST=vae+unet,SK_CUDNN_BENCH=1
+# repeat of B2a: is cudnn.benchmark's algorithm choice reproducible across processes? (latents B2a vs B2a2)
+0301 B2a2_cudnnbench_rep deliv 1.00 T5 - - SK_MAX_CHUNKS=2,SK_SAVE_LAT=1,SK_CUDNN_BENCH=1

@@ -1,0 +1,23 @@
+2-window renders, 0301 576x1024, deliverable T5@1.00 (steady = window 1; window 0 includes autotune/benchmarking)
+  knob                                     UNet ms/fwd    rel enc w1 s    rel dec w1 s    rel w0 extra s (enc+dec+1st fwd)       md5
+  baseline (B1c, deployed path)                  501.2  1.000    0.652  1.000    2.458  1.000                         0.00  719d6ceb
+  cudnn.benchmark=True (B2a)                     495.9  0.989    0.644  0.987    2.332  0.949                         6.21  781e6460
+  cudnn.benchmark=True again (B2a2)              495.9  0.989    0.643  0.986    2.332  0.949                         6.17  710a59b6
+  channels_last UNet Conv2d (B2b)                519.1  1.036    0.656  1.006    2.455  0.999                        -0.10  45e228f2
+  channels_last VAE Conv2d (B2c)                 501.5  1.001    0.726  1.113    2.639  1.074                        -0.12  14590ede
+  channels_last both + benchmark (B2d)           512.9  1.023    0.724  1.110    2.508  1.020                         3.97  96297b3f
+  md5 of the baseline 2-window render = 719d6ceb (any other value = pixel change).  B2a vs B2a2: different md5 and
+  latents (max |d| 0.17) -> cudnn.benchmark is not reproducible across processes.
+
+Decode-only screens on A1's saved latents (windows 0,1,2,13; see TABLE_DECODE_SCREEN_576.txt for all rows):
+  decode_chunk_size 2 (deployed)           steady  9.298 s  rel 1.000  first pass   9.41 s  peak  2.67 GB  IDENTICAL
+  decode_chunk_size 4                      steady  9.412 s  rel 1.012  first pass   9.51 s  peak  5.07 GB  pixel change
+  decode_chunk_size 8                      steady  9.675 s  rel 1.041  first pass  10.02 s  peak  9.87 GB  pixel change
+  decode_chunk_size 14                     steady  9.863 s  rel 1.061  first pass  10.00 s  peak 17.12 GB  pixel change
+  VAE fp16 instead of bf16                 steady  9.060 s  rel 0.974  first pass   9.21 s  peak  2.67 GB  pixel change
+  channels_last VAE                        steady 10.040 s  rel 1.080  first pass  10.14 s  peak  2.66 GB  pixel change
+  cudnn.benchmark                          steady  8.836 s  rel 0.950  first pass  11.84 s  peak 11.69 GB  pixel change
+  F6 skip discarded chunks (IDENTITY)      steady  7.555 s  rel 0.813  first pass   7.65 s  peak  2.67 GB  IDENTICAL
+  Conv3d(3,1,1) as Conv2d                  steady  8.971 s  rel 0.965  first pass   9.08 s  peak  2.67 GB  pixel change
+  torch.compile(decoder) [F10]             steady  5.792 s  rel 0.623  first pass  51.35 s  peak  2.58 GB  pixel change
+  Conv3d-as-Conv2d + compile               steady  5.486 s  rel 0.590  first pass  41.66 s  peak  2.58 GB  pixel change

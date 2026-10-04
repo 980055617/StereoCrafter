@@ -1,0 +1,374 @@
+% more_20261004 / literature lane -- 2026-10-04.
+% Every entry below was checked against its arXiv abstract page (or the publisher page named in `note`) in this session.
+% Venues are given only where a fetched page stated them; otherwise the entry is @misc with the arXiv id.
+% Keys marked MUST-COMPARE in `note` are the three works the thesis should both cite and compare against.
+
+% ---------------------------------------------------------------- base model / pipeline
+@misc{zhao2024stereocrafter,
+  title  = {StereoCrafter: Diffusion-based Generation of Long and High-fidelity Stereoscopic 3D from Monocular Videos},
+  author = {Zhao, Sijie and Hu, Wenbo and Cun, Xiaodong and Zhang, Yong and Li, Xiaoyu and Kong, Zhe and Gao, Xiangjun and Niu, Muyao and Shan, Ying},
+  year   = {2024}, eprint = {2409.07447}, archivePrefix = {arXiv}, url = {https://arxiv.org/abs/2409.07447}
+}
+@misc{blattmann2023svd,
+  title  = {Stable Video Diffusion: Scaling Latent Video Diffusion Models to Large Datasets},
+  author = {Blattmann, Andreas and Dockhorn, Tim and Kulal, Sumith and Mendelevitch, Daniel and Kilian, Maciej and Lorenz, Dominik and Levi, Yam and English, Zion and Voleti, Vikram and Letts, Adam and Jampani, Varun and Rombach, Robin},
+  year   = {2023}, eprint = {2311.15127}, archivePrefix = {arXiv}, url = {https://arxiv.org/abs/2311.15127}
+}
+@inproceedings{karras2022edm,
+  title     = {Elucidating the Design Space of Diffusion-Based Generative Models},
+  author    = {Karras, Tero and Aittala, Miika and Aila, Timo and Laine, Samuli},
+  booktitle = {NeurIPS}, year = {2022}, url = {https://arxiv.org/abs/2206.00364}
+}
+
+% ---------------------------------------------------------------- stereo conversion successors
+@misc{huang2026dreamstereo,
+  title  = {DreamStereo: Towards Real-Time Stereo Inpainting for HD Videos},
+  author = {Huang, Yuan and Zhao, Sijie and Cheng, Jing and Xu, Hao and Jiao, Shaohui},
+  year   = {2026}, eprint = {2604.12270}, archivePrefix = {arXiv}, url = {https://arxiv.org/abs/2604.12270},
+  note   = {Wan2.1-1.3B + LoRA, NFE=1; no code release found (project page https://huangyuan2020.github.io/DreamStereo/)}
+}
+@inproceedings{shvetsova2026m2svid,
+  title     = {M2SVid: End-to-End Inpainting and Refinement for Monocular-to-Stereo Video Conversion},
+  author    = {Shvetsova, Nina and Bhat, Goutam and Truong, Prune and Kuehne, Hilde and Tombari, Federico},
+  booktitle = {International Conference on 3D Vision (3DV)}, year = {2026}, url = {https://arxiv.org/abs/2505.16565},
+  note      = {MUST-COMPARE. SVD-based, single step; code+weights Apache-2.0 at https://github.com/google-research/m2svid}
+}
+@misc{shen2025stereopilot,
+  title  = {StereoPilot: Learning Unified and Efficient Stereo Conversion via Generative Priors},
+  author = {Shen, Guibao and Du, Yihua and Ge, Wenhang and He, Jing and Chang, Chirui and Zhou, Donghao and Yang, Zhen and Wang, Luozhou and Tao, Xin and Chen, Ying-Cong},
+  year   = {2025}, eprint = {2512.16915}, archivePrefix = {arXiv}, url = {https://arxiv.org/abs/2512.16915},
+  note   = {MIT license, weights at https://github.com/KlingTeam/StereoPilot}
+}
+@misc{xing2025stereoworld,
+  title  = {StereoWorld: Geometry-Aware Monocular-to-Stereo Video Generation},
+  author = {Xing, Ke and Jin, Xiaojie and Li, Longfei and Yin, Yuyang and Liang, Hanwen and Luo, Guixun and Fang, Chen and Wang, Jue and Plataniotis, Konstantinos N. and Zhao, Yao and Wei, Yunchao},
+  year   = {2025}, eprint = {2512.09363}, archivePrefix = {arXiv}, url = {https://arxiv.org/abs/2512.09363}
+}
+@misc{metzger2025elastic3d,
+  title  = {Elastic3D: Controllable Stereo Video Conversion with Guided Latent Decoding},
+  author = {Metzger, Nando and Truong, Prune and Bhat, Goutam and Schindler, Konrad and Tombari, Federico},
+  year   = {2025}, eprint = {2512.14236}, archivePrefix = {arXiv}, url = {https://arxiv.org/abs/2512.14236}
+}
+@misc{zhang2026alphadepth,
+  title  = {$\alpha$Depth: Learning Single-Pass Soft Boundary Decomposition for Stereo Conversion},
+  author = {Zhang, Xiang and Zhang, Yang and Mehl, Lukas and Briedis, Karlis Martins and Gross, Markus and Schroers, Christopher},
+  year   = {2026}, eprint = {2606.00386}, archivePrefix = {arXiv}, url = {https://arxiv.org/abs/2606.00386}
+}
+@misc{shi2024dissolvestereo,
+  title  = {DissolveStereo: Coarse Depth Injection for Zero-Shot Stereo Video Generation},
+  author = {Shi, Jian and Wang, Qian and Li, Zhenyu and Cui, Wenqing and Idoughi, Ramzi and Wonka, Peter},
+  year   = {2024}, eprint = {2411.14295}, archivePrefix = {arXiv}, url = {https://arxiv.org/abs/2411.14295},
+  note   = {v1 was titled StereoCrafter-Zero; v3 May 2026}
+}
+@misc{geyer2025eye2eye,
+  title  = {Eye2Eye: A Simple Approach for Monocular-to-Stereo Video Synthesis},
+  author = {Geyer, Michal and Tov, Omer and Jin, Linyi and Tucker, Richard and Mosseri, Inbar and Dekel, Tali and Snavely, Noah},
+  year   = {2025}, eprint = {2505.00135}, archivePrefix = {arXiv}, url = {https://arxiv.org/abs/2505.00135}
+}
+@misc{shi2024immersepro,
+  title  = {ImmersePro: End-to-End Stereo Video Synthesis Via Implicit Disparity Learning},
+  author = {Shi, Jian and Li, Zhenyu and Wonka, Peter},
+  year   = {2024}, eprint = {2410.00262}, archivePrefix = {arXiv}, url = {https://arxiv.org/abs/2410.00262}
+}
+@misc{dai2024svg,
+  title  = {SVG: 3D Stereoscopic Video Generation via Denoising Frame Matrix},
+  author = {Dai, Peng and Tan, Feitong and Xu, Qiangeng and Futschik, David and Du, Ruofei and Fanello, Sean and Qi, Xiaojuan and Zhang, Yinda},
+  year   = {2024}, eprint = {2407.00367}, archivePrefix = {arXiv}, url = {https://arxiv.org/abs/2407.00367}
+}
+@inproceedings{yu2025mono2stereo,
+  title     = {Mono2Stereo: A Benchmark and Empirical Study for Stereo Conversion},
+  author    = {Yu, Songsong and Chen, Yuxin and Qi, Zhongang and Xie, Zeke and Wang, Yifan and Wang, Lijun and Shan, Ying and Lu, Huchuan},
+  booktitle = {CVPR}, year = {2025}, url = {https://arxiv.org/abs/2503.22262}
+}
+
+% ---------------------------------------------------------------- warping (input side)
+@inproceedings{fehn2004dibr,
+  title     = {Depth-Image-Based Rendering ({DIBR}), Compression and Transmission for a New Approach on {3D-TV}},
+  author    = {Fehn, Christoph},
+  booktitle = {Stereoscopic Displays and Virtual Reality Systems XI (Proc. SPIE)}, pages = {93--104}, year = {2004}
+}
+@article{mori2009ftv,
+  title   = {View Generation with {3D} Warping Using Depth Information for {FTV}},
+  author  = {Mori, Yuji and Fukushima, Norishige and Yendo, Tomohiro and Fujii, Toshiaki and Tanimoto, Masayuki},
+  journal = {Signal Processing: Image Communication}, year = {2009},
+  url     = {https://fukushima.web.nitech.ac.jp/paper/2009_spic_mori.pdf}
+}
+@inproceedings{niklaus2020softmax,
+  title     = {Softmax Splatting for Video Frame Interpolation},
+  author    = {Niklaus, Simon and Liu, Feng},
+  booktitle = {CVPR}, year = {2020}, url = {https://arxiv.org/abs/2003.05534}
+}
+
+% ---------------------------------------------------------------- few-step distillation
+@inproceedings{salimans2022progressive,
+  title     = {Progressive Distillation for Fast Sampling of Diffusion Models},
+  author    = {Salimans, Tim and Ho, Jonathan},
+  booktitle = {ICLR}, year = {2022}, url = {https://arxiv.org/abs/2202.00512}
+}
+@inproceedings{song2023consistency,
+  title     = {Consistency Models},
+  author    = {Song, Yang and Dhariwal, Prafulla and Chen, Mark and Sutskever, Ilya},
+  booktitle = {ICML}, year = {2023}, url = {https://arxiv.org/abs/2303.01469}
+}
+@misc{luo2023lcm,
+  title  = {Latent Consistency Models: Synthesizing High-Resolution Images with Few-Step Inference},
+  author = {Luo, Simian and Tan, Yiqin and Huang, Longbo and Li, Jian and Zhao, Hang},
+  year   = {2023}, eprint = {2310.04378}, archivePrefix = {arXiv}, url = {https://arxiv.org/abs/2310.04378}
+}
+@inproceedings{wang2024animatelcm,
+  title     = {AnimateLCM: Computation-Efficient Personalized Style Video Generation without Personalized Video Data},
+  author    = {Wang, Fu-Yun and Huang, Zhaoyang and Bian, Weikang and Shi, Xiaoyu and Sun, Keqiang and Song, Guanglu and Liu, Yu and Li, Hongsheng},
+  booktitle = {SIGGRAPH Asia 2024 Technical Communications}, year = {2024}, url = {https://arxiv.org/abs/2402.00769},
+  note      = {SVD-xt variant: https://huggingface.co/wangfuyun/AnimateLCM-SVD-xt}
+}
+@inproceedings{wang2024pcm,
+  title     = {Phased Consistency Models},
+  author    = {Wang, Fu-Yun and Huang, Zhaoyang and Bergman, Alexander William and Shen, Dazhong and Gao, Peng and Lingelbach, Michael and Sun, Keqiang and Bian, Weikang and Song, Guanglu and Liu, Yu and Wang, Xiaogang and Li, Hongsheng},
+  booktitle = {NeurIPS}, year = {2024}, url = {https://arxiv.org/abs/2405.18407}
+}
+@misc{zheng2024tcd,
+  title  = {Trajectory Consistency Distillation: Improved Latent Consistency Distillation by Semi-Linear Consistency Function with Trajectory Mapping},
+  author = {Zheng, Jianbin and Hu, Minghui and Fan, Zhongyi and Wang, Chaoyue and Ding, Changxing and Tao, Dacheng and Cham, Tat-Jen},
+  year   = {2024}, eprint = {2402.19159}, archivePrefix = {arXiv}, url = {https://arxiv.org/abs/2402.19159}
+}
+@inproceedings{kim2024ctm,
+  title     = {Consistency Trajectory Models: Learning Probability Flow {ODE} Trajectory of Diffusion},
+  author    = {Kim, Dongjun and Lai, Chieh-Hsin and Liao, Wei-Hsiang and Murata, Naoki and Takida, Yuhta and Uesaka, Toshimitsu and He, Yutong and Mitsufuji, Yuki and Ermon, Stefano},
+  booktitle = {ICLR}, year = {2024}, url = {https://arxiv.org/abs/2310.02279}
+}
+@misc{boffi2024fmm,
+  title  = {Flow Map Matching with Stochastic Interpolants: A Mathematical Framework for Consistency Models},
+  author = {Boffi, Nicholas M. and Albergo, Michael S. and Vanden-Eijnden, Eric},
+  year   = {2024}, eprint = {2406.07507}, archivePrefix = {arXiv}, url = {https://arxiv.org/abs/2406.07507}
+}
+@misc{frans2024shortcut,
+  title  = {One Step Diffusion via Shortcut Models},
+  author = {Frans, Kevin and Hafner, Danijar and Levine, Sergey and Abbeel, Pieter},
+  year   = {2024}, eprint = {2410.12557}, archivePrefix = {arXiv}, url = {https://arxiv.org/abs/2410.12557}
+}
+@misc{geng2025meanflow,
+  title  = {Mean Flows for One-step Generative Modeling},
+  author = {Geng, Zhengyang and Deng, Mingyang and Bai, Xingjian and Kolter, J. Zico and He, Kaiming},
+  year   = {2025}, eprint = {2505.13447}, archivePrefix = {arXiv}, url = {https://arxiv.org/abs/2505.13447}
+}
+@misc{sabour2025ayf,
+  title  = {Align Your Flow: Scaling Continuous-Time Flow Map Distillation},
+  author = {Sabour, Amirmojtaba and Fidler, Sanja and Kreis, Karsten},
+  year   = {2025}, eprint = {2506.14603}, archivePrefix = {arXiv}, url = {https://arxiv.org/abs/2506.14603}
+}
+@inproceedings{yin2024dmd,
+  title     = {One-step Diffusion with Distribution Matching Distillation},
+  author    = {Yin, Tianwei and Gharbi, Micha{\"e}l and Zhang, Richard and Shechtman, Eli and Durand, Fredo and Freeman, William T. and Park, Taesung},
+  booktitle = {CVPR}, year = {2024}, url = {https://arxiv.org/abs/2311.18828}
+}
+@misc{yin2024dmd2,
+  title  = {Improved Distribution Matching Distillation for Fast Image Synthesis},
+  author = {Yin, Tianwei and Gharbi, Micha{\"e}l and Park, Taesung and Zhang, Richard and Shechtman, Eli and Durand, Fredo and Freeman, William T.},
+  year   = {2024}, eprint = {2405.14867}, archivePrefix = {arXiv}, url = {https://arxiv.org/abs/2405.14867}
+}
+@inproceedings{yin2025causvid,
+  title     = {From Slow Bidirectional to Fast Autoregressive Video Diffusion Models},
+  author    = {Yin, Tianwei and Zhang, Qiang and Zhang, Richard and Freeman, William T. and Durand, Fredo and Shechtman, Eli and Huang, Xun},
+  booktitle = {CVPR}, year = {2025}, url = {https://arxiv.org/abs/2412.07772}
+}
+@inproceedings{zheng2026rcm,
+  title     = {Large Scale Diffusion Distillation via Score-Regularized Continuous-Time Consistency},
+  author    = {Zheng, Kaiwen and Wang, Yuji and Ma, Qianli and Chen, Huayu and Zhang, Jintao and Balaji, Yogesh and Chen, Jianfei and Liu, Ming-Yu and Zhu, Jun and Zhang, Qinsheng},
+  booktitle = {ICLR}, year = {2026}, url = {https://arxiv.org/abs/2510.08431}
+}
+@misc{zhang2024sfv,
+  title  = {SF-V: Single Forward Video Generation Model},
+  author = {Zhang, Zhixing and Li, Yanyu and Wu, Yushu and Xu, Yanwu and Kag, Anil and Skorokhodov, Ivan and Menapace, Willi and Siarohin, Aliaksandr and Cao, Junli and Metaxas, Dimitris and Tulyakov, Sergey and Ren, Jian},
+  year   = {2024}, eprint = {2406.04324}, archivePrefix = {arXiv}, url = {https://arxiv.org/abs/2406.04324}
+}
+@misc{mao2024osv,
+  title  = {OSV: One Step is Enough for High-Quality Image to Video Generation},
+  author = {Mao, Xiaofeng and Jiang, Zhengkai and Wang, Fu-Yun and Zhang, Jiangning and Chen, Hao and Chi, Mingmin and Wang, Yabiao and Luo, Wenhan},
+  year   = {2024}, eprint = {2409.11367}, archivePrefix = {arXiv}, url = {https://arxiv.org/abs/2409.11367}
+}
+@inproceedings{kang2024diffusion2gan,
+  title     = {Distilling Diffusion Models into Conditional {GAN}s},
+  author    = {Kang, Minguk and Zhang, Richard and Barnes, Connelly and Paris, Sylvain and Kwak, Suha and Park, Jaesik and Shechtman, Eli and Zhu, Jun-Yan and Park, Taesung},
+  booktitle = {ECCV}, year = {2024}, url = {https://arxiv.org/abs/2405.05967}
+}
+@misc{liu2022rectifiedflow,
+  title  = {Flow Straight and Fast: Learning to Generate and Transfer Data with Rectified Flow},
+  author = {Liu, Xingchao and Gong, Chengyue and Liu, Qiang},
+  year   = {2022}, eprint = {2209.03003}, archivePrefix = {arXiv}, url = {https://arxiv.org/abs/2209.03003}
+}
+@misc{wang2024rectifieddiffusion,
+  title  = {Rectified Diffusion: Straightness Is Not Your Need in Rectified Flow},
+  author = {Wang, Fu-Yun and Yang, Ling and Huang, Zhaoyang and Wang, Mengdi and Li, Hongsheng},
+  year   = {2024}, eprint = {2410.07303}, archivePrefix = {arXiv}, url = {https://arxiv.org/abs/2410.07303}
+}
+@misc{sun2025swiftvideo,
+  title  = {SwiftVideo: A Unified Framework for Few-Step Video Generation through Trajectory-Distribution Alignment},
+  author = {Sun, Yanxiao and Wu, Jiafu and Cao, Yun and Xu, Chengming and Wang, Yabiao and Cao, Weijian and Luo, Donghao and Wang, Chengjie and Fu, Yanwei},
+  year   = {2025}, eprint = {2508.06082}, archivePrefix = {arXiv}, url = {https://arxiv.org/abs/2508.06082}
+}
+@misc{you2026adaptivevideodistillation,
+  title  = {Adaptive Video Distillation: Mitigating Oversaturation and Temporal Collapse in Few-Step Generation},
+  author = {You, Yuyang and Li, Yongzhi and Li, Jiahui and Mu, Yadong and Chen, Quan and Jiang, Peng},
+  year   = {2026}, eprint = {2603.21864}, archivePrefix = {arXiv}, url = {https://arxiv.org/abs/2603.21864},
+  note   = {listed as a CVPR 2026 poster (cvpr.thecvf.com/virtual/2026/poster/37903)}
+}
+
+% ---------------------------------------------------------------- training-free sampling
+@inproceedings{sabour2024ays,
+  title     = {Align Your Steps: Optimizing Sampling Schedules in Diffusion Models},
+  author    = {Sabour, Amirmojtaba and Fidler, Sanja and Kreis, Karsten},
+  booktitle = {ICML (PMLR 235)}, year = {2024}, url = {https://arxiv.org/abs/2404.14507},
+  note      = {MUST-COMPARE. SVD schedule: https://research.nvidia.com/labs/toronto-ai/AlignYourSteps/howto.html}
+}
+@inproceedings{tong2025ld3,
+  title     = {Learning to Discretize Denoising Diffusion {ODE}s},
+  author    = {Tong, Vinh and Hoang, Trung-Dung and Liu, Anji and Van den Broeck, Guy and Niepert, Mathias},
+  booktitle = {ICLR}, year = {2025}, url = {https://arxiv.org/abs/2405.15506}
+}
+@inproceedings{chen2024gits,
+  title     = {On the Trajectory Regularity of {ODE}-based Diffusion Sampling},
+  author    = {Chen, Defang and Zhou, Zhenyu and Wang, Can and Shen, Chunhua and Lyu, Siwei},
+  booktitle = {ICML}, year = {2024}, url = {https://arxiv.org/abs/2405.11326}
+}
+@inproceedings{ma2024deepcache,
+  title     = {DeepCache: Accelerating Diffusion Models for Free},
+  author    = {Ma, Xinyin and Fang, Gongfan and Wang, Xinchao},
+  booktitle = {CVPR}, year = {2024}, url = {https://arxiv.org/abs/2312.00858}
+}
+
+% ---------------------------------------------------------------- attention replacement / acceleration
+@misc{liu2024linfusion,
+  title  = {LinFusion: 1 GPU, 1 Minute, 16K Image},
+  author = {Liu, Songhua and Yu, Weihao and Tan, Zhenxiong and Wang, Xinchao},
+  year   = {2024}, eprint = {2409.02097}, archivePrefix = {arXiv}, url = {https://arxiv.org/abs/2409.02097},
+  note   = {MUST-COMPARE (method and speed scaling; not re-run)}
+}
+@misc{liu2024clear,
+  title  = {CLEAR: Conv-Like Linearization Revs Pre-Trained Diffusion Transformers Up},
+  author = {Liu, Songhua and Tan, Zhenxiong and Wang, Xinchao},
+  year   = {2024}, eprint = {2412.16112}, archivePrefix = {arXiv}, url = {https://arxiv.org/abs/2412.16112}
+}
+@inproceedings{ghafoorian2026attentionsurgery,
+  title     = {Attention Surgery: An Efficient Recipe to Linearize Your Video Diffusion Transformer},
+  author    = {Ghafoorian, Mohsen and Korzhenkov, Denis and Habibian, Amirhossein},
+  booktitle = {CVPR}, year = {2026}, url = {https://arxiv.org/abs/2509.24899}
+}
+@inproceedings{wang2025lingen,
+  title     = {LinGen: Towards High-Resolution Minute-Length Text-to-Video Generation with Linear Computational Complexity},
+  author    = {Wang, Hongjie and Ma, Chih-Yao and Liu, Yen-Cheng and Hou, Ji and Xu, Tao and Wang, Jialiang and Juefei-Xu, Felix and Luo, Yaqiao and Zhang, Peizhao and Hou, Tingbo and Vajda, Peter and Jha, Niraj K. and Dai, Xiaoliang},
+  booktitle = {CVPR}, year = {2025}, url = {https://arxiv.org/abs/2412.09856}
+}
+@misc{oshima2024ssmvdm,
+  title  = {{SSM} Meets Video Diffusion Models: Efficient Long-Term Video Generation with Structured State Spaces},
+  author = {Oshima, Yuta and Taniguchi, Shohei and Suzuki, Masahiro and Matsuo, Yutaka},
+  year   = {2024}, eprint = {2403.07711}, archivePrefix = {arXiv}, url = {https://arxiv.org/abs/2403.07711},
+  note   = {ICLR 2024 workshop paper}
+}
+@misc{yan2023diffussm,
+  title  = {Diffusion Models Without Attention},
+  author = {Yan, Jing Nathan and Gu, Jiatao and Rush, Alexander M.},
+  year   = {2023}, eprint = {2311.18257}, archivePrefix = {arXiv}, url = {https://arxiv.org/abs/2311.18257}
+}
+@inproceedings{hu2024zigma,
+  title     = {ZigMa: A DiT-style Zigzag Mamba Diffusion Model},
+  author    = {Hu, Vincent Tao and Baumann, Stefan Andreas and Gui, Ming and Grebenkova, Olga and Ma, Pingchuan and Schusterbauer, Johannes and Ommer, Bj{\"o}rn},
+  booktitle = {ECCV}, year = {2024}, url = {https://arxiv.org/abs/2403.13802}
+}
+@misc{bick2024mohawk,
+  title  = {Transformers to {SSM}s: Distilling Quadratic Knowledge to Subquadratic Models},
+  author = {Bick, Aviv and Li, Kevin Y. and Xing, Eric P. and Kolter, J. Zico and Gu, Albert},
+  year   = {2024}, eprint = {2408.10189}, archivePrefix = {arXiv}, url = {https://arxiv.org/abs/2408.10189}
+}
+@inproceedings{wang2024mamballama,
+  title     = {The Mamba in the Llama: Distilling and Accelerating Hybrid Models},
+  author    = {Wang, Junxiong and Paliotta, Daniele and May, Avner and Rush, Alexander M. and Dao, Tri},
+  booktitle = {NeurIPS}, year = {2024}, url = {https://arxiv.org/abs/2408.15237}
+}
+@inproceedings{zhang2025lolcats,
+  title     = {{LoLCATs}: On Low-Rank Linearizing of Large Language Models},
+  author    = {Zhang, Michael and Arora, Simran and Chalamala, Rahul and Wu, Alan and Spector, Benjamin and Singhal, Aaryan and Ramesh, Krithik and R{\'e}, Christopher},
+  booktitle = {ICLR}, year = {2025}, url = {https://arxiv.org/abs/2410.10254}
+}
+@inproceedings{zhang2025sageattention,
+  title     = {SageAttention: Accurate 8-Bit Attention for Plug-and-play Inference Acceleration},
+  author    = {Zhang, Jintao and Wei, Jia and Huang, Haofeng and Zhang, Pengle and Zhu, Jun and Chen, Jianfei},
+  booktitle = {ICLR}, year = {2025}, url = {https://arxiv.org/abs/2410.02367}
+}
+@inproceedings{zhang2025sageattention2,
+  title     = {SageAttention2: Efficient Attention with Thorough Outlier Smoothing and Per-thread {INT4} Quantization},
+  author    = {Zhang, Jintao and Huang, Haofeng and Zhang, Pengle and Wei, Jia and Zhu, Jun and Chen, Jianfei},
+  booktitle = {ICML}, year = {2025}, url = {https://arxiv.org/abs/2411.10958}
+}
+@inproceedings{smith2024todo,
+  title     = {ToDo: Token Downsampling for Efficient Generation of High-Resolution Images},
+  author    = {Smith, Ethan and Saxena, Nayan and Saha, Aninda},
+  booktitle = {IJCAI}, year = {2024}, url = {https://arxiv.org/abs/2402.13573}
+}
+
+% ---------------------------------------------------------------- temporal consistency
+@inproceedings{lai2018blind,
+  title     = {Learning Blind Video Temporal Consistency},
+  author    = {Lai, Wei-Sheng and Huang, Jia-Bin and Wang, Oliver and Shechtman, Eli and Yumer, Ersin and Yang, Ming-Hsuan},
+  booktitle = {ECCV}, year = {2018}, url = {https://arxiv.org/abs/1808.00449}
+}
+@article{chu2020tecogan,
+  title   = {Learning Temporal Coherence via Self-Supervision for {GAN}-based Video Generation},
+  author  = {Chu, Mengyu and Xie, You and Mayer, Jonas and Leal-Taix{\'e}, Laura and Thuerey, Nils},
+  journal = {ACM Transactions on Graphics}, volume = {39}, number = {4}, pages = {75}, year = {2020},
+  url     = {https://arxiv.org/abs/1811.09393}
+}
+@inproceedings{chang2024warpednoise,
+  title     = {How I Warped Your Noise: a Temporally-Correlated Noise Prior for Diffusion Models},
+  author    = {Chang, Pascal and Tang, Jingwei and Gross, Markus and Azevedo, Vinicius C.},
+  booktitle = {ICLR}, year = {2024}, url = {https://arxiv.org/abs/2504.03072}
+}
+@inproceedings{burgert2025gowiththeflow,
+  title     = {Go-with-the-Flow: Motion-Controllable Video Diffusion Models Using Real-Time Warped Noise},
+  author    = {Burgert, Ryan and Xu, Yuancheng and Xian, Wenqi and Pilarski, Oliver and Clausen, Pascal and He, Mingming and Ma, Li and Deng, Yitong and Li, Lingxiao and Mousavi, Mohsen and Ryoo, Michael and Debevec, Paul and Yu, Ning},
+  booktitle = {CVPR}, year = {2025}, url = {https://arxiv.org/abs/2501.08331}
+}
+@misc{wu2023freeinit,
+  title  = {FreeInit: Bridging Initialization Gap in Video Diffusion Models},
+  author = {Wu, Tianxing and Si, Chenyang and Jiang, Yuming and Huang, Ziqi and Liu, Ziwei},
+  year   = {2023}, eprint = {2312.07537}, archivePrefix = {arXiv}, url = {https://arxiv.org/abs/2312.07537}
+}
+@misc{zhou2023upscaleavideo,
+  title  = {Upscale-A-Video: Temporal-Consistent Diffusion Model for Real-World Video Super-Resolution},
+  author = {Zhou, Shangchen and Yang, Peiqing and Wang, Jianyi and Luo, Yihang and Loy, Chen Change},
+  year   = {2023}, eprint = {2312.06640}, archivePrefix = {arXiv}, url = {https://arxiv.org/abs/2312.06640}
+}
+@misc{wang2023genlvideo,
+  title  = {Gen-L-Video: Multi-Text to Long Video Generation via Temporal Co-Denoising},
+  author = {Wang, Fu-Yun and Chen, Wenshuo and Song, Guanglu and Ye, Han-Jia and Liu, Yu and Li, Hongsheng},
+  year   = {2023}, eprint = {2305.18264}, archivePrefix = {arXiv}, url = {https://arxiv.org/abs/2305.18264}
+}
+@misc{zhang2023avid,
+  title  = {AVID: Any-Length Video Inpainting with Diffusion Model},
+  author = {Zhang, Zhixing and Wu, Bichen and Wang, Xiaoyan and Luo, Yaqiao and Zhang, Luxin and Zhao, Yinan and Vajda, Peter and Metaxas, Dimitris and Yu, Licheng},
+  year   = {2023}, eprint = {2312.03816}, archivePrefix = {arXiv}, url = {https://arxiv.org/abs/2312.03816}
+}
+@misc{li2025diffueraser,
+  title  = {DiffuEraser: A Diffusion Model for Video Inpainting},
+  author = {Li, Xiaowen and Xue, Haolan and Ren, Peiran and Bo, Liefeng},
+  year   = {2025}, eprint = {2501.10018}, archivePrefix = {arXiv}, url = {https://arxiv.org/abs/2501.10018}
+}
+@inproceedings{sun2025dloral,
+  title     = {One-Step Diffusion for Detail-Rich and Temporally Consistent Video Super-Resolution},
+  author    = {Sun, Yujing and Sun, Lingchen and Liu, Shuaizheng and Wu, Rongyuan and Zhang, Zhengqiang and Zhang, Lei},
+  booktitle = {NeurIPS}, year = {2025}, url = {https://arxiv.org/abs/2506.15591}
+}
+@inproceedings{clark2024draft,
+  title     = {Directly Fine-Tuning Diffusion Models on Differentiable Rewards},
+  author    = {Clark, Kevin and Vicol, Paul and Swersky, Kevin and Fleet, David J.},
+  booktitle = {ICLR}, year = {2024}, url = {https://arxiv.org/abs/2309.17400}
+}
+@misc{prabhudesai2024vader,
+  title  = {Video Diffusion Alignment via Reward Gradients},
+  author = {Prabhudesai, Mihir and Mendonca, Russell and Qin, Zheyang and Fragkiadaki, Katerina and Pathak, Deepak},
+  year   = {2024}, eprint = {2407.08737}, archivePrefix = {arXiv}, url = {https://arxiv.org/abs/2407.08737}
+}
+@misc{meng2021sdedit,
+  title  = {{SDEdit}: Guided Image Synthesis and Editing with Stochastic Differential Equations},
+  author = {Meng, Chenlin and He, Yutong and Song, Yang and Song, Jiaming and Wu, Jiajun and Zhu, Jun-Yan and Ermon, Stefano},
+  year   = {2021}, eprint = {2108.01073}, archivePrefix = {arXiv}, url = {https://arxiv.org/abs/2108.01073}
+}

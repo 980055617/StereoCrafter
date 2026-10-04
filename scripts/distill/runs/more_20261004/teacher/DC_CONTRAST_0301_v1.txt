@@ -1,0 +1,11 @@
+0301 DC/contrast check: right half over frames 0..150 step 8 (n=19); GT = disparity-registered right eye (1,-15)
+config         mean  mean-GT      std  std/GT
+GT            80.91     0.00    46.92   1.000
+origin8       83.25    +2.34    42.59   0.908
+s25           83.75    +2.84    44.33   0.945
+X1s50         83.92    +3.01    45.59   0.972
+D16           84.47    +3.56    48.40   1.031
+D25           84.15    +3.24    48.10   1.025
+H13           84.50    +3.59    52.34   1.115
+C25           83.30    +2.38    44.44   0.947
+C25b          83.30    +2.39    44.01   0.938

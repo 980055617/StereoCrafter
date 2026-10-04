@@ -1,0 +1,26 @@
+SCORE_START 2026-10-04_18:21:13 scorer=scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py SCORE_STEP=4
+/home/kawa/miniconda3/envs/stereocrafter/lib/python3.11/site-packages/torchvision/models/_utils.py:208: UserWarning: The parameter 'pretrained' is deprecated since 0.13 and may be removed in the future, please use 'weights' instead.
+  warnings.warn(
+/home/kawa/miniconda3/envs/stereocrafter/lib/python3.11/site-packages/torchvision/models/_utils.py:223: UserWarning: Arguments other than a weight enum or `None` for 'weights' are deprecated since 0.13 and may be removed in the future. The current behavior is equivalent to passing `weights=AlexNet_Weights.IMAGENET1K_V1`. You can also use `weights=AlexNet_Weights.DEFAULT` to get the most up-to-date weights.
+  warnings.warn(msg)
+/home/kawa/miniconda3/envs/stereocrafter/lib/python3.11/site-packages/lpips/lpips.py:107: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  self.load_state_dict(torch.load(model_path, map_location='cpu'), strict=False)
+Setting up [LPIPS] perceptual loss: trunk [alex], v[0.1], spatial [off]
+Loading model from: /home/kawa/miniconda3/envs/stereocrafter/lib/python3.11/site-packages/lpips/weights/v0.1/alex.pth
+clip/config                           offset  leftPSNR    LPIPS    sharp    rPSNR   nf
+--- 0147 GT ---                                          0.0000   0.0039
+0147_origin_ll                     (-12,-12)     40.40   0.5269   0.0062   15.458   38
+ROW clip=0147 tag=0147_origin_ll dy=-12 dx=-12 leftPSNR=40.4039 lpips=0.526938 sharp=0.006179 gtSharp=0.003901 rightPSNR=15.4580 n=38 path=outputs/beyond4_lossless/clips/0147_origin_ll/0147_inpainting_results_sbs.mkv
+0147_AYS8_origin_g101              (-12,-12)     40.40   0.5247   0.0064   15.453   38
+ROW clip=0147 tag=0147_AYS8_origin_g101 dy=-12 dx=-12 leftPSNR=40.4039 lpips=0.524671 sharp=0.006420 gtSharp=0.003901 rightPSNR=15.4534 n=38 path=outputs/more_20261004/judge/ays/clips/0147_AYS8_origin_g101/0147_inpainting_results_sbs.mkv
+0147_origin_g100_T5pad             (-12,-12)     40.40   0.5272   0.0062   15.442   38
+ROW clip=0147 tag=0147_origin_g100_T5pad dy=-12 dx=-12 leftPSNR=40.4039 lpips=0.527162 sharp=0.006176 gtSharp=0.003901 rightPSNR=15.4424 n=38 path=outputs/finalcheck_20261004/speed/clips/0147_origin_g100_T5pad/0147_inpainting_results_sbs.mkv
+0147_AYS5pad8_origin_g100          (-12,-12)     40.40   0.5268   0.0062   15.448   38
+ROW clip=0147 tag=0147_AYS5pad8_origin_g100 dy=-12 dx=-12 leftPSNR=40.4039 lpips=0.526828 sharp=0.006189 gtSharp=0.003901 rightPSNR=15.4482 n=38 path=outputs/more_20261004/judge/ays/clips/0147_AYS5pad8_origin_g100/0147_inpainting_results_sbs.mkv
+0147_mstudent2_step800_deliv_ll    (-12,-12)     40.40   0.5244   0.0069   15.358   38
+ROW clip=0147 tag=0147_mstudent2_step800_deliv_ll dy=-12 dx=-12 leftPSNR=40.4039 lpips=0.524394 sharp=0.006935 gtSharp=0.003901 rightPSNR=15.3577 n=38 path=outputs/beyond_distil_mamba_scaled/clips/0147_mstudent2_step800_deliv_ll/0147_inpainting_results_sbs.mkv
+0147_deliv_g100_T5pad              (-12,-12)     40.40   0.5255   0.0070   15.307   38
+ROW clip=0147 tag=0147_deliv_g100_T5pad dy=-12 dx=-12 leftPSNR=40.4039 lpips=0.525542 sharp=0.007001 gtSharp=0.003901 rightPSNR=15.3069 n=38 path=outputs/finalcheck_20261004/speed/clips/0147_deliv_g100_T5pad/0147_inpainting_results_sbs.mkv
+0147_s25_ll                        (-12,-12)     40.40   0.5220   0.0067   15.464   38
+ROW clip=0147 tag=0147_s25_ll dy=-12 dx=-12 leftPSNR=40.4039 lpips=0.522009 sharp=0.006690 gtSharp=0.003901 rightPSNR=15.4636 n=38 path=outputs/beyond4_lossless/clips/0147_s25_ll/0147_inpainting_results_sbs.mkv
+SCORE_DONE rc=0 2026-10-04_18:24:26

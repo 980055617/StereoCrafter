@@ -1,0 +1,10 @@
+=== outputs/more_20261004/pipeline_speed/d_screen_1792  (windows [1, 13]; decode seconds summed over those windows, last pass; pass0 includes warm-up/benchmarking/compilation)
+  variant                               decode_s  vs base  pass0_s  peak GB                  md5 (right-eye u8) identity
+  c14_cl0_b0_s0_bf16.json              FAILED OOM in pass 0: CUDA out of memory. Tried to allocate 3.06 GiB. GPU 0 has a total capacity of 23.51 GiB of which 1.25 GiB is free. Process 639227 has 13.91 MiB memory in use. Including non-PyTorch memory, this proces
+  c2_cl0_b0_s0_bf16                       16.099    1.000   16.179     7.86    64e48f71cafe373693254d99f3feffd8 IDENTICAL
+  c2_cl0_b0_s0_bf16_rep2                  16.097    1.000   16.183     7.86    64e48f71cafe373693254d99f3feffd8 IDENTICAL
+  c2_cl0_b0_s1_bf16                       10.905    0.677   10.989     7.84    64e48f71cafe373693254d99f3feffd8 IDENTICAL
+  c2_cl0_b1_s0_bf16                       15.430    0.958   23.179    17.86    5fccd00dba512db784804146d50a0f4b differs
+  c2_cl1_b0_s0_bf16                       18.355    1.140   18.458     7.86    517adf6b58a233374f3c9d6e70c9ceb7 differs
+  c4_cl0_b0_s0_bf16                       16.255    1.010   16.344    15.33    75d0e8d6c939f2e044e81fe1fec5849d differs
+

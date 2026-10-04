@@ -1,0 +1,118 @@
+PRE-REGISTRATION -- more_20261004 / fewer_steps lane (GPU 0 only, every GPU job under flock /tmp/claude-gpu0.lock)
+Written 2026-10-04 ~13:40 JST, BEFORE any render or scorer call in this lane (none has been made at the time of writing).
+
+QUESTION  Can the deliverable go below 5 sampler steps (inference only, no training)?
+
+Subject   the deliverable /mnt/ssd_data/stereocrafter_weights/_distill_injected/
+          mamba5slot_plus_stepdistil_up3_train10clip_step800_20261001.pt (md5 08cf4485..., read-only), the 5-slot Mamba env
+          exactly as scripts/distill/runs/finalcheck_20261004/speed/run_driver_speed_v1.sh sets it; guidance 1.00 (min=max);
+          SK_RNG_PAD_TO=8 (every window starts from the deployed 8-step render's initial noise -> paired comparison).
+Render    verbatim copy of the speed lane hook (infer_ll_hook_speed_v1_COPY.py, md5 7f5bf0be... == original), FFV1 writer.
+Scorer    scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py UNCHANGED, SCORE_STEP=4.  LPIPS = ROW lpips.
+Clips     regime set 0301 0204 0052 0147 (0301 = smoke clip).
+
+REFERENCE (paired, RNG-padded) = deliverable T5 @1.00 padded, label deliv_g100_T5pad,
+  renders outputs/finalcheck_20261004/speed/clips/<clip>_deliv_g100_T5pad/,
+  scores  scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_T5G100_4clip.txt:
+     0301 0.398857   0204 0.187633   0052 0.440197   0147 0.525542    mean4 0.388057
+  NOT the 12-clip UNPADDED 0.3815 headline (a padded 4-clip mean is never compared with it).
+
+CANDIDATES  exact float32 reprs of the scheduler's default 8-step sigmas; the hook appends the trailing 0 and asserts every
+            kept sigma + timestep is bit-equal to a default-8 entry.
+  T4a  700.0,7.276163101196289,1.1675708293914795,0.0020000000949949026   default8 idx 0,4,5,7   (task-listed)
+  T4b  700.0,7.276163101196289,1.1675708293914795,0.09738767892122269     default8 idx 0,4,5,6   (task-listed)
+  T3   700.0,1.1675708293914795,0.0020000000949949026                     default8 idx 0,5,7     (task-listed)
+  T3b  700.0,7.276163101196289,1.1675708293914795                          default8 idx 0,4,5     (added)
+  T3c  700.0,7.276163101196289,0.09738767892122269                         default8 idx 0,4,6     (added)
+  T3d  700.0,1.1675708293914795,0.09738767892122269                        default8 idx 0,5,6     (added)
+  UNet work per window at guidance 1.00 = N calls x batch 1 (T5 = 5).
+
+A-PRIORI ANALYSIS (written before any number).  The Euler sampler's output is the denoiser at the LAST sigma of the
+  schedule.  At sigma 0.002, c_out = 0.002 and c_skip ~ 1, so the 0.002 evaluation moves the latent by ~0.002*v
+  (measured end-to-end shift 2e-5, beyond_distil/RESULTS.txt section 2D).  Predictions:
+    T4b ~ T5        -> if T4b passes, the write-up says "T5's last UNet call was already a no-op", NOT "the deliverable is
+                       robust to fewer steps";
+    T4a ~ T3b       -> effectively a 3-step schedule (the 0.097 evaluation is the one dropped);
+    T3  ~ [700,1.17] -> effectively a 2-step schedule.
+  So the informative questions are: does dropping the 0.097 evaluation hurt (T4a, T3b); does dropping 7.28 (T3, T3d) or
+  1.17 (T3c) hurt.
+
+PASS (per candidate V, vs the reference, n = 4 regime clips)
+  P-a  mean4 LPIPS(V) - mean4 LPIPS(ref) <= +0.002
+  P-b  every clip: LPIPS(V) - LPIPS(ref) <= +0.005
+FUTILITY (definitive; it is P-b applied to one clip): every candidate is rendered + scored on 0301 first.  If its 0301
+  delta > +0.005 it FAILS P-b and is not rendered on the other three clips.  EVERY candidate with 0301 delta <= +0.005 is
+  rendered on 0204 0052 0147 -- 0301 is used for no other selection.
+REPORTED, NOT GATED
+  (i)   cumulative delta vs the DEPLOYED deliverable 8x2 @1.01 (label mstudent2_step800_deliv_ll; T5@1.00pad already costs
+        +0.0024 on 0301 against it, so a candidate passing at +0.002 vs T5 can be ~+0.0045 vs deployed on that clip);
+  (ii)  delta vs DEPLOYED ORIGIN 8x2 @1.01 (label origin_ll), clips improved;
+  (iii) sharpness/GT and sharpness ratio vs ref;
+  (iv)  UNet calls per window, batch, UNet GPU seconds (speed_log.json; same-session T5 = the C1 control render).
+ORIGIN REFERENCE ROWS  deployed origin_ll (existing); origin T5 @1.00 padded (existing, origin_g100_T5pad); origin @1.00
+  padded at T4a, T4b, T3 on 0301.  For every deliverable schedule other than T4b that is extended to 4 clips, origin at
+  the same schedule on the 4 clips (origin T4b's stand-in on 0204/0052/0147 is origin_g100_T5pad, justified by the
+  no-op argument and checked on 0301).
+12-CLIP EXTENSION (budget permitting, lane total <= 90 GPU-min)  a 4-step candidate that passes on 4 clips is rendered
+  (padded, guidance 1.00) on the remaining 8 test clips 0042 0125 0128 0141 0170 0225 0251 0259 and judged against
+  deliv_g100_T5pad (exists for all 12, SCORES_STEP2_EXT12.txt) with the same thresholds on 12 clips:
+  mean12 delta <= +0.002 and every clip <= +0.005.  The 12-clip verdict is final for that candidate.
+RECOMMENDATION RULE  the fewest UNet calls per window among candidates that pass (12-clip verdict where run, otherwise
+  the 4-clip verdict, labelled as such); if none passes, T5 @1.00 stays the recommendation.
+
+INTEGRITY CHECKS (a failure blocks using the affected rows until fixed)
+  C1  the copied driver + hook reproduce deliv_g100_T5pad on 0301: pre-encode writer md5 f2a35759d425d70e8a9e67508da52387
+      (outputs/finalcheck_20261004/speed/clips/0301_deliv_g100_T5pad/writer_md5.txt).
+  C2  G6 pass-through: every new render's FFV1 full-decode md5 == its writer md5, decoded left half [:, :, :1024]
+      bit-identical (md5 + frame count) to origin@1.01's (copy of the speed lane's check_passthrough_v1.py).
+  C3  G7 RNG pairing: every new padded render's per-window init_md5 == the speed lane's 8-step render of the same clip
+      (<clip>_deliv_g100_s8 / <clip>_origin_g100_s8 speed_log.json).
+  C4  schedule: speed_log.json lists exactly the candidate's sigmas + [0], the expected default8_index,
+      unet_calls_per_window == [N], batch == [1], pad draws per window == 8 - N.
+  C5  scorer reproduction: rescoring the 4 reference renders deliv_g100_T5pad reproduces the per-clip LPIPS above
+      within +-0.0001 (they are rescored in the same scorer call as the 0301 smoke rows, and again with the extension).
+
+-------------------------------------------------------------------------------------------------------------------
+ORACLE (no training), clip 0301 only -- pre-registered NOW so the grid is not chosen after seeing the numbers
+-------------------------------------------------------------------------------------------------------------------
+TRIGGER / GRID  The oracle runs on the T4a grid [700, 7.276, 1.168, 0.002] in either case:
+  - if no 4-step candidate passes, it is the literal task check (a re-distilled 4-step student); if T4b also fails, the
+    T4b grid is added;
+  - if a 4-step candidate passes (expected: T4b), the step count at which inference-only first fails is 3, and the T4a
+    grid IS the 3-step grid [700, 7.276, 1.168] plus the no-op 0.002 evaluation, so the same oracle answers "could a
+    re-distilled student drop the 0.097 evaluation".
+MODEL  the SHIPPED 5-slot Mamba light_lvl0_fulldata333_v2_8k_mamba_only.pt (md5 e9c23287..., read-only) as BOTH the base
+  trajectory and the fine-integration teacher: it is the frozen teacher of the deliverable's step distillation
+  (TEACH in beyond_distil_mamba_scaled/train_beyond_mamba_scaled.py; same construction as skeptic1/oracle_mamba_v1.py).
+  The deliverable's own weights are NOT used as the fine integrator (that would make the student its own teacher).
+SETTINGS  guidance 1.00 (batch 1: bdlib.fine_step only handles CFG batch 2, so a copied fine_step with a batch-1 branch
+  is used), SK_RNG_PAD_TO=8, lossless FFV1 writer, steps/guidance passed explicitly and the logged schedule asserted.
+SUBSTITUTION  k=1 (7.276 -> 1.168, M=4: the same interval and M as the 8-grid k=4 in beyond_distil_mamba*), and the merged
+  k=2 (1.168 -> 0.002, M=8 = 4 per spanned 8-grid interval; its Karras sub-point 4 equals the 8-grid sigma 0.0974, asserted
+  to rel 1e-5).  k=0 (700 -> 7.276) and k=3 (0.002 -> 0) stay coarse (the 8-grid oracle456 also left k<=3 and k=7 coarse).
+READOUTS
+  R1  oracle LPIPS on 0301 = a PERFECT-STUDENT UPPER BOUND for this grid; reported vs deliv T5@1.00pad 0.398857,
+      deliverable 8x2@1.01 0.396496, mamba_oracle456@1.01 0.395819, mamba s25 0.397773, shipped Mamba 8x2@1.01 0.425254.
+  R2  the correction a student would have to absorb, per window, with the trainer's own definitions
+        dx0   = ||x0hat_target - x0hat_coarse|| / ||x0hat_coarse||
+        trunc = ||x_target - euler(y, x0hat_coarse)|| / ||x_target||
+      for k=1, for the merged k=2 (1.168 -> 0.002), and for its 4-substep PREFIX (1.168 -> 0.0974 = the 8-grid k5 target
+      on the same window); ratio R = mean dx0(merged) / mean dx0(prefix).  Context: the deliverable's training reduced its
+      8-grid target errors to 0.533 / 0.542 / 0.414 of their starting values (beyond_distil_mamba_scaled/RESULTS.txt s2).
+INTERPRETATION RULE  The oracle LPIPS alone cannot show that a student is reachable: with every meaningful interval
+  substituted it visits the same Karras sub-points as the 8-grid oracle for sigma <= 7.276, so it is ~grid-independent.
+  It is reported as "upper bound X (T5@1.00pad 0.398857); merged correction = R x the 8-grid k5 correction", never as
+  "reachable".
+ORACLE INTEGRITY
+  O-C1 batch-1 control (inline, window 0, first substituted step): fine_step with v0=None and M=1 re-runs the UNet at
+       (x_k, sigma_k); rel||v_recomputed - model_output|| and rel||x_target(M=1) - scheduler prev_sample|| must be at the
+       bf16 floor (< 1e-2); otherwise the oracle render is not trusted.
+  O-C2 the oracle script with NO substitution, deliverable weights, T5 @1.00 pad on 0301 reproduces md5 f2a35759... (the
+       script's base path is unperturbed).
+  O-C3 (budget permitting) the oracle script at 1.01, default 8-grid, substitution 4,5,6, M=4, shipped Mamba reproduces
+       outputs/skeptic1_stack/clips/0301_mamba_oracle456_ll writer md5 6b90c28860bd81ab83f372941ca58819 (else its LPIPS
+       within +-0.0005 of 0.395819).
+
+BUDGET  ~60-90 GPU-minutes on GPU 0.  Order: C1 -> 0301 smoke (6 deliverable + 3 origin) -> score -> 4-clip extension ->
+  score -> oracle (O-C2, O1, O-C3 if budget) -> score -> 12-clip extension if budget remains.
+Training loss is not computed or used anywhere in this lane.

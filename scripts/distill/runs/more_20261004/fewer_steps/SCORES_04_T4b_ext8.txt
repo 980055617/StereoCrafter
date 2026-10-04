@@ -1,0 +1,51 @@
+SCORE_START 2026-10-04_15:58:25 list=scripts/distill/runs/more_20261004/fewer_steps/scorelist_04_T4b_ext8.txt scorer=scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py SCORE_STEP=4
+/home/kawa/miniconda3/envs/stereocrafter/lib/python3.11/site-packages/torchvision/models/_utils.py:208: UserWarning: The parameter 'pretrained' is deprecated since 0.13 and may be removed in the future, please use 'weights' instead.
+  warnings.warn(
+/home/kawa/miniconda3/envs/stereocrafter/lib/python3.11/site-packages/torchvision/models/_utils.py:223: UserWarning: Arguments other than a weight enum or `None` for 'weights' are deprecated since 0.13 and may be removed in the future. The current behavior is equivalent to passing `weights=AlexNet_Weights.IMAGENET1K_V1`. You can also use `weights=AlexNet_Weights.DEFAULT` to get the most up-to-date weights.
+  warnings.warn(msg)
+/home/kawa/miniconda3/envs/stereocrafter/lib/python3.11/site-packages/lpips/lpips.py:107: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  self.load_state_dict(torch.load(model_path, map_location='cpu'), strict=False)
+Setting up [LPIPS] perceptual loss: trunk [alex], v[0.1], spatial [off]
+Loading model from: /home/kawa/miniconda3/envs/stereocrafter/lib/python3.11/site-packages/lpips/weights/v0.1/alex.pth
+clip/config                           offset  leftPSNR    LPIPS    sharp    rPSNR   nf
+--- 0042 GT ---                                          0.0000   0.0070
+0042_deliv_g100_T5pad              (-12,-12)     40.02   0.4240   0.0105   17.065   38
+ROW clip=0042 tag=0042_deliv_g100_T5pad dy=-12 dx=-12 leftPSNR=40.0232 lpips=0.423987 sharp=0.010513 gtSharp=0.007023 rightPSNR=17.0646 n=38 path=outputs/finalcheck_20261004/speed/clips/0042_deliv_g100_T5pad/0042_inpainting_results_sbs.mkv
+0042_deliv_g100_T4bpad             (-12,-12)     40.02   0.4240   0.0105   17.066   38
+ROW clip=0042 tag=0042_deliv_g100_T4bpad dy=-12 dx=-12 leftPSNR=40.0232 lpips=0.423977 sharp=0.010503 gtSharp=0.007023 rightPSNR=17.0661 n=38 path=outputs/more_20261004/fewer_steps/clips/0042_deliv_g100_T4bpad/0042_inpainting_results_sbs.mkv
+--- 0125 GT ---                                          0.0000   0.0114
+0125_deliv_g100_T5pad              (-12,-12)     40.46   0.4677   0.0105   16.517   38
+ROW clip=0125 tag=0125_deliv_g100_T5pad dy=-12 dx=-12 leftPSNR=40.4643 lpips=0.467726 sharp=0.010487 gtSharp=0.011358 rightPSNR=16.5167 n=38 path=outputs/finalcheck_20261004/speed/clips/0125_deliv_g100_T5pad/0125_inpainting_results_sbs.mkv
+0125_deliv_g100_T4bpad             (-12,-12)     40.46   0.4678   0.0105   16.517   38
+ROW clip=0125 tag=0125_deliv_g100_T4bpad dy=-12 dx=-12 leftPSNR=40.4643 lpips=0.467849 sharp=0.010477 gtSharp=0.011358 rightPSNR=16.5175 n=38 path=outputs/more_20261004/fewer_steps/clips/0125_deliv_g100_T4bpad/0125_inpainting_results_sbs.mkv
+--- 0128 GT ---                                          0.0000   0.0105
+0128_deliv_g100_T5pad              (-12,-12)     39.75   0.3892   0.0160   18.155   38
+ROW clip=0128 tag=0128_deliv_g100_T5pad dy=-12 dx=-12 leftPSNR=39.7484 lpips=0.389152 sharp=0.015998 gtSharp=0.010493 rightPSNR=18.1545 n=38 path=outputs/finalcheck_20261004/speed/clips/0128_deliv_g100_T5pad/0128_inpainting_results_sbs.mkv
+0128_deliv_g100_T4bpad             (-12,-12)     39.75   0.3892   0.0160   18.156   38
+ROW clip=0128 tag=0128_deliv_g100_T4bpad dy=-12 dx=-12 leftPSNR=39.7484 lpips=0.389184 sharp=0.015991 gtSharp=0.010493 rightPSNR=18.1557 n=38 path=outputs/more_20261004/fewer_steps/clips/0128_deliv_g100_T4bpad/0128_inpainting_results_sbs.mkv
+--- 0141 GT ---                                          0.0000   0.0036
+0141_deliv_g100_T5pad              (-12,-12)     40.09   0.4681   0.0059   15.478   38
+ROW clip=0141 tag=0141_deliv_g100_T5pad dy=-12 dx=-12 leftPSNR=40.0934 lpips=0.468059 sharp=0.005851 gtSharp=0.003613 rightPSNR=15.4779 n=38 path=outputs/finalcheck_20261004/speed/clips/0141_deliv_g100_T5pad/0141_inpainting_results_sbs.mkv
+0141_deliv_g100_T4bpad             (-12,-12)     40.09   0.4682   0.0058   15.478   38
+ROW clip=0141 tag=0141_deliv_g100_T4bpad dy=-12 dx=-12 leftPSNR=40.0934 lpips=0.468153 sharp=0.005847 gtSharp=0.003613 rightPSNR=15.4779 n=38 path=outputs/more_20261004/fewer_steps/clips/0141_deliv_g100_T4bpad/0141_inpainting_results_sbs.mkv
+--- 0170 GT ---                                          0.0000   0.0323
+0170_deliv_g100_T5pad                (-28,0)     39.79   0.2459   0.0173   16.958   38
+ROW clip=0170 tag=0170_deliv_g100_T5pad dy=-28 dx=0 leftPSNR=39.7902 lpips=0.245911 sharp=0.017348 gtSharp=0.032309 rightPSNR=16.9584 n=38 path=outputs/finalcheck_20261004/speed/clips/0170_deliv_g100_T5pad/0170_inpainting_results_sbs.mkv
+0170_deliv_g100_T4bpad               (-28,0)     39.79   0.2458   0.0173   16.960   38
+ROW clip=0170 tag=0170_deliv_g100_T4bpad dy=-28 dx=0 leftPSNR=39.7902 lpips=0.245795 sharp=0.017341 gtSharp=0.032309 rightPSNR=16.9603 n=38 path=outputs/more_20261004/fewer_steps/clips/0170_deliv_g100_T4bpad/0170_inpainting_results_sbs.mkv
+--- 0225 GT ---                                          0.0000   0.0132
+0225_deliv_g100_T5pad                (-28,0)     40.93   0.2609   0.0130   15.891   38
+ROW clip=0225 tag=0225_deliv_g100_T5pad dy=-28 dx=0 leftPSNR=40.9278 lpips=0.260946 sharp=0.013017 gtSharp=0.013156 rightPSNR=15.8913 n=38 path=outputs/finalcheck_20261004/speed/clips/0225_deliv_g100_T5pad/0225_inpainting_results_sbs.mkv
+0225_deliv_g100_T4bpad               (-28,0)     40.93   0.2608   0.0130   15.892   38
+ROW clip=0225 tag=0225_deliv_g100_T4bpad dy=-28 dx=0 leftPSNR=40.9278 lpips=0.260806 sharp=0.013006 gtSharp=0.013156 rightPSNR=15.8918 n=38 path=outputs/more_20261004/fewer_steps/clips/0225_deliv_g100_T4bpad/0225_inpainting_results_sbs.mkv
+--- 0251 GT ---                                          0.0000   0.0173
+0251_deliv_g100_T5pad                (-28,0)     41.23   0.3367   0.0097   18.420   38
+ROW clip=0251 tag=0251_deliv_g100_T5pad dy=-28 dx=0 leftPSNR=41.2340 lpips=0.336711 sharp=0.009689 gtSharp=0.017307 rightPSNR=18.4204 n=38 path=outputs/finalcheck_20261004/speed/clips/0251_deliv_g100_T5pad/0251_inpainting_results_sbs.mkv
+0251_deliv_g100_T4bpad               (-28,0)     41.23   0.3367   0.0097   18.421   38
+ROW clip=0251 tag=0251_deliv_g100_T4bpad dy=-28 dx=0 leftPSNR=41.2340 lpips=0.336653 sharp=0.009683 gtSharp=0.017307 rightPSNR=18.4214 n=38 path=outputs/more_20261004/fewer_steps/clips/0251_deliv_g100_T4bpad/0251_inpainting_results_sbs.mkv
+--- 0259 GT ---                                          0.0000   0.0450
+0259_deliv_g100_T5pad                (-28,0)     40.72   0.4371   0.0348   13.076   38
+ROW clip=0259 tag=0259_deliv_g100_T5pad dy=-28 dx=0 leftPSNR=40.7219 lpips=0.437134 sharp=0.034751 gtSharp=0.044964 rightPSNR=13.0760 n=38 path=outputs/finalcheck_20261004/speed/clips/0259_deliv_g100_T5pad/0259_inpainting_results_sbs.mkv
+0259_deliv_g100_T4bpad               (-28,0)     40.72   0.4371   0.0347   13.077   38
+ROW clip=0259 tag=0259_deliv_g100_T4bpad dy=-28 dx=0 leftPSNR=40.7219 lpips=0.437134 sharp=0.034749 gtSharp=0.044964 rightPSNR=13.0768 n=38 path=outputs/more_20261004/fewer_steps/clips/0259_deliv_g100_T4bpad/0259_inpainting_results_sbs.mkv
+SCORE_DONE rc=0 2026-10-04_16:09:48

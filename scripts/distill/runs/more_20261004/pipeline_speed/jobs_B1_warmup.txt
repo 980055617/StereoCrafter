@@ -1,0 +1,7 @@
+# B1 warm-up diagnosis, deliverable T5@1.00 576x1024, 2 windows each (SK_MAX_CHUNKS=2), latents saved for bit-identity
+# b: EMPTY Triton cache dir (cold compile)   c: the same dir again (warm)   d: autotune choices pre-filled from s0's snapshot
+# e: two runs in ONE process (rep1 = warm-up-once process)
+0301 B1b_coldcache deliv 1.00 T5 - - SK_MAX_CHUNKS=2,SK_SAVE_LAT=1,TRITON_PRINT_AUTOTUNING=1,TRITON_CACHE_DIR=/home/kawa/master_project/StereoCrafter/outputs/more_20261004/pipeline_speed/triton_cache_b1
+0301 B1c_samecache_warm deliv 1.00 T5 - - SK_MAX_CHUNKS=2,SK_SAVE_LAT=1,TRITON_PRINT_AUTOTUNING=1,TRITON_CACHE_DIR=/home/kawa/master_project/StereoCrafter/outputs/more_20261004/pipeline_speed/triton_cache_b1
+0301 B1d_atload deliv 1.00 T5 - - SK_MAX_CHUNKS=2,SK_SAVE_LAT=1,TRITON_PRINT_AUTOTUNING=1,SK_AT_LOAD=/home/kawa/master_project/StereoCrafter/outputs/more_20261004/pipeline_speed/autotune_choices_s0.json
+0301 B1e_repeat2 deliv 1.00 T5 - - SK_MAX_CHUNKS=2,SK_SAVE_LAT=1,TRITON_PRINT_AUTOTUNING=1,SK_REPEAT=2

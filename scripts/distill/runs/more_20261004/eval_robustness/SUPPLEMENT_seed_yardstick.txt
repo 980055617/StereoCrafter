@@ -1,0 +1,25 @@
+SEED-REALISATION YARDSTICK vs the deliverable's per-clip delta (descriptive supplement, not a PREREG criterion)
+scores: outputs/more_20261004/eval_robustness/score_v1 (+ widened outputs/more_20261004/eval_robustness/score_v1_wide for the clips it holds)
+yardstick s = |LPIPS(T5nat) - LPIPS(T5pad)| (same model/schedule/guidance, different noise in windows >= 1)
+clip   GTshift  origin U  origin F   dDel U   dDel F     s U     s F |dDel F|/s F rel dDel U rel dDel F
+0042       -35    0.4279    0.1599  -0.0061  -0.0034  0.0013  0.0019          1.8      -1.4%      -2.1%
+0052       -40    0.4467    0.2231  -0.0072  -0.0080  0.0003  0.0001        108.6      -1.6%      -3.6%
+0125       -32    0.4799    0.3628  -0.0144  -0.0164  0.0004  0.0006         28.3      -3.0%      -4.5%
+0128       -31    0.4055    0.2291  -0.0173  -0.0121  0.0002  0.0008         15.9      -4.3%      -5.3%
+0141       -60    0.4813    0.2864  -0.0133  -0.0186  0.0006  0.0013         14.7      -2.8%      -6.5%
+0147       -44    0.5269    0.2100  -0.0025  -0.0059  0.0004  0.0001         84.2      -0.5%      -2.8%
+0170       -10    0.2517    0.2058  -0.0071  -0.0073  0.0013  0.0012          6.2      -2.8%      -3.6%
+0204       -17    0.2053    0.1340  -0.0186  -0.0196  0.0003  0.0003         68.8      -9.0%     -14.6%
+0225       -14    0.2750    0.2080  -0.0164  -0.0148  0.0004  0.0011         14.1      -5.9%      -7.1%
+0251       -19    0.3460    0.1798  -0.0105  -0.0132  0.0001  0.0004         36.7      -3.0%      -7.3%
+0259       -17    0.4376    0.3140  -0.0019  +0.0019  0.0023  0.0038          0.5      -0.4%      +0.6%
+0301       -12    0.4351    0.4051  -0.0386  -0.0408  0.0006  0.0003        134.9      -8.9%     -10.1%
+
+yardstick under REG_FRAME: median 0.0007, max 0.0038 (0259); RMS 0.0014
+clips whose REG_FRAME deliverable delta is negative and >= 3x their own yardstick: 10/12 ['0052', '0125', '0128', '0141', '0147', '0170', '0204', '0225', '0251', '0301']
+clips NOT resolved by one seed (|delta| < 3x yardstick): ['0042', '0259']
+mean relative change of the deliverable vs origin: UNREG -3.64%  REG_FRAME -5.58%  (absolute deltas are nearly equal, the denominator shrinks under registration)
+
+NOTE (appended after review, 2026-10-04): the yardstick is a PROXY. It is the effect of re-seeding ONE configuration
+(T5, windows >= 1), not the seed variance of the paired deliverable - origin delta, which was not measured
+(both of those renders share seed 1234). Read "not resolved by one seed" above as "within the re-seed proxy".

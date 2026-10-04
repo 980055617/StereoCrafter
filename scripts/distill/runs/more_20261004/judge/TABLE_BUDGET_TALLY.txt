@@ -1,0 +1,56 @@
+render ays          0301 AC0_origin_g101_T8sig                       169.3 s
+render ays          0301 AYS8_origin_g101                            168.9 s
+render ays          0301 AYS5pad8_origin_g100                        101.7 s
+render ays          0042 AYS8_origin_g101                            173.0 s
+render ays          0125 AYS8_origin_g101                            184.6 s
+render ays          0128 AYS8_origin_g101                            171.4 s
+render ays          0141 AYS8_origin_g101                            171.3 s
+render ays          0204 AYS8_origin_g101                            169.6 s
+render ays          0204 AYS5pad8_origin_g100                         97.6 s
+render ays          0052 AYS8_origin_g101                            196.8 s
+render ays          0052 AYS5pad8_origin_g100                        114.8 s
+render ays          0147 AYS8_origin_g101                            204.9 s
+render ays          0147 AYS5pad8_origin_g100                        119.6 s
+render ays          0170 AYS8_origin_g101                            170.0 s
+render ays          0225 AYS8_origin_g101                            171.1 s
+render ays          0251 AYS8_origin_g101                            171.7 s
+render ays          0259 AYS8_origin_g101                            172.8 s
+render devclips     0268 o8_origin_g101_s8                           172.8 s
+render devclips     0268 d8_deliv_g101_s8                            171.1 s
+render devclips     0268 o5p_origin_g100_T5pad                        95.2 s
+render devclips     0268 d5p_deliv_g100_T5pad                         98.6 s
+render devclips     0268 d5n_deliv_g100_T5nat                         99.1 s
+render devclips     0082 o8_origin_g101_s8                           186.9 s
+render devclips     0082 d8_deliv_g101_s8                            187.7 s
+render devclips     0082 o5p_origin_g100_T5pad                       110.8 s
+render devclips     0082 d5p_deliv_g100_T5pad                        115.3 s
+render devclips     0082 d5n_deliv_g100_T5nat                        117.3 s
+render timing_576   0301 J_A_deliv_T5_576                             99.1 s
+render timing_576   0301 J_C_deliv_T5_576_idfix                       84.9 s
+render timing_576   0301 J_O_origin_s8_576                           164.4 s
+render timing_576   0301 J_OC_origin_s8_576_idfix                    154.6 s
+render timing_576   0301 J_D_deliv_T5_576_dcs14_fix5789               92.1 s
+render timing_576   0301 J_OT5_origin_T5g100_576_idfix                85.9 s
+score  SCORES_J1c_LPIPS_0042.txt                                      62.0 s (wall incl. lock wait)
+score  SCORES_J1c_LPIPS_0170.txt                                      65.0 s (wall incl. lock wait)
+score  SCORES_J1c_LPIPS_0259.txt                                      64.0 s (wall incl. lock wait)
+score  SCORES_J1c_LPIPS_0301.txt                                      61.0 s (wall incl. lock wait)
+score  SCORES_J3c_AYS_0301.txt                                        80.0 s (wall incl. lock wait)
+score  SCORES_J3c_AYS_ext8_0042.txt                                  103.0 s (wall incl. lock wait)
+score  SCORES_J3c_AYS_ext8_0125.txt                                  103.0 s (wall incl. lock wait)
+score  SCORES_J3c_AYS_ext8_0128.txt                                   99.0 s (wall incl. lock wait)
+score  SCORES_J3c_AYS_ext8_0141.txt                                  114.0 s (wall incl. lock wait)
+score  SCORES_J3c_AYS_ext8_0170.txt                                   88.0 s (wall incl. lock wait)
+score  SCORES_J3c_AYS_ext8_0225.txt                                  111.0 s (wall incl. lock wait)
+score  SCORES_J3c_AYS_ext8_0251.txt                                   99.0 s (wall incl. lock wait)
+score  SCORES_J3c_AYS_ext8_0259.txt                                   84.0 s (wall incl. lock wait)
+score  SCORES_J3c_AYS_regime_0052.txt                                227.0 s (wall incl. lock wait)
+score  SCORES_J3c_AYS_regime_0147.txt                                193.0 s (wall incl. lock wait)
+score  SCORES_J3c_AYS_regime_0204.txt                                116.0 s (wall incl. lock wait)
+score  SCORES_J5_DEV_0082.txt                                        214.0 s (wall incl. lock wait)
+score  SCORES_J5_DEV_0268.txt                                        137.0 s (wall incl. lock wait)
+score  J1d_warp_0042.log                                             112.0 s (wall incl. lock wait)
+score  J1d_warp_0170.log                                             111.0 s (wall incl. lock wait)
+score  J1d_warp_0259.log                                             108.0 s (wall incl. lock wait)
+score  J1d_warp_0301.log                                             109.0 s (wall incl. lock wait)
+TOTAL renders 79.4 GPU-min, scoring <= 41.0 GPU-min (wall, lock waits included), sum <= 120.4

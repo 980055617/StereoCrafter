@@ -1,0 +1,49 @@
+judge J3c -- Align-Your-Steps schedule on ORIGIN, paired contrasts (score_clip_ll.py SCORE_STEP=4, FFV1 renders)
+sources: 0052: ['SCORES_J3c_AYS_regime_0052.txt']; 0147: ['SCORES_J3c_AYS_regime_0147.txt']; 0204: ['SCORES_J3c_AYS_regime_0204.txt']; 0301: ['SCORES_J3c_AYS_0301.txt', 'mstudent2_step800_deliv_ll from eval_robustness/PUBLISHED_ROWS.json', 's25_ll from eval_robustness/PUBLISHED_ROWS.json']
+
+AYS8 origin @1.01 vs deployed origin (Karras-8 @1.01): same cost, same noise   [AYS8_origin_g101 - origin_ll]  n=4
+  per clip: 0052:-0.0047 0147:-0.0023 0204:-0.0126 0301:-0.0313
+  mean -0.01270  negative on 4/4  worst 0147 -0.0023  t95 [-0.0336,+0.0082]  p_sign 0.1250  p_signflip 0.1250
+  RULE (pre-registered 4-/12-clip rule): mean <= -0.002 and no clip > +0.005 -> PASS (free gain)
+  sharpness ratio a/b mean 1.065 (per clip 1.022 1.039 1.077 1.121)
+  means: AYS8_origin_g101 0.3908  origin_ll 0.4035
+AYS5 origin @1.00 pad8 vs origin T5 @1.00 pad8: same cost, same noise   [AYS5pad8_origin_g100 - origin_g100_T5pad]  n=4
+  per clip: 0052:-0.0010 0147:-0.0003 0204:-0.0010 0301:-0.0105
+  mean -0.00319  negative on 4/4  worst 0147 -0.0003  t95 [-0.0109,+0.0046]  p_sign 0.1250  p_signflip 0.1250
+  RULE (pre-registered 4-/12-clip rule): mean <= -0.002 and no clip > +0.005 -> PASS (free gain)
+  sharpness ratio a/b mean 1.009 (per clip 1.001 1.002 1.009 1.023)
+  means: AYS5pad8_origin_g100 0.4029  origin_g100_T5pad 0.4061
+AYS5 origin @1.00 pad8 vs deployed origin (5x1 vs 8x2 evals)   [AYS5pad8_origin_g100 - origin_ll]  n=4
+  per clip: 0052:-0.0002 0147:-0.0001 0204:+0.0019 0301:-0.0039
+  mean -0.00058  negative on 3/4  worst 0204 +0.0019  t95 [-0.0045,+0.0033]  p_sign 0.6250  p_signflip 0.6250
+  sharpness ratio a/b mean 0.994 (per clip 0.989 1.002 0.993 0.992)
+  means: AYS5pad8_origin_g100 0.4029  origin_ll 0.4035
+
+--- THESIS-DECIDING CONTRASTS (deliverable vs a schedule-optimised origin at equal cost) ---
+deliverable 8x2@1.01 (published headline config) vs AYS8 origin @1.01: same 16 evals/window, same noise   [mstudent2_step800_deliv_ll - AYS8_origin_g101]  n=4
+  per clip: 0052:-0.0025 0147:-0.0003 0204:-0.0060 0301:-0.0073
+  mean -0.00403  negative on 4/4  worst 0147 -0.0003  t95 [-0.0092,+0.0011]  p_sign 0.1250  p_signflip 0.1250
+  sharpness ratio a/b mean 1.075 (per clip 1.038 1.080 1.098 1.082)
+  means: mstudent2_step800_deliv_ll 0.3868  AYS8_origin_g101 0.3908
+deliverable T5@1.00 pad8 vs AYS5 origin @1.00 pad8: same 5 evals/window, same noise   [deliv_g100_T5pad - AYS5pad8_origin_g100]  n=4
+  per clip: 0052:-0.0063 0147:-0.0013 0204:-0.0196 0301:-0.0323
+  mean -0.01487  negative on 4/4  worst 0147 -0.0013  t95 [-0.0371,+0.0073]  p_sign 0.1250  p_signflip 0.1250
+  sharpness ratio a/b mean 1.138 (per clip 1.060 1.131 1.160 1.203)
+  means: deliv_g100_T5pad 0.3881  AYS5pad8_origin_g100 0.4029
+deliverable T5@1.00 pad8 (5 evals) vs AYS8 origin @1.01 (16 evals)   [deliv_g100_T5pad - AYS8_origin_g101]  n=4
+  per clip: 0052:-0.0018 0147:+0.0009 0204:-0.0051 0301:-0.0050
+  mean -0.00276  negative on 3/4  worst 0147 +0.0009  t95 [-0.0073,+0.0018]  p_sign 0.6250  p_signflip 0.2500
+  sharpness ratio a/b mean 1.063 (per clip 1.026 1.090 1.070 1.064)
+  means: deliv_g100_T5pad 0.3881  AYS8_origin_g101 0.3908
+
+--- context ---
+origin s25 (teacher, 50 evals) vs AYS8 origin (16 evals)   [s25_ll - AYS8_origin_g101]  n=4
+  per clip: 0052:-0.0036 0147:-0.0027 0204:-0.0031 0301:-0.0052
+  mean -0.00365  negative on 4/4  worst 0147 -0.0027  t95 [-0.0054,-0.0019]  p_sign 0.1250  p_signflip 0.1250
+  sharpness ratio a/b mean 1.069 (per clip 1.032 1.042 1.083 1.118)
+  means: s25_ll 0.3872  AYS8_origin_g101 0.3908
+deliverable 8x2@1.01 vs deployed origin (published headline, same clips)   [mstudent2_step800_deliv_ll - origin_ll]  n=4
+  per clip: 0052:-0.0072 0147:-0.0025 0204:-0.0186 0301:-0.0386
+  mean -0.01672  negative on 4/4  worst 0147 -0.0025  t95 [-0.0423,+0.0088]  p_sign 0.1250  p_signflip 0.1250
+  sharpness ratio a/b mean 1.145 (per clip 1.061 1.122 1.183 1.213)
+  means: mstudent2_step800_deliv_ll 0.3868  origin_ll 0.4035

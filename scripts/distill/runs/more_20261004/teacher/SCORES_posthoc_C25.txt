@@ -1,0 +1,17 @@
+SCORE_START 2026-10-04_16:10:23 list=scripts/distill/runs/more_20261004/teacher/scorelist_posthoc_C25.txt scorer=scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py SCORE_STEP=4
+/home/kawa/miniconda3/envs/stereocrafter/lib/python3.11/site-packages/torchvision/models/_utils.py:208: UserWarning: The parameter 'pretrained' is deprecated since 0.13 and may be removed in the future, please use 'weights' instead.
+  warnings.warn(
+/home/kawa/miniconda3/envs/stereocrafter/lib/python3.11/site-packages/torchvision/models/_utils.py:223: UserWarning: Arguments other than a weight enum or `None` for 'weights' are deprecated since 0.13 and may be removed in the future. The current behavior is equivalent to passing `weights=AlexNet_Weights.IMAGENET1K_V1`. You can also use `weights=AlexNet_Weights.DEFAULT` to get the most up-to-date weights.
+  warnings.warn(msg)
+/home/kawa/miniconda3/envs/stereocrafter/lib/python3.11/site-packages/lpips/lpips.py:107: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  self.load_state_dict(torch.load(model_path, map_location='cpu'), strict=False)
+Setting up [LPIPS] perceptual loss: trunk [alex], v[0.1], spatial [off]
+Loading model from: /home/kawa/miniconda3/envs/stereocrafter/lib/python3.11/site-packages/lpips/weights/v0.1/alex.pth
+clip/config                           offset  leftPSNR    LPIPS    sharp    rPSNR   nf
+--- 0147 GT ---                                          0.0000   0.0039
+0147_C25                           (-12,-12)     40.40   0.5220   0.0065   15.493   38
+ROW clip=0147 tag=0147_C25 dy=-12 dx=-12 leftPSNR=40.4039 lpips=0.522020 sharp=0.006517 gtSharp=0.003901 rightPSNR=15.4926 n=38 path=outputs/more_20261004/teacher/clips/0147_C25/0147_inpainting_results_sbs.mkv
+--- 0052 GT ---                                          0.0000   0.0099
+0052_C25                           (-12,-12)     40.70   0.4393   0.0135   13.183   38
+ROW clip=0052 tag=0052_C25 dy=-12 dx=-12 leftPSNR=40.6982 lpips=0.439265 sharp=0.013542 gtSharp=0.009881 rightPSNR=13.1833 n=38 path=outputs/more_20261004/teacher/clips/0052_C25/0052_inpainting_results_sbs.mkv
+SCORE_DONE rc=0 2026-10-04_16:15:25

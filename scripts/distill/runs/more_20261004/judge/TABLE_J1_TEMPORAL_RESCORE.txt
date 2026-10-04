@@ -1,0 +1,29 @@
+judge J1c/J1d -- re-scores of the temporal lane's dcs14 key rows vs the lane's own numbers
+LPIPS: score_clip_ll.py SCORE_STEP=4 (mine: SCORES_J1c_LPIPS_<clip>.txt; lane: temporal/SCORES_LPIPS_*.txt)
+warp : mine = validate-lane score_temporal_ll.py (independent copy), lane = temporal/score_temporal_tr_v1.py JSONs
+
+PASS 0170 origin_ll                LPIPS mine 0.251735 lane 0.251735 (d +0.0e+00)   warp mine 0.026743 lane 0.026743 (d -4.8e-13; lane values 1)
+PASS 0259 origin_ll                LPIPS mine 0.437586 lane 0.437586 (d +0.0e+00)   warp mine 0.023869 lane 0.023869 (d +4.1e-13; lane values 1)
+PASS 0042 origin_ll                LPIPS mine 0.427856 lane 0.427856 (d +0.0e+00)   warp mine 0.009719 lane 0.009719 (d +7.5e-14; lane values 1)
+PASS 0301 origin_ll                LPIPS mine 0.435095 lane 0.435095 (d +0.0e+00)   warp mine 0.049347 lane 0.049347 (d -3.2e-13; lane values 1)
+PASS 0170 deliv_g100_T5nat         LPIPS mine 0.244648 lane 0.244648 (d +0.0e+00)   warp mine 0.030675 lane 0.030675 (d -2.6e-13; lane values 1)
+PASS 0259 deliv_g100_T5nat         LPIPS mine 0.434854 lane 0.434854 (d +0.0e+00)   warp mine 0.028696 lane 0.028696 (d -1.5e-13; lane values 1)
+PASS 0042 deliv_g100_T5nat         LPIPS mine 0.425277 lane 0.425277 (d +0.0e+00)   warp mine 0.012677 lane 0.012677 (d +7.3e-14; lane values 1)
+PASS 0301 deliv_g100_T5nat         LPIPS mine 0.399416 lane 0.399416 (d +0.0e+00)   warp mine 0.061745 lane 0.061745 (d +4.9e-14; lane values 1)
+PASS 0170 T5nat_dcs14              LPIPS mine 0.237561 lane 0.237561 (d +0.0e+00)   warp mine 0.028334 lane 0.028334 (d +2.5e-13; lane values 1)
+PASS 0259 T5nat_dcs14              LPIPS mine 0.430439 lane 0.430439 (d +0.0e+00)   warp mine 0.020816 lane 0.020816 (d -1.4e-13; lane values 1)
+PASS 0042 T5nat_dcs14              LPIPS mine 0.425088 lane 0.425088 (d +0.0e+00)   warp mine 0.011126 lane 0.011126 (d -2.1e-13; lane values 1)
+PASS 0301 T5nat_dcs14              LPIPS mine 0.392643 lane 0.392643 (d +0.0e+00)   warp mine 0.059982 lane 0.059982 (d -4.6e-13; lane values 1)
+PASS 0170 origin_g101_s8_dcs14     LPIPS mine 0.244993 lane 0.244993 (d +0.0e+00)   warp mine 0.024809 lane 0.024809 (d -4.7e-13; lane values 1)
+PASS 0259 origin_g101_s8_dcs14     LPIPS mine 0.431326 lane 0.431326 (d +0.0e+00)   warp mine 0.018731 lane 0.018731 (d -4.4e-13; lane values 1)
+PASS 0042 origin_g101_s8_dcs14     LPIPS mine 0.426480 lane 0.426480 (d +0.0e+00)   warp mine 0.008621 lane 0.008621 (d -4.8e-13; lane values 1)
+PASS 0301 origin_g101_s8_dcs14     LPIPS mine 0.430021 lane 0.430021 (d +0.0e+00)   warp mine 0.047989 lane 0.047989 (d +1.4e-13; lane values 1)
+
+mean4 origin_ll                LPIPS 0.3881   warp 0.02742   gap vs origin_ll +0.00 %
+mean4 deliv_g100_T5nat         LPIPS 0.3760   warp 0.03345   gap vs origin_ll +21.99 %
+mean4 T5nat_dcs14              LPIPS 0.3714   warp 0.03006   gap vs origin_ll +9.65 %
+mean4 origin_g101_s8_dcs14     LPIPS 0.3832   warp 0.02504   gap vs origin_ll -8.69 %
+dcs14 vs origin at the same decode: +20.08 %  (BASE vs deployed origin +21.99 %)
+T5nat_dcs14 vs deliv_g100_T5nat per clip (dLPIPS / warp ratio): 0170:-0.0071/0.924 0259:-0.0044/0.725 0042:-0.0002/0.878 0301:-0.0068/0.971
+origin_g101_s8_dcs14 vs origin_ll per clip (dLPIPS / warp ratio): 0170:-0.0067/0.928 0259:-0.0063/0.785 0042:-0.0014/0.887 0301:-0.0051/0.972
+SUMMARY rows=16 failed=0

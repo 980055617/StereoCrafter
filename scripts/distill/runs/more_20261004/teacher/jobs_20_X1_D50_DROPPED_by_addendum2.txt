@@ -1,0 +1,2 @@
+# CLIP LABEL SAMPLER N PAD SCHURN MAXCH  -- PREREG_ADDENDUM_1 B: converged anchor, full clip, RNG-paired with s25
+0301 X1D50 dpmpp2m 50 25 - -

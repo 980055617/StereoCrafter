@@ -1,0 +1,22 @@
+PRE-REGISTRATION ADDENDUM 2 -- more_20261004 / teacher lane
+Written 2026-10-04 ~14:40 JST, after the window-0 diagnostic (DIAG_MATRIX_w0_v1.txt) and BEFORE any Stage-1a
+candidate render has finished or been scored (SCORES_stage1a.txt does not exist).  P1/P2/F1/F2 unchanged.
+
+Diagnostic outcome (Addendum 1 A rule, applied mechanically): CONVERGED = True (D50-E100 38.38 dB, D50-H25 40.17 dB,
+H25-E100 33.93 dB); HEUN FLAG False (H13 -> H25 moves +11.43 dB toward D50); DPM FLAG False.
+Window-0 PSNR to the converged limit D50: D25 43.17 | H25 40.17 | E100 38.38 | D16 37.00 | E25(s25) 29.72 |
+H13 28.75 | E8 24.44 | C25 21.19 (stochastic, expected far).
+
+Consequences fixed now:
+1. D25 IS the converged anchor.  It sits 43.17 dB from D50 in window 0 -- closer than any other pair and 13.45 dB
+   closer than s25 -- so its full-clip score stands for "the ODE limit" within any precision that matters here.
+   The X1-D50 render of Addendum 1 B is DROPPED as redundant; Addendum 1 B's read-out rule is applied to D25:
+     LPIPS_0301(D25) - LPIPS_0301(s25) <= -0.003  -> the ODE limit is a better teacher on 0301
+     otherwise                                    -> no deterministic teacher, at any compute, beats s25 on 0301
+   (D25 remains a matched-compute candidate under F1/F2/P1/P2 as pre-registered.)
+2. Budget priority after Stage 1a: (i) Stage-2 clips of F1 survivors, best 0301 delta first; (ii) C25b if
+   triggered (PREREG S1); (iii) X1 := Euler s50 RNG-paired (teacher_sched_v2 euler_nd N=50 pad 25, checked bitwise
+   against euler on CPU and GPU: test_euler_nd_cpu_v1.log / test_euler_nd_gpu_v1.log) on 0301 -- the Euler-path
+   point between s25 (29.72 dB from the limit) and E100 (38.38 dB).
+3. H13's verdict will be reported with its distance to the limit (28.75 dB, i.e. a COARSER ODE approximation than
+   s25 at matched compute), so an H13 FAIL is not read as "ODE accuracy does not help".

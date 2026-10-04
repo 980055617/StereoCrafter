@@ -1,0 +1,2 @@
+# O-C2: oracle_fs_v1.py with NO substitution (OR_SUBST unset), deliverable, T5 @1.00 pad, 0301 -> must reproduce md5 f2a35759d425d70e8a9e67508da52387
+0301 deliv_g100_T5pad_orcC2nosubst deliv 1.00 700.0,7.276163101196289,1.1675708293914795,0.09738767892122269,0.0020000000949949026 8

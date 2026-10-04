@@ -1,0 +1,142 @@
+PRE-REGISTRATION -- more_20261004 / lane "pipeline_speed" (GPU 0 only, every GPU job under flock /tmp/claude-gpu0.lock)
+Written 2026-10-04 ~13:30 JST, BEFORE any render, timing run or scorer call in this lane.  Not edited after the first
+scorer call; later additions go in dated ADDENDUM sections at the bottom.
+Files: scripts/distill/runs/more_20261004/pipeline_speed/  and  outputs/more_20261004/pipeline_speed/  (new dirs only).
+
+QUESTION  With the UNet at ~1/3 of origin's time, where does END-TO-END time go, and what cheap fix gives the next real
+speedup?  Clip 0301 (151 frames, 2x2 tile 2160x3840 -> 1080x1920 quadrants), resolutions 576x1024 and 1024x1792.
+
+CONFIGS
+  deployed origin   plain origin (no state, MAMBA_SELF_ATTN_INCLUDE='__nomatch__'), 8 Euler steps, guidance 1.01 (min=max),
+                    config/0160_overfit_inference_matched.json (bf16, decode_chunk_size 2, 14-frame windows overlap 3,
+                    seed 1234, overlap_prev_weight 0).
+  deliverable T5    mamba5slot_plus_stepdistil_up3_train10clip_step800_20261001.pt (md5 08cf4485...), gate 1.0, 5-slot
+                    env, guidance 1.00, T5 sigmas 700, 7.276163101196289, 1.1675708293914795, 0.09738767892122269,
+                    0.0020000000949949026 (+0), UNPADDED (natural RNG = what ships; LPIPS 12-clip 0.3815).
+  Reference md5s (pre-encode sbs array, writer_md5.txt):
+    576x1024 deliverable T5@1.00 unpadded  a41b432baeb25393bb12d39b4f2e6a21  (outputs/finalcheck_20261004/speed/clips/0301_deliv_g100_T5nat)
+    576x1024 deployed origin               2e533d7755c950d2fc95043f6fb0a51d  (outputs/finalcheck_20261004/speed/clips/0301_origin_g101_s8)
+    1024x1792: no prior 0301 render exists -> this lane's own instrumented baseline render (A3/A4) is the reference.
+  Reference LPIPS (score_clip_ll.py SCORE_STEP=4): 0301 deliverable T5@1.00 unpadded 0.399416
+    (scripts/distill/runs/finalcheck_20261004/speed/SCORES_POSTHOC_T5G100NAT.txt).
+
+-------------------------------------------------------------------------------------------------------------------
+I. INSTRUMENTATION INTEGRITY (gating: a failure blocks using the affected numbers until fixed)
+-------------------------------------------------------------------------------------------------------------------
+I1  The instrumented hook (stage timers = CUDA-synchronised wall-clock wrappers + CUDA events around UNet forwards) is
+    passive: A1 (576 deliverable T5) reproduces a41b432b..., A2 (576 deployed origin) reproduces 2e533d77....
+I2  Stage times are reported with the residual "unaccounted" time (process wall-clock minus the sum of named stages);
+    a breakdown whose unaccounted share exceeds 5 % of process wall-clock is flagged.
+
+-------------------------------------------------------------------------------------------------------------------
+B. BASELINE BREAKDOWN (timing-grade: the GPU-0 lock is held for the WHOLE run; load1 and the other GPU's use are logged)
+-------------------------------------------------------------------------------------------------------------------
+A1 576x1024 deliverable T5   A2 576x1024 deployed origin   A3 1024x1792 deliverable T5   A4 1024x1792 deployed origin
+Stages: python import | model load (from_pretrained x3, state load, .to(cuda)) | video read+preprocess | per window:
+CLIP encode, CPU preprocess (incl. the noise_aug randn), VAE encode, mask encode, UNet loop (CUDA-event UNet time and
+the loop remainder), VAE decode, latent->PIL->tensor post-processing | final assembly (cat, sbs, uint8) | write
+(md5 + FFV1 encode; the anaglyph md5) | residual.  Window-0 excess = w0 UNet time - median steady window UNet time.
+
+-------------------------------------------------------------------------------------------------------------------
+F. CANDIDATE FIXES and their acceptance rule
+-------------------------------------------------------------------------------------------------------------------
+Classes:
+  IDENTITY  accepted iff the pre-encode md5 of the sbs array equals the reference md5 of the same config+resolution
+            (576: the reference md5s above; 1792: A3/A4).  Nothing else is claimed for it.
+  PIXEL     (md5 differs) rendered losslessly (FFV1), scored with scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py
+            UNCHANGED, SCORE_STEP=4, on 0301 576x1024, in ONE scorer call together with the reference render
+            (outputs/finalcheck_20261004/speed/clips/0301_deliv_g100_T5nat), whose re-score must reproduce 0.399416
+            within 0.0001 (else the comparison is void).
+            ADOPTED as a speed fix iff |LPIPS(fix) - LPIPS(reference)| <= 0.0005.
+            If LPIPS(fix) < reference - 0.0005: reported as a QUALITY-CHANGING setting needing 12-clip validation, NOT
+            adopted in the speed headline.  If LPIPS(fix) > reference + 0.0005: rejected.
+            Sharpness ratio (ROW sharp / reference sharp) is reported, not gated.
+Candidates (from the brief; more may be added by ADDENDUM after the A1-A4 breakdown, each with its class stated
+before its first render):
+  F1 decode_chunk_size 2 -> 4 / 8 / 14  (expected PIXEL: the temporal decoder mixes frames within a chunk)
+  F2 VAE dtype: config precision is bf16 -> check that encode/decode actually run in bf16 (no fp32 upcast); a no-op if so
+  F3 channels_last (VAE, UNet)  F4 torch.backends.cudnn.benchmark=True   (class decided by the md5 test)
+  F5 the ~5 s first-call Mamba warm-up: identify it (TRITON_PRINT_AUTOTUNING=1; cold vs warm TRITON_CACHE_DIR);
+     candidates: persistent Triton cache dir, persisted autotune choices, warm-up-once (persistent) process.
+     Expected IDENTITY (same kernel configs) -> md5 test.
+Micro-benchmarks on saved per-window latents may be used to SCREEN decode variants (time + decoded-frame md5); every
+adopted fix is confirmed by a real end-to-end render (md5 or LPIPS as above).
+
+-------------------------------------------------------------------------------------------------------------------
+H. HEADLINE (pre-registered computation)
+-------------------------------------------------------------------------------------------------------------------
+End-to-end speedup at each resolution = process wall-clock(deployed origin, A2/A4) / process wall-clock(deliverable T5
+with ALL adopted fixes), same clip, same session, GPU-0 lock held, one render at a time.  Reported beside it:
+  - deliverable T5 without the fixes (A1/A3) vs deployed origin (the starting point);
+  - each adopted fix's own saving (paired, same resolution);
+  - "service mode" per-clip time (a persistent process: model load and warm-up paid once), if F5's warm-up-once
+    process is adopted, stated separately from the single-process CLI number.
+  - the share that is pipeline engineering vs Mamba/schedule (origin with the same identity fixes, where measured).
+Repeats: 576x1024 headline configs n=2 (both reported, mean used); 1024x1792 n=1 (cost), stated as such.
+Budget: ~60-90 GPU-minutes.  Training loss is never used.  Every number names the file it came from.
+
+-------------------------------------------------------------------------------------------------------------------
+ADDENDUM 1 (2026-10-04 ~13:47 JST; no render with any of these knobs and no scorer call has happened yet)
+-------------------------------------------------------------------------------------------------------------------
+Added candidates, all expected IDENTITY (accepted only on the md5 rule above; a PIXEL outcome is reported as a defect):
+  F6 SK_SKIP_DISCARDED=1  decode_latents does not decode a chunk whose frames main() throws away (frames
+     [0, cur_overlap) of windows i>0: chunk [0,1] of every middle window, chunks [0..5] of the last); kept chunks
+     get the identical inputs (each chunk is an independent vae.decode call).
+  F7 SK_DIRECT_POST=1     tensor2vid's denormalize on the GPU tensor, then (x*255).round() and uint8 on the GPU, HWC
+     uint8 numpy frames to main() (np.array(PIL image) is the same array); avoids the float32 .cpu() + PIL round trip.
+  F8 SK_NOAUG_SKIP=1      the unused CPU randn for noise_aug (noise_aug_strength is 0.0) replaced by a 0-dim zero.
+  F9 SK_READER=cropfirst  reader_cropfirst.read_cropfirst: uint8 crop first, then the same element-wise ops.
+     Pre-check already done (CPU only, before this addendum): outputs/more_20261004/pipeline_speed/r0_readerbench/
+     reader_0301_576x1024.json -> left/warped/mask torch.equal True, window .clone() strides identical.
+Implementation note for F3: nn.Module.to(memory_format=channels_last) raises on the temporal Conv3d weights, so
+  SK_CHANNELS_LAST / decode_bench DB_CL convert only the Conv2d weights to channels_last (Conv3d untouched).
+Write-stage note: the CPU-only write benchmark (write_bench_v1.py, outputs/more_20261004/pipeline_speed/
+  w0_writebench_576_0301/write_bench.json) was run before this addendum; it times the tail on an existing render.
+
+-------------------------------------------------------------------------------------------------------------------
+ADDENDUM 2 (2026-10-04 ~15:05 JST; still no scorer call in this lane) -- screening outcomes and what is carried forward
+-------------------------------------------------------------------------------------------------------------------
+Screens done (timing + md5 only): decode screen on A1's saved latents (outputs/more_20261004/pipeline_speed/
+d_screen_576/, windows 0,1,2,13), B1 warm-up runs (b1_warmup/), B2a cudnn.benchmark (b2_screen/).
+  F1 decode_chunk_size 4/8/14: PIXEL and SLOWER (+1.2 / +4.1 / +6.1 % decode time) -> not a speed fix; not rendered.
+  F2 VAE dtype: already bf16 (precision 'bf16' -> main() loads and casts the VAE to bf16; no fp32 upcast since that
+     only triggers for fp16).  fp16 decode: PIXEL, -2.6 % -> not carried forward.
+  F3 channels_last VAE (Conv2d weights): PIXEL and SLOWER (+8 % decode) -> dropped.  UNet: B2b pending.
+  F4 cudnn.benchmark: PIXEL; steady -1.0 % UNet, -1.4 % encode, -5.1 % decode, but +6.2 s of benchmarking in window 0
+     of every process -> a net LOSS for a single-clip CLI process; at most ~-2 s/clip in a persistent process.
+     Not carried into the headline (would need LPIPS here + determinism across processes, B2a2).
+  F5 warm-up = Triton AUTOTUNE benchmarking of 5 Mamba2 SSD kernels (TRITON_PRINT_AUTOTUNING lines, 4.7 s), not
+     compilation: kernel binaries already persist in ~/.triton/cache (empty TRITON_CACHE_DIR -> 34 s first call; warm
+     dir -> still 5.4 s).  Pre-filled autotune choices (SK_AT_LOAD) -> first call 0.79 s, latents bit-identical;
+     2nd clip in the same process -> no warm-up, md5 identical.  Carried forward (IDENTITY).
+Carried forward to the C renders (all IDENTITY candidates; md5 rule): F5 (SK_AT_LOAD, choices from a fresh process at
+the SAME resolution), F6, F7, F8, F9.  Consequently no PIXEL fix is currently a candidate for the speed headline; if one
+is later rendered for LPIPS, it gets its own addendum first.
+
+-------------------------------------------------------------------------------------------------------------------
+ADDENDUM 3 (2026-10-04 ~15:47 JST; still no scorer call in this lane) -- a PIXEL candidate found by profiling
+-------------------------------------------------------------------------------------------------------------------
+Evidence that led here (timing/md5 only): v_profile/vae_profile_576.txt (one 2-frame decode chunk: GroupNorm 34 %,
+Conv2d 27 %, Conv3d(3,1,1) 15 % on a non-tensor-core implicit_convolveNd_sgemm kernel, layout copies/adds/SiLU the
+rest -> memory-bound); d_screen3_576/ (windows 0,1,2,13): torch.compile(vae.decoder) steady decode 5.79 s vs 9.32 s
+(-38 %), +Conv3d-as-Conv2d 5.49 s; first pass incl. compilation 41-51 s; md5 differs (PIXEL).  Also recorded:
+cudnn.benchmark is NOT reproducible across processes (B2a vs B2a2 latents differ, max |d| 0.17) -> F4 stays dropped.
+F10 SK_VAE_COMPILE=default (torch.compile of vae.decoder only, inductor default mode), on top of the identity set.
+   Class PIXEL.  Renders: P1 576 cold inductor cache, P2 576 same cache (second process; md5 must equal P1 =
+   determinism), P4 576 two clips in one process, P3 1024x1792 (own cold cache).
+   ADOPTED as a speed fix iff |LPIPS(P1) - LPIPS(reference)| <= 0.0005 on 0301 576x1024 (score_clip_ll.py, SCORE_STEP=4,
+   ONE scorer call with the reference render outputs/finalcheck_20261004/speed/clips/0301_deliv_g100_T5nat, whose
+   re-score must reproduce 0.399416 within 0.0001) AND P2's md5 == P1's md5.  Its speed is reported three ways (cold
+   CLI incl. compilation, warm-cache CLI, persistent process); the headline uses whichever applies, stated explicitly.
+   If it fails the LPIPS gate it is reported as rejected; if LPIPS improves by > 0.0005 it is reported as
+   quality-changing (not adopted for speed).
+
+-------------------------------------------------------------------------------------------------------------------
+ADDENDUM 4 (2026-10-04 ~16:30 JST; written while the first scorer call of this lane (P1 vs reference) was running, before
+its result was read) -- F10 outcome on the pre-registered determinism criterion, and one deviation
+-------------------------------------------------------------------------------------------------------------------
+F10 determinism criterion (P2 md5 == P1 md5) FAILED: P1 cold 31f05d91..., P2 warm 6de43d6e..., P4 warm 76e77513...
+(P4's two clips agree with each other -> deterministic within a process, not across processes).  F10 is therefore NOT
+adopted, whatever its LPIPS.  The LPIPS of P1 vs the reference is still reported (not gating any more).
+DEVIATION: P3 (1024x1792 compiled-decoder render) is not run -- it could not change F10's verdict; its expected speed is
+stated as an extrapolation from the 576 steady per-window decode ratio, labelled as such.

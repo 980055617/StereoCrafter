@@ -1,0 +1,5 @@
+PASS 0301_deliv_g100_T3pad              sched=T3 N=3 sigmas_ok=True idx=[0, 5, 7] calls/window=[3] batch=[1] pad/window=[5] windows=14 unet_s=25.53 call_s=37.02 hook_total_s=86.1
+PASS 0301_deliv_g100_T4apad             sched=T4a N=4 sigmas_ok=True idx=[0, 4, 5, 7] calls/window=[4] batch=[1] pad/window=[4] windows=14 unet_s=32.45 call_s=44.05 hook_total_s=92.5
+PASS 0301_deliv_g100_T4bpad             sched=T4b N=4 sigmas_ok=True idx=[0, 4, 5, 6] calls/window=[4] batch=[1] pad/window=[4] windows=14 unet_s=32.44 call_s=44.04 hook_total_s=91.8
+PASS 0301_deliv_g100_T5pad_rep          sched=T5 N=5 sigmas_ok=True idx=[0, 4, 5, 6, 7] calls/window=[5] batch=[1] pad/window=[3] windows=14 unet_s=39.38 call_s=50.83 hook_total_s=98.5
+SUMMARY checked=4 failed=0

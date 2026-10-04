@@ -1,0 +1,24 @@
+SCORE_START 2026-10-04_18:43:37 scorer=scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py SCORE_STEP=4
+/home/kawa/miniconda3/envs/stereocrafter/lib/python3.11/site-packages/torchvision/models/_utils.py:208: UserWarning: The parameter 'pretrained' is deprecated since 0.13 and may be removed in the future, please use 'weights' instead.
+  warnings.warn(
+/home/kawa/miniconda3/envs/stereocrafter/lib/python3.11/site-packages/torchvision/models/_utils.py:223: UserWarning: Arguments other than a weight enum or `None` for 'weights' are deprecated since 0.13 and may be removed in the future. The current behavior is equivalent to passing `weights=AlexNet_Weights.IMAGENET1K_V1`. You can also use `weights=AlexNet_Weights.DEFAULT` to get the most up-to-date weights.
+  warnings.warn(msg)
+/home/kawa/miniconda3/envs/stereocrafter/lib/python3.11/site-packages/lpips/lpips.py:107: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  self.load_state_dict(torch.load(model_path, map_location='cpu'), strict=False)
+Setting up [LPIPS] perceptual loss: trunk [alex], v[0.1], spatial [off]
+Loading model from: /home/kawa/miniconda3/envs/stereocrafter/lib/python3.11/site-packages/lpips/weights/v0.1/alex.pth
+clip/config                           offset  leftPSNR    LPIPS    sharp    rPSNR   nf
+--- 0170 GT ---                                          0.0000   0.0323
+0170_origin_ll                       (-28,0)     39.79   0.2517   0.0164   17.168   38
+ROW clip=0170 tag=0170_origin_ll dy=-28 dx=0 leftPSNR=39.7902 lpips=0.251735 sharp=0.016394 gtSharp=0.032309 rightPSNR=17.1683 n=38 path=outputs/beyond4_lossless/clips/0170_origin_ll/0170_inpainting_results_sbs.mkv
+0170_AYS8_origin_g101                (-28,0)     39.79   0.2457   0.0169   17.129   38
+ROW clip=0170 tag=0170_AYS8_origin_g101 dy=-28 dx=0 leftPSNR=39.7902 lpips=0.245660 sharp=0.016875 gtSharp=0.032309 rightPSNR=17.1293 n=38 path=outputs/more_20261004/judge/ays/clips/0170_AYS8_origin_g101/0170_inpainting_results_sbs.mkv
+0170_origin_g100_T5pad               (-28,0)     39.79   0.2536   0.0161   17.222   38
+ROW clip=0170 tag=0170_origin_g100_T5pad dy=-28 dx=0 leftPSNR=39.7902 lpips=0.253584 sharp=0.016104 gtSharp=0.032309 rightPSNR=17.2217 n=38 path=outputs/finalcheck_20261004/speed/clips/0170_origin_g100_T5pad/0170_inpainting_results_sbs.mkv
+0170_mstudent2_step800_deliv_ll      (-28,0)     39.79   0.2446   0.0177   16.912   38
+ROW clip=0170 tag=0170_mstudent2_step800_deliv_ll dy=-28 dx=0 leftPSNR=39.7902 lpips=0.244619 sharp=0.017661 gtSharp=0.032309 rightPSNR=16.9118 n=38 path=outputs/beyond_distil_mamba_scaled/clips/0170_mstudent2_step800_deliv_ll/0170_inpainting_results_sbs.mkv
+0170_deliv_g100_T5pad                (-28,0)     39.79   0.2459   0.0173   16.958   38
+ROW clip=0170 tag=0170_deliv_g100_T5pad dy=-28 dx=0 leftPSNR=39.7902 lpips=0.245911 sharp=0.017348 gtSharp=0.032309 rightPSNR=16.9584 n=38 path=outputs/finalcheck_20261004/speed/clips/0170_deliv_g100_T5pad/0170_inpainting_results_sbs.mkv
+0170_s25_ll                          (-28,0)     39.79   0.2450   0.0175   17.046   38
+ROW clip=0170 tag=0170_s25_ll dy=-28 dx=0 leftPSNR=39.7902 lpips=0.244962 sharp=0.017470 gtSharp=0.032309 rightPSNR=17.0464 n=38 path=outputs/skeptic1_stack/clips/0170_s25_ll/0170_inpainting_results_sbs.mkv
+SCORE_DONE rc=0 2026-10-04_18:45:05

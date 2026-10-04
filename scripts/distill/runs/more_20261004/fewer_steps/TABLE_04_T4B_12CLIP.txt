@@ -1,0 +1,77 @@
+==================================================================================================================================
+12 TEST CLIPS (extension, PREREG) -- deliverable T4b = [700, 7.276, 1.168, 0.0974] (4x1 UNet calls) at guidance 1.00, RNG padded to 8, vs the paired reference deliverable T5 @1.00 padded (5x1). LOSSLESS FFV1, real-GT LPIPS
+scorer scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py SCORE_STEP=4 (unchanged), FFV1 renders only
+==================================================================================================================================
+
+--- PER CLIP: LPIPS (lower is better) ---
+  row                                     0042     0052     0125     0128     0141     0147     0170     0204     0225     0251     0259     0301
+  GT sharpness                          0.0070   0.0099   0.0114   0.0105   0.0036   0.0039   0.0323   0.0116   0.0132   0.0173   0.0450   0.0505
+  origin 8-step @1.01 DEPLOYED (8x2)    0.4279   0.4467   0.4799   0.4055   0.4813   0.5269   0.2517   0.2053   0.2750   0.3460   0.4376   0.4351
+  origin T5 @1.00 pad (5x1)             0.4291   0.4474   0.4820   0.4074   0.4811   0.5272   0.2536   0.2082   0.2777   0.3477   0.4417   0.4416
+  deliverable 8-step @1.01 DEPLOYED     0.4218   0.4395   0.4655   0.3882   0.4681   0.5244   0.2446   0.1867   0.2587   0.3355   0.4357   0.3965
+  deliverable T5 @1.00 pad REF (5x1)    0.4240   0.4402   0.4677   0.3892   0.4681   0.5255   0.2459   0.1876   0.2609   0.3367   0.4371   0.3989
+  deliverable T5 @1.00 UNPADDED (5x1)    0.4253   0.4399   0.4682   0.3890   0.4675   0.5251   0.2446   0.1874   0.2606   0.3368   0.4349   0.3994
+  deliverable T4b @1.00 pad (4x1)       0.4240   0.4402   0.4678   0.3892   0.4682   0.5255   0.2458   0.1875   0.2608   0.3367   0.4371   0.3988
+
+--- PER CLIP: delta vs origin_ll (negative = better) ---
+  origin T5 @1.00 pad (5x1)            +0.0012  +0.0007  +0.0021  +0.0019  -0.0002  +0.0002  +0.0018  +0.0029  +0.0027  +0.0016  +0.0041  +0.0065
+  deliverable 8-step @1.01 DEPLOYED    -0.0061  -0.0072  -0.0144  -0.0173  -0.0133  -0.0025  -0.0071  -0.0186  -0.0164  -0.0105  -0.0019  -0.0386
+  deliverable T5 @1.00 pad REF (5x1)   -0.0039  -0.0065  -0.0122  -0.0163  -0.0133  -0.0014  -0.0058  -0.0177  -0.0141  -0.0093  -0.0005  -0.0362
+  deliverable T5 @1.00 UNPADDED (5x1)   -0.0026  -0.0068  -0.0118  -0.0165  -0.0138  -0.0018  -0.0071  -0.0179  -0.0145  -0.0093  -0.0027  -0.0357
+  deliverable T4b @1.00 pad (4x1)      -0.0039  -0.0065  -0.0121  -0.0163  -0.0132  -0.0014  -0.0059  -0.0178  -0.0142  -0.0094  -0.0005  -0.0363
+
+--- PER CLIP: delta vs the SAME MODEL's reference config (ref) ---
+  origin T5 @1.00 pad (5x1) - ref      +0.0012  +0.0007  +0.0021  +0.0019  -0.0002  +0.0002  +0.0018  +0.0029  +0.0027  +0.0016  +0.0041  +0.0065
+  deliverable T5 @1.00 pad REF (5x1) - ref   +0.0022  +0.0007  +0.0022  +0.0009  -0.0000  +0.0011  +0.0013  +0.0009  +0.0023  +0.0012  +0.0014  +0.0024
+  deliverable T5 @1.00 UNPADDED (5x1) - ref   +0.0035  +0.0004  +0.0026  +0.0007  -0.0006  +0.0007  +0.0000  +0.0006  +0.0019  +0.0013  -0.0009  +0.0029
+  deliverable T4b @1.00 pad (4x1) - ref   -0.0000  +0.0000  +0.0001  +0.0000  +0.0001  +0.0000  -0.0001  -0.0001  -0.0001  -0.0001  +0.0000  -0.0001
+
+--- PER CLIP: sharpness / GT sharpness (1.0 = matches the real right eye) ---
+  origin 8-step @1.01 DEPLOYED (8x2)     1.253    1.314    0.828    1.287    1.360    1.584    0.507    0.564    0.895    0.479    0.693    0.466
+  origin T5 @1.00 pad (5x1)              1.261    1.297    0.814    1.268    1.337    1.583    0.498    0.555    0.880    0.481    0.715    0.452
+  deliverable 8-step @1.01 DEPLOYED      1.458    1.394    0.939    1.546    1.644    1.778    0.547    0.667    1.016    0.557    0.739    0.565
+  deliverable T5 @1.00 pad REF (5x1)     1.497    1.377    0.923    1.525    1.619    1.795    0.537    0.649    0.989    0.560    0.773    0.556
+  deliverable T5 @1.00 UNPADDED (5x1)     1.525    1.383    0.913    1.548    1.615    1.799    0.543    0.649    0.994    0.556    0.770    0.561
+  deliverable T4b @1.00 pad (4x1)        1.496    1.377    0.922    1.524    1.618    1.793    0.537    0.648    0.989    0.559    0.773    0.555
+
+--- PER CLIP: sharpness ratio vs the same model's reference config ---
+  origin T5 @1.00 pad (5x1) / ref       1.0061   0.9877   0.9831   0.9854   0.9831   0.9995   0.9823   0.9838   0.9832   1.0030   1.0316   0.9697
+  deliverable T5 @1.00 pad REF (5x1) / ref    1.0265   0.9880   0.9836   0.9861   0.9852   1.0095   0.9823   0.9738   0.9735   1.0049   1.0463   0.9835
+  deliverable T5 @1.00 UNPADDED (5x1) / ref    1.0459   0.9919   0.9729   1.0015   0.9827   1.0118   0.9928   0.9728   0.9782   0.9983   1.0430   0.9928
+  deliverable T4b @1.00 pad (4x1) / ref    0.9990   0.9993   0.9990   0.9996   0.9993   0.9993   0.9996   0.9987   0.9992   0.9994   0.9999   0.9993
+
+==================================================================================================================================
+MEANS over n=12 clips: 0042 0052 0125 0128 0141 0147 0170 0204 0225 0251 0259 0301
+==================================================================================================================================
+  row                                meanLPIPS   d vs origin_ll  d vs ref improved  sh/GT  sh/ref   worst vs origin      worst vs ref   rPSNR
+  origin 8-step @1.01 DEPLOYED (8x2)    0.3933          +0.0000               0/12  0.936              0042 +0.0000                    16.425
+  origin T5 @1.00 pad (5x1)             0.3954          +0.0021   +0.0021     1/12  0.928  0.9916      0301 +0.0065      0301 +0.0065  16.426
+  deliverable 8-step @1.01 DEPLOYED     0.3804          -0.0128              12/12  1.071              0259 -0.0019                    16.229
+  deliverable T5 @1.00 pad REF (5x1)    0.3818          -0.0114   +0.0014    12/12  1.067  0.9953      0259 -0.0005      0301 +0.0024  16.222
+  deliverable T5 @1.00 UNPADDED (5x1)    0.3815          -0.0117   +0.0011    12/12  1.071  0.9987      0147 -0.0018      0042 +0.0035  16.218
+  deliverable T4b @1.00 pad (4x1)       0.3818          -0.0114   -0.0000    12/12  1.066  0.9993      0259 -0.0005      0125 +0.0001  16.223
+
+==================================================================================================================================
+PRE-REGISTERED CRITERIA (scripts/distill/runs/more_20261004/fewer_steps/PREREG.txt)
+==================================================================================================================================
+  [GATING] P12 T4b vs deliverable T5 @1.00 pad (12-clip, FINAL)  (deliv_g100_T4bpad vs deliv_g100_T5pad, n=12, better on 6/12): PASS
+        (a) mean delta -0.0000 <= +0.002: PASS
+        (b) worst clip 0125 +0.0001 <= +0.005: PASS
+  [reported] reported: T4b vs DEPLOYED deliverable 8x2 @1.01 (cumulative)  (deliv_g100_T4bpad vs mstudent2_step800_deliv_ll, n=12, better on 0/12): PASS
+        (a) mean delta +0.0014 <= +0.002: PASS
+        (b) worst clip 0125 +0.0023 <= +0.005: PASS
+  [reported] reported: T4b vs DEPLOYED origin 8x2 @1.01  (deliv_g100_T4bpad vs origin_ll, n=12, better on 12/12): PASS
+        (a) mean delta -0.0114 <= +0.002: PASS
+        (b) worst clip 0259 -0.0005 <= +0.005: PASS
+
+==================================================================================================================================
+PROVENANCE (score file per row; render dir root)
+==================================================================================================================================
+  origin 8-step @1.01 DEPLOYED (8x2) label=origin_ll                      roots=['outputs/beyond4_lossless'] scores=['scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt']
+  origin T5 @1.00 pad (5x1)          label=origin_g100_T5pad              roots=['outputs/finalcheck_20261004/speed'] scores=['scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt']
+  deliverable 8-step @1.01 DEPLOYED  label=mstudent2_step800_deliv_ll     roots=['outputs/beyond_distil_mamba_scaled'] scores=['scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt']
+  deliverable T5 @1.00 pad REF (5x1) label=deliv_g100_T5pad               roots=['outputs/finalcheck_20261004/speed'] scores=['scripts/distill/runs/more_20261004/fewer_steps/SCORES_01a_0301early.txt', 'scripts/distill/runs/more_20261004/fewer_steps/SCORES_02_T4b4clip.txt', 'scripts/distill/runs/more_20261004/fewer_steps/SCORES_04_T4b_ext8.txt']
+  deliverable T5 @1.00 UNPADDED (5x1) label=deliv_g100_T5nat               roots=['outputs/finalcheck_20261004/speed'] scores=['scripts/distill/runs/finalcheck_20261004/speed/SCORES_POSTHOC_T5G100NAT.txt']
+  deliverable T4b @1.00 pad (4x1)    label=deliv_g100_T4bpad              roots=['outputs/more_20261004/fewer_steps'] scores=['scripts/distill/runs/more_20261004/fewer_steps/SCORES_01a_0301early.txt', 'scripts/distill/runs/more_20261004/fewer_steps/SCORES_02_T4b4clip.txt', 'scripts/distill/runs/more_20261004/fewer_steps/SCORES_04_T4b_ext8.txt']
+
+VERDICTS: P12 T4b vs deliverable T5 @1.00 pad (12-clip, FINAL): PASS; reported: T4b vs DEPLOYED deliverable 8x2 @1.01 (cumulative): PASS; reported: T4b vs DEPLOYED origin 8x2 @1.01: PASS

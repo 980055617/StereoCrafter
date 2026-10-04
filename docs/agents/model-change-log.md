@@ -10918,3 +10918,45 @@ with the largest LPIPS gain); origin was preferred on none. Too few non-tie answ
 supports: "LPIPS improves on 12/12 clips; to the eye the outputs are nearly indistinguishable, and where a difference was
 seen the deliverable was preferred" - not "visibly better". Raw answers: scratchpad export of the page's `ratings`
 collection (q01-q05).
+
+## 2026-10-04 - Eight-lane search for remaining improvements: the 8-step headline is mostly a SCHEDULE effect (AYS), and the claim must be re-based
+
+`scripts/distill/runs/more_20261004/{stripes,teacher,temporal,pipeline_speed,fewer_steps,literature,eval_robustness,mamba_scope,judge}/`,
+renders under `outputs/more_20261004/`. Every lane pre-registered; the judge re-scored the "promising" rows from disk and
+ran the literature lane's proposed control itself.
+
+**The finding that changes the thesis claim.** Align Your Steps (AYS, ICML 2024) publishes a 10-step SVD schedule;
+log-linearly interpolated to 8 steps (700, 32.13, 8.802, 3.318, 1.165, 0.3571, 0.06828, 0.002) it gives ORIGIN
+**-0.0105 LPIPS on 12/12 clips at the deployed cost** (CI [-0.0155, -0.0054]), 71 % of the 25-step teacher's gain,
+training-free. Against that stronger origin the deliverable's 8-step margin shrinks from -0.0128 to **-0.0024
+(9/12, CI [-0.0047, +0.000005], not significant)**. So "deployed origin is compute-limited" (2026-10-01) is wrong at
+8 steps: it is mostly SCHEDULE-limited. What survives: at 5 evaluations per window (guidance 1.00) the deliverable beats
+origin with the same sampler by -0.0136 (12/12, CI [-0.0205, -0.0066]) and AYS5 origin by -0.0149 on the 4 regime clips
+(12-clip check pending); the deliverable at 5 evaluations matches AYS8 origin at 16. On the two never-used dev clips
+(0268, 0082) the deliverable beats Karras-scheduled origin in all three checks.
+
+**Speed is a sampler property, not a model property, at 576x1024.** With the same sampler and the same pipeline fixes,
+origin takes 85.88 s and the deliverable 84.92 s on 0301 (no measurable difference, n=1). Mamba's real speed share is
+the hi-res UNet saving (-20.3 % at 1024x1792).
+
+**Promising, apply to both models:** (1) five bit-identical pipeline fixes F5-F9 (pre-filled Triton autotune choices,
+skip decoding discarded frames, GPU post-processing, drop an unused randn, crop-first reader): md5 14/14 identical,
+deliverable 99.06 -> 84.92 s at 576x1024, 311.7 -> 278.0 s at 1024x1792; (2) whole-window VAE decode
+(decode_chunk_size 14) at 576x1024: LPIPS -0.0046 deliverable / -0.0049 origin, warp error -10.1 % / -8.7 %, but more
+visible window seams and OOM at hi-res; (3) T4b: T5's last UNet call at sigma 0.002 is a no-op (c_out = 0.002), so 4 steps
+are free (12 clips within +-0.0001), UNet time 0.800 of T5.
+
+**Closed, with the deciding number:** input crack filling (12-clip +0.0006; and the released UNet IGNORES the occlusion
+mask - conv_in input channel 8 weights are exactly 0 - so mask edits are no-ops); a more accurate teacher sampler (Heun-13
++0.114, DPM++2M-25 +0.053, Euler-50 +0.012 vs s25 on 0301; LPIPS is U-shaped along Euler steps, the converged ODE
+solution is worse); inference knobs for the Mamba-specific flicker (best prev-weight 0.5: -5.97 points but LPIPS
++0.0037; the gap at equal decode stays +20.08 %); fewer than 4 meaningful steps (T4a +0.0114 on 0301); level-1 Mamba slots
+(+2.13 % at 1024x1792, zero-cost ceiling 4.55 %); decode/fp16/channels_last/cudnn.benchmark/compiled decoder as speed
+fixes. Correction to the 2026-10-01 visual review: the "amplified splatting stripes" energy is already in the warped
+INPUT (stripeE/GT input 1.80-10.07 vs deliverable 0.98-5.49); the models reduce it, the deliverable less than origin.
+
+**Robustness (eval_robustness):** with registered GT the deliverable's delta is -0.0132 (CI [-0.0196, -0.0079]) but
+"12/12" becomes 11/12 (0259 +0.0019); absolute LPIPS drops ~38 % with registration (origin 0.3933 -> 0.2432); n = 12 clips
+with one seed each (a re-seed moved 0259 by 0.0038); the regime clips were reused for design; right-eye PSNR is
+0.20-0.22 dB lower than origin's. Next step (judge): AYS5 origin on the remaining 8 test clips to settle the equal-cost
+5-evaluation claim.

@@ -1,0 +1,9 @@
+PSNR_right  34.903 dB  meanAbs 3.1410  frames 151  A=outputs/more_20261004/teacher/clips/0301_X1s50/0301_inpainting_results_sbs.mkv  B=outputs/beyond4_lossless/clips/0301_s25_ll/0301_inpainting_results_sbs.mkv
+PSNR_right  27.372 dB  meanAbs 7.7100  frames 151  A=outputs/more_20261004/teacher/clips/0301_D25/0301_inpainting_results_sbs.mkv  B=outputs/beyond4_lossless/clips/0301_s25_ll/0301_inpainting_results_sbs.mkv
+PSNR_right  26.532 dB  meanAbs 8.3871  frames 151  A=outputs/more_20261004/teacher/clips/0301_D16/0301_inpainting_results_sbs.mkv  B=outputs/beyond4_lossless/clips/0301_s25_ll/0301_inpainting_results_sbs.mkv
+PSNR_right  22.365 dB  meanAbs 14.1214  frames 151  A=outputs/more_20261004/teacher/clips/0301_H13/0301_inpainting_results_sbs.mkv  B=outputs/beyond4_lossless/clips/0301_s25_ll/0301_inpainting_results_sbs.mkv
+PSNR_right  21.812 dB  meanAbs 13.6754  frames 151  A=outputs/more_20261004/teacher/clips/0301_C25/0301_inpainting_results_sbs.mkv  B=outputs/beyond4_lossless/clips/0301_s25_ll/0301_inpainting_results_sbs.mkv
+PSNR_right  38.196 dB  meanAbs 2.0416  frames 151  A=outputs/more_20261004/teacher/clips/0301_D25/0301_inpainting_results_sbs.mkv  B=outputs/more_20261004/teacher/clips/0301_D16/0301_inpainting_results_sbs.mkv
+PSNR_right  31.254 dB  meanAbs 4.9200  frames 151  A=outputs/more_20261004/teacher/clips/0301_D25/0301_inpainting_results_sbs.mkv  B=outputs/more_20261004/teacher/clips/0301_X1s50/0301_inpainting_results_sbs.mkv
+PSNR_right  28.335 dB  meanAbs 7.1421  frames 151  A=outputs/more_20261004/teacher/clips/0301_D25/0301_inpainting_results_sbs.mkv  B=outputs/more_20261004/teacher/clips/0301_H13/0301_inpainting_results_sbs.mkv
+PSNR_right  19.594 dB  meanAbs 18.1729  frames 151  A=outputs/more_20261004/teacher/clips/0301_D25/0301_inpainting_results_sbs.mkv  B=outputs/more_20261004/teacher/clips/0301_C25/0301_inpainting_results_sbs.mkv

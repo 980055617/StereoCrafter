@@ -1,0 +1,4 @@
+# CLIP LABEL SAMPLER N PAD SCHURN MAXCH
+# GATE: my scheduler in diffusers-exact Euler mode, 25 steps, guidance 1.01, NO pad -> must reproduce the s25 render
+#       outputs/beyond4_lossless/clips/0301_s25_ll  pre-encode md5 72eb725755dd97457d9eebcebc7654a5
+0301 gate_euler25 euler 25 - - -

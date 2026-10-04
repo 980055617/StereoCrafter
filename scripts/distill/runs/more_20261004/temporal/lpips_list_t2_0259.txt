@@ -1,0 +1,9 @@
+0259=outputs/beyond4_lossless/clips/0259_origin_ll/0259_inpainting_results_sbs.mkv
+0259=outputs/finalcheck_20261004/speed/clips/0259_deliv_g100_T5nat/0259_inpainting_results_sbs.mkv
+0259=outputs/more_20261004/temporal/clips/0259_T5nat_ov5/0259_inpainting_results_sbs.mkv
+0259=outputs/more_20261004/temporal/clips/0259_T5nat_ov7/0259_inpainting_results_sbs.mkv
+0259=outputs/more_20261004/temporal/clips/0259_T5nat_pw03/0259_inpainting_results_sbs.mkv
+0259=outputs/more_20261004/temporal/clips/0259_T5nat_pw05/0259_inpainting_results_sbs.mkv
+0259=outputs/more_20261004/temporal/clips/0259_T5nat_nsfa/0259_inpainting_results_sbs.mkv
+0259=outputs/more_20261004/temporal/clips/0259_T5nat_dcs14/0259_inpainting_results_sbs.mkv
+0259=outputs/more_20261004/temporal/clips/0259_origin_g101_s8_dcs14/0259_inpainting_results_sbs.mkv

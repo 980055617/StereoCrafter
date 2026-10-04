@@ -1,0 +1,66 @@
+stage group                           A2_origin   A2r_origin  C3_orig_fix     A1_deliv    A1r_deliv   C1a_dl_fix   C1b_dl_fix      C1w_2nd
+------------------------------------------------------------------------------------------------------------------------------------------
+python start+import                        2.63         2.20         2.67         3.00         2.18         2.19         2.80            -
+model load                                 1.59         1.39         2.93         2.16         1.99         2.04         4.28         1.93
+video read+prep                            4.77         4.72         7.21         4.76         4.23         2.72         5.67         3.09
+CLIP encode                                0.27         0.30         0.42         0.31         0.27         0.27         0.38         0.20
+CPU preprocess                             1.78         1.93         1.11         2.20         1.78         0.75         0.77         0.70
+VAE encode                                 9.13         9.18         9.27         9.16         9.10         9.10         9.14         9.02
+UNet loop                                105.80       105.85       105.77        39.97        39.85        35.29        35.26        34.89
+VAE decode                                33.84        33.87        28.60        33.89        33.87        28.58        28.61        28.59
+post (latent->frames)                      2.10         2.40         0.59         2.60         2.09         0.38         0.37         0.36
+final assembly+write                       4.57         3.95         4.84         5.46         3.98         3.86         3.91         3.90
+instrumentation (save latents)             0.02         0.02         0.02         0.05         0.02         0.02         0.02            -
+------------------------------------------------------------------------------------------------------------------------------------------
+END-TO-END (reference seconds)           166.51       165.82       163.43       103.56        99.35        85.19        91.21        82.68
+  of which UNet GPU (CUDA events)        105.29       105.32       105.24        39.39        39.38        34.95        34.95        34.65
+  of which window-0 excess                 0.00        -0.00        -0.02         4.75         4.74         0.25         0.26        -0.00
+  non-UNet share of end-to-end            36.8%        36.5%        35.6%        62.0%        60.4%        59.0%        61.7%        58.1%
+unattributed (s)                           0.00         0.00         0.00         0.00         0.00         0.00         0.00         0.00
+md5 (pre-encode sbs)                   2e533d77     2e533d77     2e533d77     a41b432b     a41b432b     a41b432b     a41b432b     a41b432b
+
+A2_origin: outputs/more_20261004/pipeline_speed/a_576/clips/0301_A2_origin_s8_576  rep=0  process_s=166.51  windows=14
+A2r_origin: outputs/more_20261004/pipeline_speed/c_576/clips/0301_A2r_origin_s8_576  rep=0  process_s=165.82  windows=14
+C3_orig_fix: outputs/more_20261004/pipeline_speed/c_576/clips/0301_C3_origin_s8_576_idfix  rep=0  process_s=163.43  windows=14
+A1_deliv: outputs/more_20261004/pipeline_speed/a_576/clips/0301_A1_deliv_T5_576  rep=0  process_s=103.56  windows=14
+A1r_deliv: outputs/more_20261004/pipeline_speed/c_576/clips/0301_A1r_deliv_T5_576  rep=0  process_s=99.35  windows=14
+C1a_dl_fix: outputs/more_20261004/pipeline_speed/c_576/clips/0301_C1a_deliv_T5_576_idfix  rep=0  process_s=85.19  windows=14
+C1b_dl_fix: outputs/more_20261004/pipeline_speed/c_576/clips/0301_C1b_deliv_T5_576_idfix_rep  rep=0  process_s=91.21  windows=14
+C1w_2nd: outputs/more_20261004/pipeline_speed/c_576/clips/0301_C1w_deliv_T5_576_idfix_worker  rep=1  process_s=169.87  windows=14
+
+Exclusive stage seconds (all named stages):
+  unet_gpu                             105.29       105.32       105.24        39.39        39.38        34.95        34.95        34.65
+  vae_decode                            33.84        33.87        28.60        33.89        33.87        28.58        28.61        28.59
+  vae_encode                             9.09         9.12         9.18         9.10         9.06         9.04         9.08         8.97
+  read_video                             4.77         4.72         7.20         4.76         4.23         2.72         5.66         3.08
+  import                                 1.89         1.63         2.03         2.20         1.62         1.63         2.23         0.00
+  tensor2vid_pil                         1.73         1.97         0.00         2.15         1.70         0.00         0.00         0.00
+  pipe_to_cuda                           0.66         0.60         1.92         0.61         0.53         0.53         1.27         0.58
+  write_sbs_md5                          1.12         1.04         1.27         1.83         1.08         1.04         1.05         1.08
+  ffv1_encode                            1.48         1.30         1.55         1.56         1.31         1.37         1.36         1.26
+  load_other                             0.10         0.09         0.11         0.77         0.75         0.74         1.45         0.70
+  noise_aug_randn_cpu                    1.05         1.12         0.00         1.35         1.06         0.00         0.00         0.00
+  load_unet                              0.50         0.44         0.57         0.44         0.43         0.50         1.00         0.39
+  img_preprocess                         0.65         0.71         0.96         0.75         0.64         0.66         0.67         0.62
+  python_startup                         0.74         0.57         0.63         0.80         0.56         0.57         0.58         0.00
+  final_assembly                         0.64         0.52         0.75         0.64         0.49         0.48         0.54         0.53
+  anaglyph_assembly                      0.61         0.51         0.62         0.69         0.52         0.51         0.51         0.53
+  loop_overhead                          0.50         0.52         0.51         0.56         0.47         0.33         0.30         0.23
+  post_convert                           0.37         0.43         0.52         0.45         0.38         0.33         0.32         0.31
+  clip_encode                            0.27         0.30         0.42         0.31         0.27         0.27         0.38         0.20
+  run_tail                               0.40         0.28         0.33         0.39         0.29         0.16         0.16         0.21
+  load_clip                              0.24         0.19         0.22         0.22         0.19         0.19         0.38         0.19
+  write_anaglyph_md5                     0.31         0.30         0.33         0.35         0.29         0.29         0.29         0.30
+  mask_preprocess                        0.08         0.09         0.15         0.10         0.09         0.09         0.09         0.08
+  load_vae                               0.08         0.05         0.05         0.09         0.05         0.05         0.10         0.05
+  mask_encode                            0.04         0.06         0.08         0.05         0.04         0.06         0.05         0.05
+  tensor2vid_DIRECT                      0.00         0.00         0.08         0.00         0.00         0.05         0.05         0.05
+  load_pipe                              0.01         0.01         0.05         0.03         0.03         0.03         0.06         0.02
+  hook_tail                              0.02         0.02         0.02         0.03         0.02         0.02         0.02         0.00
+  window_misc                            0.01         0.01         0.02         0.01         0.01         0.01         0.01         0.01
+  save_latents                           0.00         0.00         0.00         0.02         0.00         0.00         0.00         0.00
+  torch_load_state                       0.00         0.00         0.00         0.01         0.01         0.01         0.02         0.01
+  pre_window_misc                        0.01         0.01         0.01         0.01         0.01         0.01         0.01         0.00
+  latent_randn_cuda                      0.00         0.00         0.00         0.00         0.00         0.00         0.00         0.00
+  noise_aug_SKIPPED                      0.00         0.00         0.00         0.00         0.00         0.00         0.00         0.00
+  center_crop                            0.00         0.00         0.00         0.00         0.00         0.00         0.00         0.00

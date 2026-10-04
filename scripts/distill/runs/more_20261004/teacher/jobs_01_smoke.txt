@@ -1,0 +1,5 @@
+# CLIP LABEL SAMPLER N PAD SCHURN MAXCH   -- 2-window smokes (truncated outputs, NEVER scored)
+0301 smoke2w_heun13 heun 13 25 - 2
+0301 smoke2w_dpm16 dpmpp2m 16 25 - 2
+0301 smoke2w_dpm25 dpmpp2m 25 25 - 2
+0301 smoke2w_churn5 euler_churn 25 25 5 2

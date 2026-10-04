@@ -1,0 +1,24 @@
+PASS 0042_deliv_g100_T4bpad             sched=T4b N=4 sigmas_ok=True idx=[0, 4, 5, 6] calls/window=[4] batch=[1] pad/window=[4] windows=14 unet_s=32.42 call_s=43.94 hook_total_s=98.3
+PASS 0052_deliv_g100_T4bpad             sched=T4b N=4 sigmas_ok=True idx=[0, 4, 5, 6] calls/window=[4] batch=[1] pad/window=[4] windows=15 unet_s=34.89 call_s=47.72 hook_total_s=108.2
+PASS 0125_deliv_g100_T4bpad             sched=T4b N=4 sigmas_ok=True idx=[0, 4, 5, 6] calls/window=[4] batch=[1] pad/window=[4] windows=15 unet_s=34.42 call_s=46.59 hook_total_s=104.1
+PASS 0128_deliv_g100_T4bpad             sched=T4b N=4 sigmas_ok=True idx=[0, 4, 5, 6] calls/window=[4] batch=[1] pad/window=[4] windows=14 unet_s=32.41 call_s=43.89 hook_total_s=98.1
+PASS 0141_deliv_g100_T4bpad             sched=T4b N=4 sigmas_ok=True idx=[0, 4, 5, 6] calls/window=[4] batch=[1] pad/window=[4] windows=14 unet_s=32.45 call_s=43.82 hook_total_s=97.9
+PASS 0147_deliv_g100_T4bpad             sched=T4b N=4 sigmas_ok=True idx=[0, 4, 5, 6] calls/window=[4] batch=[1] pad/window=[4] windows=16 unet_s=36.48 call_s=49.67 hook_total_s=111.6
+PASS 0170_deliv_g100_T4bpad             sched=T4b N=4 sigmas_ok=True idx=[0, 4, 5, 6] calls/window=[4] batch=[1] pad/window=[4] windows=14 unet_s=32.45 call_s=43.96 hook_total_s=91.4
+PASS 0204_deliv_g100_T4bpad             sched=T4b N=4 sigmas_ok=True idx=[0, 4, 5, 6] calls/window=[4] batch=[1] pad/window=[4] windows=14 unet_s=32.43 call_s=43.87 hook_total_s=91.1
+PASS 0225_deliv_g100_T4bpad             sched=T4b N=4 sigmas_ok=True idx=[0, 4, 5, 6] calls/window=[4] batch=[1] pad/window=[4] windows=14 unet_s=32.61 call_s=44.58 hook_total_s=95.7
+PASS 0251_deliv_g100_T4bpad             sched=T4b N=4 sigmas_ok=True idx=[0, 4, 5, 6] calls/window=[4] batch=[1] pad/window=[4] windows=14 unet_s=32.54 call_s=44.27 hook_total_s=95.6
+PASS 0259_deliv_g100_T4bpad             sched=T4b N=4 sigmas_ok=True idx=[0, 4, 5, 6] calls/window=[4] batch=[1] pad/window=[4] windows=14 unet_s=32.43 call_s=43.90 hook_total_s=91.6
+PASS 0301_deliv_g100_T3bpad             sched=T3b N=3 sigmas_ok=True idx=[0, 4, 5] calls/window=[3] batch=[1] pad/window=[5] windows=14 unet_s=25.55 call_s=37.22 hook_total_s=87.9
+PASS 0301_deliv_g100_T3cpad             sched=T3c N=3 sigmas_ok=True idx=[0, 4, 6] calls/window=[3] batch=[1] pad/window=[5] windows=14 unet_s=25.54 call_s=37.33 hook_total_s=85.2
+PASS 0301_deliv_g100_T3dpad             sched=T3d N=3 sigmas_ok=True idx=[0, 5, 6] calls/window=[3] batch=[1] pad/window=[5] windows=14 unet_s=25.54 call_s=37.06 hook_total_s=84.9
+PASS 0301_deliv_g100_T3pad              sched=T3 N=3 sigmas_ok=True idx=[0, 5, 7] calls/window=[3] batch=[1] pad/window=[5] windows=14 unet_s=25.53 call_s=37.02 hook_total_s=86.1
+PASS 0301_deliv_g100_T4apad             sched=T4a N=4 sigmas_ok=True idx=[0, 4, 5, 7] calls/window=[4] batch=[1] pad/window=[4] windows=14 unet_s=32.45 call_s=44.05 hook_total_s=92.5
+PASS 0301_deliv_g100_T4bpad             sched=T4b N=4 sigmas_ok=True idx=[0, 4, 5, 6] calls/window=[4] batch=[1] pad/window=[4] windows=14 unet_s=32.44 call_s=44.04 hook_total_s=91.8
+PASS 0301_deliv_g100_T5pad_orcC2nosubst sched=T5 N=5 sigmas_ok=True idx=[0, 4, 5, 6, 7] calls/window=[5] batch=[1] pad/window=[3] windows=14 unet_s=39.38 call_s=50.83 hook_total_s=98.4
+PASS 0301_deliv_g100_T5pad_rep          sched=T5 N=5 sigmas_ok=True idx=[0, 4, 5, 6, 7] calls/window=[5] batch=[1] pad/window=[3] windows=14 unet_s=39.38 call_s=50.83 hook_total_s=98.5
+PASS 0301_mamba_g100_T4apad_oracle12    sched=T4a N=4 sigmas_ok=True idx=[0, 4, 5, 7] calls/window=[15, 19] (oracle: not asserted) batch=[1] pad/window=[4] windows=14 unet_s=125.90 call_s=137.48 hook_total_s=185.2
+PASS 0301_origin_g100_T3pad             sched=T3 N=3 sigmas_ok=True idx=[0, 5, 7] calls/window=[3] batch=[1] pad/window=[5] windows=14 unet_s=21.84 call_s=33.71 hook_total_s=81.3
+PASS 0301_origin_g100_T4apad            sched=T4a N=4 sigmas_ok=True idx=[0, 4, 5, 7] calls/window=[4] batch=[1] pad/window=[4] windows=14 unet_s=29.05 call_s=40.62 hook_total_s=89.2
+PASS 0301_origin_g100_T4bpad            sched=T4b N=4 sigmas_ok=True idx=[0, 4, 5, 6] calls/window=[4] batch=[1] pad/window=[4] windows=14 unet_s=29.09 call_s=40.73 hook_total_s=87.8
+SUMMARY checked=23 failed=0

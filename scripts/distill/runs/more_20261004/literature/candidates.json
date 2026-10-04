@@ -1,0 +1,452 @@
+{
+ "lane": "literature",
+ "written": "2026-10-04",
+ "project_numbers_used": {
+  "headline_12clip_lpips": {
+   "deployed_origin": 0.3933,
+   "deliverable_deployed": 0.3804,
+   "deliverable_T5_g100_unpadded": 0.3815,
+   "origin_s25": 0.3786,
+   "source": "scripts/distill/runs/beyond_distil_mamba_scaled/TABLE_HEADLINE_12CLIP.txt; scripts/distill/runs/finalcheck_20261004/speed/TABLE_POSTHOC_T5G100_UNPADDED.txt"
+  },
+  "origin_schedule_merges_12clip_mean_delta_vs_origin_8step_g101": {
+   "T6_drop_286.5_102.9": "+0.00018 (max +0.0004)",
+   "T5_also_drop_30.99": "+0.00140 (max +0.0040)",
+   "T5_at_g100": "+0.00215 (max +0.0065)",
+   "source": "scripts/distill/runs/finalcheck_20261004/speed/TABLE_STEP2_EXT12.txt (means computed from its per-clip rows)"
+  },
+  "step_information_share": {
+   "k4_sigma7.276": "36%",
+   "k5_sigma1.168": "61%",
+   "k0-3": "noise floor",
+   "k6": "noise floor",
+   "k7": "0%",
+   "source": "scripts/distill/runs/beyond_distil/RESULTS.txt section 2D"
+  },
+  "point_target_collapse": {
+   "origin_lpips": "0.4445 -> 0.5041 / 0.7075 / 0.9182",
+   "source": "scripts/distill/runs/beyond_distil/RESULTS.txt section 1 (diag_trainer runs)"
+  },
+  "temporal_576_12clip": {
+   "warp_GT": 0.0157,
+   "warp_origin": 0.0174,
+   "warp_deliverable": 0.0213,
+   "warp_s25": 0.021,
+   "seam_ratio_GT": 0.9701,
+   "seam_ratio_origin": 1.3292,
+   "seam_ratio_deliverable": 1.4171,
+   "source": "scripts/distill/runs/finalcheck_20261004/validate/V1_TEMPORAL_576_12CLIP.txt"
+  },
+  "attn1_spatial_share_of_origin_forward": {
+   "576x1024": "13.6% (level-0 alone 10.6%)",
+   "1024x1792": "29.1% (level-0 alone 24.4%)",
+   "baseline_kernel": "flash attention via torch SDPA (diffusers 0.29.2 default; no xformers call in inpainting_inference.py)",
+   "source": "docs/agents/model-change-log.md lines 9245-9265 (2026-09-10 benchmark audit)"
+  },
+  "trainer_budget": {
+   "trainable": "3,641,325 params (three up_blocks.3 slots)",
+   "peak": "15.30 GiB",
+   "down_blocks.0": "untrainable at 24 GB",
+   "source": "scripts/distill/runs/beyond_distil_mamba_scaled/RESULTS.txt section 2"
+  },
+  "splatting": "depth_splatting_inference.py ForwardWarpStereo: bilinear forward splat (Forward_Warp) weighted by 1.414**(disp-disp.min()), normalised; occlusion = 1 - splatted ones (softmax-splatting family)",
+  "env": "torch 2.4.0+cu121, triton 3.0.0, diffusers 0.29.2 (EulerDiscreteScheduler.set_timesteps(sigmas=...), EDMDPMSolverMultistepScheduler, EDMEulerScheduler present), mamba_ssm 2.3.1"
+ },
+ "schedules": {
+  "convention": "N sigmas ending at sigma_min = N Euler steps; hook appends 0 (finalcheck speed hook). Reproduce with ays_schedules.py",
+  "karras8_deployed": "700.0,286.5388488769531,102.90337371826172,30.993608474731445,7.276163101196289,1.1675708293914795,0.09738767892122269,0.0020000000949949026",
+  "T5_shipped": "700.0,7.276163101196289,1.1675708293914795,0.09738767892122269,0.0020000000949949026",
+  "AYS8": "700.0,32.1326904296875,8.801949501037598,3.318009376525879,1.1647257804870605,0.35714080929756165,0.06827998906373978,0.0020000000949949026",
+  "AYS5": "700.0,11.25711441040039,1.7890000343322754,0.26404356956481934,0.0020000000949949026",
+  "AYS25_teacher": "700.0,241.62344360351562,83.40269470214844,40.045249938964844,23.959360122680664,14.999725341796875,11.25711441040039,8.448328971862793,6.465784549713135,4.972768783569336,3.6778059005737305,2.5650720596313477,1.7890000343322754,1.392787218093872,1.0843243598937988,0.7853767275810242,0.5421169996261597,0.37557798624038696,0.26404356956481934,0.18563121557235718,0.1005827933549881,0.05106469243764877,0.021203331649303436,0.006512039806693792,0.0020000000949949026",
+  "AYS_source": "AYS SVD 10-step noise levels [700.00, 54.5, 15.886, 7.977, 4.248, 1.789, 0.981, 0.403, 0.173, 0.034, 0.002] + loglinear_interp, https://research.nvidia.com/labs/toronto-ai/AlignYourSteps/howto.html",
+  "hook_caveat": "finalcheck speed hook asserts each sigma is bit-equal to a default-8 entry; AYS values need a hook COPY without that assert (UNet is continuous-time, t=0.25*ln(sigma))"
+ },
+ "candidates": [
+  {
+   "id": "B1",
+   "cluster": "training-free sampling",
+   "name": "Align Your Steps (SVD schedule)",
+   "cite": "sabour2024ays",
+   "url": "https://arxiv.org/abs/2404.14507",
+   "venue": "ICML 2024",
+   "summary": "Optimises the discretisation (noise levels) of a given solver/model by minimising a KL upper bound; publishes a 10-step SVD schedule and recommends log-linear interpolation for other step counts. The project page shows SVD with 10 DDIM steps (qualitative only: 'more stable videos with less color distortions').",
+   "needs_here": "AYS->8 = 700, 32.13, 8.80, 3.318, 1.165, 0.357, 0.0683, 0.002 moves the two Karras steps that are measured to be useless for origin (T6 = +0.00018 mean12) into sigma 0.07-9, where beyond_distil measured 97% of the step information (k4 36%, k5 61%). Same NFE and RNG consumption as deployed (8 draws) -> paired with the existing origin_ll renders. Needs a copy of infer_ll_hook_speed_v1.py without the default-8 bit-equality assert. The deliverable's step-distilled slots were trained at Karras k=4,5,6 points, so AYS moves its trained grid: test origin first; deliverable only as a probe.",
+   "verdict": "promising (top; also a REQUIRED control for the thesis)",
+   "cheapest_test": "TWO matched-cost origin controls, FFV1 + score_clip_ll.py SCORE_STEP=4, smoke 0301 then regime set 0301 0204 0052 0147. (a) 8 NFE: origin, guidance 1.01, SK_SIGMAS=AYS8, paired with existing origin_ll (deployed) renders; report the fraction of s25's gain captured per clip = (origin8 - AYS8)/(origin8 - s25). (b) 5 NFE: origin, guidance 1.00, SK_SIGMAS=AYS5, SK_RNG_PAD_TO=8, paired with the existing origin_g100_T5pad renders (the matched control for the T5@1.00 speed headline). Pre-register for each: 'free gain' iff mean4 delta vs its paired reference <= -0.002 and no clip > +0.005; if (a) captures >= 50% of s25's 4-clip gain, the thesis must print it beside the deliverable. ~2 x 15 GPU-min + scoring.",
+   "lane_overlap": "none (fewer_steps lane only subsets Karras points; teacher lane tests Heun/DPM++ on the Karras grid at 13-25 NFE)",
+   "caveats": "AYS's log-linear interpolation is published for MORE steps; AYS8/AYS5 interpolate DOWN from 10 steps (outside the stated recipe). The AYS SVD schedule was tuned for base SVD (the project page shows 10 DDIM steps), not for the 9-channel StereoCrafter inpainting UNet."
+  },
+  {
+   "id": "B2",
+   "cluster": "training-free sampling",
+   "name": "LD3: Learning to Discretize Denoising Diffusion ODEs",
+   "cite": "tong2025ld3",
+   "url": "https://arxiv.org/abs/2405.15506",
+   "venue": "ICLR 2025",
+   "summary": "Learns the timesteps (cumulative softmax) plus decoupled model-input times by minimising LPIPS between the few-step output and the many-step teacher output from (almost) the same noise, with a relaxation ball r*sigma_T; 100 samples, 5-40 min on one GPU; works with Euler, DPM-Solver++, UniPC, iPNDM (SD1.5 NFE4 FID 17.32 vs 17.76; ImageNet-256 UniPC NFE4 9.89 vs 20.01).",
+   "needs_here": "Exactly the measured regime (deterministic teacher target, tiny data, a handful of parameters). Its gradient needs backprop through every UNet call of the sampler, which at 576x1024x14 frames does not fit the 24 GB budget that already caps training at the up3 slots; a gradient-free search over 3-6 interior sigmas against existing s25 renders of TRAIN-split windows (selection by LPIPS on held-out windows, never by loss) is the feasible variant.",
+   "verdict": "promising as stage 2 after B1 (1-2 GPU-h)",
+   "cheapest_test": "only if B1 shows a schedule effect: coordinate search over the AYS8 interior points on 2 train clips, then the regime-set rule as in B1.",
+   "lane_overlap": "none"
+  },
+  {
+   "id": "B3",
+   "cluster": "training-free sampling",
+   "name": "GITS (trajectory regularity, DP timestep search)",
+   "cite": "chen2024gits",
+   "url": "https://arxiv.org/abs/2405.11326",
+   "venue": "ICML 2024",
+   "summary": "Exploits the regular shape of ODE sampling trajectories to choose a time schedule by dynamic programming; no training, negligible cost; gains at 5-10 NFE.",
+   "needs_here": "Could compute a schedule from the trajectories beyond_distil already captured; same role as B1/B2.",
+   "verdict": "marginal (alternative to B1)",
+   "lane_overlap": "none"
+  },
+  {
+   "id": "B4",
+   "cluster": "training-free sampling",
+   "name": "DPM-Solver++(2M) in EDM form at deployed NFE",
+   "cite": "karras2022edm",
+   "url": "https://arxiv.org/abs/2206.00364",
+   "venue": "NeurIPS 2022 (EDM); solver available as diffusers EDMDPMSolverMultistepScheduler in 0.29.2",
+   "summary": "Second-order multistep solver at the same NFE as Euler; EDM preconditioning matches SVD's (v-prediction, continuous t=0.25 ln sigma).",
+   "needs_here": "The teacher lane already tests DPM++2M/Heun at 13-25 NFE on origin; nobody tests it at the deployed 8 NFE. For the deliverable it double-corrects (the step distillation already removes Euler truncation error at k=4,5,6), so origin-only control. Correctness control: order-1 must reproduce the Euler md5.",
+   "verdict": "marginal (origin control only)",
+   "lane_overlap": "teacher lane (13-25 NFE)"
+  },
+  {
+   "id": "B5",
+   "cluster": "training-free sampling",
+   "name": "Drop the sigma_min UNet call (T4b)",
+   "cite": "karras2022edm",
+   "url": "https://arxiv.org/abs/2206.00364",
+   "venue": "-",
+   "summary": "With Euler, the output is the denoiser at the last sigma; at sigma 0.002 the call moves the latent by ~0.002*v, so the final evaluation is a near no-op (also the project's k=7 measurement).",
+   "needs_here": "Runnable with the unmodified speed hook (all kept sigmas are default-8 entries).",
+   "verdict": "covered by the fewer_steps lane (candidate T4b, same a-priori argument)",
+   "lane_overlap": "fewer_steps"
+  },
+  {
+   "id": "B6",
+   "cluster": "training-free acceleration",
+   "name": "DeepCache",
+   "cite": "ma2024deepcache",
+   "url": "https://arxiv.org/abs/2312.00858",
+   "venue": "CVPR 2024",
+   "summary": "Training-free reuse of high-level UNet features across adjacent denoising steps; repo reports SVD-XT 1.7x, SD1.5 2.3x.",
+   "needs_here": "Relies on adjacent steps being similar; T5's steps (700 -> 7.28 -> 1.17 -> 0.097) are far apart, so little to cache at 5 NFE.",
+   "verdict": "marginal; cite as a training-free UNet baseline",
+   "lane_overlap": "none"
+  },
+  {
+   "id": "A1",
+   "cluster": "few-step distillation",
+   "name": "Progressive distillation",
+   "cite": "salimans2022progressive",
+   "url": "https://arxiv.org/abs/2202.00512",
+   "venue": "ICLR 2022",
+   "summary": "Each round trains a student so one step matches two deterministic teacher (DDIM) steps, halving the step count; 4 steps on CIFAR-10 at FID 3.0.",
+   "needs_here": "The deliverable's step distillation IS this family (one round, ratio 24/7 = 3.43, only k=4,5,6, deterministic sub-integration target, bdlib.fine_step). A second round (merge k=5,6 or k=4,5) reuses train_beyond_mamba_scaled.py with the deliverable as teacher; only worth it if the fewer_steps lane's inference-only T3/T4 candidates fail.",
+   "verdict": "promising as future work (3-5 GPU-h); cite as the lineage of the step distillation",
+   "lane_overlap": "fewer_steps (decides whether retraining is needed)"
+  },
+  {
+   "id": "A2",
+   "cluster": "few-step distillation",
+   "name": "Consistency family: CM, LCM, AnimateLCM(-SVD-xt), PCM, TCD",
+   "cite": "song2023consistency; luo2023lcm; wang2024animatelcm; wang2024pcm; zheng2024tcd",
+   "url": "https://arxiv.org/abs/2303.01469 ; https://arxiv.org/abs/2310.04378 ; https://arxiv.org/abs/2402.00769 ; https://huggingface.co/wangfuyun/AnimateLCM-SVD-xt ; https://arxiv.org/abs/2405.18407 ; https://arxiv.org/abs/2402.19159",
+   "venue": "ICML 2023; arXiv 2023; SIGGRAPH Asia 2024 TC; NeurIPS 2024; arXiv 2024",
+   "summary": "CM/LCM learn a map from any x_t to the trajectory origin x0 (LCM: 32 A100-h for 2-4-step images); AnimateLCM decouples image and motion acceleration and ships an SVD-xt model for 2-8 steps at cfg 1; PCM restricts consistency to sub-trajectory phases to fix LCM's multi-step flaws (1-16 steps, also text-to-video); TCD maps to any earlier trajectory point.",
+   "needs_here": "CM/LCM's target is the endpoint x0 from arbitrary sigma -- the 'point target' class whose optimum is a one-step model and which collapsed origin here (0.4445 -> 0.5041/0.7075/0.9182). PCM/TCD keep multi-step structure but need EMA target networks and many iterations on large data. AnimateLCM-SVD-xt weights fit SVD-xt, not the 9-channel StereoCrafter UNet.",
+   "verdict": "closed (CM/LCM); marginal, future work (PCM/TCD)",
+   "lane_overlap": "none"
+  },
+  {
+   "id": "A3",
+   "cluster": "few-step distillation",
+   "name": "DMD / DMD2 / CausVid / rCM",
+   "cite": "yin2024dmd; yin2024dmd2; yin2025causvid; zheng2026rcm",
+   "url": "https://arxiv.org/abs/2311.18828 ; https://arxiv.org/abs/2405.14867 ; https://arxiv.org/abs/2412.07772 ; https://arxiv.org/abs/2510.08431",
+   "venue": "CVPR 2024; arXiv 2024; CVPR 2025; ICLR 2026",
+   "summary": "DMD: distribution-matching gradient = teacher score minus a fake score trained with denoising loss on generator samples, plus regression on precomputed teacher noise-image pairs. DMD2 drops the regression, adds two-time-scale updates and a GAN on real images, and surpasses its teacher (FID 1.28 ImageNet-64). CausVid distils a 50-step bidirectional video model into a 4-step causal one, initialised by regression on teacher ODE pairs. rCM scales JVP-based continuous-time consistency with a score-distillation regulariser to Wan2.1 14B, 1-4 steps.",
+   "needs_here": "Three UNet-sized networks (generator, frozen teacher, trainable fake score) at 576x1024x14 frames; the project already peaks at 15.3 GiB training 3.6M params of ONE UNet. The fake-score critic is trained with denoising loss on generator samples (not on GT), so the closed 'diffusion loss on GT' finding does not directly apply, but with 2-28 clips the critic is poorly estimated. rCM needs forward-mode JVP through the whole UNet; whether the Mamba2 Triton kernels support it is untested here (likely unsupported). The part that fits -- regression on deterministic teacher pairs (DMD's regression term, CausVid's ODE initialisation) -- is what the project already does.",
+   "verdict": "closed on this hardware/data; cite",
+   "lane_overlap": "none"
+  },
+  {
+   "id": "A4",
+   "cluster": "few-step distillation",
+   "name": "Adversarial one-step: SF-V, OSV, Diffusion2GAN (E-LatentLPIPS)",
+   "cite": "zhang2024sfv; mao2024osv; kang2024diffusion2gan",
+   "url": "https://arxiv.org/abs/2406.04324 ; https://arxiv.org/abs/2409.11367 ; https://arxiv.org/abs/2405.05967",
+   "venue": "arXiv 2024; arXiv 2024; ECCV 2024",
+   "summary": "SF-V fine-tunes SVD adversarially into one forward pass (~23x faster than SVD). OSV combines consistency distillation and GAN for one-step SVD-style I2V (FVD 171.15 at 1 step vs AnimateLCM 8-step 184.79 vs SVD 25-step 156.94; OpenWebVid-1M). Diffusion2GAN regresses teacher ODE noise-to-image pairs with E-LatentLPIPS (perceptual loss in the latent space, no decoding) plus a conditional GAN.",
+   "needs_here": "A discriminator trained on 2-28 clips is not credible and adds memory. Separable idea: swap the x0-space MSE of the existing trainer for a latent perceptual loss (needs an LPIPS-like net for SD-VAE latents, which SVD shares); risk of optimising the evaluation metric itself (Goodhart), so selection must stay on held-out sampled LPIPS plus sharpness/stripe/flicker.",
+   "verdict": "closed (GAN); marginal (latent perceptual loss as a trainer swap)",
+   "lane_overlap": "none"
+  },
+  {
+   "id": "A5",
+   "cluster": "few-step distillation",
+   "name": "Rectified flow / Rectified Diffusion",
+   "cite": "liu2022rectifiedflow; wang2024rectifieddiffusion",
+   "url": "https://arxiv.org/abs/2209.03003 ; https://arxiv.org/abs/2410.07303",
+   "venue": "arXiv 2022; arXiv 2024",
+   "summary": "Reflow retrains a flow on noise-sample pairs generated by the previous flow to straighten paths. Rectified Diffusion argues the key ingredient is pairing noise with the teacher's own generated samples (a deterministic coupling), not straightness, and applies directly to epsilon/v-prediction diffusion models.",
+   "needs_here": "Full-model fine-tuning on paired endpoints at random t is outside the 3.6M-parameter/24 GB budget and close to the collapsed point-target class unless restricted. Its value here is explanatory: the literature's account of why deterministic-coupling targets work while independent-coupling (per-sample diffusion) losses do not -- the project's central empirical finding.",
+   "verdict": "closed as a method; cite in the discussion",
+   "lane_overlap": "none"
+  },
+  {
+   "id": "A6",
+   "cluster": "few-step distillation",
+   "name": "Flow maps: CTM, Flow Map Matching, shortcut models, MeanFlow, Align Your Flow",
+   "cite": "kim2024ctm; boffi2024fmm; frans2024shortcut; geng2025meanflow; sabour2025ayf",
+   "url": "https://arxiv.org/abs/2310.02279 ; https://arxiv.org/abs/2406.07507 ; https://arxiv.org/abs/2410.12557 ; https://arxiv.org/abs/2505.13447 ; https://arxiv.org/abs/2506.14603",
+   "venue": "ICLR 2024; arXiv 2024; arXiv 2024; arXiv 2025; arXiv 2025",
+   "summary": "Learn the two-time map X(s,t) along the PF-ODE: CTM (anytime-to-anytime, soft consistency + DSM + GAN); FMM unifies CM, CTM and progressive distillation; shortcut models condition on step size with a self-consistency loss; MeanFlow learns the average velocity (1-NFE FID 3.43 ImageNet-256 from scratch, needs JVP); AYF distils flow maps from teachers with new continuous-time objectives (image/T2I only).",
+   "needs_here": "The deliverable is a fixed-grid discrete flow map (coarse step = fine sub-integration at three grid points): the thesis should frame it in FMM/CTM terms. A step-size-conditioned student would need a second time input (the slots' time_embed_proj FiLM is a natural place) and a JVP-free (Lagrangian/discrete) loss with the existing fine_step targets; continuous-time variants need JVP (MeanFlow's paper reports <20% training overhead in JAX), and forward-mode AD through the Mamba2 Triton kernels is untested here (likely unsupported).",
+   "verdict": "marginal; future work (the principled generalisation of the current method)",
+   "lane_overlap": "none"
+  },
+  {
+   "id": "A7",
+   "cluster": "few-step distillation",
+   "name": "Adaptive Video Distillation; SwiftVideo",
+   "cite": "you2026adaptivevideodistillation; sun2025swiftvideo",
+   "url": "https://arxiv.org/abs/2603.21864 ; https://arxiv.org/abs/2508.06082",
+   "venue": "arXiv 2026 (CVPR 2026 poster page); arXiv 2025",
+   "summary": "AVD adds a temporal regularisation loss against temporal collapse and an adaptive regression loss that reweights spatial supervision in few-step video distillation (VBench/VBench2). SwiftVideo combines continuous-time consistency distillation, distribution alignment on real data and trajectory alignment across step counts (OpenVid-1M).",
+   "needs_here": "Only abstracts were read; AVD's temporal term is the closest published analogue of adding a temporal penalty to the step-distillation objective.",
+   "verdict": "inconclusive (read full text before use)",
+   "lane_overlap": "none"
+  },
+  {
+   "id": "C1",
+   "cluster": "attention replacement",
+   "name": "LinFusion",
+   "cite": "liu2024linfusion",
+   "url": "https://arxiv.org/abs/2409.02097",
+   "venue": "arXiv 2024",
+   "summary": "Replaces all 16 self-attention layers of SD-v1.5 with a generalised linear attention inspired by Mamba2/RWKV6/GLA, initialised from W_Q/W_K, trained with noise-prediction + output KD + per-layer feature matching (alpha=beta=0.5) on 169k LAION images, 100k iterations, ~1 day on 8 RTX6000Ada; 2.07 vs 2.32 s/image at 512^2, ~2x at 2048^2, zero-shot cross-resolution to 16K.",
+   "needs_here": "The closest prior method to the 5-slot Mamba replacement (pretrained diffusion UNet, attention -> linear-complexity mixer, distilled). Differences to state: video UNet, only the 5 level-0 attn1 slots, feature distillation without the noise-prediction term (closed here), ~333 clips. Speed scaling is directly comparable (theirs ~11% at 512^2, ~2x at 2048^2; the deliverable -5% at 576x1024, -21% at 1024x1792/1920).",
+   "verdict": "MUST cite and compare (method + speed scaling, no re-run)",
+   "lane_overlap": "mamba_scope (context)"
+  },
+  {
+   "id": "C2",
+   "cluster": "attention replacement",
+   "name": "CLEAR; Attention Surgery",
+   "cite": "liu2024clear; ghafoorian2026attentionsurgery",
+   "url": "https://arxiv.org/abs/2412.16112 ; https://arxiv.org/abs/2509.24899",
+   "venue": "arXiv 2024; CVPR 2026",
+   "summary": "CLEAR converts FLUX's attention to local windows by fine-tuning on 10K self-generated samples (99.5% fewer attention computations, 6.3x at 8K). Attention Surgery linearises Wan2.1-1.3B with hybrid softmax/linear tokens and a cost-aware block-rate strategy in a few GPU-days (up to 40% attention FLOPs cut, VBench parity).",
+   "needs_here": "Independent evidence that linearising a pretrained diffusion model works with small data when the targets are the teacher's own outputs -- the regime this project found to work. DiT-specific, so cite rather than adopt.",
+   "verdict": "cite",
+   "lane_overlap": "none"
+  },
+  {
+   "id": "C3",
+   "cluster": "attention replacement",
+   "name": "LLM attention->SSM distillation: MOHAWK, Mamba-in-the-Llama, LoLCATs",
+   "cite": "bick2024mohawk; wang2024mamballama; zhang2025lolcats",
+   "url": "https://arxiv.org/abs/2408.10189 ; https://arxiv.org/abs/2408.15237 ; https://arxiv.org/abs/2410.10254",
+   "venue": "arXiv 2024; NeurIPS 2024; ICLR 2025",
+   "summary": "MOHAWK: mixing-matrix alignment -> hidden-state alignment -> end-to-end, 3B tokens (<1% of scratch). Mamba-in-the-Llama reuses attention projection weights to initialise Mamba layers. LoLCATs: attention transfer (MSE to softmax outputs) then LoRA, 0.2% of parameters and 0.4% of tokens of prior linearisations.",
+   "needs_here": "Methodological precedents for per-slot feature distillation and weight reuse; cite in the method chapter.",
+   "verdict": "cite",
+   "lane_overlap": "none"
+  },
+  {
+   "id": "C4",
+   "cluster": "SSM diffusion from scratch",
+   "name": "DiffuSSM, ZigMa, SSM-meets-VDM, LinGen",
+   "cite": "yan2023diffussm; hu2024zigma; oshima2024ssmvdm; wang2025lingen",
+   "url": "https://arxiv.org/abs/2311.18257 ; https://arxiv.org/abs/2403.13802 ; https://arxiv.org/abs/2403.07711 ; https://arxiv.org/abs/2412.09856",
+   "venue": "arXiv 2023; ECCV 2024; ICLR 2024 workshop; CVPR 2025",
+   "summary": "Attention-free or hybrid SSM diffusion backbones trained from scratch: DiffuSSM (image), ZigMa (zigzag scans), SSM layers as temporal mixers in video diffusion (less memory at equal FVD up to 256 frames), LinGen (bidirectional Mamba2 + temporal Swin, up to 15x FLOPs / 11.5x latency reduction vs DiT).",
+   "needs_here": "Related work only: large-scale training from scratch.",
+   "verdict": "cite",
+   "lane_overlap": "none"
+  },
+  {
+   "id": "C5",
+   "cluster": "training-free acceleration",
+   "name": "SageAttention / SageAttention2",
+   "cite": "zhang2025sageattention; zhang2025sageattention2",
+   "url": "https://arxiv.org/abs/2410.02367 ; https://arxiv.org/abs/2411.10958",
+   "venue": "ICLR 2025; ICML 2025",
+   "summary": "Quantised attention kernels (v1: INT8 QK, ~2.1x OPS over FlashAttention2; v2: INT4 QK + FP8 PV, ~3x over FA2 on RTX 4090) with 'almost no' end-to-end metric loss on image/video generators; drop-in for scaled_dot_product_attention (with model-specific caveats).",
+   "needs_here": "A training-free competitor to the Mamba slots for the speed claim. Upper estimates from the project's own profile and the paper's 2.1x kernel OPS figure (not measured at these shapes): on the five level-0 attn1 layers alone, 10.6% x (1 - 1/2.1) = ~5.5% of origin's forward at 576x1024 -- about equal to the 5-slot Mamba's measured -5.4% -- and 24.4% x 0.524 = ~12.8% at 1024x1792 vs the Mamba's -20.6%/-21.9% (hi-res). On all spatial attn1 (13.6% / 29.1%) the bound is ~7.1% / ~15.2%. Temporal attention share not included. Stacked on the deliverable only ~3.0% / ~4.7% of spatial attn1 remains. v1 installs on this env (torch 2.4, triton 3.0); v2's FP8-on-Ada path needs CUDA >= 12.4 (env is cu121). Install lane-locally (pip --target + PYTHONPATH), never into the shared env.",
+   "verdict": "promising as a required speed baseline (~30 GPU-min with bench2.py + one quality render)",
+   "lane_overlap": "pipeline_speed/mamba_scope (context only)",
+   "project_evidence": "docs/agents/model-change-log.md L9245-9265 (shares); scripts/distill/runs/beyond_distil_mamba_scaled/RESULTS.txt section 1 (-5.4%, -20.6/-21.9%)"
+  },
+  {
+   "id": "C6",
+   "cluster": "training-free acceleration",
+   "name": "ToDo: token downsampling",
+   "cite": "smith2024todo",
+   "url": "https://arxiv.org/abs/2402.13573",
+   "venue": "IJCAI 2024",
+   "summary": "Training-free downsampling of keys/values in SD UNet attention; up to 2x at common sizes and 4.5x or more at 2048^2.",
+   "needs_here": "Targets exactly the level-0 attn1 layers the Mamba slots replace, without training; needs a custom attention processor in a copied driver. Quality risk on 1-3 px cracks and fine edges.",
+   "verdict": "marginal; must be named in the thesis as the training-free alternative for the same layers",
+   "lane_overlap": "none"
+  },
+  {
+   "id": "D1",
+   "cluster": "temporal consistency",
+   "name": "Warp-error metric and its blur bias: Lai et al. 2018; TecoGAN tLP",
+   "cite": "lai2018blind; chu2020tecogan",
+   "url": "https://arxiv.org/abs/1808.00449 ; https://arxiv.org/abs/1811.09393",
+   "venue": "ECCV 2018; ACM TOG 39(4) 2020",
+   "summary": "Lai et al. train with short/long-term temporal losses balanced against a perceptual loss. TecoGAN: 'traditional temporal metrics based on vector norm differences of warped frames ... can be easily deceived by very blurry results'; its tLP = ||LP(b_{t-1},b_t) - LP(g_{t-1},g_t)||_1 compares the output's frame-to-frame change with the reference's.",
+   "needs_here": "The project's tLP is reference-free (mean LPIPS of consecutive frames) and its warp table reports a GT row: GT 0.0157 < origin 0.0174 < deliverable 0.0213. The real right eye is both sharper and more coherent, so 'more sharpness' cannot excuse the deliverable's warp increase. Report a TecoGAN-style reference-relative tLP per frame pair (needs a copy of score_temporal.py that keeps per-pair values; rescoring only, no renders).",
+   "verdict": "must cite; cheap rescoring",
+   "lane_overlap": "temporal lane (metrics context)"
+  },
+  {
+   "id": "D2",
+   "cluster": "temporal consistency",
+   "name": "Temporal co-denoising of overlapping windows: Gen-L-Video, AVID",
+   "cite": "wang2023genlvideo; zhang2023avid",
+   "url": "https://arxiv.org/abs/2305.18264 ; https://arxiv.org/abs/2312.03816",
+   "venue": "arXiv 2023; arXiv 2023",
+   "summary": "Training-free: overlapping clips are denoised in lockstep and their latents fused at every step (Gen-L-Video temporal co-denoising; AVID temporal MultiDiffusion).",
+   "needs_here": "Seams are a pre-existing StereoCrafter flicker source: seam/non-seam ratio GT 0.970, origin 1.329, deliverable 1.417. The temporal lane tests overlap size, overlap_prev_weight and frame-aligned shared noise, not per-step latent fusion. Needs lockstep window denoising in a copied pipeline (same UNet calls, more latent memory).",
+   "verdict": "marginal-to-promising (beyond-origin on seams; ~half a day of engineering)",
+   "lane_overlap": "temporal lane (adjacent knobs)"
+  },
+  {
+   "id": "D3",
+   "cluster": "temporal consistency",
+   "name": "Noise warping and re-initialisation: integral noise, Go-with-the-Flow, FreeInit",
+   "cite": "chang2024warpednoise; burgert2025gowiththeflow; wu2023freeinit",
+   "url": "https://arxiv.org/abs/2504.03072 ; https://arxiv.org/abs/2501.08331 ; https://arxiv.org/abs/2312.07537",
+   "venue": "ICLR 2024; CVPR 2025; arXiv 2023",
+   "summary": "Integral noise warps noise along optical flow training-free but states 'noise warping has limited impact on temporal coherency in latent diffusion models'; Go-with-the-Flow fine-tunes video models on warped noise; FreeInit re-noises and re-samples the low frequencies over several sampling passes.",
+   "needs_here": "StereoCrafter is a latent model (the stated limitation applies); Go-with-the-Flow needs diffusion-loss fine-tuning (closed); FreeInit multiplies sampling passes (defeats the speed goal).",
+   "verdict": "closed",
+   "lane_overlap": "temporal lane (nsfa shared-noise variant is the cheap relative)"
+  },
+  {
+   "id": "D4",
+   "cluster": "temporal consistency",
+   "name": "Reward/temporal gradients through the sampler: DRaFT, VADER",
+   "cite": "clark2024draft; prabhudesai2024vader",
+   "url": "https://arxiv.org/abs/2309.17400 ; https://arxiv.org/abs/2407.08737",
+   "venue": "ICLR 2024; arXiv 2024",
+   "summary": "Backpropagate a differentiable reward through the sampling chain (DRaFT-K: last K steps only); VADER applies reward gradients to video diffusion models.",
+   "needs_here": "The only beyond-teacher handle on the flicker the teacher itself has (s25 +20.3%): a flow-warped temporal loss on the student's sampled output needs no stereo GT, but must be balanced against blur (TecoGAN) and needs backprop through VAE decode or a latent proxy at 24 GB.",
+   "verdict": "marginal; future work",
+   "lane_overlap": "none"
+  },
+  {
+   "id": "D5",
+   "cluster": "temporal consistency",
+   "name": "DLoRAL (one-step VSR, consistency + detail LoRAs)",
+   "cite": "sun2025dloral",
+   "url": "https://arxiv.org/abs/2506.15591",
+   "venue": "NeurIPS 2025",
+   "summary": "One-step SD-based video super-resolution: a Consistency-LoRA learns temporal representations, then a Detail-LoRA adds spatial detail while staying aligned to it; both merged for single-step inference.",
+   "needs_here": "Conceptually the split this project needs (detail gain vs temporal coherence), but trained on VSR data at scale.",
+   "verdict": "cite; marginal",
+   "lane_overlap": "none"
+  },
+  {
+   "id": "E1",
+   "cluster": "stereo successors",
+   "name": "DreamStereo",
+   "cite": "huang2026dreamstereo",
+   "url": "https://arxiv.org/abs/2604.12270",
+   "venue": "arXiv Apr 2026",
+   "summary": "ByteDance authors (Huang, Zhao, Cheng, Xu, Jiao): Wan2.1-1.3B + LoRA, NFE=1, a distilled 3D-aware VAE (>4x faster enc/dec), Gradient-Aware Parallax Warping (backward warping; removes forward-warping 'scattered pixels'), and Sparsity-Aware Stereo Inpainting that runs only 25.6% of tokens and blends unmasked regions from the warp. Table 1 (HD-100, 768x1280, ms/frame, A100): StereoCrafter NFE=8 716.5 ms, PSNR 23.99, LPIPS 0.142 vs DreamStereo NFE=1 40.1 ms, PSNR 30.48, LPIPS 0.053.",
+   "needs_here": "The direct speed successor the thesis must cite. Its SASI blend is the mask-only compositing the user rejected; its GAPW supports the stripes lane's input-side direction. No code release found, so no comparison run.",
+   "verdict": "must cite; not runnable",
+   "lane_overlap": "stripes (GAPW)"
+  },
+  {
+   "id": "E2",
+   "cluster": "stereo successors",
+   "name": "M2SVid",
+   "cite": "shvetsova2026m2svid",
+   "url": "https://arxiv.org/abs/2505.16565",
+   "venue": "3DV 2026",
+   "summary": "SVD-based; conditions on left video + warped right video + disocclusion masks, full attention for disoccluded pixels, single denoising step at t=T from zero latents, loss = latent + L1 + LPIPS; Ego4D + Stereo4D (~200K clips). 2.1 s vs StereoCrafter (25 steps) 12.2 s at 512x512x16 on A100; Stereo4D LPIPS 0.180 vs 0.242. Apache-2.0 code + 8.5 GB weights (google-research/m2svid); the released inference outputs the fully generated right view (no blend).",
+   "needs_here": "The runnable external comparison: same backbone family, same DepthCrafter + warping inputs, full-view output (compatible with the no-mask-only rule). Trained at 512^2, so the 576x1024 protocol needs tiling/resizing -> report as a secondary table. Also published evidence that an SVD stereo model can be trained by image-space regression instead of diffusion loss, but with ~200K clips.",
+   "verdict": "MUST cite and compare (~1-2 GPU-h for the regime set incl. setup)",
+   "lane_overlap": "eval_robustness (context)",
+   "caveats": "Fit on a 24 GB RTX 4090 unverified (authors tested A100/H100); repo code is Apache-2.0 -- check the weights' license separately before publishing numbers."
+  },
+  {
+   "id": "E3",
+   "cluster": "stereo successors",
+   "name": "StereoPilot",
+   "cite": "shen2025stereopilot",
+   "url": "https://arxiv.org/abs/2512.16915",
+   "venue": "arXiv Dec 2025",
+   "summary": "Warp-free single-step Wan2.1-1.3B model (timestep fixed at t0=0.001), UniStereo ~103K pairs; 11 s per 81-frame clip vs StereoCrafter 1 min; Stereo4D LPIPS 0.087 vs 0.298. MIT license, weights on Hugging Face, ~23 GB VRAM at 832x480.",
+   "needs_here": "Runnable on a 4090 (tight); different resolution/frame protocol and no depth input, so it measures a different pipeline.",
+   "verdict": "optional comparison; cite",
+   "lane_overlap": "none"
+  },
+  {
+   "id": "E4",
+   "cluster": "stereo successors",
+   "name": "Other 2024-2026 stereo work",
+   "cite": "xing2025stereoworld; metzger2025elastic3d; zhang2026alphadepth; shi2024dissolvestereo; geyer2025eye2eye; shi2024immersepro; dai2024svg; yu2025mono2stereo",
+   "url": "https://arxiv.org/abs/2512.09363 ; https://arxiv.org/abs/2512.14236 ; https://arxiv.org/abs/2606.00386 ; https://arxiv.org/abs/2411.14295 ; https://arxiv.org/abs/2505.00135 ; https://arxiv.org/abs/2410.00262 ; https://arxiv.org/abs/2407.00367 ; https://arxiv.org/abs/2503.22262",
+   "venue": "arXiv 2025; arXiv 2025; arXiv 2026; arXiv 2024-26; arXiv 2025; arXiv 2024; arXiv 2024; CVPR 2025",
+   "summary": "StereoWorld (geometry-aware regularisation, 11M IPD-aligned frames), Elastic3D (guided VAE decoder, disparity knob), alphaDepth (soft-boundary layered depth), DissolveStereo (formerly StereoCrafter-Zero; zero-shot noisy restart + iterative refinement, code released), Eye2Eye (direct synthesis, avoids warping on specular/transparent surfaces), ImmersePro (YouTube-SBS, 423 videos / 7M pairs), SVG (training-free frame-matrix inpainting), Mono2Stereo (benchmark + SIoU metric, which the authors report correlates with human judgement of stereo effect).",
+   "needs_here": "Related work; SIoU could be added as a stereo-specific metric.",
+   "verdict": "cite",
+   "lane_overlap": "eval_robustness (SIoU)"
+  },
+  {
+   "id": "E5",
+   "cluster": "input-side warping",
+   "name": "DIBR crack handling + softmax splatting",
+   "cite": "fehn2004dibr; mori2009ftv; niklaus2020softmax",
+   "url": "https://fukushima.web.nitech.ac.jp/paper/2009_spic_mori.pdf ; https://arxiv.org/abs/2003.05534",
+   "venue": "Proc. SPIE 2004; Signal Processing: Image Communication 2009; CVPR 2020",
+   "summary": "Classic DIBR (Fehn) and FTV view generation (Mori et al.: post-filter the projected depth, then backward-warp colour); softmax splatting resolves many-to-one forward-warp collisions with importance weights -- StereoCrafter's 1.414^(d-min)-weighted bilinear forward splat is this family.",
+   "needs_here": "The stripes lane fills cracks in colour (row interpolation / Telea / mask shrink). The DIBR-standard variant fills cracks in the projected disparity and backward-samples real source texture (DreamStereo's GAPW is a 2026 version). The StereoCrafter UNet was trained on its own forward-splat inputs, so validate on origin first.",
+   "verdict": "promising (hand to the stripes lane as a variant)",
+   "lane_overlap": "stripes"
+  }
+ ],
+ "must_cite_and_compare": [
+  {
+   "key": "sabour2024ays",
+   "why": "training-free SVD schedule; run origin + AYS8 at deployed cost to show the distillation gain is not just a schedule effect"
+  },
+  {
+   "key": "shvetsova2026m2svid",
+   "why": "runnable SVD-based one-step stereo successor (Apache-2.0 weights, full-view output)"
+  },
+  {
+   "key": "liu2024linfusion",
+   "why": "closest prior for distilling attention into a Mamba2-style linear mixer inside a pretrained diffusion UNet"
+  }
+ ],
+ "must_cite_no_comparison": [
+  "zhao2024stereocrafter",
+  "blattmann2023svd",
+  "huang2026dreamstereo",
+  "salimans2022progressive",
+  "lai2018blind",
+  "chu2020tecogan",
+  "zhang2025sageattention",
+  "smith2024todo"
+ ],
+ "failures": [
+  "TecoGAN PDF could not be parsed by WebFetch; text extracted locally with pdftotext (scratchpad) to quote the T-diff/tLP passages",
+  "AYS arXiv abstract does not mention SVD; the SVD schedule and DDIM video comparison come from the NVIDIA project/how-to pages",
+  "SwiftVideo: a search-snippet sentence about blurry discrete-time CMs was not in the fetched abstract and was dropped",
+  "No code release found for DreamStereo, Eye2Eye or SVG (SVG says 'will be released')",
+  "Venues not verified for @misc entries (cited by arXiv id only)",
+  "Adaptive Video Distillation and DRaFT/VADER read at abstract level only"
+ ]
+}

@@ -1,0 +1,38 @@
+{
+ "0170": {
+  "full": "1feb1af0464ad398e84454b1f4baa161",
+  "left": "d758b40e054ce51c354586239676ffb4",
+  "n": 151,
+  "W": 2048,
+  "H": 576,
+  "writer": "1feb1af0464ad398e84454b1f4baa161",
+  "roundtrip_ok": true
+ },
+ "0259": {
+  "full": "adfa31a700a66a026cc08be4e4db8255",
+  "left": "e38d257659f5ebc452357977b53f0bab",
+  "n": 151,
+  "W": 2048,
+  "H": 576,
+  "writer": "adfa31a700a66a026cc08be4e4db8255",
+  "roundtrip_ok": true
+ },
+ "0042": {
+  "full": "13ca5217581aebdb1ef0183da4f90c85",
+  "left": "91c0da975c81757485e5a9cdc42f4c11",
+  "n": 153,
+  "W": 2048,
+  "H": 576,
+  "writer": "13ca5217581aebdb1ef0183da4f90c85",
+  "roundtrip_ok": true
+ },
+ "0301": {
+  "full": "2e533d7755c950d2fc95043f6fb0a51d",
+  "left": "7ca2a3ff1c13c342c8662191d82a9141",
+  "n": 151,
+  "W": 2048,
+  "H": 576,
+  "writer": "2e533d7755c950d2fc95043f6fb0a51d",
+  "roundtrip_ok": true
+ }
+}

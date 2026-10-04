@@ -1,0 +1,54 @@
+more_20261004 / stripes lane -- RESULTS (2026-10-04).  Outputs: outputs/more_20261004/stripes/ (nothing else written).
+Question: can the depth-splatting stripe artefact be removed at the INPUT (fill the 1-3 px cracks of the warped right eye
+before the VAE encode), so every config gains quality and less stripe gets amplified?
+
+VERDICT (pre-registered, PREREG.txt): NO.  No fill variant passes for either config (TABLE_STRIPES_4CLIP.txt).
+  4 regime clips 0301 0204 0052 0147, each variant vs its OWN unfilled baseline, RNG-paired (same initial noise):
+                              dLPIPS 0301 / 0204 / 0052 / 0147  (mean)   better   stripeE ratio mean (lower)   edgeHF mean/min
+  origin 8x2@1.01   A rowlin  -0.0225 / -0.0002 / +0.0001 / +0.0012 (-0.0053)  2/4    1.0166 (1/4)   1.0057 / 0.9910
+                    B telea   -0.0168 / -0.0002 / +0.0001 / +0.0005 (-0.0041)  2/4    1.0122 (1/4)   1.0057 / 0.9950
+  deliv T5@1.00     A rowlin  -0.0028 / +0.0001 / +0.0005 / +0.0023 (+0.0000)  1/4    1.0032 (2/4)   1.0024 / 0.9798
+                    B telea   -0.0015 / -0.0000 / +0.0003 / +0.0009 (-0.0001)  2/4    1.0023 (2/4)   1.0013 / 0.9779
+  P1 (LPIPS better on >=3/4) fails for all four; P2 (stripe energy falls) fails for all four; P3 fails for the deliverable.
+  C (rowlin + mask shrunk to runs > 3 px) is BIT-IDENTICAL to A (0301 deliverable and origin md5 equal) -- see below.
+  Temporal (reported): warp error ratio origin A 1.017 / B 1.010, deliverable A 0.998 / B 0.997 (no flag); seam ratio
+  falls slightly with every fill (e.g. deliverable A 1.284 -> 1.269 4-clip mean).
+  12-clip check of deliverable A (NOT TRIGGERED, shown per ADDENDUM 2b; EXT12_DELIV_A.txt): mean +0.0006 LPIPS, better on
+  3/12, worst 0259 +0.0035; filled deliverable vs deployed origin -0.0111 (10/12) vs unfilled -0.0117 (12/12);
+  Spearman(crack fraction, delta) = -0.08 -> crack density does not predict the effect.
+
+WHY (mechanism, all measured):
+ 1. The UNet never sees the occlusion mask.  weights/StereoCrafter/unet_diffusers conv_in.weight (320,9,3,3): input
+    channel 8 (the mask) is exactly 0 (channels 0-3 mean|w| 0.033, 4-7 0.002).  The deliverable .pt has no conv_in key.
+    Any mask edit is a no-op; holes are only "seen" as dark pixels of the warped image (PREREG_ADDENDUM_1.txt).
+ 2. The 0301 origin gain travels ONLY through the VAE frame latents: routing the filled frames to the VAE only gives
+    0.412442 (-0.0227), to the CLIP image embedding only 0.435239 (+0.0001) vs baseline 0.435095 and both 0.412622
+    (mechanism/SCORES_mech0301.txt; share VAE 1.01, CLIP -0.01).
+ 3. Cracks at depth edges are part of the disocclusion: interpolating across them bleeds foreground into revealed
+    background and moves silhouettes (0147: |A-baseline| concentrates on the jersey/arm outline, near-hole stripe energy
+    RISES 1.16-1.20x, LPIPS worse).  Cracks inside textured surfaces (0301 foliage) are the case the fill helps.
+ 4. The stripe energy is mostly not crack-borne.  GT-flat pixels within 2 px of a hole: 0301 5.8 %, 0204 0.11 %,
+    0052 2.6 %, 0147 2.7 %.  The model-free warped INPUT already carries more flat-region |dx| than either render:
+    stripeE/GT input 1.80 / 2.57 / 3.12 / 10.07 vs origin 0.80 / 1.93 / 2.17 / 4.57 vs deliverable 0.98 / 2.43 / 2.34 / 5.49
+    (0301/0204/0052/0147, decomp_00_baselines_input/DECOMP.txt); on the review's hole-free texture crops (local GT
+    registration, the review's own 8x2 deliverable panel) input 1.30 / 1.39 / 3.60 vs deliverable 0.86 / 1.30 / 3.02 vs
+    origin 0.71 / 1.04 / 2.40 for 0301 / 0204 / 0147 (diag_crop_input/CROP_INPUT.txt).
+    Measured on each image's OWN flattest half (no registration), the input is 0.78-1.45x GT and the deliverable
+    0.35-1.61x GT, with low vertical coherence of its high-pass (0.51-0.63 vs GT 0.65-0.91) -> grain, not vertical
+    stripes (diag_selfflat_00_baselines/SELFFLAT.txt).  64x64-block GT registration (+1.7..4.4 dB) lowers every
+    stripeE/GT by 11-28 % but keeps origin < deliverable on 4/4 clips and input >= deliverable on 3/4 (0204: 2.12 vs
+    2.13) (diag_blockreg_00_baselines/BLOCKREG.txt).
+    So the review's "stripe energy 1.9-5.5x GT" is input content (and residual GT misregistration / view differences)
+    passed through -- the models attenuate it, the deliverable less than origin -- not stripes created at cracks.
+    (diag_coherence_00_baselines/ used first-difference coherence, which smooth ramps dominate; superseded, not used.)
+
+INTEGRITY: K1 control (fill off) reproduced a41b432baeb25393bb12d39b4f2e6a21; K2 init-latent fingerprints equal the
+references for every render; K3 pass-through 29/29 PASS (CHECK_K3_passthrough.txt); K4 fill logs: 0 pixels changed
+outside the crack set everywhere (0225 has no holes in the window -> nothing filled, output md5 == baseline, the only
+"K4 FAIL" line in CHECK_K1K2K4_after_regime.txt); K5 baselines re-scored to the published LPIPS and the review's
+decomposition rows; K6 origin warp errors reproduce V1_TEMPORAL_576_12CLIP.txt.  RAFT temporal is deterministic
+(baseline values identical across the A and B runs).
+GPU: 29 renders, 66.9 GPU-locked minutes + ~15 min scoring, all on GPU 0 under flock (lock held per job).
+Deviations, each written before the affected scores: ADDENDUM_1 (C dropped from 0204/0052/0147: identical to A by
+construction), ADDENDUM_2/2b (12-clip deliverable-A extension, run speculatively; trigger failed), ADDENDUM_3 (CLIP/VAE
+routing test).  The origin 12-clip extension was not run (trigger failed; budget).

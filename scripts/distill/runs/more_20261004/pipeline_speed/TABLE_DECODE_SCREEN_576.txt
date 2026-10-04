@@ -1,0 +1,23 @@
+=== outputs/more_20261004/pipeline_speed/d_screen_576  (windows [0, 1, 2, 13]; decode seconds summed over those windows, last pass; pass0 includes warm-up/benchmarking/compilation)
+  variant                               decode_s  vs base  pass0_s  peak GB                  md5 (right-eye u8) identity
+  c14_cl0_b0_s0_bf16                       9.863    1.061    9.999    17.12    cb4990fa3b852aa22e007db00c4c46d5 differs
+  c14_cl1_b0_s0_bf16                      10.481    1.127   10.594    17.12    af97eaac64a08f8ac04c1dc998eef302 differs
+  c2_cl0_b0_s0_bf16                        9.298    1.000    9.412     2.67    a5e9163f6e91498f339f7b191159149a IDENTICAL
+  c2_cl0_b0_s0_bf16_rep2                   9.304    1.001    9.410     2.67    a5e9163f6e91498f339f7b191159149a IDENTICAL
+  c2_cl0_b0_s0_fp16                        9.060    0.974    9.209     2.67    614926d551015a0a15ee98fabbf571a5 differs
+  c2_cl0_b0_s1_bf16                        7.555    0.813    7.649     2.67    a5e9163f6e91498f339f7b191159149a IDENTICAL
+  c2_cl0_b1_s0_bf16                        8.836    0.950   11.835    11.69    c07443c7acd47cc42ed5aba56ae45152 differs
+  c2_cl1_b0_s0_bf16                       10.040    1.080   10.137     2.66    4047660edd7df2688c77184b86f9e6bb differs
+  c2_cl1_b1_s0_bf16                        9.530    1.025   11.602     4.74    5f1f90ad19e84f5e1ccf82d64eb1a621 differs
+  c4_cl0_b0_s0_bf16                        9.412    1.012    9.506     5.07    45c1b4018d387dc393a315cbdddc321e differs
+  c8_cl0_b0_s0_bf16                        9.675    1.041   10.018     9.87    7d45fc8955842f1e3a32ca4b409ff0e4 differs
+
+=== outputs/more_20261004/pipeline_speed/d_screen3_576  (windows [0, 1, 2, 13]; decode seconds summed over those windows, last pass; pass0 includes warm-up/benchmarking/compilation)
+  variant                               decode_s  vs base  pass0_s  peak GB                  md5 (right-eye u8) identity
+  c2_cl0_b0_s0_bf16_c3d0_compdefault       5.792    0.622   51.355     2.58    d9040087e883a7dd5f04024ba9389c8c differs
+  c2_cl0_b0_s0_bf16_c3d0_compnone          9.317    1.000    9.410     2.67    a5e9163f6e91498f339f7b191159149a IDENTICAL
+  c2_cl0_b0_s0_bf16_c3d0_compnone_rep2     9.307    0.999    9.415     2.67    a5e9163f6e91498f339f7b191159149a IDENTICAL
+  c2_cl0_b0_s0_bf16_c3d1_compdefault       5.486    0.589   41.655     2.58    57e6cbbdf6c31b36d68e525ab7c027b2 differs
+  c2_cl0_b0_s0_bf16_c3d1_compnone          8.971    0.963    9.079     2.67    ae8e9de103c8c86b79d3c78481569280 differs
+  c2_cl0_b0_s1_bf16_c3d1_compnone          7.275    0.781    7.374     2.67    ae8e9de103c8c86b79d3c78481569280 differs
+

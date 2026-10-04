@@ -1,0 +1,2 @@
+PASS outputs/more_20261004/teacher/clips/0301_C25b vs outputs/more_20261004/teacher/clips/0301_gate_euler25: windows 14 (ref 14), identical 14/14  sampler=euler_churn N=25 pad=25 draws/window=[25] unet_calls/window=[25] batch=[2]
+SUMMARY checked=1 failed=0

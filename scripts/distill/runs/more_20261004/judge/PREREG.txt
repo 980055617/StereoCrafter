@@ -1,0 +1,167 @@
+PRE-REGISTRATION -- more_20261004 / lane "judge" (final judge of the eight more_20261004 lanes)
+Written 2026-10-04 17:35 JST, BEFORE any render, timing run or scorer call in this lane.  Not edited after the first
+scorer call; later additions go in dated ADDENDUM sections at the bottom.
+Files: scripts/distill/runs/more_20261004/judge/ and outputs/more_20261004/judge/ (new dirs only).  No tracked file is
+edited; every other lane's script is used READ-ONLY (never edited, never run in its own output dir).
+
+PURPOSE  Re-check, from the renders on disk, the key row of every lane marked "promising" (temporal, pipeline_speed,
+literature), confirm the comparisons are paired and lossless, then rank the opportunities.  What I already READ
+before writing this (so it is not blind): every lane's report, TABLE_TEMPORAL_4CLIP.txt, TABLE_HEADLINE_final.txt,
+finalcheck speed TABLE_STEP1_GUIDANCE / TABLE_STEP2_EXT12 / TABLE_TIMING_final / TABLE_POSTHOC_T5G100_UNPADDED,
+eval_robustness RESULTS.txt.  No render or score of this lane exists yet.
+
+=====================================================================================================================
+J1  TEMPORAL lane, key rows: T5nat_dcs14 (deliverable T5@1.00 unpadded, decode_chunk_size 14) and
+    origin_g101_s8_dcs14, against BASE (finalcheck speed <c>_deliv_g100_T5nat) and deployed origin (beyond4 <c>_origin_ll)
+    clips 0170 0259 0042 0301
+=====================================================================================================================
+J1a LOSSLESS: scripts/distill/runs/finalcheck_20261004/speed/check_passthrough_v1.py, run UNCHANGED (CPU), on the 8
+    dcs14 render dirs; outputs to my dir.  PASS = decoded full-array md5 == writer md5 and left half == origin_ll's, 8/8.
+J1b PAIRING (CPU, speed_log.json init_md5 per window):
+    - T5nat_dcs14 vs BASE: identical 14/14 windows on each clip.
+    - origin_g101_s8_dcs14 vs an 8-step origin render with a speed_log: 0301 vs finalcheck 0301_origin_g101_s8;
+      0170/0259/0042 vs finalcheck <c>_origin_g100_s8 (guidance does not change the 8-step RNG stream: finalcheck
+      PREREG S1/G7).  identical 14/14 on each clip.  The temporal lane checked this only on 0301.
+    PASS = all identical.
+J1c LPIPS RE-SCORE: scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py UNCHANGED, SCORE_STEP=4, ONE scorer call
+    per clip with rows origin_ll, BASE, T5nat_dcs14, origin_g101_s8_dcs14 (GPU 1 under /tmp/claude-gpu1.lock).
+    PASS = every row within +-0.0001 of the temporal lane's SCORES_LPIPS_* ROW value.
+J1d WARP RE-SCORE with an INDEPENDENT scorer: the validate lane's scripts/distill/runs/finalcheck_20261004/validate/
+    score_temporal_ll.py (not the temporal lane's copy), STEP unset, one call per clip, origin_ll first (GPU 1, lock).
+    PASS = every warp within 2e-5 absolute of TABLE_TEMPORAL_4CLIP.txt (its values are printed to 5 dp), and the
+    4-clip gaps (ratio of 4-clip means to origin_ll's) reproduce BASE +21.99 %, dcs14 +9.65 %, origin_dcs14 -8.69 %
+    within 0.1 point.
+Verdict wording: "CONFIRMED" if J1a-J1d all pass; any failure is quoted with its file.
+
+=====================================================================================================================
+J2  PIPELINE_SPEED lane, key rows: identity fixes F5-F9 (bit-exact) and the end-to-end times
+=====================================================================================================================
+J2a MD5 FROM DISK (CPU): ffmpeg-decode the FFV1 sbs of C1a, C1b, C1w (rep 0 and rep1), C3, A1, A3, C2 and md5 the whole
+    rgb24 stream (same method as check_passthrough_v1.decode_md5).  PASS = C1a/C1b/C1w(rep0,rep1)/A1 == a41b432b...,
+    C3 == 2e533d77..., A3/C2 == 2e5ccd8c..., and each equals its own writer_md5.txt.
+J2b RE-TIMING (GPU 0, uncontended: nothing else of mine runs on the machine meanwhile; the driver holds
+    /tmp/claude-gpu0.lock for each whole render; load1 logged).  Driver: the pipeline_speed lane's
+    run_driver_stage_v3.sh, used read-only with OUTROOT = outputs/more_20261004/judge/timing_576.  n=1 each, 0301,
+    576x1024, in this order:
+      J_A    deliverable T5@1.00 as shipped                                  md5 must = a41b432b...
+      J_C    deliverable T5@1.00 + F5,F6,F7,F8,F9 (lane's exact knob set)     md5 must = a41b432b...
+      J_O    deployed origin 8x2@1.01                                         md5 must = 2e533d77...
+      J_OC   deployed origin + F6,F7,F8,F9                                    md5 must = 2e533d77...
+      J_D    deliverable T5@1.00 + decode_chunk_size 14 + F5,F7,F8,F9 (NO F6: with one 14-frame decode chunk per window
+             F6 has nothing to skip)    md5 must = 88551bf11359f5a0b6891094b0dd42e6 (the temporal lane's
+             0301_T5nat_dcs14, rendered on GPU 1 with another hook) = a cross-GPU, cross-hook reproduction of dcs14.
+      J_OT5  origin at the deliverable's sampler (T5@1.00, unpadded) + F6,F7,F8,F9: TIMING ONLY (no reference md5
+             exists; no quality claim is made from it) = the matched-sampler speed of origin with the same fixes.
+    Reported: process seconds, UNet seconds, VAE decode seconds (stage_log.json).  Consistency check (not a gate on
+    the lane): J_A, J_C, J_O within +-5 % of the lane's 101.45 / 88.20 / 166.16 s.  Derived: C/A, O/C, O/OC-based
+    like-for-like ratio (OC replaces the lane's CPU-contended C3), matched-sampler OT5 vs C, cost of dcs14 = D - C.
+    A failed render is retried once at most; the error is quoted.
+
+=====================================================================================================================
+J3  LITERATURE lane: nothing was rendered (outputs/more_20261004/literature/ is empty), so nothing can be re-scored.
+=====================================================================================================================
+J3a CPU: re-run ays_schedules.py (done at 17:34 before this file was saved: AYS8 and AYS5 strings equal the lane's).
+J3b CPU: recompute the origin schedule-merge means it quotes (T6 +0.00018, T5 +0.00140, T5@1.00 +0.00215 mean12)
+    from the ROW lines of finalcheck speed SCORES_STEP1.txt / SCORES_STEP2_EXT12.txt / SCORES_STEP2_4clip.txt.
+J3c (CONDITIONAL on budget, after J1/J2) AYS SMOKE on origin, clip 0301 only, GPU 0 under its lock.
+    Code: a COPY of finalcheck speed infer_ll_hook_speed_v1.py whose ONLY change is that a kept sigma that is not one of
+    the default 8-step sigmas is allowed (recorded, not asserted); default sigmas keep both asserts.  Driver: a copy of
+    run_driver_speed_v1.sh whose only changes are RUN (the copy) and OUT (outputs/more_20261004/judge/ays).
+      AC0    control: SK_SIGMAS = the default 8 sigmas (exact strings from finalcheck jobs_00_controls.txt), guidance
+             1.01, no pad.  MUST reproduce 2e533d7755c950d2fc95043f6fb0a51d (origin_ll 0301); if not, STOP J3c.
+      AYS8   origin @1.01, SK_SIGMAS = 700.0,32.1326904296875,8.801949501037598,3.318009376525879,1.1647257804870605,
+             0.35714080929756165,0.06827998906373978,0.0020000000949949026 (8 steps -> same RNG use as deployed; no pad)
+             paired with origin_ll; init_md5 must equal finalcheck 0301_origin_g101_s8's 14/14.
+      AYS5   origin @1.00, SK_SIGMAS = 700.0,11.25711441040039,1.7890000343322754,0.26404356956481934,
+             0.0020000000949949026, SK_RNG_PAD_TO=8; paired with finalcheck 0301_origin_g100_T5pad (0.4416);
+             init_md5 must equal that render's 14/14.
+    Scoring: ONE score_clip_ll.py call (SCORE_STEP=4) with origin_ll, AYS8, origin_g100_T5pad, AYS5, and the
+    deliverable's 0301_deliv_g100_T5pad as context.  Rescored origin_ll / origin_g100_T5pad must reproduce 0.4351 / 0.4416
+    within 0.0001 (else void).
+    FUTILITY RULE (fixed now): AYS8 is extended to 0204 0052 0147 only if LPIPS(AYS8) - LPIPS(origin_ll) <= -0.003 on
+    0301; AYS5 only if LPIPS(AYS5) - LPIPS(origin_g100_T5pad) <= -0.003.  If extended, the literature lane's 4-clip rule
+    applies: "free gain" iff mean4 delta <= -0.002 and no clip > +0.005.  Rationale for screening on 0301: it is the
+    clip where origin has the most step headroom (s25 -0.0365 there; origin T5@1.00 +0.0065 there).
+    Outcomes are reported as measured; a 0301-only null is "no evidence of a free schedule gain on the clip with the
+    most headroom", not proof for the other 11 clips.
+
+=====================================================================================================================
+J4  CROSS-LANE ANALYSIS from existing score files (CPU; no new scores)
+=====================================================================================================================
+J4a MATCHED SAMPLER: deliverable T5@1.00 PADDED vs origin T5@1.00 PADDED (both RNG-padded to 8 = same noise), 12 clips,
+    from finalcheck speed SCORES_STEP2_EXT12.txt / SCORES_STEP2_T5G100_4clip.txt ROW lines: per-clip delta, mean,
+    clips improved, exact sign test, sign-flip test, Student-t 95 % CI.  (I have seen the rounded table already.)
+J4b The temporal lane's dcs14 deltas re-expressed per clip from J1c/J1d values (no new data).
+Everything is descriptive; no threshold here gates anything.
+
+BUDGET  ~60-90 GPU-minutes (J2b ~12, J1c ~5, J1d ~5, J3c ~9 (+~14 if extended)).  Training loss is never used.
+Protected checkpoints are only READ (by the renders); their md5s are re-checked at the end.
+
+ADDENDUM 1 -- 2026-10-04 17:40 JST.  Written while the J2b chain is still running (finished so far: J_A 99.06 s and J_C
+84.92 s, both md5 a41b432b...) and BEFORE any scorer call of this lane.  No criterion above changes.
+J2c (added) MATCHED-SAMPLER END-TO-END AT 1024x1792 -- timing only, GPU 0, same driver, lock held per render, after J2b:
+      J_C2r     deliverable T5@1.00 + F5-F9 at 1024x1792 (the lane's C2 knobs, autotune_choices_A3_1792.json)
+                md5 must = 2e5ccd8c1f4824a117e703864664856e (A3/C2)
+      J_OT5h    origin T5@1.00 (unpadded) + F6-F9 at 1024x1792: timing only, no quality claim
+    Reported: process / UNet / VAE seconds and the ratio OT5h/C2r = the end-to-end speed the Mamba UNet itself buys at
+    the hi-res speed-claim resolution when both models use the same sampler and the same pipeline fixes.
+    Rationale: the published speed ratios compare the deliverable at T5@1.00 with origin at 8x2@1.01, and origin's own
+    T5@1.00 is already rendered (finalcheck TABLE_STEP2_EXT12: +0.0021 mean12), so the model-attributable speed share
+    has to be measured at a matched sampler; at 576 J_OT5 vs J_C covers it, at 1792 nothing exists yet.
+
+ADDENDUM 2 -- 2026-10-04 17:41 JST.  Written BEFORE any render or score of the clips below exists (no render of 0082 or
+0268 exists anywhere: eval_robustness RESULTS.txt section 5) and before any scorer call of this lane.
+J5 (added) CLEAN OUT-OF-SAMPLE CONFIRMATION on the two dev clips that eval_robustness found clean and in regime:
+    0082 (4400 tile, 168 frames, GT) and 0268 (2160 tile, 151 frames, GT).  Never used for training, selection or design.
+    Renders (GPU 0 under its lock, FFV1, config/0160_overfit_inference_matched.json, seed 1234), driver = a copy of
+    run_driver_ays_v1.sh whose only change is OUT=outputs/more_20261004/judge/devclips:
+      o8     origin 8x2 @1.01 (deployed origin)            d8     deliverable 8x2 @1.01 (published headline config)
+      o5p    origin T5@1.00 pad 8                          d5p    deliverable T5@1.00 pad 8   (matched sampler, paired)
+      d5n    deliverable T5@1.00 unpadded (what ships)
+    Pairing check: per-window init_md5 of o5p, d5p, d8 == o8's (14/14 or whatever the window count is).
+    Scoring: score_clip_ll.py UNCHANGED, SCORE_STEP=4, one call per clip with all five rows (GPU 1, lock).
+    Reported per clip (n = 2, so these are direction checks, not tests):
+      C1 headline replicates      LPIPS(d8)  - LPIPS(o8)  < 0
+      C2 matched sampler          LPIPS(d5p) - LPIPS(o5p) < 0
+      C3 shipped config           LPIPS(d5n) - LPIPS(o8)  < 0
+    Each delta is also set against the 12-test-clip range (headline per-clip deltas -0.0386 .. -0.0019) and the
+    seed-realisation proxy (median 0.0007, max 0.0038; eval_robustness SUPPLEMENT_seed_yardstick.txt).  A positive delta
+    on either clip is reported as a failure of that check, never explained away.  The dev regime differs (GT sharpness
+    0.0093 vs 0.0164), which eval_robustness flagged in advance.
+ORDER on GPU 0 after J2b: J3c (AYS, control first) -> J5 renders -> J2c (hi-res timing, run last so that no scoring or
+decoding runs on the CPU meanwhile).
+
+ADDENDUM 3 -- 2026-10-04 18:00 JST.  The J3c smoke on 0301 has been scored (SCORES_J3c_AYS_0301.txt): AYS8 - origin_ll
+= -0.0313 and AYS5pad8 - origin_g100_T5pad = -0.0105, both <= -0.003, so BOTH arms EXTEND to 0204 0052 0147 exactly as
+pre-registered in J3c.  No criterion changes.  Procedural: the extension renders run on GPU 1 (under
+/tmp/claude-gpu1.lock, same copied driver with argument 1) so the J5 dev renders on GPU 0 are not delayed.
+Pairing references for the init_md5 check: finalcheck <c>_origin_g101_s8 where it exists (0204), else <c>_origin_g100_s8
+(same 8-step RNG stream, finalcheck PREREG S1/G7); AYS5 vs finalcheck <c>_origin_g100_T5pad.
+Scoring: one score_clip_ll.py call per clip (SCORE_STEP=4) with origin_ll, AYS8, origin_g100_T5pad, AYS5 and, as
+CONTEXT rows that gate nothing, the deliverable deployed (mstudent2_step800_deliv_ll), the deliverable T5@1.00 pad, and
+s25_ll.  4-clip rule (unchanged): "free gain" iff mean4 delta <= -0.002 and no clip > +0.005, judged separately for
+AYS8 (vs origin_ll) and AYS5 (vs origin_g100_T5pad).
+PRE-DECLARED NEXT STAGE (only if an arm passes the 4-clip rule and GPU budget remains): the same arm on the other 8 test
+clips, judged by the same rule on 12 clips (mean12 <= -0.002 and no clip > +0.005); the 12-clip verdict is final.
+
+ADDENDUM 4 -- 2026-10-04 18:03 JST.  Budget reallocation, no criterion changes, written before any regime-extension score.
+J2c (the 1024x1792 matched-sampler timing of ADDENDUM 1) is DROPPED and will not be run: the AYS result has priority for
+the remaining GPU budget.  The report will say that matched-sampler end-to-end time at 1792 was not measured; the
+UNet-level number stays mamba_scope's (-20.30 % at 1024x1792, BS=1).  J5 dev renders continue (not interrupted).
+If AYS8 passes the 4-clip rule, the pre-declared 12-clip stage runs AYS8 FIRST (8 remaining test clips, split into one
+job file per GPU); AYS5's 12-clip stage runs only if budget remains, otherwise it is listed as not run.
+Primary reported contrasts (paired, n = clips available, t95 CI + exact sign test; not gates):
+   deliverable 8x2@1.01 (mstudent2_step800_deliv_ll) - AYS8 origin   (same per-window noise: 8 steps, no pad)
+   deliverable T5@1.00 pad8 - AYS5 origin pad8                       (same noise)
+
+ADDENDUM 5 -- 2026-10-04 18:24 JST.  4-clip verdicts (outputs/more_20261004/judge/analysis/J3c_AYS_4CLIP.txt): AYS8 vs origin_ll
+mean4 -0.0127, worst clip -0.0023 -> PASS; AYS5 vs origin_g100_T5pad mean4 -0.0032, worst -0.0003 -> PASS.  As pre-declared
+(ADDENDUM 3/4) the 12-clip stage now runs for AYS8 on the other 8 test clips (jobs_J3c_ays8_ext_gpu0.txt on GPU 0,
+jobs_J3c_ays8_ext_gpu1.txt on GPU 1, each under its own lock), scored with score_J3c_ays_clips_v1.sh (tag ext8).
+AYS5's 12-clip stage is NOT run in this lane (budget); it is reported as passed on 4 clips only.
+
+ADDENDUM 6 -- 2026-10-04 18:50 JST.  Record only (no criterion changes).  12-clip AYS8 verdict
+(outputs/more_20261004/judge/analysis/J3c_AYS_12CLIP.txt): AYS8 origin - origin_ll mean12 -0.01046, 12/12 negative, worst
+clip -0.0023 -> PASS (pre-registered 12-clip rule).  Primary reported contrast: deliverable 8x2@1.01 - AYS8 origin mean12
+-0.00236, 9/12 negative, t95 [-0.0047, +0.0000], p_sign 0.146, p_signflip 0.053.  AYS5's 12-clip stage was not run
+(budget; ADDENDUM 4).  J2c (1792 timing) was not run (ADDENDUM 4).  No AYS render was made on the dev clips.

@@ -1,0 +1,33 @@
+===== 0301 @ 576x1024 ==========================================================================================
+  config                                                      n end-to-end s          (each) x vs origin  UNet s VAEdec s  w0 xs       md5  gate
+  -- BASELINES
+  deployed origin 8x2@1.01                                    2       166.16     166.5/165.8      1.000x  105.30    33.86   0.01  2e533d77  PASS
+  deliverable T5@1.00 (as shipped today)                      2       101.45      103.6/99.3      1.638x   39.38    33.88   4.75  a41b432b  PASS
+  -- TIER 1  bit-exact, single-clip CLI process (md5-gated)
+  deliverable T5 + identity fixes F5-F9                       2        88.20       85.2/91.2      1.884x   34.95    28.59   0.26  a41b432b  PASS
+  origin + model-independent fixes F6-F9                      1       163.43           163.4      1.017x  105.24    28.60   0.00  2e533d77  PASS
+  -- TIER 2  bit-exact, 2nd clip in a persistent process (model reload still inside)
+  deliverable T5 + F5-F9, rep 1 of C1w                        1        82.68            82.7      2.010x   34.65    28.59  -0.00  a41b432b  PASS
+  -- TIER 3  PIXEL: + torch.compile(vae.decoder) [F10]  gate: FAIL/PENDING (LPIPS ref 0.399416 -> P1 0.399494; P1 md5 31f05d91 vs P2 6de43d6e)
+    cold CLI process (compilation inside)                     1       136.53           136.5      1.217x   35.09    71.42   0.25  31f05d91   PIX
+    warm inductor/FX cache, new CLI process                   1        83.63            83.6      1.987x   34.90    24.74   0.26  6de43d6e   PIX
+    2nd clip in a persistent process (P4 rep 1)               1        84.62            84.6      1.964x   34.64    31.00  -0.00  76e77513   PIX
+
+===== 0301 @ 1024x1792 ==========================================================================================
+  config                                                      n end-to-end s          (each) x vs origin  UNet s VAEdec s  w0 xs       md5  gate
+  -- BASELINES
+  deployed origin 8x2@1.01                                    1       599.03           599.0      1.000x  405.43   125.64   0.00  ac6d9295  PASS
+  deliverable T5@1.00 (as shipped today)                      1       311.72           311.7      1.922x  117.49   125.51   5.19  2e5ccd8c  PASS
+  -- TIER 1  bit-exact, single-clip CLI process (md5 == A3)
+  deliverable T5 + identity fixes F5-F9                       1       278.01           278.0      2.155x  112.61   105.96   0.25  2e5ccd8c  PASS
+  -- TIER 3  PIXEL: + torch.compile(vae.decoder) [F10, gate judged at 576]
+    cold CLI process (compilation inside)                     -  (not rendered)
+
+end-to-end = python start -> exit of a single-clip CLI process (driver wall-clock inside the GPU-0 lock; nothing else on
+  GPU 0), except TIER 2 / persistent rows = that clip's own run time inside a process that already rendered one clip
+  (model reload still included; no python start-up/import; no autotune).  'w0 xs' = first UNet forward minus the second.
+md5 gate = pre-encode sbs md5 equals the reference render of the same model+resolution (576: the speed-lane references
+  a41b432b / 2e533d77; 1792: this lane's A3/A4).  PIX = pixel-changing, judged by the LPIPS gate in the TIER 3 header.
+HARNESS NOTE: every row runs the same lossless harness, which md5s the sbs (and anaglyph) arrays and writes FFV1
+  (~2.2 s of md5 at 576, ~3x that at 1792); the deployed CLI instead writes mp4v sbs+anaglyph (write_bench_v1: ~3.0 s at
+  576).  Ratios are like-for-like; absolute seconds carry the harness.

@@ -1,0 +1,2 @@
+PASS outputs/more_20261004/teacher/clips/0301_X1s50  frames=151 (ref 151)  roundtrip(full decode md5 == writer md5)=True [24022064b05e3ea97ff1baf5abed04c9]  left==origin@1.01 left=True [7ca2a3ff1c13c342c8662191d82a9141]  ref_roundtrip=True
+SUMMARY checked=1 failed=0

@@ -1,0 +1,118 @@
+PRE-REGISTRATION -- more_20261004 / teacher lane (GPU 1 only)
+Written 2026-10-04 ~13:40 JST, BEFORE any scorer call by this lane: no score_clip_ll.py (or any other quality
+scorer) has been run by this lane at the time of writing.  The only jobs submitted so far are chain A (CPU/GPU
+scheduler unit tests, the md5 gate render, 2-window smokes), none of which is scored.
+
+QUESTION  Is there a better TEACHER than 25-step Euler (s25) for the frozen origin UNet, i.e. a sampler that, at
+          matched compute (~25 UNet evaluations per 14-frame window), beats s25 on real-GT LPIPS -- so that the
+          step distillation (which captured ~90 % of s25's gain) could reach higher?
+
+-------------------------------------------------------------------------------------------------------------------
+FIXED SETTINGS (identical to the s25 reference render)
+-------------------------------------------------------------------------------------------------------------------
+UNet      plain origin (no unet state; MAMBA_SELF_ATTN_INCLUDE='__nomatch__', other MAMBA_* unset)
+Pipeline  config/0160_overfit_inference_matched.json via scripts/distill/runs/fulldata_v2/beyond4/infer_lossless.py
+          (FFV1 writer), bf16, 14-frame windows overlap 3, 576x1024 centre crop, noise_seed 1234,
+          guidance 1.01 (min = max; CFG ACTIVE -> every UNet evaluation is batch 2)
+Grid      Karras rho=7, sigma_max 700, sigma_min 0.002, taken from the pipeline's OWN EulerDiscreteScheduler
+          (set_timesteps(N)); UNet timestep t = 0.25*ln(sigma_eval); c_in, x0hat = diffusers' v_prediction formulas
+Sampler   scripts/distill/runs/more_20261004/teacher/teacher_sched_v1.py (TeacherScheduler), installed by
+          infer_ll_hook_teacher_v1.py (copy of the speed-lane hook); driver run_driver_teacher_v1.sh (flock GPU 1)
+Scorer    scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py UNCHANGED, SCORE_STEP=4, FFV1 renders only.
+          LPIPS = ROW lpips; sharpness = ROW sharp; GT sharpness = ROW gtSharp.  Lower LPIPS is better.
+Clips     regime set 0301 0204 0052 0147
+
+REFERENCE s25: origin, Euler, N=25, guidance 1.01 = the EXISTING renders outputs/beyond4_lossless/clips/<clip>_s25_ll
+          (2026-10-01), rescored by this lane (I6).  Context row (cited, not a criterion): deployed origin 8-step
+          from scripts/distill/runs/beyond_distil_mamba_scaled/TABLE_HEADLINE_12CLIP.txt.
+
+CANDIDATES (all origin, guidance 1.01, RNG-padded to 25 CUDA draws per window -> PAIRED with s25: every window
+starts from s25's initial latents)
+  H13  heun        N=13  EDM Algorithm 1 (deterministic Heun; last step plain Euler)          25 evals/window
+  D16  dpmpp2m     N=16  DPM-Solver++(2M), k-diffusion sample_dpmpp_2m                       16 evals/window
+  D25  dpmpp2m     N=25  same                                                                25 evals/window
+  C25  euler_churn N=25  EDM Algorithm 2 without the Heun correction; S_churn=5 -> gamma=0.2 on the steps with
+                         sigma_i in [S_tmin, S_tmax] = [0.05, 50] (i = 9..21 of 25); S_noise 1.003; noise injected
+                         BEFORE the UNet call, UNet evaluated at (x_hat, sigma_hat); eps = the per-step draw Euler
+                         makes anyway (RNG stream identical to s25)                            25 evals/window
+  C25b euler_churn N=25  S_churn=10 (gamma=0.4, ~the sqrt2-1 cap), same window -- CONDITIONAL, see S1.
+
+-------------------------------------------------------------------------------------------------------------------
+INTEGRITY GATES (a failure blocks scoring/using the affected rows until fixed)
+-------------------------------------------------------------------------------------------------------------------
+I1  GATE: TeacherScheduler mode=euler, N=25, NO pad, 0301 reproduces the s25 pre-encode md5
+    72eb725755dd97457d9eebcebc7654a5 (outputs/beyond4_lossless/clips/0301_s25_ll/writer_md5.txt).
+I2  GPU unit test (test_teacher_sched_v1.py gpu): mode=euler and euler_churn(S_churn=0) bit-exact against the LIVE
+    diffusers EulerDiscreteScheduler (scale_model_input + prev_sample, N=8 and 25, bf16 CUDA), CUDA RNG state equal
+    after the window; heun13 / dpm16 / dpm25 padded to 25 leave the CUDA RNG state exactly where 25-step Euler does.
+    (CPU test already PASSED before this file: global error order 1 / 2 / 2 for euler / heun / dpmpp2m on an
+    analytic Gaussian-mixture denoiser driven through the same interface; churn(S_churn=0) bitwise == euler;
+    churn converges to the data marginal as N grows -- test_cpu_v2.log, test_churn_convergence_v1.log.)
+I3  per-window initial-latent fingerprints: every candidate render on 0301 == the I1 gate render's; on the other
+    clips all candidates on the same clip agree with each other.
+I4  every UNet evaluation receives t == scheduler.timesteps[k] == 0.25*ln(sigma_eval[k]) (asserted in-process;
+    a violation aborts the render).  UNet calls per window == 25 / 16 / 25 / 25 as listed.
+I5  pass-through: decoded FFV1 full-array md5 == writer md5, decoded LEFT half bit-identical to origin_ll's left half
+    (copy of the speed lane's check_passthrough_v1.py).
+I6  scorer reproduction: rescoring the existing s25 renders reproduces TABLE_HEADLINE_12CLIP.txt's s25 row
+    0301 0.3986, 0204 0.1897, 0052 0.4384, 0147 0.5220 within +-0.0001.
+SMOKE (never scored): 2-window renders of H13/D16/D25/C25 on 0301 must complete with I4 passing, window-1 fingerprint
+    == the gate's window 1, finite output.  Reported alarm (not a gate): decoded right-half PSNR vs s25 over the
+    smoke's frames; for the deterministic solvers it is expected to exceed PSNR(origin 8-step, s25) -- if not,
+    investigate before the full render.
+
+-------------------------------------------------------------------------------------------------------------------
+STAGED DESIGN (sequential, to fit ~60-90 GPU-min)
+-------------------------------------------------------------------------------------------------------------------
+S1  Stage 1a: H13, D16, D25, C25 rendered on 0301 (the most step-sensitive clip: it carried 0.0365 of s25's
+    0.0653 summed 4-clip gain over the deployed 8 steps, i.e. 56 %).
+    FUTILITY SCREEN F1: a candidate continues iff  LPIPS_0301(cand) - LPIPS_0301(s25) <= -0.003.
+      rationale: PASS needs a 4-clip mean gain >= 0.005 (summed >= 0.020); without >= 0.003 on 0301 the other three,
+      less responsive clips would have to average >= 0.0057 each.
+    CONDITIONAL C25b: rendered on 0301 iff C25's 0301 delta is <= +0.002 (i.e. C25 passes F1 or is within the
+      seed-noise band of s25); C25b then faces the same F1.  If C25 is worse than s25 by more than 0.002 on 0301,
+      more churn is not tried.
+S2  Stage 2: each F1 survivor is rendered on 0052 FIRST, then 0204 and 0147.
+    FUTILITY SCREEN F2 (after 0052): stop the candidate if LPIPS_0052(cand) - LPIPS_0052(s25) > +0.002 OR
+      sharp/GT_0052(cand) > sharp/GT_0052(s25) + 0.02 (0052 is a clip where s25 already overshoots GT sharpness).
+    If more F1 survivors exist than the budget allows, they are run in order of their 0301 delta (best first).
+
+-------------------------------------------------------------------------------------------------------------------
+PASS CRITERION (per candidate, on the 4 regime clips; only candidates that reach all 4 clips can PASS)
+-------------------------------------------------------------------------------------------------------------------
+P1  mean4 LPIPS(cand) - mean4 LPIPS(s25) <= -0.005
+P2  sharpness does not overshoot GT more than s25 does: on every regime clip where s25's sharp/gtSharp > 1
+    (expected 0052, 0147 from the headline table; decided from this lane's own rescore), the candidate's
+    sharp/gtSharp <= s25's + 0.02 (0.02 ~ the largest seed-realisation sh/GT spread on these clips in
+    finalcheck speed TABLE_POSTHOC_T5G100_UNPADDED.txt).
+    Also reported: mean over the 4 clips of max(0, sharp/gtSharp - 1) for candidate and s25.
+PASS = P1 and P2.  A candidate stopped by F1 or F2 is reported as FAIL (futility) with every number it produced.
+Reported for every candidate: per-clip LPIPS, delta vs s25 and vs deployed origin 8-step, sharp/GT, rightPSNR,
+UNet evaluations per window, batch size, process seconds.
+
+-------------------------------------------------------------------------------------------------------------------
+IF A CANDIDATE PASSES -- the re-distillation estimate
+-------------------------------------------------------------------------------------------------------------------
+Deterministic winner (H13/D16/D25): measure the CEILING the existing objective could be trained toward -- the
+  oracle analogue of beyond_distil's oracle_m4_456 (the deployed 8-step sampler with ONLY the coarse steps k=4,5,6
+  replaced by the winner's integrator between sigma_k and sigma_k+1, everything else deployed), on 0301 (more clips
+  if budget remains).  Expected student capture = 0.9 x the oracle's gain over deployed (the Euler teacher's
+  student captured 90.8 % of s25's gain, beyond_distil/RESULTS.txt).  NB a DPM++2M win may not transfer: its
+  multistep history does not exist inside one coarse interval.
+Stochastic winner (C25/C25b): NOT distillable by the deterministic local-target objective (the student would learn
+  the churned step's conditional mean); reported as such, no 90 % extrapolation.
+Cost of re-distilling = mstudent2's MEASURED 5.6 GPU-h (training 2.39 GPU-h incl. target capture 2657 s; 49 renders
+  2.46; bench 0.34; scoring ~0.4; beyond_distil_mamba_scaled/RESULTS.txt) with the capture part scaled by the new
+  teacher's UNet evaluations per target point.
+
+-------------------------------------------------------------------------------------------------------------------
+SECONDARY (non-gating; budget permitting, in this order)
+-------------------------------------------------------------------------------------------------------------------
+X1  lossless origin Euler s50 on 0301 (ODE-convergence anchor; the only s50 renders, outputs/fulldata_v2/clips/
+    *_origin_s50, are mp4v and are NOT used for any number).  Rendered RNG-PAIRED with s25 through a copy of the
+    scheduler (teacher_sched_v2.py, created after chain A so no running process sees an edited file) whose Euler
+    variant skips the unused per-step draw and pads to 25 -- the update math is the same code; checked bitwise
+    against mode=euler at N=25 before use.  If that check fails, X1 runs unpaired (50 draws/window) and is
+    labelled so.
+X2  distances between decoded right halves on 0301 (PSNR H13 vs D25 vs s25 vs X1): are the higher-order solvers
+    closer to each other than to s25 (i.e. near the ODE solution)?

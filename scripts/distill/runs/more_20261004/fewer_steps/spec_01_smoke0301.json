@@ -1,0 +1,31 @@
+{
+ "title": "SMOKE / FUTILITY SCREEN (clip 0301 only) -- deliverable at guidance 1.00, RNG padded to 8, schedules below T5. Ref = deliverable T5 @1.00 padded. LOSSLESS FFV1, real-GT LPIPS. A 0301 delta > +0.005 vs ref is a definitive FAIL (P-b).",
+ "clips": ["0301"],
+ "origin_ref": "origin_ll",
+ "rows": [
+  {"label": "origin_ll",                  "name": "origin 8-step @1.01 (8x2) DEPLOYED", "ref": null},
+  {"label": "origin_g100_T5pad",          "name": "origin T5 @1.00 pad (5x1)",        "ref": "origin_ll"},
+  {"label": "origin_g100_T4bpad",         "name": "origin T4b @1.00 pad (4x1)",       "ref": "origin_g100_T5pad"},
+  {"label": "origin_g100_T4apad",         "name": "origin T4a @1.00 pad (4x1)",       "ref": "origin_g100_T5pad"},
+  {"label": "origin_g100_T3pad",          "name": "origin T3 @1.00 pad (3x1)",        "ref": "origin_g100_T5pad"},
+  {"label": "mstudent2_step800_deliv_ll", "name": "deliverable 8-step @1.01 DEPLOYED", "ref": null},
+  {"label": "deliv_g100_T5pad",           "name": "deliverable T5 @1.00 pad REF",     "ref": "mstudent2_step800_deliv_ll"},
+  {"label": "deliv_g100_T5pad_rep",       "name": "deliv T5 @1.00 pad (C1 re-render)", "ref": "deliv_g100_T5pad"},
+  {"label": "deliv_g100_T4bpad",          "name": "deliv T4b [700,7.28,1.17,.097]",   "ref": "deliv_g100_T5pad"},
+  {"label": "deliv_g100_T4apad",          "name": "deliv T4a [700,7.28,1.17,.002]",   "ref": "deliv_g100_T5pad"},
+  {"label": "deliv_g100_T3pad",           "name": "deliv T3  [700,1.17,.002]",        "ref": "deliv_g100_T5pad"},
+  {"label": "deliv_g100_T3bpad",          "name": "deliv T3b [700,7.28,1.17]",        "ref": "deliv_g100_T5pad"},
+  {"label": "deliv_g100_T3cpad",          "name": "deliv T3c [700,7.28,.097]",        "ref": "deliv_g100_T5pad"},
+  {"label": "deliv_g100_T3dpad",          "name": "deliv T3d [700,1.17,.097]",        "ref": "deliv_g100_T5pad"}
+ ],
+ "criteria": [
+  {"name": "FUTILITY T4b (0301 <= +0.005)", "row": "deliv_g100_T4bpad", "ref": "deliv_g100_T5pad", "mean_max": 0.005, "clip_max": 0.005, "sharp_band": null, "gating": true},
+  {"name": "FUTILITY T4a (0301 <= +0.005)", "row": "deliv_g100_T4apad", "ref": "deliv_g100_T5pad", "mean_max": 0.005, "clip_max": 0.005, "sharp_band": null, "gating": true},
+  {"name": "FUTILITY T3 (0301 <= +0.005)",  "row": "deliv_g100_T3pad",  "ref": "deliv_g100_T5pad", "mean_max": 0.005, "clip_max": 0.005, "sharp_band": null, "gating": true},
+  {"name": "FUTILITY T3b (0301 <= +0.005)", "row": "deliv_g100_T3bpad", "ref": "deliv_g100_T5pad", "mean_max": 0.005, "clip_max": 0.005, "sharp_band": null, "gating": true},
+  {"name": "FUTILITY T3c (0301 <= +0.005)", "row": "deliv_g100_T3cpad", "ref": "deliv_g100_T5pad", "mean_max": 0.005, "clip_max": 0.005, "sharp_band": null, "gating": true},
+  {"name": "FUTILITY T3d (0301 <= +0.005)", "row": "deliv_g100_T3dpad", "ref": "deliv_g100_T5pad", "mean_max": 0.005, "clip_max": 0.005, "sharp_band": null, "gating": true},
+  {"name": "reported: deliv T4b vs DEPLOYED deliverable 8x2@1.01 (cumulative)", "row": "deliv_g100_T4bpad", "ref": "mstudent2_step800_deliv_ll", "mean_max": 0.002, "clip_max": 0.005, "sharp_band": null, "gating": false},
+  {"name": "reported: deliv T4a vs DEPLOYED deliverable 8x2@1.01 (cumulative)", "row": "deliv_g100_T4apad", "ref": "mstudent2_step800_deliv_ll", "mean_max": 0.002, "clip_max": 0.005, "sharp_band": null, "gating": false}
+ ]
+}

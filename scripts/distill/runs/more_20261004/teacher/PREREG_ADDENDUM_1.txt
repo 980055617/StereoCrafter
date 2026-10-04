@@ -1,0 +1,37 @@
+PRE-REGISTRATION ADDENDUM 1 -- more_20261004 / teacher lane
+Written 2026-10-04 ~14:22 JST, BEFORE the window-0 diagnostic (jobs_02_diag.txt) has produced any output and BEFORE
+any Stage-1a render exists or any candidate is scored.  The only score this lane has produced is the I6 rescore of
+the EXISTING s25 reference renders (SCORES_I6_s25.txt: 0.3986 / 0.1897 / 0.4384 / 0.5220, I6 PASS), which is the
+reference, not a candidate.  Nothing in PREREG.txt's P1/P2/F1/F2 rules is changed.
+
+Why: the smoke alarm (INVESTIGATION_smoke_alarm.txt) showed that the matched-compute higher-order solvers are NOT
+necessarily closer to the ODE solution than Euler-25 (toy: Heun-13 RMS 0.187 to the ODE limit vs Euler-25 0.103).
+So a matched-compute FAIL of H13/D16/D25 would not answer whether a MORE ACCURATE teacher could beat s25.  Teacher
+compute is spent OFFLINE (target capture), so a converged teacher is a legitimate distillation target.
+
+A. WINDOW-0 CONVERGENCE DIAGNOSTIC -- decision rule fixed before the numbers exist (non-gating for P1/P2)
+   Matrix: pairwise PSNR of decoded right halves, clip 0301, frames 0-13 (window 0, initial noise identical in every
+   config): E8 (outputs/beyond4_lossless/clips/0301_origin_ll), E25 (0301_s25_ll), E100 (diag1w_euler100),
+   D16 / D25 (smoke2w_dpm16 / smoke2w_dpm25), D50 (diag1w_dpm50), H13 (smoke2w_heun13), H25 (diag1w_heun25).
+   CONVERGED  iff PSNR(D50,E100) >= 30 dB and PSNR(D50,H25) >= 30 dB and PSNR(H25,E100) >= 30 dB
+              (i.e. the three families agree with each other better than deployed Euler-8 agrees with s25, 29.26 dB).
+   HEUN FLAG  iff PSNR(D50,E100) >= 30 dB but PSNR(H25,D50) - PSNR(H13,D50) < 3 dB (Heun not approaching the
+              common limit as N doubles).   DPM FLAG analogously with H25/E100 as the limit and D16 -> D25 -> D50.
+   A flagged family is investigated before its Stage-1a row is used.  If no pair reaches 30 dB the diagnostic is
+   INCONCLUSIVE (likely bf16 accumulation over 100 steps), Stage 1a stands on the unit tests + gate.
+
+B. X1 AMENDED -- the converged anchor replaces Euler s50 as the primary secondary
+   If A is CONVERGED: X1 := full-clip D50 (dpmpp2m N=50, 50 UNet evaluations x batch 2 per window, RNG-paired with
+   s25 via pad 25) on 0301, scored like every other row.  It answers "does a converged (more accurate) deterministic
+   teacher beat s25?" independent of matched compute.  Read-out rule, reported (not a P1/P2 gate):
+      LPIPS_0301(D50) - LPIPS_0301(s25) <= -0.003  -> the ODE limit is a better teacher on 0301 (F1-equivalent);
+                                                      D50 then continues to 0052 under F2 and to 0204/0147 if budget
+                                                      allows, judged with P1/P2 exactly like a candidate (it is NOT
+                                                      matched compute and is labelled so).
+      otherwise                                    -> no deterministic teacher, at any compute, beats s25 on 0301.
+   Euler s50 (euler_nd N=50, pad 25) is rendered only if budget remains after that.
+   If A is not CONVERGED, X1 stays Euler s50 as in PREREG.txt.
+C. Reporting: every candidate's window-0 PSNR to the converged limit (D50 if CONVERGED) is reported next to its
+   LPIPS, so a FAIL of a coarse matched-compute solver reads as "coarser ODE approximation", not "ODE accuracy
+   does not help".
+D. Stage-1a order changed (jobs_10_stage1a.txt, before chain B opened it): D16, D25, C25, then H13.  No rule changed.

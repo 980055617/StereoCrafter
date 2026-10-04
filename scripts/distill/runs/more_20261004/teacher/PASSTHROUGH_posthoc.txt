@@ -1,0 +1,3 @@
+PASS outputs/more_20261004/teacher/clips/0147_C25  frames=172 (ref 172)  roundtrip(full decode md5 == writer md5)=True [44bc609ddd948b9fd96033d8c92e82f9]  left==origin@1.01 left=True [06033ea9d37e1f8efa7551d5e17377f4]  ref_roundtrip=True
+PASS outputs/more_20261004/teacher/clips/0052_C25  frames=168 (ref 168)  roundtrip(full decode md5 == writer md5)=True [b3e1197714373eeda014beee4331ddd1]  left==origin@1.01 left=True [0f969d30cc63354f7bfdcf4d5f6bcfc7]  ref_roundtrip=True
+SUMMARY checked=2 failed=0

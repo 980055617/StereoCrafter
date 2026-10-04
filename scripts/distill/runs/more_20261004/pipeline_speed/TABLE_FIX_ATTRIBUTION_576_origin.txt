@@ -1,0 +1,47 @@
+=== 576x1024 deployed origin: A2,A2r -> C3 (model-independent identity set F6-F9; C3 ran at load1 25)
+  baseline renders ['outputs/more_20261004/pipeline_speed/a_576/clips/0301_A2_origin_s8_576', 'outputs/more_20261004/pipeline_speed/c_576/clips/0301_A2r_origin_s8_576'] end-to-end ['166.51', '165.82'] mean 166.16 s
+  fix renders      ['outputs/more_20261004/pipeline_speed/c_576/clips/0301_C3_origin_s8_576_idfix'] end-to-end ['163.43'] mean 163.43 s
+  total change -2.73 s (-1.6 %)
+
+  fix                                                          base s    fix s  delta s
+  F5 pre-filled Triton autotune choices (first UNet call)        0.01     0.00    -0.01
+  F6 skip decoding discarded overlap chunks                     33.86    28.60    -5.26
+  F7 direct GPU post-processing (no PIL round trip)              1.85     0.08    -1.77
+  F8 skip the unused CPU noise_aug randn                         1.09     0.00    -1.09
+  F9 crop-first reader                                           4.75     7.21    +2.46
+  everything else (run-to-run variation, CPU contention)                          +2.93
+
+  all exclusive stages (base -> fix):
+    unet_gpu                         105.30   105.24    -0.06
+    vae_decode                        33.86    28.60    -5.26
+    vae_encode                         9.10     9.18    +0.08
+    read_video                         4.74     7.20    +2.46
+    import                             1.76     2.03    +0.27
+    pipe_to_cuda                       0.63     1.92    +1.29
+    tensor2vid_pil                     1.85     0.00    -1.85
+    ffv1_encode                        1.39     1.55    +0.16
+    write_sbs_md5                      1.08     1.27    +0.20
+    noise_aug_randn_cpu                1.09     0.00    -1.09
+    img_preprocess                     0.68     0.96    +0.29
+    final_assembly                     0.58     0.75    +0.17
+    python_startup                     0.66     0.63    -0.02
+    anaglyph_assembly                  0.56     0.62    +0.05
+    load_unet                          0.47     0.57    +0.10
+    post_convert                       0.40     0.52    +0.11
+    loop_overhead                      0.51     0.51    -0.01
+    clip_encode                        0.29     0.42    +0.13
+    run_tail                           0.34     0.33    -0.01
+    write_anaglyph_md5                 0.31     0.33    +0.02
+    load_clip                          0.22     0.22    +0.01
+    mask_preprocess                    0.09     0.15    +0.06
+    load_other                         0.09     0.11    +0.02
+    mask_encode                        0.05     0.08    +0.03
+    tensor2vid_DIRECT                  0.00     0.08    +0.08
+    load_vae                           0.07     0.05    -0.01
+    load_pipe                          0.01     0.05    +0.04
+    window_misc                        0.01     0.02    +0.01
+    hook_tail                          0.02     0.02    -0.00
+    pre_window_misc                    0.01     0.01    -0.00
+    latent_randn_cuda                  0.00     0.00    +0.00
+    noise_aug_SKIPPED                  0.00     0.00    +0.00
+    center_crop                        0.00     0.00    -0.00

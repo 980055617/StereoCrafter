@@ -1,0 +1,4 @@
+0301=outputs/finalcheck_20261004/speed/clips/0301_deliv_g100_T5pad/0301_inpainting_results_sbs.mkv
+0301=outputs/more_20261004/fewer_steps/clips/0301_deliv_g100_T5pad_rep/0301_inpainting_results_sbs.mkv
+0301=outputs/more_20261004/fewer_steps/clips/0301_deliv_g100_T4bpad/0301_inpainting_results_sbs.mkv
+0301=outputs/more_20261004/fewer_steps/clips/0301_deliv_g100_T4apad/0301_inpainting_results_sbs.mkv

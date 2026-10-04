@@ -1,0 +1,13 @@
+  run                                              1st UNet fwd ms 2nd fwd ms autotune s (printed)       md5
+  s0  default ~/.triton/cache (warm), 2 windows               5247        501     4.73 (5 kernels)  719d6ceb
+  B1b EMPTY TRITON_CACHE_DIR (cold compile)                  34045        500    33.36 (5 kernels)  719d6ceb
+  B1c same TRITON_CACHE_DIR again (warm)                      5357        501     4.85 (5 kernels)  719d6ceb
+  B1d autotune choices pre-filled (SK_AT_LOAD)                 792        501                 none  719d6ceb
+  B1e two clips in ONE process: clip 1                        5282        501     4.77 (5 kernels)  719d6ceb
+  B1e two clips in ONE process: clip 2                         500        501   none (0 new lines)  719d6ceb
+  A1  full clip, default cache (deployed path)                5255        501          not printed  a41b432b
+  C1a full clip, identity set incl. SK_AT_LOAD                 756        499          not printed  a41b432b
+
+s0/B1b/B1c/B1d/B1e(both clips): saved final latents of windows 0 and 1 are bit-identical (compare_latents_v1.py),
+2-window sbs md5 719d6ceb in all of them; A1 (14 windows) chose a different _state_passing_fwd_kernel block size
+(1024 vs 512) than s0 and its latents are still bit-identical -> the remaining autotune choice does not change bits.

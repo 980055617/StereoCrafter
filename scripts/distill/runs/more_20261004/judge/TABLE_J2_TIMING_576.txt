@@ -1,0 +1,16 @@
+judge J2b/J2c re-timing, clip 0301, GPU 0 (RTX 4090), one render at a time, lock held for each whole render
+label                                    process_s  UNet_s VAEdec_s VAEenc_s read_s        load1  md5
+J_A_deliv_T5_576                             99.06   39.33    33.84     9.07   4.21   0.38->1.15  a41b432b
+J_C_deliv_T5_576_idfix                       84.92   34.88    28.59     9.05   2.79   1.15->1.28  a41b432b
+J_O_origin_s8_576                           164.40  105.24    33.84     9.08   4.23   1.28->1.13  2e533d77
+J_OC_origin_s8_576_idfix                    154.61  105.29    28.57     9.06   2.77   1.13->1.14  2e533d77
+J_D_deliv_T5_576_dcs14_fix5789               92.13   34.88    35.73     9.06   2.74   1.14->1.72  88551bf1
+J_OT5_origin_T5g100_576_idfix                85.88   36.36    28.57     9.09   2.77   1.72->1.25  f1b13c21
+
+RATIOS (process seconds)
+  deployed origin / deliverable as shipped (576)                           164.40 /    99.06 = 1.660x
+  deployed origin / deliverable + F5-F9 (576)  [the lane's 1.884x]         164.40 /    84.92 = 1.936x
+  origin + F6-F9 / deliverable + F5-F9 (576)  [like-for-like pipeline]     154.61 /    84.92 = 1.821x
+  origin T5@1.00 + F6-F9 / deliverable T5@1.00 + F5-F9 (576)  [matched sampler]    85.88 /    84.92 = 1.011x
+  deliverable as shipped / + F5-F9 (576)                                    99.06 /    84.92 = 1.167x
+  deliverable dcs14 + F5,F7-F9 / deliverable + F5-F9 (576)  [cost of dcs14]    92.13 /    84.92 = 1.085x

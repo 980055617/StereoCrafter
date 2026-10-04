@@ -1,0 +1,3 @@
+# CLIP LABEL SAMPLER N PAD SCHURN MAXCH  -- PREREG_ADDENDUM_3 (post-hoc, non-gating)
+0147 C25 euler_churn 25 25 5 -
+0052 C25 euler_churn 25 25 5 -

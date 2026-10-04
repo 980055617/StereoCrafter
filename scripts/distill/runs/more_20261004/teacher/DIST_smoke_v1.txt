@@ -1,0 +1,2 @@
+PSNR_right  23.821 dB  meanAbs 11.0765  frames 14  A=outputs/more_20261004/teacher/clips/0301_smoke2w_heun13/0301_inpainting_results_sbs.mkv  B=outputs/beyond4_lossless/clips/0301_s25_ll/0301_inpainting_results_sbs.mkv
+PSNR_right  28.129 dB  meanAbs 6.3230  frames 14  A=outputs/more_20261004/teacher/clips/0301_smoke2w_dpm16/0301_inpainting_results_sbs.mkv  B=outputs/beyond4_lossless/clips/0301_s25_ll/0301_inpainting_results_sbs.mkv

@@ -1,0 +1,61 @@
+stage group                           A4_origin     A3_deliv    C2_dl_fix
+-------------------------------------------------------------------------
+python start+import                        2.13         2.18         2.26
+model load                                 1.22         1.99         2.07
+video read+prep                            4.26         4.24         3.70
+CLIP encode                                0.64         0.61         0.65
+CPU preprocess                             5.54         5.46         2.38
+VAE encode                                35.73        35.69        35.78
+UNet loop                                406.65       118.63       113.26
+VAE decode                               125.64       125.51       105.96
+post (latent->frames)                      6.32         6.28         1.22
+final assembly+write                      10.90        11.07        10.73
+instrumentation (save latents)             0.02         0.04         0.02
+-------------------------------------------------------------------------
+END-TO-END (reference seconds)           599.03       311.72       278.01
+  of which UNet GPU (CUDA events)        405.43       117.49       112.61
+  of which window-0 excess                -0.03         5.17         0.24
+  non-UNet share of end-to-end            32.3%        62.3%        59.5%
+unattributed (s)                           0.00         0.00         0.00
+md5 (pre-encode sbs)                   ac6d9295     2e5ccd8c     2e5ccd8c
+
+A4_origin: outputs/more_20261004/pipeline_speed/a_1792/clips/0301_A4_origin_s8_1792  rep=0  process_s=599.03  windows=14
+A3_deliv: outputs/more_20261004/pipeline_speed/a_1792/clips/0301_A3_deliv_T5_1792  rep=0  process_s=311.72  windows=14
+C2_dl_fix: outputs/more_20261004/pipeline_speed/c_1792/clips/0301_C2_deliv_T5_1792_idfix  rep=0  process_s=278.01  windows=14
+
+Exclusive stage seconds (all named stages):
+  unet_gpu                             405.43       117.49       112.61
+  vae_decode                           125.64       125.51       105.96
+  vae_encode                            35.60        35.57        35.66
+  tensor2vid_pil                         5.21         5.22         0.00
+  read_video                             4.24         4.23         3.68
+  ffv1_encode                            3.31         3.34         3.25
+  write_sbs_md5                          3.32         3.31         3.20
+  noise_aug_randn_cpu                    3.23         3.22         0.00
+  img_preprocess                         1.94         1.87         1.98
+  import                                 1.51         1.54         1.60
+  anaglyph_assembly                      1.51         1.56         1.54
+  final_assembly                         1.38         1.47         1.36
+  loop_overhead                          1.21         1.14         0.64
+  post_convert                           1.11         1.07         0.88
+  write_anaglyph_md5                     0.87         0.90         0.88
+  load_other                             0.08         0.75         0.75
+  python_startup                         0.62         0.63         0.66
+  clip_encode                            0.64         0.61         0.65
+  pipe_to_cuda                           0.48         0.55         0.54
+  run_tail                               0.50         0.50         0.49
+  load_unet                              0.41         0.42         0.48
+  mask_preprocess                        0.36         0.37         0.40
+  tensor2vid_DIRECT                      0.00         0.00         0.33
+  load_clip                              0.20         0.20         0.22
+  mask_encode                            0.13         0.13         0.12
+  load_vae                               0.05         0.04         0.04
+  load_pipe                              0.01         0.03         0.03
+  save_latents                           0.00         0.02         0.00
+  hook_tail                              0.02         0.02         0.02
+  pre_window_misc                        0.02         0.02         0.02
+  window_misc                            0.01         0.01         0.01
+  torch_load_state                       0.00         0.01         0.01
+  latent_randn_cuda                      0.00         0.00         0.00
+  noise_aug_SKIPPED                      0.00         0.00         0.00
+  center_crop                            0.00         0.00         0.00

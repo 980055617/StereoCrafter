@@ -1,0 +1,6 @@
+PASS outputs/more_20261004/teacher/clips/0301_gate_euler25  frames=151 (ref 151)  roundtrip(full decode md5 == writer md5)=True [72eb725755dd97457d9eebcebc7654a5]  left==origin@1.01 left=True [7ca2a3ff1c13c342c8662191d82a9141]  ref_roundtrip=True
+PASS outputs/more_20261004/teacher/clips/0301_H13  frames=151 (ref 151)  roundtrip(full decode md5 == writer md5)=True [67ed82be572284249638e68d02e9f579]  left==origin@1.01 left=True [7ca2a3ff1c13c342c8662191d82a9141]  ref_roundtrip=True
+PASS outputs/more_20261004/teacher/clips/0301_D16  frames=151 (ref 151)  roundtrip(full decode md5 == writer md5)=True [0e228360b81c45715fe304b4a21323a6]  left==origin@1.01 left=True [7ca2a3ff1c13c342c8662191d82a9141]  ref_roundtrip=True
+PASS outputs/more_20261004/teacher/clips/0301_D25  frames=151 (ref 151)  roundtrip(full decode md5 == writer md5)=True [61588b5f60b7f712e6e91e1abc972e41]  left==origin@1.01 left=True [7ca2a3ff1c13c342c8662191d82a9141]  ref_roundtrip=True
+PASS outputs/more_20261004/teacher/clips/0301_C25  frames=151 (ref 151)  roundtrip(full decode md5 == writer md5)=True [c9814ce9a125354727ae58a68ae684d5]  left==origin@1.01 left=True [7ca2a3ff1c13c342c8662191d82a9141]  ref_roundtrip=True
+SUMMARY checked=5 failed=0

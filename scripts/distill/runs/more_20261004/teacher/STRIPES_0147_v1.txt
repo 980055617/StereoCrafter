@@ -1,0 +1,21 @@
+=== 0147 WHOLE 576x1024 WINDOW, n=19 frames (step 8), GT regions = DISPARITY-REGISTERED (-1,-41) ===
+label                     haloFrac%  haloMean    flatHF  flatHF/GT    edgeHF  edgeHF/GT   stripeE  stripeE/GT
+GT                            0.000   0.00000   0.00324      1.000   0.04225      1.000   0.00062       1.000
+origin8                      27.423   0.04319   0.00438      1.350   0.02376      0.562   0.00283       4.572
+s25                          27.922   0.04384   0.00521      1.606   0.02485      0.588   0.00329       5.313
+  haloFrac% = % of GT-edge pixels whose value falls outside the GT's own 3x3 [min,max] by >0.04 (halo/ringing)
+  flatHF    = mean |Laplacian| inside GT-flat regions (noise / amplified splatting texture)   <- ARTEFACT
+  edgeHF    = mean |Laplacian| inside the GT's top-decile gradient regions (detail at edges)  <- DETAIL
+  stripeE   = mean |horizontal difference| inside GT-flat regions (splatting-stripe energy)   <- ARTEFACT
+  definitions verbatim from scripts/distill/runs/fulldata_v2/beyond4/ringing_metrics.py
+  prior 4-clip whole-frame version: scripts/distill/runs/skeptic1/RINGING_STUDENT.txt
+=== 0147 WHOLE 576x1024 WINDOW, n=19 frames (step 8), GT regions = DISPARITY-REGISTERED (-1,-41) ===
+label                     haloFrac%  haloMean    flatHF  flatHF/GT    edgeHF  edgeHF/GT   stripeE  stripeE/GT
+GT                            0.000   0.00000   0.00324      1.000   0.04225      1.000   0.00062       1.000
+C25_churn5                   27.519   0.04312   0.00498      1.534   0.02414      0.571   0.00315       5.078
+  haloFrac% = % of GT-edge pixels whose value falls outside the GT's own 3x3 [min,max] by >0.04 (halo/ringing)
+  flatHF    = mean |Laplacian| inside GT-flat regions (noise / amplified splatting texture)   <- ARTEFACT
+  edgeHF    = mean |Laplacian| inside the GT's top-decile gradient regions (detail at edges)  <- DETAIL
+  stripeE   = mean |horizontal difference| inside GT-flat regions (splatting-stripe energy)   <- ARTEFACT
+  definitions verbatim from scripts/distill/runs/fulldata_v2/beyond4/ringing_metrics.py
+  prior 4-clip whole-frame version: scripts/distill/runs/skeptic1/RINGING_STUDENT.txt

@@ -1,0 +1,21 @@
+VAE DECODE FEASIBILITY PROBE (descriptive; memory/time only, NOT a quality number) -- source outputs/more_20261004/temporal/scores/vae_decode_probe_v1.json (script vae_decode_probe_v1.py, GPU 1, under the lock)
+Setup: CLIP image encoder + SVD temporal VAE + base StereoCrafter UNet resident in bf16 (the deliverable's 5 Mamba
+blocks NOT loaded, sampling leftovers NOT present -> peaks are APPROXIMATE); one 14-frame window of random latents
+decoded with decode_latents' chunk loop; peak = torch.cuda.max_memory_allocated during the decode; time = median of 3
+after a warm-up.  Weights resident: 4.20 GiB of 23.52 GiB (RTX 4090).
+
+        H x W  dcs  peak GiB  decode s/window  note
+   576 x 1024    2      6.50            2.482
+   576 x 1024    7     12.11            2.571
+   576 x 1024   14     19.96            2.618
+  1024 x 1792    2     11.33            9.223
+  1024 x 1792    7       OOM                -  CUDA out of memory. Tried to allocate 12.25 GiB. GPU 0 has a total cap
+  1024 x 1792   14       OOM                -  CUDA out of memory. Tried to allocate 6.12 GiB. GPU 0 has a total capa
+  1024 x 1920    2     11.84            9.948
+  1024 x 1920    7       OOM                -  CUDA out of memory. Tried to allocate 13.12 GiB. GPU 0 has a total cap
+  1024 x 1920   14       OOM                -  CUDA out of memory. Tried to allocate 13.12 GiB. GPU 0 has a total cap
+
+Reading: at 576x1024 decoding the whole 14-frame window fits (peak ~20 GiB) for +5 % decode time; at 1024x1792 and
+1024x1920 even decode_chunk_size 7 runs out of memory on a 24 GB card with the stock decoder, so the dcs14 result does
+NOT transfer to the hi-res speed-claim resolutions without a decoder change (e.g. sliced VAE attention and/or
+temporally overlapped chunked decoding) -- untested here; its quality/flicker effect at hi-res is unmeasured.

@@ -1,0 +1,8 @@
+0268 d8_deliv_g101_s8 vs o8: 14/14 windows identical (expected all windows) -> PASS pad_draws_total=0 calls/win=[8] batch=[2]
+0268 o5p_origin_g100_T5pad vs o8: 14/14 windows identical (expected all windows) -> PASS pad_draws_total=42 calls/win=[5] batch=[1]
+0268 d5p_deliv_g100_T5pad vs o8: 14/14 windows identical (expected all windows) -> PASS pad_draws_total=42 calls/win=[5] batch=[1]
+0268 d5n_deliv_g100_T5nat vs o8: 1/14 windows identical (expected window 0 only (unpadded)) -> PASS pad_draws_total=0 calls/win=[5] batch=[1]
+0082 d8_deliv_g101_s8 vs o8: 15/15 windows identical (expected all windows) -> PASS pad_draws_total=0 calls/win=[8] batch=[2]
+0082 o5p_origin_g100_T5pad vs o8: 15/15 windows identical (expected all windows) -> PASS pad_draws_total=45 calls/win=[5] batch=[1]
+0082 d5p_deliv_g100_T5pad vs o8: 15/15 windows identical (expected all windows) -> PASS pad_draws_total=45 calls/win=[5] batch=[1]
+0082 d5n_deliv_g100_T5nat vs o8: 1/15 windows identical (expected window 0 only (unpadded)) -> PASS pad_draws_total=0 calls/win=[5] batch=[1]

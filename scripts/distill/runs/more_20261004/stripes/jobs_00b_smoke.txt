@@ -1,0 +1,7 @@
+# smoke 0301: A rowlin/keep, B telea/keep, C rowlin/shrink, for deliv T5nat@1.00 and origin 8x2@1.01
+0301 deliv_g100_T5nat_A_rowlin deliv 1.00 700.0,7.276163101196289,1.1675708293914795,0.09738767892122269,0.0020000000949949026 - rowlin keep
+0301 origin_g101_s8_A_rowlin origin 1.01 - - rowlin keep
+0301 deliv_g100_T5nat_B_telea deliv 1.00 700.0,7.276163101196289,1.1675708293914795,0.09738767892122269,0.0020000000949949026 - telea keep
+0301 origin_g101_s8_B_telea origin 1.01 - - telea keep
+0301 deliv_g100_T5nat_C_rowlinshrink deliv 1.00 700.0,7.276163101196289,1.1675708293914795,0.09738767892122269,0.0020000000949949026 - rowlin shrink
+0301 origin_g101_s8_C_rowlinshrink origin 1.01 - - rowlin shrink

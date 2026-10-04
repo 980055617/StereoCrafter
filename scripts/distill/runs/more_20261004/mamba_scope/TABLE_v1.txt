@@ -1,0 +1,201 @@
+======================================================================================================================================================
+more_20261004 / mamba_scope -- does replacing the 5 LEVEL-1 spatial attn1 slots with Mamba buy >= 10 % extra UNet time at 1024x1792?
+run dir outputs/more_20261004/mamba_scope/run_v1;  rules: scripts/distill/runs/more_20261004/mamba_scope/PREREG.txt;  BS=1, fp16, 14 frames, synthetic, no weights
+  versions.txt:
+     python 3.11.15 torch 2.4.0 cuda 12.1 diffusers 0.29.2 gpu NVIDIA GeForce RTX 4090
+  script_md5.txt:
+     c439daf2f5829a2dfd7d1802fc985f73  scripts/distill/bench2.py
+     88aaf104207829e2678fa11045d2c08d  /home/kawa/master_project/StereoCrafter/scripts/distill/runs/more_20261004/mamba_scope/bench_slots16_v1.py
+     c1ae5d4c40e60fc461bdadce542cf728  scripts/distill/runs/slotbudget/bench_slots_v2.py
+     2c53ee0aa6f89c838c1460437e2ee3b1  /home/kawa/master_project/StereoCrafter/scripts/distill/runs/more_20261004/mamba_scope/run_v1.sh
+  passB_copy_diff.txt:
+     72,73c72,74
+     < SLOTS = [f"down_blocks.0.attentions.{i}.transformer_blocks.0.attn1" for i in (0, 1)] + \
+     <         [f"up_blocks.3.attentions.{i}.transformer_blocks.0.attn1" for i in (0, 1, 2)]
+     ---
+     > SLOTS = [f"down_blocks.{b}.attentions.{i}.transformer_blocks.0.attn1" for b in (0, 1, 2) for i in (0, 1)] + \
+     >         ["mid_block.attentions.0.transformer_blocks.0.attn1"] + \
+     >         [f"up_blocks.{b}.attentions.{i}.transformer_blocks.0.attn1" for b in (1, 2, 3) for i in (0, 1, 2)]  # MAMBA_SCOPE COPY: all 16 spatial attn1 slots
+     98c99
+     <     assert len(state["modules"]) == 5, f"expected 5 hooked slots, got {sorted(state['modules'])}"
+     ---
+     >     assert len(state["modules"]) == 16, f"expected 16 hooked slots, got {sorted(state['modules'])}"  # MAMBA_SCOPE COPY
+     106c107
+     < JSON = os.environ.get("SB_JSON") or f"{REPO}/scripts/distill/runs/slotbudget/profiles/{LABEL}.json"
+     ---
+     > JSON = os.environ.get("SB_JSON") or f"{REPO}/outputs/more_20261004/mamba_scope/profiles/{LABEL}.json"  # MAMBA_SCOPE COPY
+======================================================================================================================================================
+  pass A processes with RESULT: 36 (expected 36);  pass B: 18 (expected 18);  FAILED lines: 0
+  G1 instrumentation: PASS
+  G2 VRAM anchor (+-4 MiB vs finalcheck BS=1): PASS
+     576x1024  origin  peak   5075.0 MiB  anchor 5075  ok
+     576x1024  mamba5  peak   5081.0 MiB  anchor 5081  ok
+     1024x1792  origin  peak   9570.0 MiB  anchor 9570  ok
+     1024x1792  mamba5  peak   9575.0 MiB  anchor 9575  ok
+     1024x1920  origin  peak  10040.0 MiB  anchor 10040  ok
+     1024x1920  mamba5  peak  10047.0 MiB  anchor 10047  ok
+  G3 timing anchor (+-1.5 % means, +-1.0 pt share vs finalcheck BS=1): PASS
+     576x1024  origin  0.4849 s vs 0.4857  (-0.16 %)  ok
+     576x1024  mamba5  0.4611 s vs 0.4587  (+0.53 %)  ok
+     576x1024  share   0.9510 vs 0.9445  (+0.65 pt)  ok
+     1024x1792  origin  1.8759 s vs 1.8792  (-0.18 %)  ok
+     1024x1792  mamba5  1.4951 s vs 1.4953  (-0.02 %)  ok
+     1024x1792  share   0.7970 vs 0.7957  (+0.13 pt)  ok
+     1024x1920  origin  2.0577 s vs 2.0603  (-0.13 %)  ok
+     1024x1920  mamba5  1.6158 s vs 1.6159  (-0.01 %)  ok
+     1024x1920  share   0.7852 vs 0.7843  (+0.09 pt)  ok
+  G4 GPU-0 exclusivity before every process: PASS
+  GPU 1 (other lanes) during the run: samples 802, util>0 in 322 (40 %), max util 100 %, max mem 9669 MiB; compute apps seen on GPU 1: ['python']
+
+======================================================================================================================================================
+PASS A -- whole-UNet forward, scripts/distill/bench2.py UNMODIFIED, BS=1 (n=3 processes; +- = half-range; reps-outer)
+======================================================================================================================================================
+  res(HxW)    config    n    s/fwd      +-  prec%  vs origin  vs mamba5  peakMiB dMiB vs m5
+  576x1024   origin    3   0.4849  0.0007   0.13     +0.00%     +5.15%     5075         -6
+  576x1024   mamba5    3   0.4611  0.0030   0.65     -4.90%     +0.00%     5081         +0
+  576x1024   mamba10   3   0.4634  0.0043   0.93     -4.43%     +0.49%     5111        +30
+  576x1024   all16     3   0.4721  0.0097   2.05!    -2.65%     +2.37%     5237       +156
+
+  1024x1792   origin    3   1.8759  0.0020   0.11     +0.00%    +25.47%     9570         -5
+  1024x1792   mamba5    3   1.4951  0.0010   0.07    -20.30%     +0.00%     9575         +0
+  1024x1792   mamba10   3   1.4632  0.0017   0.12    -22.00%     -2.13%     9605        +30
+  1024x1792   all16     3   1.4671  0.0046   0.31    -21.79%     -1.87%     9731       +156
+
+  1024x1920   origin    3   2.0577  0.0006   0.03     +0.00%    +27.35%    10040         -7
+  1024x1920   mamba5    3   1.6158  0.0005   0.03    -21.48%     +0.00%    10047         +0
+  1024x1920   mamba10   3   1.5792  0.0018   0.11    -23.25%     -2.26%    10077        +30
+  1024x1920   all16     3   1.5812  0.0036   0.23    -23.16%     -2.14%    10203       +156
+
+======================================================================================================================================================
+THE NUMBER -- extra UNet saving of level-0+1 (mamba10) over the shipped level-0 model (mamba5), BS=1
+  E = 1 - t(mamba10)/t(mamba5)  (ratio of n=3 means; +- = half-range of the per-rep paired ratios);  E_pts = (t5 - t10)/t(origin)
+======================================================================================================================================================
+  576x1024  t(origin) 0.4849  t(mamba5) 0.4611  t(mamba10) 0.4634  t(all16) 0.4721
+     E(mamba10) = -0.49 %  +- 1.23   (per-rep -0.48, -1.74, +0.73)   E_pts = -0.47 pt of origin   mamba10 vs origin -4.43 %  (mamba5 -4.90 %)
+     E(all16, informational) = -2.37 %  +- 1.44   all16 vs origin -2.65 %
+     per-window UNet, T5 @1.00 (5 x BS1) / deployed origin (8 x BS2 = 8 x 0.9612 s, finalcheck run_v1, CROSS-RUN): mamba5 0.2998  mamba10 0.3013  all16 0.3070  origin-T5@1.00 0.3153
+  1024x1792  t(origin) 1.8759  t(mamba5) 1.4951  t(mamba10) 1.4632  t(all16) 1.4671
+     E(mamba10) = +2.13 %  +- 0.17   (per-rep +2.15, +1.95, +2.29)   E_pts = +1.70 pt of origin   mamba10 vs origin -22.00 %  (mamba5 -20.30 %)
+     E(all16, informational) = +1.87 %  +- 0.34   all16 vs origin -21.79 %
+     per-window UNet, T5 @1.00 (5 x BS1) / deployed origin (8 x BS2 = 8 x 3.7127 s, finalcheck run_v1, CROSS-RUN): mamba5 0.2517  mamba10 0.2463  all16 0.2470  origin-T5@1.00 0.3158
+  1024x1920  t(origin) 2.0577  t(mamba5) 1.6158  t(mamba10) 1.5792  t(all16) 1.5812
+     E(mamba10) = +2.26 %  +- 0.10   (per-rep +2.35, +2.14, +2.30)   E_pts = +1.78 pt of origin   mamba10 vs origin -23.25 %  (mamba5 -21.48 %)
+     E(all16, informational) = +2.14 %  +- 0.22   all16 vs origin -23.16 %
+     per-window UNet, T5 @1.00 (5 x BS1) / deployed origin (8 x BS2 = 8 x 4.0591 s, finalcheck run_v1, CROSS-RUN): mamba5 0.2488  mamba10 0.2432  all16 0.2435  origin-T5@1.00 0.3168
+
+======================================================================================================================================================
+INFORMATIONAL (post-hoc): fraction of GPU-1 monitor samples with util > 0 during each pass-A process (other lanes' jobs;
+  GPU 0 itself was exclusive, G4).  Listed per rep next to the s/fwd it may have perturbed (CPU/host contention).
+======================================================================================================================================================
+  576x1024
+     origin   r1 0.4841 s (GPU1 busy   0 %)   r2 0.4852 s (GPU1 busy   0 %)   r3 0.4854 s (GPU1 busy   0 %)
+     mamba5   r1 0.4582 s (GPU1 busy   0 %)   r2 0.4610 s (GPU1 busy   0 %)   r3 0.4642 s (GPU1 busy   0 %)
+     mamba10  r1 0.4604 s (GPU1 busy   0 %)   r2 0.4690 s (GPU1 busy   0 %)   r3 0.4608 s (GPU1 busy  75 %)
+     all16    r1 0.4634 s (GPU1 busy   0 %)   r2 0.4700 s (GPU1 busy  75 %)   r3 0.4828 s (GPU1 busy  22 %)
+  1024x1792
+     origin   r1 1.8733 s (GPU1 busy   0 %)   r2 1.8773 s (GPU1 busy   7 %)   r3 1.8770 s (GPU1 busy  53 %)
+     mamba5   r1 1.4943 s (GPU1 busy   0 %)   r2 1.4946 s (GPU1 busy   0 %)   r3 1.4963 s (GPU1 busy   0 %)
+     mamba10  r1 1.4621 s (GPU1 busy   0 %)   r2 1.4655 s (GPU1 busy   0 %)   r3 1.4621 s (GPU1 busy 100 %)
+     all16    r1 1.4638 s (GPU1 busy   0 %)   r2 1.4730 s (GPU1 busy   6 %)   r3 1.4644 s (GPU1 busy 100 %)
+  1024x1920
+     origin   r1 2.0570 s (GPU1 busy   0 %)   r2 2.0579 s (GPU1 busy   0 %)   r3 2.0582 s (GPU1 busy   6 %)
+     mamba5   r1 1.6154 s (GPU1 busy   0 %)   r2 1.6156 s (GPU1 busy  67 %)   r3 1.6164 s (GPU1 busy  62 %)
+     mamba10  r1 1.5775 s (GPU1 busy   0 %)   r2 1.5810 s (GPU1 busy   6 %)   r3 1.5792 s (GPU1 busy  27 %)
+     all16    r1 1.5778 s (GPU1 busy   0 %)   r2 1.5851 s (GPU1 busy   0 %)   r3 1.5807 s (GPU1 busy 100 %)
+
+======================================================================================================================================================
+INFORMATIONAL (post-hoc, non-gating): one-time cost per process = wall-clock (RUNMETA end-start) - 13 x steady-state s/fwd
+  = Python import + model build/load + warm-up excess (incl. the Mamba2 kernel build/autotune); median over reps; delta vs origin
+======================================================================================================================================================
+  576x1024  origin   3.92 s (+0.00)   mamba5   9.58 s (+5.66)   mamba10   9.68 s (+5.76)   all16   9.98 s (+6.05)
+  1024x1792  origin   3.87 s (+0.00)   mamba5  10.02 s (+6.15)   mamba10   9.75 s (+5.88)   all16  10.23 s (+6.36)
+  1024x1920  origin   5.07 s (+0.00)   mamba5   9.44 s (+4.37)   mamba10   9.89 s (+4.82)   all16  10.71 s (+5.64)
+
+======================================================================================================================================================
+PASS B -- per-slot inclusive attn1 module time (ms per UNet forward, CUDA events), BS=1, mean over reps (+- half-range)
+  replaced slot = the whole GatedResidualMambaSelfAttention adapter; un-replaced = diffusers Attention (SDPA)
+======================================================================================================================================================
+--- 576x1024  (tokens/frame at level 0/1/2/mid: 9216 / 2304 / 576 / 144)
+  slot       lvl   origin attn     +-   mamba10     +-     all16     +- speedup m10 saving m10
+  d0.a0      L0         10.266  0.016     4.977  0.022     4.981  0.018       2.06x      5.290
+  d0.a1      L0         10.274  0.017     4.974  0.010     4.991  0.017       2.07x      5.299
+  u3.a0      L0         10.319  0.023     4.981  0.016     5.001  0.036       2.07x      5.339
+  u3.a1      L0         10.338  0.021     4.977  0.017     5.000  0.030       2.08x      5.361
+  u3.a2      L0         10.338  0.017     4.973  0.015     4.980  0.016       2.08x      5.364
+  d1.a0      L1          1.951  0.002     2.393  0.015     2.406  0.008       0.82x     -0.442
+  d1.a1      L1          1.946  0.002     2.387  0.018     2.397  0.017       0.82x     -0.441
+  u2.a0      L1          1.947  0.003     2.410  0.012     2.434  0.051       0.81x     -0.463
+  u2.a1      L1          1.948  0.003     2.397  0.018     2.419  0.037       0.81x     -0.449
+  u2.a2      L1          1.950  0.002     2.403  0.005     2.422  0.038       0.81x     -0.453
+  d2.a0      L2          0.887  0.002     0.888  0.001     1.316  0.035       1.00x     -0.001
+  d2.a1      L2          0.887  0.002     0.886  0.001     1.315  0.038       1.00x      0.001
+  u1.a0      L2          0.887  0.001     0.887  0.001     1.324  0.039       1.00x      0.000
+  u1.a1      L2          0.887  0.001     0.887  0.001     1.304  0.019       1.00x      0.001
+  u1.a2      L2          0.888  0.001     0.886  0.001     1.294  0.018       1.00x      0.002
+  mid        mid         0.307  0.000     0.306  0.000     0.598  0.046       1.00x      0.001
+  per-level sums (ms):  origin: L0 51.53 / L1 9.74 / L2 4.44 / mid 0.31   mamba10: L0 24.88 / L1 11.99 / L2 4.43 / mid 0.31   all16: L0 24.95 / L1 12.08 / L2 6.55 / mid 0.60
+  origin attn1 share of origin's clean forward (0.4857 s, pass-B phase 1): L0 10.61 % / L1 2.01 % / L2 0.91 % / mid 0.06 %  (all 16: 13.59 %)
+  hook overhead: origin +0.07 %, mamba10 -0.90 %, all16 +0.40 %;  pass-B clean vs pass-A mean: origin +0.16 %, mamba10 +0.47 %, all16 -1.84 %
+
+--- 1024x1792  (tokens/frame at level 0/1/2/mid: 28672 / 7168 / 1792 / 448)
+  slot       lvl   origin attn     +-   mamba10     +-     all16     +- speedup m10 saving m10
+  d0.a0      L0         91.334  0.037    15.501  0.020    15.654  0.057       5.89x     75.833
+  d0.a1      L0         91.776  0.020    15.511  0.013    15.681  0.002       5.92x     76.265
+  u3.a0      L0         91.810  0.103    15.494  0.005    15.666  0.127       5.93x     76.317
+  u3.a1      L0         91.884  0.005    15.507  0.016    15.658  0.052       5.93x     76.377
+  u3.a2      L0         91.900  0.002    15.496  0.002    15.710  0.018       5.93x     76.404
+  d1.a0      L1         13.618  0.006     7.258  0.003     7.427  0.092       1.88x      6.360
+  d1.a1      L1         13.598  0.002     7.254  0.006     7.409  0.091       1.87x      6.344
+  u2.a0      L1         13.654  0.037     7.256  0.005     7.389  0.061       1.88x      6.398
+  u2.a1      L1         13.595  0.005     7.254  0.009     7.418  0.102       1.87x      6.341
+  u2.a2      L1         13.618  0.029     7.257  0.007     7.463  0.067       1.88x      6.362
+  d2.a0      L2          3.604  0.001     3.599  0.002     4.015  0.099       1.00x      0.006
+  d2.a1      L2          3.608  0.002     3.601  0.003     3.938  0.057       1.00x      0.007
+  u1.a0      L2          3.608  0.002     3.605  0.000     3.991  0.125       1.00x      0.003
+  u1.a1      L2          3.608  0.001     3.602  0.002     3.944  0.074       1.00x      0.006
+  u1.a2      L2          3.610  0.003     3.601  0.002     3.957  0.107       1.00x      0.009
+  mid        mid         0.674  0.000     0.672  0.000     1.257  0.132       1.00x      0.002
+  per-level sums (ms):  origin: L0 458.70 / L1 68.08 / L2 18.04 / mid 0.67   mamba10: L0 77.51 / L1 36.28 / L2 18.01 / mid 0.67   all16: L0 78.37 / L1 37.11 / L2 19.84 / mid 1.26
+  origin attn1 share of origin's clean forward (1.8794 s, pass-B phase 1): L0 24.41 % / L1 3.62 % / L2 0.96 % / mid 0.04 %  (all 16: 29.03 %)
+  hook overhead: origin +0.06 %, mamba10 +0.10 %, all16 +0.24 %;  pass-B clean vs pass-A mean: origin +0.19 %, mamba10 -0.01 %, all16 -0.02 %
+
+--- 1024x1920  (tokens/frame at level 0/1/2/mid: 30720 / 7680 / 1920 / 480)
+  slot       lvl   origin attn     +-   mamba10     +-     all16     +- speedup m10 saving m10
+  d0.a0      L0        104.631  0.029    16.596  0.003    16.591  0.003       6.30x     88.035
+  d0.a1      L0        105.146  0.036    16.606  0.002    16.613  0.018       6.33x     88.540
+  u3.a0      L0        104.992  0.156    16.609  0.005    16.600  0.001       6.32x     88.383
+  u3.a1      L0        105.271  0.013    16.617  0.020    16.587  0.003       6.34x     88.654
+  u3.a2      L0        105.291  0.019    16.600  0.006    16.594  0.001       6.34x     88.691
+  d1.a0      L1         15.359  0.001     7.902  0.002     7.919  0.019       1.94x      7.457
+  d1.a1      L1         15.340  0.005     7.896  0.003     7.908  0.011       1.94x      7.444
+  u2.a0      L1         15.363  0.006     7.909  0.000     7.894  0.001       1.94x      7.454
+  u2.a1      L1         15.359  0.012     7.896  0.002     7.894  0.004       1.95x      7.463
+  u2.a2      L1         15.332  0.002     7.906  0.009     7.906  0.003       1.94x      7.426
+  d2.a0      L2          4.058  0.002     4.050  0.003     4.097  0.001       1.00x      0.008
+  d2.a1      L2          4.059  0.002     4.049  0.003     4.097  0.003       1.00x      0.010
+  u1.a0      L2          4.056  0.002     4.049  0.004     4.085  0.002       1.00x      0.007
+  u1.a1      L2          4.056  0.002     4.049  0.003     4.089  0.002       1.00x      0.007
+  u1.a2      L2          4.062  0.002     4.050  0.003     4.099  0.003       1.00x      0.012
+  mid        mid         0.921  0.000     0.918  0.001     1.201  0.010       1.00x      0.004
+  per-level sums (ms):  origin: L0 525.33 / L1 76.75 / L2 20.29 / mid 0.92   mamba10: L0 83.03 / L1 39.51 / L2 20.25 / mid 0.92   all16: L0 82.98 / L1 39.52 / L2 20.47 / mid 1.20
+  origin attn1 share of origin's clean forward (2.0605 s, pass-B phase 1): L0 25.50 % / L1 3.73 % / L2 0.98 % / mid 0.04 %  (all 16: 30.25 %)
+  hook overhead: origin +0.07 %, mamba10 +0.04 %, all16 +0.12 %;  pass-B clean vs pass-A mean: origin +0.13 %, mamba10 -0.06 %, all16 -0.15 %
+
+======================================================================================================================================================
+CEILING -- the extra saving a ZERO-COST level-1 mixer would buy:  C = sum(level-1 origin attn1 ms) / t(mamba5)
+======================================================================================================================================================
+  576x1024  level-1 attention    9.74 ms  -> C =  2.11 % of t(mamba5)  (C_pts = 2.01 pt of origin)
+            level-1 Mamba (dim 640)   11.99 ms -> per-slot speedup 0.81x;  slot-level saving   -2.25 ms vs pass-A total saving t5-t10   -2.27 ms (101 % of the slot-level saving)
+            (informational) level-2+mid attention    4.74 ms vs Mamba    7.15 ms -> speedup 0.66x
+  1024x1792  level-1 attention   68.08 ms  -> C =  4.55 % of t(mamba5)  (C_pts = 3.63 pt of origin)
+            level-1 Mamba (dim 640)   36.28 ms -> per-slot speedup 1.88x;  slot-level saving   31.80 ms vs pass-A total saving t5-t10   31.83 ms (100 % of the slot-level saving)
+            (informational) level-2+mid attention   18.71 ms vs Mamba   21.10 ms -> speedup 0.89x
+  1024x1920  level-1 attention   76.75 ms  -> C =  4.75 % of t(mamba5)  (C_pts = 3.73 pt of origin)
+            level-1 Mamba (dim 640)   39.51 ms -> per-slot speedup 1.94x;  slot-level saving   37.24 ms vs pass-A total saving t5-t10   36.57 ms (98 % of the slot-level saving)
+            (informational) level-2+mid attention   21.21 ms vs Mamba   21.67 ms -> speedup 0.98x
+
+======================================================================================================================================================
+VERDICT (PREREG rule: PASS iff E >= 10 % at 1024x1792 AND a plausible distillation path; C < 10 % -> closed on speed)
+======================================================================================================================================================
+  E(1024x1792) = +2.13 %  -> speed criterion NOT MET (bar 10 %)
+  C(1024x1792) = 4.55 %  -> NO level-1 mixer of any cost can reach the bar: CLOSED on speed

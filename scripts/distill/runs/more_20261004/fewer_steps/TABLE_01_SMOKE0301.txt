@@ -1,0 +1,148 @@
+==================================================================================================================================
+SMOKE / FUTILITY SCREEN (clip 0301 only) -- deliverable at guidance 1.00, RNG padded to 8, schedules below T5. Ref = deliverable T5 @1.00 padded. LOSSLESS FFV1, real-GT LPIPS. A 0301 delta > +0.005 vs ref is a definitive FAIL (P-b).
+scorer scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py SCORE_STEP=4 (unchanged), FFV1 renders only
+==================================================================================================================================
+
+--- PER CLIP: LPIPS (lower is better) ---
+  row                                     0301
+  GT sharpness                          0.0505
+  origin 8-step @1.01 (8x2) DEPLOYED    0.4351
+  origin T5 @1.00 pad (5x1)             0.4416
+  origin T4b @1.00 pad (4x1)            0.4417
+  origin T4a @1.00 pad (4x1)            0.4657
+  origin T3 @1.00 pad (3x1)             0.4839
+  deliverable 8-step @1.01 DEPLOYED     0.3965
+  deliverable T5 @1.00 pad REF          0.3989
+  deliv T5 @1.00 pad (C1 re-render)     0.3989
+  deliv T4b [700,7.28,1.17,.097]        0.3988
+  deliv T4a [700,7.28,1.17,.002]        0.4102
+  deliv T3  [700,1.17,.002]             0.4500
+  deliv T3b [700,7.28,1.17]             0.4106
+  deliv T3c [700,7.28,.097]             0.4895
+  deliv T3d [700,1.17,.097]             0.4323
+
+--- PER CLIP: delta vs origin_ll (negative = better) ---
+  origin T5 @1.00 pad (5x1)            +0.0065
+  origin T4b @1.00 pad (4x1)           +0.0066
+  origin T4a @1.00 pad (4x1)           +0.0306
+  origin T3 @1.00 pad (3x1)            +0.0488
+  deliverable 8-step @1.01 DEPLOYED    -0.0386
+  deliverable T5 @1.00 pad REF         -0.0362
+  deliv T5 @1.00 pad (C1 re-render)    -0.0362
+  deliv T4b [700,7.28,1.17,.097]       -0.0363
+  deliv T4a [700,7.28,1.17,.002]       -0.0249
+  deliv T3  [700,1.17,.002]            +0.0150
+  deliv T3b [700,7.28,1.17]            -0.0245
+  deliv T3c [700,7.28,.097]            +0.0544
+  deliv T3d [700,1.17,.097]            -0.0028
+
+--- PER CLIP: delta vs the SAME MODEL's reference config (ref) ---
+  origin T5 @1.00 pad (5x1) - ref      +0.0065
+  origin T4b @1.00 pad (4x1) - ref     +0.0000
+  origin T4a @1.00 pad (4x1) - ref     +0.0240
+  origin T3 @1.00 pad (3x1) - ref      +0.0423
+  deliverable T5 @1.00 pad REF - ref   +0.0024
+  deliv T5 @1.00 pad (C1 re-render) - ref   +0.0000
+  deliv T4b [700,7.28,1.17,.097] - ref   -0.0001
+  deliv T4a [700,7.28,1.17,.002] - ref   +0.0114
+  deliv T3  [700,1.17,.002] - ref      +0.0512
+  deliv T3b [700,7.28,1.17] - ref      +0.0118
+  deliv T3c [700,7.28,.097] - ref      +0.0907
+  deliv T3d [700,1.17,.097] - ref      +0.0334
+
+--- PER CLIP: sharpness / GT sharpness (1.0 = matches the real right eye) ---
+  origin 8-step @1.01 (8x2) DEPLOYED     0.466
+  origin T5 @1.00 pad (5x1)              0.452
+  origin T4b @1.00 pad (4x1)             0.451
+  origin T4a @1.00 pad (4x1)             0.423
+  origin T3 @1.00 pad (3x1)              0.396
+  deliverable 8-step @1.01 DEPLOYED      0.565
+  deliverable T5 @1.00 pad REF           0.556
+  deliv T5 @1.00 pad (C1 re-render)      0.556
+  deliv T4b [700,7.28,1.17,.097]         0.555
+  deliv T4a [700,7.28,1.17,.002]         0.514
+  deliv T3  [700,1.17,.002]              0.441
+  deliv T3b [700,7.28,1.17]              0.513
+  deliv T3c [700,7.28,.097]              0.397
+  deliv T3d [700,1.17,.097]              0.475
+
+--- PER CLIP: sharpness ratio vs the same model's reference config ---
+  origin T5 @1.00 pad (5x1) / ref       0.9697
+  origin T4b @1.00 pad (4x1) / ref      0.9991
+  origin T4a @1.00 pad (4x1) / ref      0.9362
+  origin T3 @1.00 pad (3x1) / ref       0.8771
+  deliverable T5 @1.00 pad REF / ref    0.9835
+  deliv T5 @1.00 pad (C1 re-render) / ref    1.0000
+  deliv T4b [700,7.28,1.17,.097] / ref    0.9993
+  deliv T4a [700,7.28,1.17,.002] / ref    0.9250
+  deliv T3  [700,1.17,.002] / ref       0.7929
+  deliv T3b [700,7.28,1.17] / ref       0.9229
+  deliv T3c [700,7.28,.097] / ref       0.7140
+  deliv T3d [700,1.17,.097] / ref       0.8540
+
+==================================================================================================================================
+MEANS over n=1 clips: 0301
+==================================================================================================================================
+  row                                meanLPIPS   d vs origin_ll  d vs ref improved  sh/GT  sh/ref   worst vs origin      worst vs ref   rPSNR
+  origin 8-step @1.01 (8x2) DEPLOYED    0.4351          +0.0000               0/1   0.466              0301 +0.0000                    15.467
+  origin T5 @1.00 pad (5x1)             0.4416          +0.0065   +0.0065     0/1   0.452  0.9697      0301 +0.0065      0301 +0.0065  15.526
+  origin T4b @1.00 pad (4x1)            0.4417          +0.0066   +0.0000     0/1   0.451  0.9991      0301 +0.0066      0301 +0.0000  15.528
+  origin T4a @1.00 pad (4x1)            0.4657          +0.0306   +0.0240     0/1   0.423  0.9362      0301 +0.0306      0301 +0.0240  15.639
+  origin T3 @1.00 pad (3x1)             0.4839          +0.0488   +0.0423     0/1   0.396  0.8771      0301 +0.0488      0301 +0.0423  15.689
+  deliverable 8-step @1.01 DEPLOYED     0.3965          -0.0386               1/1   0.565              0301 -0.0386                    15.083
+  deliverable T5 @1.00 pad REF          0.3989          -0.0362   +0.0024     1/1   0.556  0.9835      0301 -0.0362      0301 +0.0024  15.123
+  deliv T5 @1.00 pad (C1 re-render)     0.3989          -0.0362   +0.0000     1/1   0.556  1.0000      0301 -0.0362      0301 +0.0000  15.123
+  deliv T4b [700,7.28,1.17,.097]        0.3988          -0.0363   -0.0001     1/1   0.555  0.9993      0301 -0.0363      0301 -0.0001  15.125
+  deliv T4a [700,7.28,1.17,.002]        0.4102          -0.0249   +0.0114     1/1   0.514  0.9250      0301 -0.0249      0301 +0.0114  15.312
+  deliv T3  [700,1.17,.002]             0.4500          +0.0150   +0.0512     0/1   0.441  0.7929      0301 +0.0150      0301 +0.0512  15.502
+  deliv T3b [700,7.28,1.17]             0.4106          -0.0245   +0.0118     1/1   0.513  0.9229      0301 -0.0245      0301 +0.0118  15.316
+  deliv T3c [700,7.28,.097]             0.4895          +0.0544   +0.0907     0/1   0.397  0.7140      0301 +0.0544      0301 +0.0907  15.687
+  deliv T3d [700,1.17,.097]             0.4323          -0.0028   +0.0334     1/1   0.475  0.8540      0301 -0.0028      0301 +0.0334  15.360
+
+==================================================================================================================================
+PRE-REGISTERED CRITERIA (scripts/distill/runs/more_20261004/fewer_steps/PREREG.txt)
+==================================================================================================================================
+  [GATING] FUTILITY T4b (0301 <= +0.005)  (deliv_g100_T4bpad vs deliv_g100_T5pad, n=1, better on 1/1): PASS
+        (a) mean delta -0.0001 <= +0.005: PASS
+        (b) worst clip 0301 -0.0001 <= +0.005: PASS
+  [GATING] FUTILITY T4a (0301 <= +0.005)  (deliv_g100_T4apad vs deliv_g100_T5pad, n=1, better on 0/1): FAIL
+        (a) mean delta +0.0114 <= +0.005: FAIL
+        (b) worst clip 0301 +0.0114 <= +0.005: FAIL
+  [GATING] FUTILITY T3 (0301 <= +0.005)  (deliv_g100_T3pad vs deliv_g100_T5pad, n=1, better on 0/1): FAIL
+        (a) mean delta +0.0512 <= +0.005: FAIL
+        (b) worst clip 0301 +0.0512 <= +0.005: FAIL
+  [GATING] FUTILITY T3b (0301 <= +0.005)  (deliv_g100_T3bpad vs deliv_g100_T5pad, n=1, better on 0/1): FAIL
+        (a) mean delta +0.0118 <= +0.005: FAIL
+        (b) worst clip 0301 +0.0118 <= +0.005: FAIL
+  [GATING] FUTILITY T3c (0301 <= +0.005)  (deliv_g100_T3cpad vs deliv_g100_T5pad, n=1, better on 0/1): FAIL
+        (a) mean delta +0.0907 <= +0.005: FAIL
+        (b) worst clip 0301 +0.0907 <= +0.005: FAIL
+  [GATING] FUTILITY T3d (0301 <= +0.005)  (deliv_g100_T3dpad vs deliv_g100_T5pad, n=1, better on 0/1): FAIL
+        (a) mean delta +0.0334 <= +0.005: FAIL
+        (b) worst clip 0301 +0.0334 <= +0.005: FAIL
+  [reported] reported: deliv T4b vs DEPLOYED deliverable 8x2@1.01 (cumulative)  (deliv_g100_T4bpad vs mstudent2_step800_deliv_ll, n=1, better on 0/1): FAIL
+        (a) mean delta +0.0023 <= +0.002: FAIL
+        (b) worst clip 0301 +0.0023 <= +0.005: PASS
+  [reported] reported: deliv T4a vs DEPLOYED deliverable 8x2@1.01 (cumulative)  (deliv_g100_T4apad vs mstudent2_step800_deliv_ll, n=1, better on 0/1): FAIL
+        (a) mean delta +0.0137 <= +0.002: FAIL
+        (b) worst clip 0301 +0.0137 <= +0.005: FAIL
+
+==================================================================================================================================
+PROVENANCE (score file per row; render dir root)
+==================================================================================================================================
+  origin 8-step @1.01 (8x2) DEPLOYED label=origin_ll                      roots=['outputs/beyond4_lossless'] scores=['scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt']
+  origin T5 @1.00 pad (5x1)          label=origin_g100_T5pad              roots=['outputs/finalcheck_20261004/speed'] scores=['scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP2_EXT12.txt']
+  origin T4b @1.00 pad (4x1)         label=origin_g100_T4bpad             roots=['outputs/more_20261004/fewer_steps'] scores=['scripts/distill/runs/more_20261004/fewer_steps/SCORES_02_T4b4clip.txt']
+  origin T4a @1.00 pad (4x1)         label=origin_g100_T4apad             roots=['outputs/more_20261004/fewer_steps'] scores=['scripts/distill/runs/more_20261004/fewer_steps/SCORES_02_T4b4clip.txt']
+  origin T3 @1.00 pad (3x1)          label=origin_g100_T3pad              roots=['outputs/more_20261004/fewer_steps'] scores=['scripts/distill/runs/more_20261004/fewer_steps/SCORES_03_oracle.txt']
+  deliverable 8-step @1.01 DEPLOYED  label=mstudent2_step800_deliv_ll     roots=['outputs/beyond_distil_mamba_scaled'] scores=['scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt']
+  deliverable T5 @1.00 pad REF       label=deliv_g100_T5pad               roots=['outputs/finalcheck_20261004/speed'] scores=['scripts/distill/runs/more_20261004/fewer_steps/SCORES_01a_0301early.txt']
+  deliv T5 @1.00 pad (C1 re-render)  label=deliv_g100_T5pad_rep           roots=['outputs/more_20261004/fewer_steps'] scores=['scripts/distill/runs/more_20261004/fewer_steps/SCORES_01a_0301early.txt']
+  deliv T4b [700,7.28,1.17,.097]     label=deliv_g100_T4bpad              roots=['outputs/more_20261004/fewer_steps'] scores=['scripts/distill/runs/more_20261004/fewer_steps/SCORES_01a_0301early.txt']
+  deliv T4a [700,7.28,1.17,.002]     label=deliv_g100_T4apad              roots=['outputs/more_20261004/fewer_steps'] scores=['scripts/distill/runs/more_20261004/fewer_steps/SCORES_01a_0301early.txt']
+  deliv T3  [700,1.17,.002]          label=deliv_g100_T3pad               roots=['outputs/more_20261004/fewer_steps'] scores=['scripts/distill/runs/more_20261004/fewer_steps/SCORES_01b_0301T3.txt']
+  deliv T3b [700,7.28,1.17]          label=deliv_g100_T3bpad              roots=['outputs/more_20261004/fewer_steps'] scores=['scripts/distill/runs/more_20261004/fewer_steps/SCORES_01b_0301T3.txt']
+  deliv T3c [700,7.28,.097]          label=deliv_g100_T3cpad              roots=['outputs/more_20261004/fewer_steps'] scores=['scripts/distill/runs/more_20261004/fewer_steps/SCORES_01b_0301T3.txt']
+  deliv T3d [700,1.17,.097]          label=deliv_g100_T3dpad              roots=['outputs/more_20261004/fewer_steps'] scores=['scripts/distill/runs/more_20261004/fewer_steps/SCORES_02_T4b4clip.txt']
+
+VERDICTS: FUTILITY T4b (0301 <= +0.005): PASS; FUTILITY T4a (0301 <= +0.005): FAIL; FUTILITY T3 (0301 <= +0.005): FAIL; FUTILITY T3b (0301 <= +0.005): FAIL; FUTILITY T3c (0301 <= +0.005): FAIL; FUTILITY T3d (0301 <= +0.005): FAIL; reported: deliv T4b vs DEPLOYED deliverable 8x2@1.01 (cumulative): FAIL; reported: deliv T4a vs DEPLOYED deliverable 8x2@1.01 (cumulative): FAIL

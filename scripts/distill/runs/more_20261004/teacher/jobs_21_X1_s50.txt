@@ -1,0 +1,3 @@
+# CLIP LABEL SAMPLER N PAD SCHURN MAXCH  -- X1 (PREREG_ADDENDUM_2 item 2.iii): Euler s50, RNG-paired with s25 via
+# teacher_sched_v2 euler_nd (no unused draws) + pad 25.  Run with run_driver_teacher_v2.sh.
+0301 X1s50 euler_nd 50 25 - -

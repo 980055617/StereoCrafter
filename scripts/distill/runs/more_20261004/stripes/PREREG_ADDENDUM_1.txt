@@ -1,0 +1,17 @@
+PRE-REGISTRATION ADDENDUM 1 -- stripes lane.  Written 2026-10-04 ~14:30 JST, AFTER the 0301 smoke renders of variants
+A, B and the deliverable C existed and BEFORE any LPIPS / decomposition / temporal score of any variant render.
+It changes no criterion; it removes a redundant arm and records why.
+
+FINDING (integrity, not quality): the 0301 deliverable C render (rowlin fill + mask shrink) has the writer md5
+ae553782fe84c2ffbe3ccb70edbd7308, BIT-IDENTICAL to the deliverable A render (rowlin fill, mask kept), although its
+stripe_fill_log.json proves the mask was changed (md5_mask_bin_window 0810a50b... vs b3c0078e...; binarised hole
+fraction of the window 1.444 % -> 0.059 %; 1,233,642 window mask pixels zeroed).
+CAUSE: weights/StereoCrafter/unet_diffusers/diffusion_pytorch_model.safetensors, conv_in.weight has shape
+(320, 9, 3, 3) and its input channel 8 -- the mask channel the pipeline concatenates after the 4 noise and 4
+frame-latent channels -- is EXACTLY ZERO (mean |w| 0, max |w| 0; channels 0-3 mean |w| ~0.033, channels 4-7 ~0.002).
+The UNet therefore never sees the occlusion mask: any mask edit is a no-op by construction (0 * x = 0), and the
+model can only detect holes from the warped image content itself.
+CONSEQUENCE: variant C == variant A on every clip and config by construction.  C is dropped from the regime set
+(0204 0052 0147) to save ~14 GPU-min; the 0301 C renders (deliverable, and origin when it lands) stay as the
+empirical proof (md5 equality is checked and reported).  P1-P3 are evaluated for A and B only; C's verdict is
+A's verdict.  The original job list is kept as jobs_01_regime_ORIG_with_C.txt.

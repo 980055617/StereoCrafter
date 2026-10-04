@@ -1,0 +1,9 @@
+PRE-REGISTRATION ADDENDUM 2b (amends the variant choice of ADDENDUM 2) -- stripes lane.  Written 2026-10-04 ~15:05 JST,
+BEFORE any score of any 0204 / 0052 / 0147 render (only the 0301 smoke has been scored).
+Reason: GPU 0 is shared by 4 lanes and every render waits 4-9 min for the lock, so waiting for the B regime renders
+before starting the extension would add ~1 h of wall-clock.  The extension variant is therefore FIXED NOW to
+A (rowlin / keep): the simplest fill, and C == A by construction.  (Disclosed bias: on the 0301 smoke A was better
+than B for both configs.)  The deliverable A extension (8 clips: 0042 0125 0128 0141 0170 0225 0251 0259) is started
+now, speculatively.  TRIGGER unchanged: the extension is a reported result of the lane iff A passes P1 for the
+deliverable on the 4 regime clips; if A fails P1 the extension numbers are still shown, labelled "NOT TRIGGERED".
+The origin extension stays conditional on the ~90 GPU-minute budget (ADDENDUM 2).  E1-E3 unchanged.

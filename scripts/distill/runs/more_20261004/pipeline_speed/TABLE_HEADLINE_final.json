@@ -1,0 +1,173 @@
+{
+ "576|deployed origin 8x2@1.01": {
+  "dirs": [
+   "outputs/more_20261004/pipeline_speed/a_576/clips/0301_A2_origin_s8_576",
+   "outputs/more_20261004/pipeline_speed/c_576/clips/0301_A2r_origin_s8_576"
+  ],
+  "rep": 0,
+  "end_to_end_each": [
+   166.51,
+   165.82
+  ],
+  "mean": 166.165,
+  "speedup_vs_origin": 1.0,
+  "md5": [
+   "2e533d7755c950d2fc95043f6fb0a51d"
+  ],
+  "gate": "PASS"
+ },
+ "576|deliverable T5@1.00 (as shipped today)": {
+  "dirs": [
+   "outputs/more_20261004/pipeline_speed/a_576/clips/0301_A1_deliv_T5_576",
+   "outputs/more_20261004/pipeline_speed/c_576/clips/0301_A1r_deliv_T5_576"
+  ],
+  "rep": 0,
+  "end_to_end_each": [
+   103.56,
+   99.35
+  ],
+  "mean": 101.455,
+  "speedup_vs_origin": 1.6378197230299147,
+  "md5": [
+   "a41b432baeb25393bb12d39b4f2e6a21"
+  ],
+  "gate": "PASS"
+ },
+ "576|deliverable T5 + identity fixes F5-F9": {
+  "dirs": [
+   "outputs/more_20261004/pipeline_speed/c_576/clips/0301_C1a_deliv_T5_576_idfix",
+   "outputs/more_20261004/pipeline_speed/c_576/clips/0301_C1b_deliv_T5_576_idfix_rep"
+  ],
+  "rep": 0,
+  "end_to_end_each": [
+   85.19,
+   91.21
+  ],
+  "mean": 88.19999999999999,
+  "speedup_vs_origin": 1.8839569160997733,
+  "md5": [
+   "a41b432baeb25393bb12d39b4f2e6a21"
+  ],
+  "gate": "PASS"
+ },
+ "576|origin + model-independent fixes F6-F9": {
+  "dirs": [
+   "outputs/more_20261004/pipeline_speed/c_576/clips/0301_C3_origin_s8_576_idfix"
+  ],
+  "rep": 0,
+  "end_to_end_each": [
+   163.43
+  ],
+  "mean": 163.43,
+  "speedup_vs_origin": 1.016734993575231,
+  "md5": [
+   "2e533d7755c950d2fc95043f6fb0a51d"
+  ],
+  "gate": "PASS"
+ },
+ "576|deliverable T5 + F5-F9, rep 1 of C1w": {
+  "dirs": [
+   "outputs/more_20261004/pipeline_speed/c_576/clips/0301_C1w_deliv_T5_576_idfix_worker"
+  ],
+  "rep": 1,
+  "end_to_end_each": [
+   82.67931107990444
+  ],
+  "mean": 82.67931107990444,
+  "speedup_vs_origin": 2.0097530788495783,
+  "md5": [
+   "a41b432baeb25393bb12d39b4f2e6a21"
+  ],
+  "gate": "PASS"
+ },
+ "576|  cold CLI process (compilation inside)": {
+  "dirs": [
+   "outputs/more_20261004/pipeline_speed/p_576/clips/0301_P1_deliv_T5_576_idfix_vaecompile_cold"
+  ],
+  "rep": 0,
+  "end_to_end_each": [
+   136.53
+  ],
+  "mean": 136.53,
+  "speedup_vs_origin": 1.2170585219365706,
+  "md5": [
+   "31f05d9159d87afb1a9dd92563f754d3"
+  ],
+  "gate": "PIX"
+ },
+ "576|  warm inductor/FX cache, new CLI process": {
+  "dirs": [
+   "outputs/more_20261004/pipeline_speed/p_576/clips/0301_P2_deliv_T5_576_idfix_vaecompile_warm"
+  ],
+  "rep": 0,
+  "end_to_end_each": [
+   83.63
+  ],
+  "mean": 83.63,
+  "speedup_vs_origin": 1.9869066124596437,
+  "md5": [
+   "6de43d6ecc9bbf0915ec1bcd6cb27bf0"
+  ],
+  "gate": "PIX"
+ },
+ "576|  2nd clip in a persistent process (P4 rep 1)": {
+  "dirs": [
+   "outputs/more_20261004/pipeline_speed/p_576/clips/0301_P4_deliv_T5_576_idfix_vaecompile_worker"
+  ],
+  "rep": 1,
+  "end_to_end_each": [
+   84.61724995821714
+  ],
+  "mean": 84.61724995821714,
+  "speedup_vs_origin": 1.963724891580027,
+  "md5": [
+   "76e775131d3ba4dd0886aec893dbac3e"
+  ],
+  "gate": "PIX"
+ },
+ "1792|deployed origin 8x2@1.01": {
+  "dirs": [
+   "outputs/more_20261004/pipeline_speed/a_1792/clips/0301_A4_origin_s8_1792"
+  ],
+  "rep": 0,
+  "end_to_end_each": [
+   599.03
+  ],
+  "mean": 599.03,
+  "speedup_vs_origin": 1.0,
+  "md5": [
+   "ac6d929512090d2a28b1fd972a3375eb"
+  ],
+  "gate": "PASS"
+ },
+ "1792|deliverable T5@1.00 (as shipped today)": {
+  "dirs": [
+   "outputs/more_20261004/pipeline_speed/a_1792/clips/0301_A3_deliv_T5_1792"
+  ],
+  "rep": 0,
+  "end_to_end_each": [
+   311.72
+  ],
+  "mean": 311.72,
+  "speedup_vs_origin": 1.9216925445912996,
+  "md5": [
+   "2e5ccd8c1f4824a117e703864664856e"
+  ],
+  "gate": "PASS"
+ },
+ "1792|deliverable T5 + identity fixes F5-F9": {
+  "dirs": [
+   "outputs/more_20261004/pipeline_speed/c_1792/clips/0301_C2_deliv_T5_1792_idfix"
+  ],
+  "rep": 0,
+  "end_to_end_each": [
+   278.01
+  ],
+  "mean": 278.01,
+  "speedup_vs_origin": 2.1547066652278697,
+  "md5": [
+   "2e5ccd8c1f4824a117e703864664856e"
+  ],
+  "gate": "PASS"
+ }
+}

@@ -1,0 +1,3 @@
+# C2 (1024x1792): deliverable T5@1.00 with the identity-fix set; autotune choices pre-filled from A3's own snapshot
+# (A3 = a fresh 1792 process).  md5 must equal A3's.
+0301 C2_deliv_T5_1792_idfix deliv 1.00 T5 1024 1792 SK_SKIP_DISCARDED=1,SK_DIRECT_POST=1,SK_NOAUG_SKIP=1,SK_READER=cropfirst,SK_AT_LOAD=/home/kawa/master_project/StereoCrafter/outputs/more_20261004/pipeline_speed/autotune_choices_A3_1792.json

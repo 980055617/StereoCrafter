@@ -1,0 +1,4 @@
+# C (576x1024): identity-fix set F5(autotune choices pre-filled)+F6+F7+F8+F9, interleaved with baseline repeats.
+# C0 = 2-window pre-check (md5 must equal s0's 719d6ceb...); C1a/C1b = CLI renders (md5 must equal a41b432b...);
+# C3 = origin with the model-independent fixes (md5 must equal 2e533d77...); C1w = 2 clips in ONE process (service mode).
+0301 C0_deliv_T5_576_idfix_2win deliv 1.00 T5 - - SK_MAX_CHUNKS=2,SK_SKIP_DISCARDED=1,SK_DIRECT_POST=1,SK_NOAUG_SKIP=1,SK_READER=cropfirst,SK_AT_LOAD=/home/kawa/master_project/StereoCrafter/outputs/more_20261004/pipeline_speed/autotune_choices_s0.json

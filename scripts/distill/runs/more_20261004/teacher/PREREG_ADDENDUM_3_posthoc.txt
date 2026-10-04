@@ -1,0 +1,18 @@
+PRE-REGISTRATION ADDENDUM 3 (POST-HOC, EXPLORATORY, NON-GATING) -- more_20261004 / teacher lane
+Written 2026-10-04 ~15:47 JST, AFTER every pre-registered verdict was final (all of H13, D16, D25, C25, C25b FAIL F1 on
+0301 -> no candidate reached Stage 2 -> no PASS; TABLE_stage1a_interim_v1.txt + SCORES_C25b.txt) and BEFORE the arm
+below is rendered or scored.  It CANNOT change any verdict above.
+
+Why: F1's rationale ("0301 is the most step-sensitive clip") fits the ODE-accuracy axis but NOT churn's measured
+mechanism.  On 0301 churn LOWERED splatting-stripe energy (STRIPES_0301_v1.txt: stripeE/GT s25 1.032 -> C25 0.990)
+without moving LPIPS, and 0301 is the regime clip with the LEAST stripe problem (review_20261001
+METRICS_WHOLEFRAME.txt, registered: s25 stripeE/GT 0301 1.03 vs 0147 5.31).  So the 0301 futility screen is biased
+against churn's mechanism; the over-sharp, stripe-dominated clips are the informative ones.
+
+Arm: C25 exactly as pre-registered (euler_churn N=25, S_churn=5, S_tmin 0.05, S_tmax 50, S_noise 1.003, guidance
+1.01, pad 25 -> paired with s25) on 0147, then 0052 (the two clips where s25 overshoots GT sharpness).
+Reported (no pass/fail): per-clip LPIPS delta vs s25, sharp/GT vs s25's, and for 0147 the whole-frame stripe
+decomposition (review operators, registered GT offset (-1,-41) from review_20261001/GEOMETRY.txt; reproduction
+check against the review's origin/s25 rows).  Reading rule fixed now: a delta <= -0.003 on BOTH clips would be a
+lead worth a pre-registered churn study; anything else closes churn at this dose for this lane.
+Budget: ~15 GPU-min (2 renders + scoring), keeping the lane under ~90 GPU-min.

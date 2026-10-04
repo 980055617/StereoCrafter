@@ -1,0 +1,68 @@
+judge J3b/J4a -- paired 12-clip contrasts recomputed from ROW lines (score_clip_ll.py SCORE_STEP=4, FFV1 renders)
+sources: deliv_g100_T5nat: ['SCORES_POSTHOC_T5G100NAT.txt']; deliv_g100_T5pad: ['SCORES_STEP2_EXT12.txt', 'SCORES_STEP2_T5G100_4clip.txt']; deliv_g100_s8: ['SCORES_STEP1.txt']; deliv_g101_T5nat: ['SCORES_STEP2_4clip.txt']; deliv_g101_T5pad: ['SCORES_STEP2_4clip.txt', 'SCORES_STEP2_EXT12.txt']; deliv_g101_T6pad: ['SCORES_STEP2_4clip.txt', 'SCORES_STEP2_EXT12.txt']; mstudent2_step800_deliv_ll: ['SCORES_STEP1.txt']; origin_g100_T5pad: ['SCORES_STEP2_EXT12.txt']; origin_g100_s8: ['SCORES_STEP1.txt']; origin_g101_T5pad: ['SCORES_STEP2_4clip.txt', 'SCORES_STEP2_EXT12.txt']; origin_g101_T6pad: ['SCORES_STEP2_4clip.txt', 'SCORES_STEP2_EXT12.txt']; origin_ll: ['SCORES_STEP1.txt']; s25_ll: ['eval_robustness/PUBLISHED_ROWS.json']
+
+=== J3b: origin's own sampler levers (literature lane quotes T6 +0.00018, T5 +0.00140, T5@1.00 +0.00215) ===
+origin T6@1.01 (padded) vs deployed origin
+  origin_g101_T6pad - origin_ll   [paired: pad 8]
+  per clip: 0042:+0.0002 0052:+0.0001 0125:+0.0000 0128:+0.0001 0141:+0.0000 0147:+0.0000 0170:+0.0001 0204:+0.0003 0225:+0.0002 0251:+0.0002 0259:+0.0004 0301:+0.0004
+  mean +0.00016  improved 0/12  worst 0301 +0.0004  best 0147 +0.0000  t95 [+0.0001,+0.0003]  p_sign 0.00049  p_signflip 0.00049
+  means: origin_g101_T6pad 0.3934  origin_ll 0.3933
+origin T5@1.01 (padded) vs deployed origin
+  origin_g101_T5pad - origin_ll   [paired: pad 8]
+  per clip: 0042:+0.0010 0052:+0.0004 0125:+0.0008 0128:+0.0010 0141:+0.0000 0147:+0.0004 0170:+0.0008 0204:+0.0021 0225:+0.0018 0251:+0.0011 0259:+0.0033 0301:+0.0040
+  mean +0.00140  improved 0/12  worst 0301 +0.0040  best 0141 +0.0000  t95 [+0.0006,+0.0022]  p_sign 0.00049  p_signflip 0.00049
+  means: origin_g101_T5pad 0.3947  origin_ll 0.3933
+origin T5@1.00 (padded) vs deployed origin
+  origin_g100_T5pad - origin_ll   [paired: pad 8]
+  per clip: 0042:+0.0012 0052:+0.0007 0125:+0.0021 0128:+0.0019 0141:-0.0002 0147:+0.0002 0170:+0.0018 0204:+0.0029 0225:+0.0027 0251:+0.0016 0259:+0.0041 0301:+0.0065
+  mean +0.00214  improved 1/12  worst 0301 +0.0065  best 0141 -0.0002  t95 [+0.0010,+0.0033]  p_sign 0.00635  p_signflip 0.00098
+  means: origin_g100_T5pad 0.3954  origin_ll 0.3933
+origin 8-step@1.00 vs deployed origin
+  origin_g100_s8 - origin_ll   [paired by construction]
+  per clip: 0042:+0.0003 0052:+0.0003 0125:+0.0011 0128:+0.0009 0141:-0.0002 0147:-0.0002 0170:+0.0007 0204:+0.0007 0225:+0.0007 0251:+0.0005 0259:+0.0004 0301:+0.0024
+  mean +0.00065  improved 2/12  worst 0301 +0.0024  best 0147 -0.0002  t95 [+0.0002,+0.0011]  p_sign 0.03857  p_signflip 0.00293
+  means: origin_g100_s8 0.3939  origin_ll 0.3933
+
+=== J4a: MATCHED SAMPLER (same schedule, same guidance, same noise) deliverable vs origin ===
+T5@1.00, both RNG-padded to 8 (PRIMARY matched comparison)
+  deliv_g100_T5pad - origin_g100_T5pad   [paired: identical per-window noise]
+  per clip: 0042:-0.0051 0052:-0.0072 0125:-0.0143 0128:-0.0183 0141:-0.0131 0147:-0.0016 0170:-0.0077 0204:-0.0206 0225:-0.0168 0251:-0.0110 0259:-0.0045 0301:-0.0428
+  mean -0.01357  improved 12/12  worst 0147 -0.0016  best 0301 -0.0428  t95 [-0.0205,-0.0066]  p_sign 0.00049  p_signflip 0.00049
+  means: deliv_g100_T5pad 0.3818  origin_g100_T5pad 0.3954
+8 steps @1.00, both
+  deliv_g100_s8 - origin_g100_s8   [paired]
+  per clip: 0042:-0.0062 0052:-0.0073 0125:-0.0147 0128:-0.0180 0141:-0.0134 0147:-0.0025 0170:-0.0076 0204:-0.0192 0225:-0.0171 0251:-0.0108 0259:-0.0024 0301:-0.0406
+  mean -0.01332  improved 12/12  worst 0259 -0.0024  best 0301 -0.0406  t95 [-0.0199,-0.0067]  p_sign 0.00049  p_signflip 0.00049
+  means: deliv_g100_s8 0.3806  origin_g100_s8 0.3939
+8x2 @1.01 both (= the published headline)
+  mstudent2_step800_deliv_ll - origin_ll   [paired]
+  per clip: 0042:-0.0061 0052:-0.0072 0125:-0.0144 0128:-0.0173 0141:-0.0133 0147:-0.0025 0170:-0.0071 0204:-0.0186 0225:-0.0164 0251:-0.0105 0259:-0.0019 0301:-0.0386
+  mean -0.01282  improved 12/12  worst 0259 -0.0019  best 0301 -0.0386  t95 [-0.0191,-0.0065]  p_sign 0.00049  p_signflip 0.00049
+  means: mstudent2_step800_deliv_ll 0.3804  origin_ll 0.3933
+T5@1.01, both padded
+  deliv_g101_T5pad - origin_g101_T5pad   [paired]
+  per clip: 0042:-0.0051 0052:-0.0072 0125:-0.0139 0128:-0.0175 0141:-0.0130 0147:-0.0017 0170:-0.0072 0204:-0.0199 0225:-0.0161 0251:-0.0106 0259:-0.0041 0301:-0.0410
+  mean -0.01311  improved 12/12  worst 0147 -0.0017  best 0301 -0.0410  t95 [-0.0198,-0.0064]  p_sign 0.00049  p_signflip 0.00049
+  means: deliv_g101_T5pad 0.3815  origin_g101_T5pad 0.3947
+
+=== context: shipped config vs deployed origin, and vs the teacher ===
+deliverable T5@1.00 UNPADDED (what ships) vs deployed origin
+  deliv_g100_T5nat - origin_ll   [window 0 paired only]
+  per clip: 0042:-0.0026 0052:-0.0068 0125:-0.0118 0128:-0.0165 0141:-0.0138 0147:-0.0018 0170:-0.0071 0204:-0.0179 0225:-0.0145 0251:-0.0093 0259:-0.0027 0301:-0.0357
+  mean -0.01171  improved 12/12  worst 0147 -0.0018  best 0301 -0.0357  t95 [-0.0176,-0.0058]  p_sign 0.00049  p_signflip 0.00049
+  means: deliv_g100_T5nat 0.3815  origin_ll 0.3933
+deliverable T5@1.00 UNPADDED vs origin T5@1.00 padded
+  deliv_g100_T5nat - origin_g100_T5pad   [window 0 paired only; descriptive]
+  per clip: 0042:-0.0038 0052:-0.0075 0125:-0.0139 0128:-0.0185 0141:-0.0137 0147:-0.0020 0170:-0.0089 0204:-0.0209 0225:-0.0171 0251:-0.0109 0259:-0.0068 0301:-0.0422
+  mean -0.01385  improved 12/12  worst 0147 -0.0020  best 0301 -0.0422  t95 [-0.0206,-0.0071]  p_sign 0.00049  p_signflip 0.00049
+  means: deliv_g100_T5nat 0.3815  origin_g100_T5pad 0.3954
+origin s25 (teacher) vs deployed origin
+  s25_ll - origin_ll   [s25 shares window-0 noise]
+  per clip: 0042:-0.0104 0052:-0.0083 0125:-0.0330 0128:-0.0178 0141:-0.0192 0147:-0.0049 0170:-0.0068 0204:-0.0156 0225:-0.0147 0251:-0.0076 0259:-0.0009 0301:-0.0365
+  mean -0.01465  improved 12/12  worst 0259 -0.0009  best 0301 -0.0365  t95 [-0.0216,-0.0077]  p_sign 0.00049  p_signflip 0.00049
+  means: s25_ll 0.3786  origin_ll 0.3933
+deliverable 8x2@1.01 vs s25
+  mstudent2_step800_deliv_ll - s25_ll   []
+  per clip: 0042:+0.0043 0052:+0.0011 0125:+0.0186 0128:+0.0006 0141:+0.0060 0147:+0.0024 0170:-0.0003 0204:-0.0029 0225:-0.0017 0251:-0.0030 0259:-0.0010 0301:-0.0021
+  mean +0.00183  improved 6/12  worst 0125 +0.0186  best 0251 -0.0030  t95 [-0.0020,+0.0056]  p_sign 1.00000  p_signflip 0.36816
+  means: mstudent2_step800_deliv_ll 0.3804  s25_ll 0.3786

@@ -1,0 +1,8 @@
+POST-HOC, EXPLORATORY, NON-GATING (PREREG_ADDENDUM_3_posthoc.txt): C25 = Euler+churn S_churn=5 (gamma 0.2 on sigma in [0.05,50]),
+N=25, guidance 1.01, RNG-paired with s25.  Lossless FFV1, score_clip_ll.py SCORE_STEP=4.  Cannot change any pre-registered verdict.
+clip    s25 LPIPS  C25 LPIPS    delta  s25 sh/GT  C25 sh/GT  s25 rPSNR  C25 rPSNR  source
+0301       0.3986     0.3978  -0.0008      0.583      0.560     15.013     15.105  SCORES_stage1a.txt
+0147       0.5220     0.5220  +0.0000      1.715      1.671     15.464     15.493  SCORES_posthoc_C25.txt
+0052       0.4384     0.4393  +0.0009      1.387      1.371     13.177     13.183  SCORES_posthoc_C25.txt
+Reading rule (fixed before rendering): delta <= -0.003 on BOTH 0147 and 0052 -> lead for a pre-registered churn study;
+otherwise churn at this dose is closed for this lane.  RESULT: 0147 +0.0000, 0052 +0.0009 -> CLOSED.

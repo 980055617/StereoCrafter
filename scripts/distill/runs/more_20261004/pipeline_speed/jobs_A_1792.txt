@@ -1,0 +1,3 @@
+# A3/A4: 1024x1792 baselines (tracked reader; 0301's 1080x1920 quadrants fit in RAM). A3 saves latents for screening.
+0301 A3_deliv_T5_1792 deliv 1.00 T5 1024 1792 SK_SAVE_LAT=1
+0301 A4_origin_s8_1792 origin 1.01 - 1024 1792 -

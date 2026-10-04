@@ -1,0 +1,12 @@
+VAE-encode batch-composition test (enc_batch_test_v1.py; outputs/more_20261004/pipeline_speed/e_encbatch/*.json).
+Question: can the 3 overlap frames' encode latents be reused across windows (IDENTITY only if per-frame encoding is
+bit-independent of which frames share its batch)?  Answer: NO -> closed.
+
+  576x1024: overlap frames w0[11..13] == w1[0..2] (batch 4 vs batch 5 chunks): [True, True, True]
+     deployed chunks vs batch-1 encoding: 0/14 frames bit-equal, max |d| 0.8427734375
+     deployed chunks vs shifted chunks:   10/14 frames bit-equal
+     one 14-frame window encode time by chunk size [chunk, s, bit-equal to deployed]: [[5, 0.626, True], [1, 0.695, False], [7, 0.621, False], [14, 0.623, False], [5, 0.627, True]]
+  1024x1792: overlap frames w0[11..13] == w1[0..2] (batch 4 vs batch 5 chunks): [False, False, False]
+     deployed chunks vs batch-1 encoding: 0/14 frames bit-equal, max |d| 1.375
+     deployed chunks vs shifted chunks:   7/14 frames bit-equal
+     one 14-frame window encode time by chunk size [chunk, s, bit-equal to deployed]: [[5, 2.519, True], [1, 2.787, False], [7, 2.49, False], [14, None, 'OOM'], [5, 2.522, True]]

@@ -1,0 +1,6 @@
+0301 A1r_deliv_T5_576 deliv 1.00 T5 - - -
+0301 C1a_deliv_T5_576_idfix deliv 1.00 T5 - - SK_SKIP_DISCARDED=1,SK_DIRECT_POST=1,SK_NOAUG_SKIP=1,SK_READER=cropfirst,SK_AT_LOAD=/home/kawa/master_project/StereoCrafter/outputs/more_20261004/pipeline_speed/autotune_choices_s0.json
+0301 A2r_origin_s8_576 origin 1.01 - - - -
+0301 C1b_deliv_T5_576_idfix_rep deliv 1.00 T5 - - SK_SKIP_DISCARDED=1,SK_DIRECT_POST=1,SK_NOAUG_SKIP=1,SK_READER=cropfirst,SK_AT_LOAD=/home/kawa/master_project/StereoCrafter/outputs/more_20261004/pipeline_speed/autotune_choices_s0.json
+0301 C3_origin_s8_576_idfix origin 1.01 - - - SK_SKIP_DISCARDED=1,SK_DIRECT_POST=1,SK_NOAUG_SKIP=1,SK_READER=cropfirst
+0301 C1w_deliv_T5_576_idfix_worker deliv 1.00 T5 - - SK_SKIP_DISCARDED=1,SK_DIRECT_POST=1,SK_NOAUG_SKIP=1,SK_READER=cropfirst,SK_AT_LOAD=/home/kawa/master_project/StereoCrafter/outputs/more_20261004/pipeline_speed/autotune_choices_s0.json,SK_REPEAT=2
