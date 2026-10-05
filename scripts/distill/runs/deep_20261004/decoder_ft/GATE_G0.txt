@@ -1,0 +1,7 @@
+G0 0301 UNREG     lane re-decode 0.435095  published-path 0.435095  eval_robustness 0.435095 -> OK
+G0 0301 REG_CLIP  lane re-decode 0.405686  published-path 0.405686  eval_robustness 0.405686 -> OK
+G0 0301 REG_FRAME lane re-decode 0.405128  published-path 0.405128  eval_robustness 0.405128 -> OK
+G0 0301 BLK_LOCAL lane re-decode 0.366568  published-path 0.366568  eval_robustness 0.366568 -> OK
+G0 0301 UNREG vs published ROWS_pass1 0.435095: |d| 2.3e-07
+G0 aux: lane re-decode vs published path identical on dists/niqe/musiq/lpips_vgg/psnr_reg: True {'dists': 0.1941, 'niqe': 3.4848, 'musiq': 57.5777, 'lpips_vgg': 0.4688, 'psnr_reg': 17.4454}
+GATE G0 PASS

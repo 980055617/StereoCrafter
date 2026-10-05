@@ -1,0 +1,7 @@
+# S0 smoke remainder (the v1 per-job chain was stopped while 0301_origin_g100_sd7 waited for the lock; its empty dir was rmdir-ed); grouped driver v2
+0301 origin_g100_sd7 origin 1.00 s7 8 warp
+0301 origin_g100_sd31 origin 1.00 s31 8 warp
+0301 deliv_g100_sd1 deliv 1.00 s1 8 warp
+0301 deliv_g100_sd1fill deliv 1.00 s1 8 warpfill
+0301 deliv_g100_sd7 deliv 1.00 s7 8 warp
+0301 deliv_g100_sd31 deliv 1.00 s31 8 warp

@@ -1,0 +1,11 @@
+ADDENDUM 1 (2026-10-05 13:45 JST, written after the analysis; records changes to analyze_v1.py, none to a rule or threshold)
+1. J0 grid handling (edited ~13:33, BEFORE the first 12-clip analysis was run): scale_gt and external_models registered
+   clip 0125 on the PREREG grid (their origin REG_FRAME mean 0.2430); this lane, eval_robustness, sdedit and skeptic use
+   the ADDENDUM wide grid (0.2432).  For those two lanes the J0 comparison of 0125 uses the UNREG column only.
+2. Added AFTER the preliminary 12-clip output was seen, descriptive only, no rule uses them:
+   (a) origin's own edge/flat/stripe vs GT as a mean of per-clip ratios (to read the rows' 'vs GT' line);
+   (b) scale_gt 25-step row against its matching reference s25_ll (the lane's own contrast).
+3. F7 visual check: post hoc by nature (PREREG says so); notes in VISUAL_F7_v1.txt.
+4. Interpretation note (not a rule change): F2 and F5 fire on s25_ll, the un-tuned 25-step teacher, and origin's own
+   GT-flat horizontal-difference energy is already 1.945x the GT's (mean of per-clip ratios).  F2/F5 therefore mark
+   "sharper / more HF than origin", not a hack by themselves; the verdict does not rest on them alone.

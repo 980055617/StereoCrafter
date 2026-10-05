@@ -1,0 +1,177 @@
+{
+ "spec": {
+  "name": "contrast8_v1",
+  "latent_dir": "/mnt/ssd_data/deep_20261004/scale_gt/cache_v1/latents",
+  "windows": [
+   [
+    "0160",
+    0
+   ],
+   [
+    "0160",
+    44
+   ],
+   [
+    "0160",
+    88
+   ],
+   [
+    "0160",
+    132
+   ],
+   [
+    "0177",
+    0
+   ],
+   [
+    "0177",
+    44
+   ],
+   [
+    "0177",
+    88
+   ],
+   [
+    "0144",
+    132
+   ],
+   [
+    "0179",
+    44
+   ],
+   [
+    "0179",
+    132
+   ],
+   [
+    "0105",
+    0
+   ],
+   [
+    "0105",
+    44
+   ],
+   [
+    "0105",
+    88
+   ],
+   [
+    "0105",
+    132
+   ],
+   [
+    "0078",
+    0
+   ],
+   [
+    "0078",
+    44
+   ],
+   [
+    "0078",
+    88
+   ],
+   [
+    "0078",
+    132
+   ],
+   [
+    "0165",
+    0
+   ],
+   [
+    "0165",
+    44
+   ],
+   [
+    "0165",
+    88
+   ],
+   [
+    "0067",
+    0
+   ],
+   [
+    "0067",
+    44
+   ],
+   [
+    "0067",
+    88
+   ],
+   [
+    "0067",
+    132
+   ]
+  ],
+  "steps": 1000,
+  "ck_every": 250,
+  "seed": 1234,
+  "lr": 1e-05,
+  "ck_dir": "/mnt/ssd_data/deep_20261004/scale_gt/ck",
+  "rec_dir": "scripts/distill/runs/deep_20261004/scale_gt/train"
+ },
+ "n_windows": 25,
+ "n_clips": 8,
+ "clips": [
+  "0067",
+  "0078",
+  "0105",
+  "0144",
+  "0160",
+  "0165",
+  "0177",
+  "0179"
+ ],
+ "trainable": [
+  "up_blocks.3.attentions.0.transformer_blocks.0.attn1.to_q.weight",
+  "up_blocks.3.attentions.0.transformer_blocks.0.attn1.to_k.weight",
+  "up_blocks.3.attentions.0.transformer_blocks.0.attn1.to_v.weight",
+  "up_blocks.3.attentions.0.transformer_blocks.0.attn1.to_out.0.weight",
+  "up_blocks.3.attentions.0.transformer_blocks.0.attn1.to_out.0.bias",
+  "up_blocks.3.attentions.1.transformer_blocks.0.attn1.to_q.weight",
+  "up_blocks.3.attentions.1.transformer_blocks.0.attn1.to_k.weight",
+  "up_blocks.3.attentions.1.transformer_blocks.0.attn1.to_v.weight",
+  "up_blocks.3.attentions.1.transformer_blocks.0.attn1.to_out.0.weight",
+  "up_blocks.3.attentions.1.transformer_blocks.0.attn1.to_out.0.bias",
+  "up_blocks.3.attentions.2.transformer_blocks.0.attn1.to_q.weight",
+  "up_blocks.3.attentions.2.transformer_blocks.0.attn1.to_k.weight",
+  "up_blocks.3.attentions.2.transformer_blocks.0.attn1.to_v.weight",
+  "up_blocks.3.attentions.2.transformer_blocks.0.attn1.to_out.0.weight",
+  "up_blocks.3.attentions.2.transformer_blocks.0.attn1.to_out.0.bias"
+ ],
+ "nf": 14,
+ "lr": 1e-05,
+ "betas": [
+  0.9,
+  0.999
+ ],
+ "wd": 0.0,
+ "clip_grad_norm": 1.0,
+ "seed": 1234,
+ "sigmas": [
+  700.0,
+  286.5388488769531,
+  102.90337371826172,
+  30.993608474731445,
+  7.276163101196289,
+  1.1675708293914795,
+  0.09738767892122269,
+  0.0020000000949949026
+ ],
+ "timesteps": [
+  1.6377700567245483,
+  1.41446852684021,
+  1.1584476232528687,
+  0.8584452271461487,
+  0.4961509108543396,
+  0.03873134404420853,
+  -0.5822638869285583,
+  -1.553652048110962
+ ],
+ "sigma_spec": "deploy8 (uniform over the 8 deployment sigmas)",
+ "cond_latent_scale": 1.0,
+ "x0_scale": 0.18215,
+ "loss": "masked v-MSE over valid latent cells",
+ "kept_mean": 0.46279979109764097
+}

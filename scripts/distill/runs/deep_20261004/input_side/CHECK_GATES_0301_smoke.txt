@@ -1,0 +1,15 @@
+G4 PASS 0301_g1_dep_origin: decode==writer True  left==origin_ll left True  frames 151 (ref 151)
+G1 PASS 0301_g1_dep_origin: writer md5 2e533d7755c950d2fc95043f6fb0a51d vs existing origin 2e533d7755c950d2fc95043f6fb0a51d
+G4 PASS 0301_g1_dep_deliv: decode==writer True  left==origin_ll left True  frames 151 (ref 151)
+G1 PASS 0301_g1_dep_deliv: writer md5 3e367e6167e5ae62681f50b86579f6b6 vs existing deliv 3e367e6167e5ae62681f50b86579f6b6
+G4 PASS 0301_R1_origin: decode==writer True  left==origin_ll left True  frames 151 (ref 151)
+G4 PASS 0301_R1_deliv: decode==writer True  left==origin_ll left True  frames 151 (ref 151)
+G4 PASS 0301_RF_origin: decode==writer True  left==origin_ll left True  frames 151 (ref 151)
+G4 PASS 0301_RF_deliv: decode==writer True  left==origin_ll left True  frames 151 (ref 151)
+G4 PASS 0301_RO_origin: decode==writer True  left==origin_ll left True  frames 151 (ref 151)
+G4 PASS 0301_RO_deliv: decode==writer True  left==origin_ll left True  frames 151 (ref 151)
+G4 PASS 0147_g1_dep_origin: decode==writer True  left==origin_ll left True  frames 172 (ref 172)
+G1 PASS 0147_g1_dep_origin: writer md5 90637b7ea7521ff0b5358a60bef029ce vs existing origin 90637b7ea7521ff0b5358a60bef029ce
+G3 PASS 0301: 8 renders, 14 windows, 1 distinct init-latent fingerprint lists
+G3 PASS 0147: 1 renders, 16 windows, 1 distinct init-latent fingerprint lists
+TOTAL failures: 0

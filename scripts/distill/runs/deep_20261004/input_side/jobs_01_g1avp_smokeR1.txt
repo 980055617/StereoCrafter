@@ -1,0 +1,4 @@
+# G1 on the AVP / T=172 path, then the 0301 smoke of the reconstruction control R1
+0147 g1_dep_origin origin deployed
+0301 R1_origin origin R1
+0301 R1_deliv deliv R1

@@ -17,3 +17,5 @@ runs/**/*.stdout
 runs/**/*.stderr
 runs/**/*.npy
 runs/**/*.npz
+runs/**/*.lock
+runs/**/*.out

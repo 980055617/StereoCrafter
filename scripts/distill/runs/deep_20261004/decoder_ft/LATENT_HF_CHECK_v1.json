@@ -1,0 +1,185 @@
+{
+ "clips": {
+  "0040": {
+   "INPUT": {
+    "EDGE": 2.0130253859928677,
+    "FLAT": 0.7895839597497668
+   },
+   "origin": {
+    "EDGE": 2.1331892354147777,
+    "FLAT": 0.555249714425632
+   },
+   "deliv": {
+    "EDGE": 2.186008197920663,
+    "FLAT": 0.8313149171216148
+   },
+   "ratio": {
+    "origin/INPUT": {
+     "EDGE": 1.0596931614762735,
+     "FLAT": 0.703218077785674
+    },
+    "deliv/INPUT": {
+     "EDGE": 1.0859317588001884,
+     "FLAT": 1.0528518302031784
+    }
+   },
+   "GT_wholeframe_HF": 1.4247140765190125,
+   "INPUT_wholeframe_note": "GT reference is not geometry-aligned; compare levels only"
+  },
+  "0082": {
+   "INPUT": {
+    "EDGE": 1.8289608558019002,
+    "FLAT": 0.5345128655433655
+   },
+   "origin": {
+    "EDGE": 1.6576337655385336,
+    "FLAT": 0.30946699778238934
+   },
+   "deliv": {
+    "EDGE": 1.8603687604268393,
+    "FLAT": 0.6001351217428843
+   },
+   "ratio": {
+    "origin/INPUT": {
+     "EDGE": 0.906325447195944,
+     "FLAT": 0.5789701571875111
+    },
+    "deliv/INPUT": {
+     "EDGE": 1.0171725406398424,
+     "FLAT": 1.1227702089692635
+    }
+   },
+   "GT_wholeframe_HF": 1.0978567838668822,
+   "INPUT_wholeframe_note": "GT reference is not geometry-aligned; compare levels only"
+  },
+  "0091": {
+   "INPUT": {
+    "EDGE": 1.973588506380717,
+    "FLAT": 0.7844431320826213
+   },
+   "origin": {
+    "EDGE": 1.8321421543757122,
+    "FLAT": 0.46765432953834535
+   },
+   "deliv": {
+    "EDGE": 1.996734627087911,
+    "FLAT": 0.7765934944152832
+   },
+   "ratio": {
+    "origin/INPUT": {
+     "EDGE": 0.9283303730500552,
+     "FLAT": 0.5961609075431229
+    },
+    "deliv/INPUT": {
+     "EDGE": 1.0117279365137977,
+     "FLAT": 0.9899933630032581
+    }
+   },
+   "GT_wholeframe_HF": 1.2668565392494202,
+   "INPUT_wholeframe_note": "GT reference is not geometry-aligned; compare levels only"
+  },
+  "0184": {
+   "INPUT": {
+    "EDGE": 2.8866077831813266,
+    "FLAT": 1.1143571819577898
+   },
+   "origin": {
+    "EDGE": 2.512103353227888,
+    "FLAT": 1.0419478629316603
+   },
+   "deliv": {
+    "EDGE": 2.8255926370620728,
+    "FLAT": 1.2652078015463692
+   },
+   "ratio": {
+    "origin/INPUT": {
+     "EDGE": 0.870261407824274,
+     "FLAT": 0.9350214453691453
+    },
+    "deliv/INPUT": {
+     "EDGE": 0.978862682185382,
+     "FLAT": 1.135370078849901
+    }
+   },
+   "GT_wholeframe_HF": 1.9094146132469176,
+   "INPUT_wholeframe_note": "GT reference is not geometry-aligned; compare levels only"
+  },
+  "0245": {
+   "INPUT": {
+    "EDGE": 2.658209596361433,
+    "FLAT": 1.5067557437079293
+   },
+   "origin": {
+    "EDGE": 2.702871084213257,
+    "FLAT": 1.5424901587622506
+   },
+   "deliv": {
+    "EDGE": 2.7621545110430037,
+    "FLAT": 1.6626859392438615
+   },
+   "ratio": {
+    "origin/INPUT": {
+     "EDGE": 1.0168013417425612,
+     "FLAT": 1.023716129972323
+    },
+    "deliv/INPUT": {
+     "EDGE": 1.0391033554403877,
+     "FLAT": 1.1034873742390445
+    }
+   },
+   "GT_wholeframe_HF": 1.9105581998825074,
+   "INPUT_wholeframe_note": "GT reference is not geometry-aligned; compare levels only"
+  },
+  "0268": {
+   "INPUT": {
+    "EDGE": 2.3748679842267717,
+    "FLAT": 0.7998105819736209
+   },
+   "origin": {
+    "EDGE": 2.0340894630977084,
+    "FLAT": 0.5023407212325505
+   },
+   "deliv": {
+    "EDGE": 2.1924369505473544,
+    "FLAT": 0.7382015820060458
+   },
+   "ratio": {
+    "origin/INPUT": {
+     "EDGE": 0.85650633071294,
+     "FLAT": 0.6280746123575526
+    },
+    "deliv/INPUT": {
+     "EDGE": 0.9231826632507261,
+     "FLAT": 0.9229705115734427
+    }
+   },
+   "GT_wholeframe_HF": 1.1685543179512023,
+   "INPUT_wholeframe_note": "GT reference is not geometry-aligned; compare levels only"
+  }
+ },
+ "definition": "deep_20261004 / decoder_ft lane -- LATENT high-frequency check (post-hoc mechanism diagnostic, dev clips only; it is\nnot a selection input and changes no verdict).  Question: do the models' sampled latents carry the detail that the latent of\ntheir own input carries?  If the output latents lack it, the deployed blur is upstream of the decoder; if they carry it\n(and/or carry extra flat-region energy), the decoder sees a different latent distribution than the one it was tuned on.\n\nPer dev clip, per captured window k (latents/<clip>_{origin,deliv}_cap/w<k>.pt, bf16 [1,n,4,72,128], x0 space = mode*sf):\n  INPUT  = the deployed encode of the model's own conditioning frames (warped BR crop of the splatting video, deployed window,\n           image_processor.preprocess -> _encode_vae_frames(n_frames_per_time=5) mode) * 0.18215  (same space as the outputs;\n           geometry-aligned with the outputs by construction)\n  per-cell HF = mean over the 4 channels of |4-neighbour Laplacian| of the latent (interior cells)\n  cells: HOLE = any disocclusion pixel (BL mask > 127.5) in the 8x8 cell, dilated by 1 cell -> excluded everywhere;\n         EDGE = top 20 % of non-hole cells by the INPUT frame's mean |gradient| over the cell; FLAT = bottom 50 %.\nReported: mean HF on EDGE and FLAT cells for INPUT / origin / deliverable, and the ratios output/INPUT, pooled over all\nwindows and frames; plus the same for the real right eye's own encode (deployed window, not aligned: whole-frame reference).\nusage: CUDA_VISIBLE_DEVICES=1 flock /tmp/claude-gpu1.lock python latent_hf_check_v1.py <out_json>\n",
+ "mean": {
+  "INPUT": {
+   "EDGE": 2.2892100186575024,
+   "FLAT": 0.9215772441691823
+  },
+  "origin": {
+   "EDGE": 2.1453381759779795,
+   "FLAT": 0.736524964112138
+  },
+  "deliv": {
+   "EDGE": 2.303882614014641,
+   "FLAT": 0.9790231426793432
+  }
+ },
+ "mean_ratio": {
+  "origin": {
+   "EDGE": 0.9396530103336747,
+   "FLAT": 0.7441935550358881
+  },
+  "deliv": {
+   "EDGE": 1.0093301561383876,
+   "FLAT": 1.0545738944730148
+  }
+ }
+}

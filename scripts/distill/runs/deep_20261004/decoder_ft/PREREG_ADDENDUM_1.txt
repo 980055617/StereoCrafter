@@ -1,0 +1,23 @@
+decoder_ft PREREG ADDENDUM 1 (2026-10-05 ~10:00 JST; before any decoder checkpoint beyond the smoke exists and before any
+quality number of a fine-tuned decoder exists).
+
+1. GATE T1 (training-data correspondence/scaling) outcome, GATE_T1_traindata.txt: 3 of 4 sampled windows OK; 0215 w000
+   was marked FAIL by the plausibility bound "LPIPS-alex < 0.2" (it scored 0.2726, PSNR 20.78 dB, min 20.30).
+   Reading: the gate's PURPOSE holds on all 4 windows -- (a) a fresh deployed encode of the same tgt frames gives a
+   decode identical to the stored latents' decode (max difference 0 levels), so the stored latents ARE the encoding of
+   these frames in this order; (b) the trainer's scaling path is bit-equal to decode_latents' path; (c) a scaling or
+   frame-order error gives PSNR < 15 dB, not 20-43 dB.  0215 w000 is a dense forsythia bush at native iPhone resolution
+   (mean |horizontal gradient| 16.5 grey levels vs 0.5-4.5 for the other three windows; image inspected), i.e. the
+   extreme-texture case where the VAE loses most (blur_diag: 2160-format VAE_GT LPIPS mean 0.117).  The 0.2 bound was
+   mis-specified for such content.  Decision: the training data is accepted unchanged; the bound is not re-tuned.
+2. systemd user units start with a soft open-file limit of 1024; the trainer memory-maps all 1164 tgt.npy files (Python
+   mmap dups each descriptor).  The main run's launch line therefore runs `ulimit -n 65536` first (hard limit 1048576).
+   No script change.
+3. SMOKE OUTCOME -> the pre-registered training settings (10:00 JST, no quality number exists):
+   train_decoder_v1.py (diffusers block-level checkpointing) ran out of 24 GiB in both smokes (40x64 x 4 pairs; 72x128 x 2
+   pairs; logs smoke_c40x64_b4.log, smoke_full_b2.log).  train_decoder_v2.py = v1 + finer checkpointing (each
+   spatial/temporal res-block, attention and upsampler wrapped; same function and gradients).  v2 smokes (clip 0160):
+   72x128 x 1 pair x ACC 2: 2.94 s/step, peak 12.3 GiB (OK); 72x128 x 2 pairs: OOM; 40x64 x 4 pairs: 1.36 s/step, 13.3 GiB.
+   Applying PREREG section 2: CROP = full frame 72x128, B = 1 pair x ACC 2; s/step 2.94 > 2.2 -> STEPS = 2000, checkpoints
+   250, 500, 1000, 1500, 2000.  Main run "main_v1" launched 10:00 JST on GPU 1 (unit df-train-main-v1), lr 2e-5, warmup
+   100, seed 1234.  Dev selection therefore ranges over s250, s500, s1000, s1500, s2000.

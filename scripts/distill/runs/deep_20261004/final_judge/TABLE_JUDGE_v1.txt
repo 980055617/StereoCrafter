@@ -1,0 +1,203 @@
+======================================================================================================================
+FINAL JUDGE (deep_20261004/final_judge) -- re-score of every gain row from the lossless renders on disk
+score dir outputs/deep_20261004/final_judge/score_v1   nr dir outputs/deep_20261004/final_judge/nr_v1   clips 12/12   rules PREREG.txt
+======================================================================================================================
+
+--- GATE J0: reproduction of the published per-clip values (max |my - published|) ---
+  eval_robustness origin_ll UNREG/REG_FRAME/REG_CLIP         n= 36  max|d| 0.00e+00  tol 1e-04  PASS
+  eval_robustness mstudent2_step800_deliv_ll UNREG/REG_FRAME/REG_CLIP n= 36  max|d| 0.00e+00  tol 1e-04  PASS
+  eval_robustness s25_ll UNREG/REG_FRAME/REG_CLIP            n= 36  max|d| 0.00e+00  tol 1e-04  PASS
+  sdedit origin_g100_sd7 deltas vs origin (3 variants)       n= 36  max|d| 7.20e-07  tol 2e-04  PASS
+  sdedit origin_g100_sd1fill deltas vs origin (3 variants)   n= 36  max|d| 6.50e-07  tol 2e-04  PASS
+  sdedit deliv_g100_sd7 deltas vs origin (3 variants)        n= 36  max|d| 8.58e-07  tol 2e-04  PASS
+  sdedit deliv_g100_sd1fill deltas vs origin (3 variants)    n= 36  max|d| 5.70e-07  tol 2e-04  PASS
+  sdedit INPUT_fill (table printed at 4 dp)                  n= 36  max|d| 4.86e-05  tol 2e-04  PASS
+  external_models M2SVid (CPU-scored; 0125 REG on another grid, UNREG only) n= 34  max|d| 1.25e-04  tol 2e-04  PASS
+  scale_gt selMain250 s8/s25 (0125 REG on another grid, UNREG only) n= 68  max|d| 0.00e+00  tol 1e-04  PASS
+  skeptic AYS8 UNREG/REG_FRAME (CPU-scored, 5 dp)            n= 24  max|d| 1.66e-04  tol 2e-04  PASS
+  blur_diag HIRES_B / HIRES_B_L                              n=  8  max|d| 1.10e-08  tol 2e-04  PASS
+  skeptic LEFT_AS_RIGHT 12-clip means (UNREG 0.2814, REG 0.2638) n=  2  max|d| 1.23e-05  tol 2e-04  PASS
+  every row's own left-eye search landed on the deployed window: True
+
+--- LEVELS, 12-clip means (lower LPIPS = closer to the real right eye) ---
+  row                                  UNREG REG_FRAME REG_CLIP rPSNR_reg
+  origin_ll                           0.3933    0.2432   0.2454    20.715
+  deliverable (shipped)               0.3804    0.2300   0.2320    20.492
+  origin 25 steps                     0.3786    0.2279   0.2301    20.574
+  origin + AYS 8-step schedule        0.3828    0.2317   0.2339    20.660
+  sdedit origin sigma7.28             0.3899    0.2387   0.2410    20.618
+  sdedit origin sigma1.17+fill        0.3820    0.2287   0.2309    20.756
+  sdedit deliv sigma7.28              0.3795    0.2286   0.2307    20.392
+  sdedit deliv sigma1.17+fill         0.3778    0.2248   0.2269    20.647
+  M2SVid (external)                   0.3812    0.2374   0.2394    20.404
+  NO MODEL: warp+row fill             0.3583    0.1920   0.1947    20.662
+  NO STEREO: left eye as right        0.2814    0.2638   0.2648    17.662
+  scale_gt GT-ft (8 steps)            0.4310    0.2897   0.2920    20.772
+  scale_gt GT-ft (25 steps)           0.3942    0.2486   0.2510    20.666
+
+--- CONTRASTS vs ORIGIN (row - origin; negative = better), bar = mean dREG_FRAME <= -0.005 AND >= 9/12 improved ---
+
+[deliverable (shipped)]  (mstudent2_step800_deliv_ll; 12 clips; separation: clean (10 train clips; step chosen on dev 0040/0091/0184/0245))
+   dUNREG     mean -0.0128  improved 12/12  CI95 [-0.0186,-0.0080]  n11(no 0125) -0.0127   per clip 0042:-0.0061 0052:-0.0072 0125:-0.0144 0128:-0.0173 0141:-0.0133 0147:-0.0025 0170:-0.0071 0204:-0.0186 0225:-0.0164 0251:-0.0105 0259:-0.0019 0301:-0.0386
+   dREG_FRAME mean -0.0132  improved 11/12  CI95 [-0.0194,-0.0079]  n11(no 0125) -0.0129   per clip 0042:-0.0034 0052:-0.0080 0125:-0.0164 0128:-0.0121 0141:-0.0186 0147:-0.0059 0170:-0.0073 0204:-0.0196 0225:-0.0148 0251:-0.0132 0259:+0.0019 0301:-0.0408
+   dREG_CLIP  mean -0.0133  improved 11/12  CI95 [-0.0195,-0.0081]  n11(no 0125) -0.0131   per clip 0042:-0.0041 0052:-0.0080 0125:-0.0155 0128:-0.0125 0141:-0.0191 0147:-0.0058 0170:-0.0079 0204:-0.0197 0225:-0.0155 0251:-0.0133 0259:+0.0018 0301:-0.0406
+   registered PSNR change -0.223 dB | ratios vs origin: edgeHF 1.124  flatHF 1.215  stripeE 1.196 (>1.10 on 11 clips)  selfEdge 1.113  sharp 1.144
+   vs GT: edgeHF 0.567  flatHF 1.082  stripeE 2.343 | NR: dNIQE -0.146 (worse on 3/12)  dMUSIQ +0.21 (worse on 7/12)
+   vs AYS8: dREG_FRAME -0.0018 improved 9/12 CI95 [-0.0042,+0.0009]; dUNREG -0.0024 (9/12) -> strict bar not met
+   BAR MET; flags raised: ['F2_PSNR_texture', 'F5_stripes']
+
+[origin 25 steps]  (s25_ll; 12 clips; separation: clean (no selection))
+   dUNREG     mean -0.0146  improved 12/12  CI95 [-0.0207,-0.0092]  n11(no 0125) -0.0130   per clip 0042:-0.0104 0052:-0.0083 0125:-0.0330 0128:-0.0178 0141:-0.0192 0147:-0.0049 0170:-0.0068 0204:-0.0156 0225:-0.0147 0251:-0.0076 0259:-0.0009 0301:-0.0365
+   dREG_FRAME mean -0.0152  improved 11/12  CI95 [-0.0221,-0.0091]  n11(no 0125) -0.0131   per clip 0042:-0.0055 0052:-0.0098 0125:-0.0387 0128:-0.0125 0141:-0.0246 0147:-0.0085 0170:-0.0071 0204:-0.0159 0225:-0.0136 0251:-0.0093 0259:+0.0001 0301:-0.0374
+   dREG_CLIP  mean -0.0153  improved 11/12  CI95 [-0.0219,-0.0093]  n11(no 0125) -0.0133   per clip 0042:-0.0067 0052:-0.0099 0125:-0.0373 0128:-0.0128 0141:-0.0247 0147:-0.0087 0170:-0.0073 0204:-0.0158 0225:-0.0145 0251:-0.0095 0259:+0.0004 0301:-0.0370
+   registered PSNR change -0.141 dB | ratios vs origin: edgeHF 1.047  flatHF 1.148  stripeE 1.181 (>1.10 on 9 clips)  selfEdge 1.016  sharp 1.123
+   vs GT: edgeHF 0.527  flatHF 1.014  stripeE 2.286 | NR: dNIQE +0.088 (worse on 7/12)  dMUSIQ -1.25 (worse on 10/12)
+   vs AYS8: dREG_FRAME -0.0038 improved 10/12 CI95 [-0.0072,-0.0009]; dUNREG -0.0042 (11/12) -> strict bar not met
+   vs deliverable: dREG_FRAME -0.0021 improved 7/12 CI95 [-0.0063,+0.0011]
+   BAR MET; flags raised: ['F2_PSNR_texture', 'F4_flat_texture', 'F5_stripes']
+
+[origin + AYS 8-step schedule]  (AYS8_origin_g101; 12 clips; separation: clean (published schedule; only the run/extend decision used 0301))
+   dUNREG     mean -0.0105  improved 12/12  CI95 [-0.0151,-0.0067]  n11(no 0125) -0.0097   per clip 0042:-0.0082 0052:-0.0047 0125:-0.0184 0128:-0.0114 0141:-0.0089 0147:-0.0023 0170:-0.0061 0204:-0.0126 0225:-0.0113 0251:-0.0063 0259:-0.0041 0301:-0.0313
+   dREG_FRAME mean -0.0114  improved 12/12  CI95 [-0.0163,-0.0075]  n11(no 0125) -0.0105   per clip 0042:-0.0078 0052:-0.0061 0125:-0.0222 0128:-0.0106 0141:-0.0111 0147:-0.0041 0170:-0.0065 0204:-0.0135 0225:-0.0113 0251:-0.0080 0259:-0.0037 0301:-0.0324
+   dREG_CLIP  mean -0.0115  improved 12/12  CI95 [-0.0162,-0.0076]  n11(no 0125) -0.0105   per clip 0042:-0.0083 0052:-0.0061 0125:-0.0217 0128:-0.0108 0141:-0.0111 0147:-0.0041 0170:-0.0065 0204:-0.0135 0225:-0.0117 0251:-0.0081 0259:-0.0038 0301:-0.0320
+   registered PSNR change -0.055 dB | ratios vs origin: edgeHF 1.028  flatHF 1.075  stripeE 1.083 (>1.10 on 4 clips)  selfEdge 1.015  sharp 1.058
+   vs GT: edgeHF 0.517  flatHF 0.952  stripeE 2.098 | NR: dNIQE -0.010 (worse on 5/12)  dMUSIQ -0.36 (worse on 8/12)
+   vs deliverable: dREG_FRAME +0.0018 improved 3/12 CI95 [-0.0009,+0.0042]
+   BAR MET; flags raised: ['F5_stripes']
+
+[sdedit origin sigma7.28]  (origin_g100_sd7; 12 clips; separation: NOT CLEAN (variant chosen on test 0301/0204/0052/0147))
+   dUNREG     mean -0.0034  improved 10/12  CI95 [-0.0074,-0.0001]  n11(no 0125) -0.0037   per clip 0042:+0.0058 0052:-0.0011 0125:-0.0002 0128:-0.0018 0141:-0.0010 0147:-0.0001 0170:-0.0046 0204:-0.0079 0225:-0.0071 0251:+0.0027 0259:-0.0040 0301:-0.0215
+   dREG_FRAME mean -0.0045  improved 10/12  CI95 [-0.0090,-0.0008]  n11(no 0125) -0.0048   per clip 0042:+0.0063 0052:-0.0014 0125:-0.0013 0128:-0.0026 0141:-0.0010 0147:-0.0010 0170:-0.0054 0204:-0.0102 0225:-0.0081 0251:+0.0015 0259:-0.0059 0301:-0.0245
+   dREG_CLIP  mean -0.0044  improved 10/12  CI95 [-0.0090,-0.0007]  n11(no 0125) -0.0047   per clip 0042:+0.0064 0052:-0.0014 0125:-0.0008 0128:-0.0025 0141:-0.0011 0147:-0.0010 0170:-0.0054 0204:-0.0102 0225:-0.0084 0251:+0.0015 0259:-0.0058 0301:-0.0244
+   registered PSNR change -0.097 dB | ratios vs origin: edgeHF 1.079  flatHF 1.042  stripeE 1.023 (>1.10 on 0 clips)  selfEdge 1.083  sharp 1.030
+   vs GT: edgeHF 0.545  flatHF 0.922  stripeE 1.981 | NR: dNIQE -0.102 (worse on 1/12)  dMUSIQ +0.39 (worse on 3/12)
+   vs AYS8: dREG_FRAME +0.0070 improved 1/12 CI95 [+0.0037,+0.0105]; dUNREG +0.0071 (0/12) -> strict bar not met
+   vs deliverable: dREG_FRAME +0.0087 improved 1/12 CI95 [+0.0047,+0.0123]
+   BAR not met; flags raised: ['F8_separation']
+
+[sdedit origin sigma1.17+fill]  (origin_g100_sd1fill; 12 clips; separation: NOT CLEAN (variant chosen on test 0301/0204/0052/0147))
+   dUNREG     mean -0.0112  improved 11/12  CI95 [-0.0197,-0.0050]  n11(no 0125) -0.0109   per clip 0042:-0.0086 0052:-0.0037 0125:-0.0151 0128:-0.0069 0141:-0.0053 0147:-0.0014 0170:-0.0129 0204:-0.0183 0225:-0.0124 0251:+0.0010 0259:-0.0005 0301:-0.0508
+   dREG_FRAME mean -0.0145  improved 11/12  CI95 [-0.0245,-0.0069]  n11(no 0125) -0.0138   per clip 0042:-0.0102 0052:-0.0054 0125:-0.0215 0128:-0.0100 0141:-0.0058 0147:+0.0020 0170:-0.0152 0204:-0.0244 0225:-0.0140 0251:-0.0031 0259:-0.0041 0301:-0.0618
+   dREG_CLIP  mean -0.0145  improved 11/12  CI95 [-0.0244,-0.0070]  n11(no 0125) -0.0138   per clip 0042:-0.0103 0052:-0.0053 0125:-0.0220 0128:-0.0099 0141:-0.0058 0147:+0.0016 0170:-0.0153 0204:-0.0242 0225:-0.0148 0251:-0.0036 0259:-0.0037 0301:-0.0607
+   registered PSNR change +0.042 dB | ratios vs origin: edgeHF 1.071  flatHF 1.073  stripeE 1.040 (>1.10 on 3 clips)  selfEdge 1.041  sharp 1.040
+   vs GT: edgeHF 0.537  flatHF 0.930  stripeE 1.967 | NR: dNIQE +0.030 (worse on 8/12)  dMUSIQ -1.50 (worse on 11/12)
+   vs AYS8: dREG_FRAME -0.0030 improved 6/12 CI95 [-0.0090,+0.0015]; dUNREG -0.0008 (5/12) -> strict bar not met
+   vs deliverable: dREG_FRAME -0.0013 improved 6/12 CI95 [-0.0065,+0.0036]
+   BAR MET; flags raised: ['F5_stripes', 'F8_separation']
+
+[sdedit deliv sigma7.28]  (deliv_g100_sd7; 12 clips; separation: NOT CLEAN (variant chosen on test 0301/0204/0052/0147))
+   dUNREG     mean -0.0138  improved 11/12  CI95 [-0.0212,-0.0080]  n11(no 0125) -0.0139   per clip 0042:+0.0001 0052:-0.0081 0125:-0.0132 0128:-0.0177 0141:-0.0156 0147:-0.0028 0170:-0.0115 0204:-0.0190 0225:-0.0173 0251:-0.0059 0259:-0.0065 0301:-0.0481
+   dREG_FRAME mean -0.0146  improved 11/12  CI95 [-0.0228,-0.0080]  n11(no 0125) -0.0145   per clip 0042:+0.0049 0052:-0.0090 0125:-0.0155 0128:-0.0129 0141:-0.0206 0147:-0.0062 0170:-0.0124 0204:-0.0212 0225:-0.0163 0251:-0.0086 0259:-0.0048 0301:-0.0524
+   dREG_CLIP  mean -0.0147  improved 11/12  CI95 [-0.0229,-0.0082]  n11(no 0125) -0.0147   per clip 0042:+0.0045 0052:-0.0090 0125:-0.0143 0128:-0.0131 0141:-0.0210 0147:-0.0063 0170:-0.0129 0204:-0.0213 0225:-0.0171 0251:-0.0086 0259:-0.0048 0301:-0.0523
+   registered PSNR change -0.322 dB | ratios vs origin: edgeHF 1.191  flatHF 1.239  stripeE 1.209 (>1.10 on 11 clips)  selfEdge 1.184  sharp 1.167
+   vs GT: edgeHF 0.603  flatHF 1.101  stripeE 2.360 | NR: dNIQE -0.242 (worse on 3/12)  dMUSIQ +0.51 (worse on 6/12)
+   vs AYS8: dREG_FRAME -0.0032 improved 10/12 CI95 [-0.0075,+0.0011]; dUNREG -0.0033 (9/12) -> strict bar not met
+   vs deliverable: dREG_FRAME -0.0014 improved 9/12 CI95 [-0.0042,+0.0013]
+   BAR MET; flags raised: ['F2_PSNR_texture', 'F5_stripes', 'F8_separation']
+
+[sdedit deliv sigma1.17+fill]  (deliv_g100_sd1fill; 12 clips; separation: NOT CLEAN (variant chosen on test 0301/0204/0052/0147))
+   dUNREG     mean -0.0155  improved 11/12  CI95 [-0.0231,-0.0093]  n11(no 0125) -0.0146   per clip 0042:-0.0126 0052:-0.0083 0125:-0.0254 0128:-0.0151 0141:-0.0197 0147:-0.0045 0170:-0.0150 0204:-0.0179 0225:-0.0136 0251:-0.0043 0259:+0.0001 0301:-0.0492
+   dREG_FRAME mean -0.0183  improved 12/12  CI95 [-0.0276,-0.0108]  n11(no 0125) -0.0171   per clip 0042:-0.0135 0052:-0.0101 0125:-0.0317 0128:-0.0139 0141:-0.0254 0147:-0.0038 0170:-0.0171 0204:-0.0225 0225:-0.0137 0251:-0.0085 0259:-0.0002 0301:-0.0597
+   dREG_CLIP  mean -0.0185  improved 11/12  CI95 [-0.0276,-0.0111]  n11(no 0125) -0.0173   per clip 0042:-0.0141 0052:-0.0100 0125:-0.0321 0128:-0.0140 0141:-0.0254 0147:-0.0042 0170:-0.0177 0204:-0.0224 0225:-0.0146 0251:-0.0090 0259:+0.0000 0301:-0.0587
+   registered PSNR change -0.068 dB | ratios vs origin: edgeHF 1.099  flatHF 1.162  stripeE 1.145 (>1.10 on 9 clips)  selfEdge 1.061  sharp 1.108
+   vs GT: edgeHF 0.552  flatHF 1.012  stripeE 2.191 | NR: dNIQE -0.041 (worse on 6/12)  dMUSIQ -1.85 (worse on 10/12)
+   vs AYS8: dREG_FRAME -0.0069 improved 10/12 CI95 [-0.0117,-0.0028]; dUNREG -0.0050 (10/12) -> strict bar MET
+   vs deliverable: dREG_FRAME -0.0052 improved 9/12 CI95 [-0.0093,-0.0015]
+   BAR MET; flags raised: ['F5_stripes', 'F8_separation']
+
+[M2SVid (external)]  (m2svid_fa_w16_ll; 12 clips; separation: clean wrt our split (external weights; their training data unknown))
+   dUNREG     mean -0.0120  improved 10/12  CI95 [-0.0211,-0.0001]  n11(no 0125) -0.0117   per clip 0042:-0.0060 0052:+0.0077 0125:-0.0156 0128:-0.0166 0141:-0.0247 0147:-0.0114 0170:-0.0229 0204:-0.0164 0225:-0.0248 0251:+0.0400 0259:-0.0195 0301:-0.0340
+   dREG_FRAME mean -0.0057  improved  9/12  CI95 [-0.0216,+0.0137]  n11(no 0125) -0.0058   per clip 0042:+0.0106 0052:+0.0394 0125:-0.0047 0128:-0.0265 0141:-0.0148 0147:-0.0051 0170:-0.0254 0204:-0.0179 0225:-0.0285 0251:+0.0726 0259:-0.0299 0301:-0.0385
+   dREG_CLIP  mean -0.0060  improved  9/12  CI95 [-0.0215,+0.0128]  n11(no 0125) -0.0062   per clip 0042:+0.0100 0052:+0.0384 0125:-0.0036 0128:-0.0266 0141:-0.0152 0147:-0.0049 0170:-0.0251 0204:-0.0179 0225:-0.0287 0251:+0.0693 0259:-0.0297 0301:-0.0381
+   registered PSNR change -0.311 dB | ratios vs origin: edgeHF 0.933  flatHF 0.981  stripeE 0.999 (>1.10 on 2 clips)  selfEdge 0.920  sharp 0.977
+   vs GT: edgeHF 0.459  flatHF 0.841  stripeE 1.837 | NR: dNIQE +0.190 (worse on 10/12)  dMUSIQ -1.23 (worse on 8/12)
+   vs AYS8: dREG_FRAME +0.0057 improved 8/12 CI95 [-0.0094,+0.0242]; dUNREG -0.0016 (8/12) -> strict bar not met
+   vs deliverable: dREG_FRAME +0.0074 improved 4/12 CI95 [-0.0079,+0.0266]
+   BAR MET; flags raised: ['F1_UNREG>REG', 'F2_PSNR_texture', 'F3_blur', 'F6_NR_worse']
+
+[NO MODEL: warp+row fill]  (INPUT_fill; 12 clips; separation: n/a (no model))
+   dUNREG     mean -0.0350  improved 12/12  CI95 [-0.0550,-0.0191]  n11(no 0125) -0.0337   per clip 0042:-0.0115 0052:-0.0154 0125:-0.0488 0128:-0.0258 0141:-0.0308 0147:-0.0024 0170:-0.0684 0204:-0.0231 0225:-0.0471 0251:-0.0175 0259:-0.0073 0301:-0.1218
+   dREG_FRAME mean -0.0512  improved 12/12  CI95 [-0.0759,-0.0313]  n11(no 0125) -0.0492   per clip 0042:-0.0206 0052:-0.0232 0125:-0.0729 0128:-0.0482 0141:-0.0417 0147:-0.0051 0170:-0.0844 0204:-0.0417 0225:-0.0643 0251:-0.0371 0259:-0.0166 0301:-0.1580
+   dREG_CLIP  mean -0.0507  improved 12/12  CI95 [-0.0749,-0.0313]  n11(no 0125) -0.0487   per clip 0042:-0.0214 0052:-0.0227 0125:-0.0722 0128:-0.0477 0141:-0.0428 0147:-0.0055 0170:-0.0801 0204:-0.0411 0225:-0.0639 0251:-0.0378 0259:-0.0163 0301:-0.1566
+   registered PSNR change -0.053 dB | ratios vs origin: edgeHF 1.512  flatHF 1.661  stripeE 1.446 (>1.10 on 11 clips)  selfEdge 1.434  sharp 1.471
+   vs GT: edgeHF 0.739  flatHF 1.434  stripeE 2.603 | NR: dNIQE -0.749 (worse on 1/12)  dMUSIQ -0.57 (worse on 8/12)
+   vs AYS8: dREG_FRAME -0.0397 improved 12/12 CI95 [-0.0601,-0.0230]; dUNREG -0.0245 (12/12) -> strict bar MET
+   vs deliverable: dREG_FRAME -0.0380 improved 11/12 CI95 [-0.0574,-0.0218]
+   BAR MET; flags raised: ['F5_stripes']
+
+[NO STEREO: left eye as right]  (LEFT_AS_RIGHT; 12 clips; separation: n/a (no model))
+   dUNREG     mean -0.1119  improved 12/12  CI95 [-0.1425,-0.0831]  n11(no 0125) -0.1117   per clip 0042:-0.0775 0052:-0.0605 0125:-0.1140 0128:-0.1210 0141:-0.0683 0147:-0.0202 0170:-0.0879 0204:-0.1156 0225:-0.1374 0251:-0.1787 0259:-0.1427 0301:-0.2186
+   dREG_FRAME mean +0.0206  improved  4/12  CI95 [-0.0187,+0.0553]  n11(no 0125) +0.0245   per clip 0042:+0.0933 0052:+0.0242 0125:-0.0218 0128:+0.0426 0141:-0.0055 0147:+0.0401 0170:-0.0774 0204:+0.0521 0225:+0.0198 0251:+0.0939 0259:+0.1065 0301:-0.1205
+   dREG_CLIP  mean +0.0194  improved  4/12  CI95 [-0.0183,+0.0539]  n11(no 0125) +0.0225   per clip 0042:+0.0901 0052:+0.0231 0125:-0.0150 0128:+0.0391 0141:-0.0115 0147:+0.0368 0170:-0.0781 0204:+0.0527 0225:+0.0110 0251:+0.0931 0259:+0.1048 0301:-0.1131
+   registered PSNR change -3.053 dB | ratios vs origin: edgeHF 1.295  flatHF 2.064  stripeE 2.041 (>1.10 on 12 clips)  selfEdge 1.483  sharp 1.593
+   vs GT: edgeHF 0.630  flatHF 1.752  stripeE 3.566 | NR: dNIQE -0.779 (worse on 0/12)  dMUSIQ +0.72 (worse on 5/12)
+   vs AYS8: dREG_FRAME +0.0320 improved 2/12 CI95 [-0.0039,+0.0644]; dUNREG -0.1014 (12/12) -> strict bar not met
+   vs deliverable: dREG_FRAME +0.0338 improved 3/12 CI95 [-0.0012,+0.0656]
+   BAR not met; flags raised: ['F1_UNREG>REG', 'F5_stripes']
+
+[scale_gt GT-ft (8 steps)]  (selMain250_s8; 12 clips; separation: clean (215 train clips; step chosen on dev))
+   dUNREG     mean +0.0378  improved  0/12  CI95 [+0.0211,+0.0583]  n11(no 0125) +0.0368   per clip 0042:+0.0186 0052:+0.0131 0125:+0.0487 0128:+0.0608 0141:+0.0027 0147:+0.0001 0170:+0.0334 0204:+0.0373 0225:+0.0499 0251:+0.0159 0259:+0.0456 0301:+0.1271
+   dREG_FRAME mean +0.0465  improved  0/12  CI95 [+0.0289,+0.0675]  n11(no 0125) +0.0450   per clip 0042:+0.0343 0052:+0.0206 0125:+0.0639 0128:+0.0779 0141:+0.0078 0147:+0.0035 0170:+0.0375 0204:+0.0417 0225:+0.0542 0251:+0.0260 0259:+0.0555 0301:+0.1357
+   dREG_CLIP  mean +0.0466  improved  0/12  CI95 [+0.0289,+0.0675]  n11(no 0125) +0.0450   per clip 0042:+0.0356 0052:+0.0204 0125:+0.0636 0128:+0.0787 0141:+0.0080 0147:+0.0033 0170:+0.0366 0204:+0.0415 0225:+0.0548 0251:+0.0259 0259:+0.0553 0301:+0.1351
+   registered PSNR change +0.057 dB | ratios vs origin: edgeHF 0.894  flatHF 0.900  stripeE 0.870 (>1.10 on 0 clips)  selfEdge 0.922  sharp 0.864
+   vs GT: edgeHF 0.451  flatHF 0.808  stripeE 1.722 | NR: dNIQE -0.023 (worse on 6/12)  dMUSIQ -0.23 (worse on 8/12)
+   vs AYS8: dREG_FRAME +0.0580 improved 0/12 CI95 [+0.0373,+0.0830]; dUNREG +0.0482 (0/12) -> strict bar not met
+   vs deliverable: dREG_FRAME +0.0597 improved 0/12 CI95 [+0.0390,+0.0857]
+   BAR not met; flags raised: ['F1_UNREG>REG', 'F3_blur']
+
+[scale_gt GT-ft (25 steps)]  (selMain250_s25; 12 clips; separation: clean)
+   dUNREG     mean +0.0009  improved  6/12  CI95 [-0.0037,+0.0053]  n11(no 0125) +0.0014   per clip 0042:+0.0003 0052:+0.0009 0125:-0.0042 0128:+0.0137 0141:-0.0169 0147:-0.0050 0170:+0.0091 0204:-0.0019 0225:+0.0075 0251:-0.0013 0259:+0.0104 0301:-0.0014
+   dREG_FRAME mean +0.0055  improved  3/12  CI95 [-0.0005,+0.0110]  n11(no 0125) +0.0058   per clip 0042:+0.0127 0052:+0.0047 0125:+0.0018 0128:+0.0237 0141:-0.0182 0147:-0.0049 0170:+0.0116 0204:-0.0008 0225:+0.0091 0251:+0.0035 0259:+0.0170 0301:+0.0054
+   dREG_CLIP  mean +0.0056  improved  3/12  CI95 [-0.0004,+0.0112]  n11(no 0125) +0.0057   per clip 0042:+0.0132 0052:+0.0045 0125:+0.0038 0128:+0.0244 0141:-0.0182 0147:-0.0054 0170:+0.0110 0204:-0.0010 0225:+0.0090 0251:+0.0034 0259:+0.0171 0301:+0.0053
+   registered PSNR change -0.049 dB | ratios vs origin: edgeHF 0.977  flatHF 1.054  stripeE 1.037 (>1.10 on 2 clips)  selfEdge 0.980  sharp 0.991
+   vs GT: edgeHF 0.489  flatHF 0.933  stripeE 2.012 | NR: dNIQE -0.337 (worse on 0/12)  dMUSIQ -0.48 (worse on 7/12)
+   vs AYS8: dREG_FRAME +0.0169 improved 2/12 CI95 [+0.0099,+0.0238]; dUNREG +0.0114 (2/12) -> strict bar not met
+   vs deliverable: dREG_FRAME +0.0186 improved 0/12 CI95 [+0.0120,+0.0259]
+   BAR not met; flags raised: ['F1_UNREG>REG']
+
+[1.75x work-res, INTER_AREA]  (HIRES_B; 2 clips; separation: test clips 0042/0170 only)
+   dUNREG     mean +0.0031  improved  1/2  CI95 [+nan,+nan]   per clip 0042:-0.0075 0170:+0.0136
+   dREG_FRAME mean -0.0046  improved  1/2  CI95 [+nan,+nan]   per clip 0042:-0.0175 0170:+0.0084
+   dREG_CLIP  mean -0.0045  improved  1/2  CI95 [+nan,+nan]   per clip 0042:-0.0190 0170:+0.0100
+   registered PSNR change +0.546 dB | ratios vs origin: edgeHF 0.845  flatHF 0.800  stripeE 0.912 (>1.10 on 0 clips)  selfEdge 0.775  sharp 0.944
+   vs GT: edgeHF 0.493  flatHF 0.704  stripeE 1.512 | NR: dNIQE +0.373 (worse on 2/2)  dMUSIQ -2.30 (worse on 2/2)
+   BAR not met; flags raised: ['F3_blur', 'F6_NR_worse']
+
+[1.75x work-res, Lanczos]  (HIRES_B_L; 2 clips; separation: NOT CLEAN (Lanczos chosen after seeing 0042/0170))
+   dUNREG     mean -0.0082  improved  2/2  CI95 [+nan,+nan]   per clip 0042:-0.0092 0170:-0.0072
+   dREG_FRAME mean -0.0175  improved  2/2  CI95 [+nan,+nan]   per clip 0042:-0.0206 0170:-0.0145
+   dREG_CLIP  mean -0.0172  improved  2/2  CI95 [+nan,+nan]   per clip 0042:-0.0220 0170:-0.0124
+   registered PSNR change +0.524 dB | ratios vs origin: edgeHF 0.944  flatHF 0.903  stripeE 0.985 (>1.10 on 0 clips)  selfEdge 0.877  sharp 1.016
+   vs GT: edgeHF 0.549  flatHF 0.795  stripeE 1.631 | NR: dNIQE +0.473 (worse on 2/2)  dMUSIQ -0.84 (worse on 2/2)
+   BAR not met; flags raised: ['F3_blur', 'F6_NR_worse', 'F8_separation']
+
+--- NO-REFERENCE LEVELS (12-clip means; NIQE lower = better, MUSIQ higher = better) ---
+  GT_REGFRAME                        NIQE  4.344  MUSIQ  56.83
+  origin_ll                          NIQE  5.102  MUSIQ  56.20
+  deliverable (shipped)              NIQE  4.956  MUSIQ  56.41
+  origin 25 steps                    NIQE  5.190  MUSIQ  54.95
+  origin + AYS 8-step schedule       NIQE  5.092  MUSIQ  55.84
+  sdedit origin sigma7.28            NIQE  5.001  MUSIQ  56.59
+  sdedit origin sigma1.17+fill       NIQE  5.132  MUSIQ  54.71
+  sdedit deliv sigma7.28             NIQE  4.861  MUSIQ  56.71
+  sdedit deliv sigma1.17+fill        NIQE  5.061  MUSIQ  54.35
+  M2SVid (external)                  NIQE  5.292  MUSIQ  54.98
+  NO MODEL: warp+row fill            NIQE  4.354  MUSIQ  55.63
+  NO STEREO: left eye as right       NIQE  4.323  MUSIQ  56.93
+  scale_gt GT-ft (8 steps)           NIQE  5.079  MUSIQ  55.98
+  scale_gt GT-ft (25 steps)          NIQE  4.765  MUSIQ  55.72
+
+--- origin's own decomposition vs GT as the MEAN OF PER-CLIP RATIOS (same statistic as the rows' 'vs GT' line) ---
+  origin edgeHF   vs GT 0.503   per clip 0042:0.66 0052:0.53 0125:0.55 0128:0.45 0141:0.56 0147:0.60 0170:0.51 0204:0.57 0225:0.49 0251:0.49 0259:0.37 0301:0.26
+  origin flatHF   vs GT 0.888   per clip 0042:1.39 0052:0.87 0125:0.91 0128:0.78 0141:1.07 0147:1.33 0170:0.44 0204:0.85 0225:0.64 0251:0.73 0259:1.17 0301:0.46
+  origin stripeE  vs GT 1.945   per clip 0042:2.97 0052:2.11 0125:1.71 0128:1.51 0141:3.80 0147:4.45 0170:0.51 0204:1.88 0225:0.80 0251:1.34 0259:1.53 0301:0.73
+
+--- scale_gt at 25 steps against the matching reference (origin 25 steps, s25_ll) ---
+  dUNREG     (selMain250_s25 - s25_ll) mean +0.0156  improved 1/12  CI95 [+0.0095,+0.0220]
+  dREG_FRAME (selMain250_s25 - s25_ll) mean +0.0207  improved 0/12  CI95 [+0.0141,+0.0279]
+  dREG_CLIP  (selMain250_s25 - s25_ll) mean +0.0209  improved 0/12  CI95 [+0.0142,+0.0281]
+
+--- GT vs origin decomposition levels (12-clip means of the absolute values) ---
+  edgeHF   GT 0.17826  origin 0.08292  origin/GT 0.465
+  flatHF   GT 0.02367  origin 0.01608  origin/GT 0.679
+  stripeE  GT 0.00658  origin 0.00725  origin/GT 1.102

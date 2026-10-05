@@ -1,0 +1,6 @@
+0040 contrast8_v1_s500_s8 /mnt/ssd_data/deep_20261004/scale_gt/ck/contrast8_v1/step500.pt 8
+0082 contrast8_v1_s500_s8 /mnt/ssd_data/deep_20261004/scale_gt/ck/contrast8_v1/step500.pt 8
+0091 contrast8_v1_s500_s8 /mnt/ssd_data/deep_20261004/scale_gt/ck/contrast8_v1/step500.pt 8
+0184 contrast8_v1_s500_s8 /mnt/ssd_data/deep_20261004/scale_gt/ck/contrast8_v1/step500.pt 8
+0245 contrast8_v1_s500_s8 /mnt/ssd_data/deep_20261004/scale_gt/ck/contrast8_v1/step500.pt 8
+0268 contrast8_v1_s500_s8 /mnt/ssd_data/deep_20261004/scale_gt/ck/contrast8_v1/step500.pt 8

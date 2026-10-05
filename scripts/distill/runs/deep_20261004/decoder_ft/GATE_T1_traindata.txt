@@ -1,0 +1,6 @@
+GATE T1 training data, 1164 latent windows; checked ['0176_w132.pt', '0081_w000.pt', '0215_w000.pt', '0025_w088.pt']
+0176 w132: decode-vs-tgt PSNR mean 30.92 min 30.39 dB, LPIPS-alex 0.0339; fresh-encode diff p99.9 0.0 max 0 levels; trainer scaling path bit-equal True -> OK
+0081 w000: decode-vs-tgt PSNR mean 42.94 min 42.24 dB, LPIPS-alex 0.0224; fresh-encode diff p99.9 0.0 max 0 levels; trainer scaling path bit-equal True -> OK
+0215 w000: decode-vs-tgt PSNR mean 20.78 min 20.30 dB, LPIPS-alex 0.2726; fresh-encode diff p99.9 0.0 max 0 levels; trainer scaling path bit-equal True -> FAIL
+0025 w088: decode-vs-tgt PSNR mean 32.43 min 31.74 dB, LPIPS-alex 0.0937; fresh-encode diff p99.9 0.0 max 0 levels; trainer scaling path bit-equal True -> OK
+GATE T1 FAIL

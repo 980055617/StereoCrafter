@@ -1,0 +1,6 @@
+0040 main_v1_s250_s8 /mnt/ssd_data/deep_20261004/scale_gt/ck/main_v1/step250.pt 8
+0082 main_v1_s250_s8 /mnt/ssd_data/deep_20261004/scale_gt/ck/main_v1/step250.pt 8
+0091 main_v1_s250_s8 /mnt/ssd_data/deep_20261004/scale_gt/ck/main_v1/step250.pt 8
+0184 main_v1_s250_s8 /mnt/ssd_data/deep_20261004/scale_gt/ck/main_v1/step250.pt 8
+0245 main_v1_s250_s8 /mnt/ssd_data/deep_20261004/scale_gt/ck/main_v1/step250.pt 8
+0268 main_v1_s250_s8 /mnt/ssd_data/deep_20261004/scale_gt/ck/main_v1/step250.pt 8

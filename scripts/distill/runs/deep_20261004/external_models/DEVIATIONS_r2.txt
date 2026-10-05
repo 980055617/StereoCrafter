@@ -1,0 +1,36 @@
+DEVIATIONS from PREREG_r2.txt (external_models lane), appended in time order.
+D1 2026-10-04 22:30 JST  smoke (first 16-frame window of 0301, official path) OOMed INSIDE THE VAE DECODE
+   (sgm decode_first_stage forces the whole window: "Tried to allocate 4.50 GiB ... 18.66 GiB allocated", log
+   smoke_r2_w16_0301.log; the UNet/sampler pass had completed).  F1 (identity guider) only reduces UNet memory, so it
+   cannot fix a decode OOM -> pre-registered fallback F2 applied directly: VAE decode in chunks of 8 frames
+   (--decode_chunk 8; temporal decoder context 8 instead of 16).  UNet path unchanged (official scale-1.0 CFG batch).
+   Also PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True (allocator only, no numerical effect).
+N1 (note, not a deviation) input semantics checked on 0301 f8: our BL tile is StereoCrafter's SOFT occlusion map
+   (1 - clamp(bilinear forward-splat coverage)); BR has stretched texture (partial coverage) instead of black holes, so
+   only 17% of mask>0.5 pixels are dark in BR.  M2SVid's own warper (m2svid/warping/warping.py) is the same 2-tap
+   bilinear forward splat and marks coverage==0; its official preprocessing (closing 11, warped[mask>0.5]=0, dilation 3)
+   is applied unchanged to mask>0.5, which is coverage < 0.5 (a superset of coverage==0).  Polarity correct
+   (white = hole).  Panels: outputs/deep_20261004/external_models/smoke_r2_w16/inputs_0301_f008_*.png
+D2 2026-10-04 22:50 JST  scheduling only (no effect on any value): the GPU-0 lock had 6+ waiters, so chain_r2.sh's
+   per-step lock acquisitions (~36) would not fit the cap.  chain_r2.sh is stopped right after RENDER_A (between steps)
+   and replaced by chain2_r2.sh: one lock hold scores the regime set (score_batch_r2.sh = the same scripts, called in one
+   hold), a second hold renders the 8 remaining test clips and scores them.
+D3 2026-10-04 22:58 JST  scoring moved to CPU (the GPU-0 lock had 9+ waiters): score_clip_ll_cpu_r2.py (= score_clip_ll.py
+   with .cuda() -> cpu, nothing else) and score_reg_from_published_r2.py (the LPIPS half of score_registered_v1.py, re-using
+   the PUBLISHED model-independent per-frame shifts from outputs/more_20261004/eval_robustness/score_v1/<clip>.json).
+   Measured reproduction on 0301: origin published values reproduced within 4.7e-5 (UNREG 0.435140 vs 0.435095), the
+   deliverable within 3.8e-5 -> the pre-set 1e-5 gate FAILS NARROWLY (CPU vs CUDA convolution arithmetic).  Consequence:
+   every headline delta is computed PAIRED on the same backend (origin / deliverable re-scored on CPU in the same run);
+   published GPU values are shown next to them.  Effects of interest are ~1e-2, i.e. ~200x the backend error.
+D4 2026-10-04 23:09 JST  time budget (render B still queued behind ~10 lock waiters at 23:08): for the 8 non-regime test
+   clips the registered CPU scorer scores M2SVid only (score_reg_m2only_r2.py, SKIP_REF=1) and the reference values of
+   origin / deliverable are the PUBLISHED GPU values; the 12-clip table therefore uses published GPU references for ALL
+   12 clips (backend error <= 5e-5, measured on the regime set where the paired CPU re-score exists).  NR (pyiqa) only
+   on the regime set.  Temporal (CPU) on all clips.
+D5 2026-10-04 23:16 JST  chain2 (still waiting for the lock, nothing started) replaced by chain3_r2.sh: the same render of the
+   8 remaining test clips, followed in the SAME lock hold by the DEV-only mask-threshold check pre-registered in
+   PREREG_ADDENDUM_r2_dev_mask.txt.  Driver gained --mask_thresh (default None = untouched official path).
+D6 2026-10-05 00:21 JST  DEV mask check incomplete: m2svid_infer_ll.py's post-render G0 step reads
+   outputs/beyond4_lossless/clips/<clip>_origin_ll (exists only for test clips) -> the dev runs crashed (rc=1) right after
+   writing their first clip (0040; mkv + .md5 written, run json not written).  No time / lock left to rerun; the
+   pre-registered 3-clip selection rule is not applied.

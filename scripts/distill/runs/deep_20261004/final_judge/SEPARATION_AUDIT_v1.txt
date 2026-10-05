@@ -1,0 +1,35 @@
+FINAL JUDGE -- DEV/TEST SEPARATION AUDIT (PREREG section D).  2026-10-05, CPU only, from the lanes' own records.
+test = 0042 0052 0125 0128 0141 0147 0170 0204 0225 0251 0259 0301; dev = 0040 0082 0091 0184 0245 0268 (+0311 0351, no
+valid real right eye; every lane excluded them).  Split file: scripts/distill/splits/fulldata_v1.json.
+
+1. TRAINING DATA (checked by set intersection, this session)
+   scale_gt main_v1       215 clips / 754 windows (train/main_v1/meta.json spec.windows; order.json 3000 steps)
+                          test 0, dev 0, clips >= 0310: 0                                              CLEAN
+   scale_gt contrast8_v1  8 clips / 25 windows: test 0, dev 0, >= 0310: 0                             CLEAN
+   decoder_ft main_v1     291 clips / 1164 windows (train/main_v1/config.json; /mnt/ssd_data/deep_20261004/decoder_ft/
+                          gt_latents = the same 291 clips): test 0, dev 0, >= 0310: 0; equals train_order < 0310 exactly
+                                                                                                        CLEAN
+   deliverable mstudent2  10 train clips 0011 0078 0094 0105 0114 0144 0165 0177 0179 0286
+                          (beyond_distil_mamba_scaled/mstudent2/*.json): test 0, dev 0                 CLEAN
+   skeptic camera-look    trainsample_v1.json: 48 clip keys (46 used): test 0, dev 0, >= 0310: 0       CLEAN
+   train_order >= 0310    42 clips: 28 have no train bundle, 14 are symlinks into train_leftGT_broken (right eye = left
+                          eye copy); train_order < 0310 = 291, none missing or broken.  (independent re-count, this session)
+
+2. SELECTION (what chose a variant / checkpoint)
+   scale_gt               step 250 chosen on dev REG_FRAME (5 registered dev clips); test rendered ONLY for the selected
+                          checkpoint (12 x s8, 12 x s25) + 2 control renders (C2).  Listing of outputs/deep_20261004/
+                          scale_gt/renders/: no other checkpoint on any test clip.                      CLEAN
+   decoder_ft             no eligible checkpoint on dev -> test never scored; re-decodes exist only for dev clips
+                          (redec_dev: 0040 0082 0091 0184 0245 0268).  Test latents were captured, never re-decoded. CLEAN
+   deliverable            step800 chosen on dev 0040/0091/0184/0245 (TABLE_DEV_SELECTION.txt).       CLEAN
+   AYS8                   published schedule (no tuning); the decision to EXTEND from 0301 to 12 clips used the 0301 test
+                          result (futility gate, judge/PREREG ADDENDUM 3).  No variant was picked on test.  ACCEPTABLE
+   sdedit                 variants passed to 12 clips by P4 on the regime set 0301 0204 0052 0147 = TEST clips
+                          (sdedit/PREREG.txt line 70, 120; FRESH8_SPLIT_S2.txt).  The 12-clip numbers are test-selected;
+                          the 8 unused clips are the cleaner estimate.                                 NOT CLEAN
+   blur_diag HIRES_B_L    Lanczos down-sampling added after the pre-registered INTER_AREA result was seen on the same
+                          two test clips 0042/0170 (TABLE_BLUR_DIAG_r2.txt R4 'SENSITIVITY').           NOT CLEAN
+   input_side RF          disparity scale/offset fitted to each TEST clip's real right eye (oracle by design).
+                                                                                                        ORACLE, not a method
+   external_models M2SVid single pre-registered configuration + an OOM fallback (decode chunking); no choice on test.
+                          M2SVid's own training data cannot be checked against our clips.            CLEAN wrt our split

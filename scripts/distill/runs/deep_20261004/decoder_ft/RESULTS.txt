@@ -1,0 +1,122 @@
+decoder_ft -- TRAINING PHASE of deep_20261004: which option the probe evidence justifies, and what running it showed.
+lane dir scripts/distill/runs/deep_20261004/decoder_ft/ (records); outputs/deep_20261004/decoder_ft/ (scores, panels);
+/mnt/ssd_data/deep_20261004/decoder_ft/ (captures, latents, re-decodes, checkpoints).  2026-10-05 09:36 -> 12:55 JST.
+Every number below cites its file (this dir unless a path is given).
+
+=====================================================================================================================================
+0. ANSWER
+=====================================================================================================================================
+Only option (B) was justified, so only (B) was run: a fine-tune of ONLY the SVD temporal VAE decoder on the real right eye of
+ALL 291 GT-valid train clips (1164 windows, 16296 frames; latent of the frame -> the frame; LPIPS-VGG + L1; full deployed
+576x1024 frames, 2000 steps).  It FAILED its pre-registered dev gate: no checkpoint was eligible and none improved the primary
+metric, so -- as pre-registered -- nothing was taken to the 12 test clips.  Test clips were rendered by this lane only for the
+passive latent capture (every capture md5 == the published lossless render) and were never scored.
+  * DEV (5 registered clips x {origin, deliverable}, same sampled latents, fine-tuned minus stock decoder): REG_FRAME LPIPS-Alex
+    +0.0009 / +0.0009 / +0.0016 / +0.0010 / +0.0019 at steps 250 / 500 / 1000 / 1500 / 2000 (better on 4, 4, 2, 2, 2 of 10
+    cells); UNREG +0.0003..+0.0012; NIQE worse by +0.35..+0.54 at every step (worse on 12/12 cells at s1000); MUSIQ -0.9..-1.1;
+    DISTS +0.0001..+0.0010.  Moving slightly favourably: LPIPS-VGG (the training-loss family, -0.0024..-0.0043) and registered
+    PSNR (+0.005..+0.054 dB at 4 of 5 steps, -0.003 at s2000).  [TABLE_DEV_main_v1.txt, SELECTION_DEV_main_v1.json]
+  * The decoder did change in a measurable, mostly favourable way on REAL latents, but that does not carry over to the models'
+    latents.  On the real right eye of the held-out dev clips (decoder-only round trip, registration-free): LPIPS-Alex
+    0.0452 -> 0.0423..0.0430 (-5..-6 %), DISTS 0.0284 -> 0.0269..0.0278 (-2..-5 %), PSNR 35.53 -> 36.42..36.67 dB (part of the
+    PSNR gain may be a colour/bias correction: the fine-tuned decoder shifts the mean colour by up to -3.4 levels on R, 0082)
+    [ROUNDTRIP_DEV_main_v1.json].  Applied to origin's and the deliverable's sampled latents it ADDS flat-region high-frequency
+    energy (flatHF +5..+8 %, stripe energy +3..+6 %, both already above the real right eye's level) and REMOVES edge energy
+    (edgeHF -2..-4 %) [DEV_LEVELS_main_v1.txt].  0245 shows the contrast most sharply: the best GT round-trip gain of all dev
+    clips (0.0703 -> 0.0631) but the largest output degradation (+0.005..+0.008 REG_FRAME).
+  * SCOPE OF "CLOSED": decoder-only fine-tuning on clean GT encoder latents, LPIPS-VGG + L1 (1:1), lr 2e-5, 2000 steps
+    (0.49 epoch), evaluated on the two models' sampled latents.  NOT tested: a decoder adapted on the models' OWN output
+    latents (the domain gap found here), other loss weightings (e.g. L1-dominant), longer training.  HYPOTHESIS (not shown):
+    that the VAE-stage loss blur_diag measured is mostly the 4-channel latent bottleneck rather than decoder capacity -- this
+    run recovered only ~6 % of the real-latent round-trip LPIPS, but with 0.49 epoch at lr 2e-5 that is a lower bound, not a
+    ceiling.  A post-hoc latent check (section 5, dev only): at latent-cell scale the sampled latents track their own input's
+    structure (Laplacian corr 0.77 origin / 0.72 deliverable at the input's edge cells, magnitude 0.94x / 1.01x); this check
+    cannot resolve sub-8-px detail (a 3x3 Laplacian on the 72x128 latent responds to ~16-24 px structure), and its
+    consecutive-frame reference (0.38) is motion-dependent, not a ceiling.  For fine detail, blur_diag's pixel-space numbers
+    remain the evidence that the blur relative to the input forms largely in the VAE path; this check is consistent with
+    that.  Flat-region latent energy differs (origin 0.74x, deliverable 1.05x of the input's); why the fine-tuned decoder
+    responds differently to sampled latents than to clean encoder latents is not isolated here.  A decoder adapted ON the
+    sampled latents is an untested variant, but it inherits a target problem (sampled latents have no pixel-aligned target:
+    the warped input carries splat stripes, and the registered real right eye fits only ~half the cells within +-2 px -- the
+    same issue that ruled out (A)) and costs ~3 GPU-min per clip per model just to sample train latents (50 clips x 2 models
+    ~ 5 GPU-h before training).
+  * Not run, by the evidence: (C) its precondition failed (scale_gt: STILL DEGRADES at 215 clips); (A) its target is the same
+    misregistered real right eye; one observation from this run is relevant to it but is not a test of it: here LPIPS-VGG
+    training moved LPIPS-VGG favourably while LPIPS-Alex, DISTS, NIQE and MUSIQ moved unfavourably; (D) no input-side or
+    training-free lever passed its own pre-registration.
+  * The user's question (why 1-28 when there are 333 clips): of the 333 train_order clips, the 42 numbered >= 0310 have no
+    usable real right eye (no bundle, or a link to an old bundle whose "right eye" is a copy of the left), leaving 291; this
+    round used 215 of them for the GT diffusion fine-tune (scale_gt, after registration exclusions) and all 291 for this
+    decoder fine-tune (no registration needed).  Neither improved on origin.
+  * Reusable asset: the pre-decode latents of origin and the deliverable for the 12 test and 6 dev clips are captured
+    bit-exactly (/mnt/ssd_data/deep_20261004/decoder_ft/latents/); any later decoder lane can re-decode a clip in ~40 s with
+    no re-sampling (redecode_v1.py; stock re-decode == published render md5).
+
+=====================================================================================================================================
+1. DATA AND TRAINING
+=====================================================================================================================================
+* clips: scale_gt/clips_valid_v1.json train_valid (291; < 0310, not broken, right != left), asserted disjoint from test/dev.
+  Frames: scale_gt's lossless crops cache_v1/crops/<clip>/w*/tgt.npy (md5-checked), 4 windows x 14 frames per clip.
+  Latents: encode_gt_v1.py, the deployed encode (mode, bf16), 890 s [encode_gt_v1.log].
+* GATE T1 [GATE_T1_traindata.txt, PREREG_ADDENDUM_1.txt]: stored latents == fresh deployed encode (0 levels), trainer scaling
+  path bit-equal to decode_latents; one window (0215 w000, dense forsythia) exceeded the LPIPS<0.2 plausibility bound (0.27) --
+  mis-specified bound, data accepted unchanged.
+* train_decoder_v2.py (v1 + per-module checkpointing; v1 OOM'd): vae.decoder only (63.58M), fp32 masters from the deployed fp16
+  weights, AdamW lr 2e-5, warmup 100, clip 1.0, 1 pair x ACC 2 per step, full 72x128 latents, 2000 steps, 5908 s on GPU1,
+  peak 12.3 GiB [train/main_v1/, train_main_v1.log].  ||W-W0||/||W0||: 0.0052 / 0.0078 / 0.0114 / 0.0142 / 0.0166 at
+  250 / 500 / 1000 / 1500 / 2000 [train/main_v1/weight_drift.json].  Training loss logged, never used.
+
+=====================================================================================================================================
+2. GATES (all pass)
+=====================================================================================================================================
+* C1 capture renders == published lossless renders: test 12/12 x 2 models and dev 0040/0082/0091/0184/0245/0268 (origin ==
+  scale_gt origin_s8; deliverable == mstudent2_step800(_deliv)_ll where it exists) [capture/timing_gpu0.txt on /mnt,
+  GATES_C1C2_dev_v2.txt; the original 'init_md5_all' sub-rule only fits 14-window clips -> PREREG_ADDENDUM_3].
+* C2 stock re-decode == capture on all 12 dev cells (+0301 origin) [GATES_C1C2_dev_v2.txt, gate_stock_0301_origin.log].
+* C3 step-0 checkpoint re-decode == stock on 0040 both models [GATES_C3_dev_main_v1.txt].
+* G0 scorer chain reproduces the published 0301 origin UNREG / REG_CLIP / REG_FRAME / BLK_LOCAL exactly (|d| <= 2.3e-7)
+  [GATE_G0.txt]; dev stock rows reproduce scale_gt's dev origin_s8 exactly (REG_FRAME5 0.2568, UNREG6 0.4616, rPSNR 20.093).
+
+=====================================================================================================================================
+3. DEV TABLE (pre-registered selection; full table TABLE_DEV_main_v1.txt)
+=====================================================================================================================================
+  cand   dREG_FRAME better  dUNREG better  drPSNR   dNIQE  dMUSIQ  dDISTS   dVGG   eligible   [origin / deliverable dREG]
+  s250    +0.0009   4/10   +0.0008  7/12   +0.005  +0.347  -0.89  +0.0001 -0.0024  no (NIQE)  [+0.0004 / +0.0013]
+  s500    +0.0009   4/10   +0.0005  6/12   +0.054  +0.358  -0.99  +0.0007 -0.0035  no (NIQE)  [+0.0006 / +0.0011]
+  s1000   +0.0016   2/10   +0.0009  4/12   +0.027  +0.452  -1.07  +0.0009 -0.0043  no (NIQE)  [+0.0012 / +0.0020]
+  s1500   +0.0010   2/10   +0.0003  4/12   +0.037  +0.544  -0.87  +0.0010 -0.0043  no (NIQE)  [+0.0008 / +0.0011]
+  s2000   +0.0019   2/10   +0.0012  4/12   -0.003  +0.379  -1.04  +0.0008 -0.0042  no (NIQE, UNREG) [+0.0014 / +0.0023]
+  GT-free unsharp baseline grid: best us_s1a0.15 dREG +0.0002 (NIQE -0.32, MUSIQ +1.46); none improves REG_FRAME on dev.
+  Stock references: REG_FRAME origin 0.2568, deliverable 0.2507; UNREG 0.4616 / 0.4561; NIQE 6.449 / 6.001 (GT 4.907).
+  SELECTED: none -> no test evaluation (PREREG section 4).
+
+=====================================================================================================================================
+4. DIAGNOSTICS (after the selection; never a selection input)
+=====================================================================================================================================
+* Decoder-only dev round trip [ROUNDTRIP_DEV_main_v1.json]: mean LPIPS-Alex stock 0.0452 -> s250 0.0427, s500 0.0423, s1000
+  0.0430, s1500 0.0425, s2000 0.0425; PSNR 35.526 -> 36.42..36.67 dB; DISTS 0.0284 -> 0.0269..0.0278.  Per clip 5/6 improve;
+  0268 (iPhone) is mixed (0.0852 -> 0.0839..0.0882).
+* Output statistics on dev [DEV_LEVELS_main_v1.txt]: origin flatHF 0.00972 -> 0.0103, stripeE 0.00522 -> 0.0055, edgeHF
+  0.0572 -> 0.0550; deliverable 0.0116 -> 0.0124, 0.00612 -> 0.0064, 0.0638 -> 0.0616 (GT 0.00704 / 0.00186 / 0.111).
+  NIQE worse on every dev clip for both models (+0.21 .. +0.78 at s1000).
+* Visual [outputs/deep_20261004/decoder_ft/panels_dev_main_v1/]: at 2x zoom stock and fine-tuned outputs are nearly
+  indistinguishable; the difference image (stock vs s2000, 0245) is texture-localised, carries latent-grid (8 px) spectral
+  structure, plus a small global colour change (mean -0.5..-1.5 levels).
+
+=====================================================================================================================================
+5. POST-HOC LATENT CHECK (dev only, after the selection; latent_hf_check_v2.py -> LATENT_HF_CHECK_v2.json; v1 = magnitudes only)
+=====================================================================================================================================
+Per captured window: INPUT = deployed encode of the model's own warped conditioning frames x 0.18215 (geometry-aligned with
+the outputs by construction); per-cell HF = |latent Laplacian| (4 channels); cells exclude any disocclusion pixel (dilated by
+one cell); EDGE = top 20 % of non-hole cells by the input frame's gradient, FLAT = bottom 50 %.  Crude latent-space measure;
+input-edge cells can include splat stripes.
+                       EDGE HF ratio out/in   FLAT HF ratio out/in   Laplacian corr out vs in (EDGE / ALL non-hole)
+  origin               0.94 (0.86-1.06)       0.74 (0.58-1.02)       0.77 / 0.68   (per clip EDGE 0.63-0.93)
+  deliverable          1.01 (0.92-1.09)       1.05 (0.92-1.14)       0.72 / 0.60   (per clip EDGE 0.56-0.89)
+  reference: input latents of consecutive frames t, t+1: corr 0.38 / 0.38 (0.01-0.90, motion-dependent)
+Reading (scoped): at latent-cell scale (~16-24 px structure) the sampled latents track their own input's structure at about
+the input's magnitude; the check cannot resolve sub-8-px detail.  It is consistent with blur_diag's pixel-space finding that
+the blur relative to the input forms largely in the VAE path (decoded input keeps 0.733 of the input's edge energy), but it
+does not establish it.  The fine-tuned decoder raised flat-region pixel energy on BOTH models' outputs (section 4), including origin, whose
+flat-cell latent energy is below its input's (0.74x) -- so the decoder's response to sampled latents differs from its response
+to clean encoder latents; the cause of that difference is not isolated here.

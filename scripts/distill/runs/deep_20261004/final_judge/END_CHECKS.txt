@@ -1,0 +1,20 @@
+2026-10-05 13:42:42
+--- J2 protected checkpoints (expected 08cf44850b8f392efb307e3a48cd82d1 / e9c232878319d041680e7fb3be74bf10)
+08cf44850b8f392efb307e3a48cd82d1  /mnt/ssd_data/stereocrafter_weights/_distill_injected/mamba5slot_plus_stepdistil_up3_train10clip_step800_20261001.pt
+e9c232878319d041680e7fb3be74bf10  /mnt/ssd_data/stereocrafter_weights/_distill_injected/light_lvl0_fulldata333_v2_8k_mamba_only.pt
+-rw-rw-r-- 1 kawa kawa 16110894 2026-09-24 17:26:07.606720509 +0900 /mnt/ssd_data/stereocrafter_weights/_distill_injected/light_lvl0_fulldata333_v2_8k_mamba_only.pt
+-rw-rw-r-- 1 kawa kawa 16119038 2026-10-01 15:20:20.946255688 +0900 /mnt/ssd_data/stereocrafter_weights/_distill_injected/mamba5slot_plus_stepdistil_up3_train10clip_step800_20261001.pt
+--- git status --porcelain (expected: only '?? scripts/distill/runs/deep_20261004/')
+?? scripts/distill/runs/deep_20261004/
+--- git diff --stat (tracked files)
+--- HEAD
+c24b8ea59b89b2623cb5827184e1addccce3e3c6
+attn1_only_version
+--- tracked scorer md5 (unchanged vs START_CHECKS)
+a6695eb066971e1ca211e4ad9c85fac7  scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py
+4cb3c07da50c90c3fdddcb6f8c5c7ee9  scripts/distill/score_temporal.py
+c9532d5a5cde42f7024a2caebb855c3f  scripts/distill/runs/more_20261004/eval_robustness/score_registered_v1.py
+2506656d86c8c5a24dd7546a2689e8f6  scripts/distill/runs/review_20261001/reviewlib.py
+--- other lanes' scripts I executed, unchanged:
+62c1751339389c37bb912f1fccd6451d  scripts/distill/runs/deep_20261004/input_side/score_input_v1.py
+--- running judge units

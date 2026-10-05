@@ -1,0 +1,29 @@
+{
+ "trainer": "train_decoder_v2.py",
+ "run": "smoke2_full_b1acc2",
+ "steps": 20,
+ "lr": 2e-05,
+ "B": 1,
+ "acc": 2,
+ "crop": [
+  72,
+  128
+ ],
+ "warmup": 5,
+ "save": [
+  20
+ ],
+ "lpips_w": 1.0,
+ "l1_w": 1.0,
+ "seed": 1234,
+ "n_windows": 4,
+ "n_clips": 1,
+ "clips": [
+  "0160"
+ ],
+ "n_params": 63579183,
+ "init": "weights/stable-video-diffusion-img2vid-xt-1-1/vae diffusion_pytorch_model.fp16.safetensors upcast fp32",
+ "torch": "2.4.0",
+ "lpips_net": "vgg",
+ "ck_dir": "/mnt/ssd_data/deep_20261004/decoder_ft/ck/smoke2_full_b1acc2"
+}

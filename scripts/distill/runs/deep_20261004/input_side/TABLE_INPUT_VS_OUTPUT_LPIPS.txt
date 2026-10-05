@@ -1,0 +1,20 @@
+DESCRIPTIVE (not pre-registered): LPIPS-Alex vs the real right eye of the model INPUT (warped window, holes black)
+and of each model's OUTPUT, same frames, same per-input registration.  input: input_lpips_v1/<clip>.json (CPU LPIPS);
+outputs: outputs/deep_20261004/input_side/scores_v1/<clip>__<input>.json.  out - in > 0 = the model moved AWAY from GT.
+clip  input     in UNREG   in REG | origin REG  out-in | deliv REG  out-in
+0301  deployed    0.3173   0.2555 |     0.4051 +0.1496 |    0.3643 +0.1088
+0301  R1          0.3145   0.2519 |     0.4085 +0.1567 |    0.3641 +0.1122
+0301  RO          0.2528   0.2503 |     0.4081 +0.1578 |    0.3643 +0.1140
+0301  RF          0.2189   0.2163 |     0.3530 +0.1367 |    0.3359 +0.1196
+0204  deployed    0.1823   0.0922 |     0.1340 +0.0418 |    0.1144 +0.0222
+0204  R1          0.1812   0.0904 |     0.1281 +0.0377 |    0.1121 +0.0217
+0204  RO          0.0990   0.0901 |     0.1298 +0.0396 |    0.1136 +0.0235
+0204  RF          0.0912   0.0820 |     0.1206 +0.0386 |    0.1055 +0.0235
+0052  deployed    0.4449   0.2247 |     0.2231 -0.0016 |    0.2151 -0.0095
+0052  R1          0.4451   0.2238 |     0.2225 -0.0013 |    0.2170 -0.0068
+0052  RO          0.2186   0.2174 |     0.2185 +0.0012 |    0.2130 -0.0044
+0052  RF          0.3358   0.3342 |     0.2015 -0.1327 |    0.1919 -0.1422
+0147  deployed    0.5445   0.2519 |     0.2100 -0.0418 |    0.2042 -0.0477
+0147  R1          0.5527   0.2670 |     0.2182 -0.0488 |    0.2139 -0.0531
+0147  RO          0.2791   0.2773 |     0.2271 -0.0502 |    0.2228 -0.0545
+0147  RF          0.2880   0.2859 |     0.2230 -0.0628 |    0.2181 -0.0678

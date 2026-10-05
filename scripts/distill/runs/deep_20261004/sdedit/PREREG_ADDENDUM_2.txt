@@ -1,0 +1,37 @@
+PRE-REGISTRATION ADDENDUM 2 -- deep_20261004 / sdedit lane
+Written 2026-10-05 ~05:30 JST (shell stamp below), after the S1 table (TABLE_S1_REGIME.txt) and BEFORE any S2 render or score exists
+(chain_02c_ext12_split.sh is still waiting for its first GPU-0 lock hold).  It fixes now the judgement calls the A2
+verdict mapping needs, so that none of them is made after the 12-clip numbers are known.  Nothing in PREREG.txt or
+ADDENDUM 1 changes.
+
+B1  VISUAL CALLS (A2 "clean panels"), from the S1 visual material already on disk:
+      outputs/deep_20261004/sdedit/panels/            (GT | deployed | lowest-REG_FRAME variant = sd1fill, both models)
+      outputs/deep_20261004/sdedit/panels_sd7/        (GT | deployed | sd7, both models, make_panels_v2.py PANEL_VARIANT=sd7)
+      outputs/deep_20261004/sdedit/holezoom_s1/       (4x zooms of the two densest-hole 96x96 blocks: GT | INPUT_warp |
+                                                       deployed | g1.00 control | sd31 | sd7 | sd1 | sd1fill | holes)
+    sd1      NOT CLEAN, disqualifying: dark hatched crack patterns survive inside the disocclusion bands (0147 jersey edge,
+             0052 frame/wheel bands, 0301 diagonal hatching).  Near-hole stripe ratio 6.9x (origin) / 6.5x (deliv) on 0147.
+    sd1fill  NOT CLEAN: a red/white streaky smear along the 0147 jersey edge (the row-interpolated source bleeds foreground
+             colour into the revealed background and sigma 1.17 does not remove it); clean-looking on 0052/0204; on 0301
+             sharper than deployed with GT-like texture.  stripeE ratio 1.243 on 0301 (origin).
+    sd7      CLEAN: nothing visible beyond the deployed render on 0301 / 0204 / 0052 / 0147 for either model; slightly
+             sharper on 0301; on 0204 the deliverable's dark-blue water patch is weaker than in the deployed render.
+    sd31     CLEAN (visually indistinguishable from deployed in the hole zooms).
+    These calls are final for the A2 mapping; S2 adds no new visual judgement unless a 12-clip panel is opened, in which
+    case only an artefact of the kinds named above may change a call, and that would be reported as such.
+B2  P12 SENSITIVITY LINES (PREREG.txt P12 already says "also shown with REG_CLIP and without 0125"; table_v1.py does not
+    print them): p12_sensitivity_v1.py computes, from TABLE_S2_EXT12.json + the S2 reg JSONs, the P12 count with REG_CLIP
+    and the count over the 11 clips without 0125 (rule scaled: >= 9/12 -> >= 8/11 is NOT used; the 11-clip line is shown
+    as a count only).  Reported, never gating.
+B3  INPUT_fill / INPUT_warp ROUND-RULE LINE (descriptive): the A1 round rule (registered LPIPS >= 0.005 better than
+    origin_ll on the 12-clip mean AND better on >= 9/12) is evaluated on the no-model INPUT rows as well, from the same S2
+    scorer runs, provided the 8-clip INPUT job finished before the S2 stage prep (checked in its log).  If INPUT_fill meets
+    it, the answer states that the round's LPIPS criterion is met by a warped-pixel composite that the user explicitly
+    rejects, so an LPIPS pass alone never certifies "beyond origin" here without the stripe and visual gates.
+B4  FRAMING fixed now: deliv-based variants are reported by their increment over the deliverable first (S1: sd7 -0.0036,
+    sd1fill -0.0055); deliv sd1 is out whatever P12 says (S1 mean +0.0014, crack remnants, B1).  The cost side is stated
+    as a fact: sd31 / sd7 / sd1(fill) use 5 / 4 / 3 UNet evaluations per window instead of 8.
+--- recorded by the shell at 2026-10-05T05:30:46+09:00 ---
+S2 state: CHAIN02c start 2026-10-05_05:26:14
+S2 render dirs present for the 8 new clips: 0
+score_ext12 present: ls: cannot access 'outputs/deep_20261004/sdedit/score_ext12': No such file or directory

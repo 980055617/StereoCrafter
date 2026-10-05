@@ -1,0 +1,33 @@
+External-model search record -- deep_20261004 / external_models lane (r2), 2026-10-04 22:00-22:15 JST.
+Criterion: open code + released weights, 2024-2026, monocular->stereo video or stereo video inpainting, runs on one
+24 GB RTX 4090, and (for a fair score against the real right eye) accepts OUR warp + mask / depth so the right eye has the
+same geometry as origin's.
+
+CHOSEN
+  M2SVid (Google; arXiv 2505.16565, 3DV 2026) -- github.com/google-research/m2svid (Apache-2.0), weights released
+    2026-03-20 (m2svid_weights.pt full attention 4.98 GB, m2svid_no_full_atten_weights.pt).  SVD-XT fine-tune, inputs =
+    left video + warped right + disocclusion mask, 1 step.  Paper Table 1 (Stereo4D 512x512, 16 frames @5 fps):
+    PSNR 26.2 / MS-SSIM 0.915 / LPIPS 0.180 vs StereoCrafter 25 steps 24.9 / 0.909 / 0.242; 2.1 s vs 12.2 s per
+    512x512x16 clip on an A100.  Note from the paper: the comparison used the same depth maps but EACH METHOD'S OWN
+    WARPING -> here both get the identical StereoCrafter warp, which removes that confound.
+
+FOUND, NOT CHOSEN
+  StereoPilot (KlingTeam, github.com/KlingTeam/StereoPilot, MIT, weights on HF) -- Wan2.1-T2V-1.3B feed-forward; input is
+    the MONOCULAR video only (81 frames, 832x480, 16 fps, + text prompt), ~23 GB VRAM; no depth/warp input and no
+    disparity/baseline control -> its right eye has its own disparity, so LPIPS vs our real right eye would mostly measure
+    geometry mismatch, not inpainting quality; also 480p (we score 576x1024).
+  StereoWorld (arXiv 2512.09363, CVPR 2026) -- pretrained video generator conditioned on the mono video, geometry-aware
+    regularization, spatio-temporal tiling; mono input only (same geometry problem); weights not confirmed released.
+  StereoCrafter-Zero (github.com/shijianjian/StereoCrafter-Zero) -- training-free noisy-restart / iterative refinement on
+    top of a video diffusion model; iterative (slower than origin) and not a sharper model per se.
+  ImmersePro (ICML 2026 poster) -- implicit disparity (no explicit warp input); code/weights not confirmed.
+  Restereo (arXiv 2506.06023), SpatialMe -- depth-warp-inpaint pipelines; no released weights found in this search.
+  Eye2Eye (Google) -- not open.
+  Stereo MATCHING / depth models found by the search (MonSter, FoundationStereo, ZeroStereo) are not right-eye
+    generators -> out of scope.
+  Generic video inpainters already cached on this machine (ROSE, DiffuEraser, VideoPainter, Wan2.1-Fun-InP) inpaint
+    holes only (mask-only compositing is rejected by the user) and do not regenerate the whole right eye -> not chosen.
+
+Sources: github.com/google-research/m2svid (README), arxiv.org/html/2505.16565v2, github.com/klingteam/stereopilot,
+arxiv.org/html/2512.09363v2, arxiv.org/pdf/2506.06023, arxiv.org/abs/2411.14295 (StereoCrafter-Zero), icml.cc 2026 poster
+63467 (ImmersePro).

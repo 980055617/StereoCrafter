@@ -1,0 +1,6 @@
+step0 identical to main_v1 step0: True
+contrast8_v1: relative weight change ||W_s - W_0|| / ||W_0||  (main_v1 at the same step in brackets)
+step   250  0.00091  [main 0.00074]  cos(delta_contrast, delta_main) +0.546
+step   500  0.00134  [main 0.00102]  cos(delta_contrast, delta_main) +0.479
+step   750  0.00172  [main 0.00126]  cos(delta_contrast, delta_main) +0.445
+step  1000  0.00204  [main 0.00151]  cos(delta_contrast, delta_main) +0.436

@@ -1,0 +1,209 @@
+PRE-REGISTRATION -- deep_20261004 / lane "blur_diag" (GPU 0, shared under flock /tmp/claude-gpu0.lock)
+Written 2026-10-04 ~22:30 JST, BEFORE any score, VAE round trip or render of this lane exists.  The only numbers seen so
+far are the published eval_robustness per-clip JSON values (used below as reproduction gates) and the published
+V2_HIRES_TABLE.txt.  Any later change goes into a dated ADDENDUM at the bottom; nothing above it is edited.
+
+QUESTION  Where does origin's blur come from, and how far is origin from the real right eye on NO-REFERENCE metrics?
+          Decompose GT -> VAE round trip -> warped input -> origin -> deliverable with edge energy, registered LPIPS and
+          NR metrics; test a higher working resolution (1024x1792) on 2 clips.
+
+=====================================================================================================================
+DATA
+=====================================================================================================================
+Clips   12 test clips 0042 0052 0125 0128 0141 0147 (4400-px tiles, 2200x2200 quadrants) | 0170 0204 0225 0251 0259 0301
+        (2160-px tiles, 1080x1920 quadrants).  All < 0310.  Every table is reported for ALL-12, 4400-px (6), 2160-px (6).
+Frames  the published SCORE_STEP=4 grid: frames 0,4,...,148 = 38 per clip (the task said "~19"; the 38-frame grid is
+        kept so the published registered numbers are reproducible, gate G0).
+Window  the deployed 576x1024 window in render geometry (splatting quadrant cropped to /128, centred; = scorer window).
+GT      real right eye = train-tile TR quadrant, REGISTERED with the eval_robustness REG_FRAME per-frame shifts (median-5
+        smoothed integer (ddy,ddx) per GT frame, estimated from TR vs the model input BR, holes excluded) read from
+        outputs/more_20261004/eval_robustness/score_v1/<clip>.json, and for 0125 from score_v1_wide/0125.json (its
+        primary file).  NOT re-estimated.  Frames >= n_g (no GT) are padded with the last GT frame only where the VAE
+        window grid needs them; they are never scored.
+Holes   splatting BL quadrant at the window, channel mean > 127.5 (eval_robustness definition).  "Dilated holes" = holes
+        dilated by 8 px (17x17 square).  "Valid" = not dilated-hole.
+
+=====================================================================================================================
+ROWS
+=====================================================================================================================
+GT        registered real right eye (the reference).
+LEFT      real left eye at the window = left half of the origin_ll render (NR anchor-fairness control only).
+VAE_GT    GT -> the pipeline's OWN VAE path, bf16 (precision of config/0160_overfit_inference_matched.json):
+          image_processor.preprocess -> _encode_vae_frames(n_frames_per_time=5, latent_dist.mode()) -> (z*scaling
+          factor).to(bf16) -> decode_latents(decode_chunk_size=2) -> tensor2vid(pil) -> /255 -> *255 -> .to(uint8),
+          run over ALL frames on the deployed 14-frame / overlap-3 window grid of the splatting video's n_s frames,
+          keeping exactly the frames the deployed loop keeps (so every frame has its deployed 2-frame decode partner).
+          GT geometry -> scored against its own input.
+VAE_GT32  same, VAE in fp32 (sensitivity: does bf16 cost detail?).
+VAE_GTx   GT window upsampled (bicubic, align_corners=False, clamp) to 1024x1792 -> same bf16 VAE path at 1024x1792 ->
+          cv2.INTER_AREA back to 576x1024 (the VAE ceiling at a 1.75x working resolution; 1.778 x 1.75 anisotropic).
+RS_GTx    GT window upsampled as above -> INTER_AREA back (resampling-only control for VAE_GTx / HIRES_B).
+BR        the warped input = splatting BR quadrant at the window (the model's input), render geometry.
+VAE_BR    BR -> the same bf16 VAE path = what the UNet's conditioning latent can carry.
+ORIGIN    outputs/beyond4_lossless/clips/<c>_origin_ll (deployed 8 Euler steps, guidance 1.01).
+DELIV     outputs/beyond_distil_mamba_scaled/clips/<c>_mstudent2_step800_deliv_ll.
+S25       origin 25 steps (beyond4_lossless for 0052 0147 0204 0301, skeptic1_stack for the other 8; paths from the JSON).
+T5NAT / T5PAD  deliverable T5 @1.00 unpadded / RNG-padded (outputs/finalcheck_20261004/speed): SEED YARDSTICK pair
+          (same model/schedule/guidance, different noise in windows >= 1).  Y_m = max over 12 clips of |m(T5NAT) -
+          m(T5PAD)| for metric m.  A proxy for seed noise (window 0 is shared).
+HIRES_B   ** the working-resolution test (PRIMARY for that question) **  origin rendered from the native 576x1024
+          window upsampled to 1024x1792 (left/warped bicubic as above, mask nearest; the released UNet ignores the mask
+          channel), 8 steps, guidance 1.01, seed 1234, tile_num 1, then the right eye INTER_AREA back to 576x1024 and
+          paired with the byte-identical native left window.  Clips 0170 (2160-px, origin sharp/GT 0.42) and 0042
+          (4400-px).  Literal "render at 1024x1792 and downsample" is impossible here: the pipeline centre-CROPS, so a
+          1024x1792 render is a larger field of view at the SAME pixel density.
+HIRES_A   CONTEXT (no new render): the existing origin 1024x1792 renders (outputs/finalcheck_20261004/validate/clips/
+          <c>_origin_ll_1024x1792, 0170 0204 0042 0052) cropped to the shared window at inner offset (224,384) = same
+          pixels, same density, larger context.
+
+=====================================================================================================================
+METRICS (per clip = mean over the 38 scored frames; 12-clip = mean of clip values)
+=====================================================================================================================
+M1  LPIPS-Alex (lpips package, net='alex', inputs*2-1, batches of 4) full frame.  REG_FRAME vs GT for every row
+    (VAE_GT* / RS_GTx: vs their own input GT crop, i.e. "against itself").  UNREG (GT at zero shift, score_clip_ll.py
+    definition) for every render-geometry row.  BR / VAE_BR full-frame values are hole-contaminated (flagged).
+M2  valid-composite LPIPS (DIAGNOSTIC COMPOSITE, never an output; the user rejects mask compositing as an output):
+    in BOTH images dilated-hole pixels are replaced by the reference's pixels; lpips spatial=True map; mean over valid
+    pixels.  GT chain: reference GT.  INPUT chain (registration-free): reference BR, rows VAE_BR ORIGIN DELIV S25 T5NAT
+    T5PAD HIRES_A HIRES_B (all pixel-registered with BR by construction).
+M3  detail statistics on the same composites; gray = RGB mean / 255; pixel sets pooled over the 38 frames, interior,
+    valid only; reference edge set E = reference gmag (|dx|+|dy| forward diffs) >= its 0.90 quantile over valid pixels;
+    flat set F = gmag <= 0.50 quantile.  Reported as ratio to the reference's own value on the same set.
+      edgeHF   mean |4-neighbour Laplacian| on E                          (reviewlib / ringing_metrics.py operator)
+      edgeGy   mean |vertical forward difference| on E                     (immune to vertical splatting stripes)
+      flatHF   mean |Laplacian| on F                                       (ARTEFACT / noise)
+      stripeE  mean |horizontal forward difference| on F                   (ARTEFACT, splatting stripes)
+      b1..b4   DoG band RMS over valid pixels, b1 = g-G1*g, b2 = G1-G2, b3 = G2-G4, b4 = G4-G8 (Gaussian sigma px,
+               reflect) -- ALIGNMENT-FREE (power is shift-invariant), so valid in the GT chain for render-geometry rows
+      sharp    score_clip_ll.py statistic (mean |horizontal diff|, RGB, full frame), ratio to GT, for continuity.
+    GT chain: reference GT, E/F from GT.  edgeHF/edgeGy at GT edges are BIASED LOW for render-geometry rows (residual
+    multi-plane misregistration, 0125 ill-posed) -> context only; the bands are the GT-chain detail measure.
+    INPUT chain: reference BR, E/F from BR -- exact registration.
+M4  NR (pyiqa 0.1.14.1, offline weights under /mnt/ssd_data/deep_20261004/blur_diag/torch_home; verified working on CPU
+    22:2x before this file): PRIMARY musiq (KonIQ ckpt, higher=better), clipiqa (higher=better), niqe (lower=better);
+    EXTRA topiq_nr, clipiqa+, arniqa (higher=better).  Full 576x1024 RGB frames as they are (no composite).
+    Rows: GT LEFT VAE_GT VAE_GT32 VAE_GTx RS_GTx BR(as-is, holes+stripes, flagged) VAE_BR ORIGIN DELIV S25 T5NAT T5PAD
+    HIRES_A HIRES_B.  NR metrics can reward noise / fake texture: never read alone, always next to M1-M3.
+
+=====================================================================================================================
+GATES (a failing gate blocks the numbers it guards; one retry at most, errors quoted)
+=====================================================================================================================
+G0  scorer reproduction: UNREG and REG_FRAME LPIPS of ORIGIN, DELIV, S25 equal the eval_robustness JSON per-clip
+    values within 1e-4 on all 12 clips (12-clip means 0.3933/0.3804/0.3786 UNREG, 0.2432/0.2300/0.2279 REG_FRAME at 4
+    dp), and the left-eye offset (dy,dx) equals the JSON's.  Fails -> no LPIPS number of this lane is reported.
+G1  GT validity per clip: readlink -f of the train tile not under train_leftGT_broken, and mean PSNR(train TL, train
+    TR) at the unregistered window over the 38 frames < 30 dB (real right eye != left eye).
+G2  VAE path: outputs have n_s frames at the expected size; bf16 / fp32 dtype confirmed in the log; a second VAE_GT run
+    of the smoke clip is bit-identical (determinism).
+G3  HIRES_B hook: in identity mode (no resize, 576x1024) with max_profile_chunks=1 on GPU 0 it reproduces the first 14
+    frames of the existing origin_ll render bit-exactly (both halves).  If not bit-exact: report max/mean |diff|, one
+    investigation, and HIRES_B is reported only with that caveat.  Every HIRES_B/HIRES_A left half must be
+    byte-identical to the native origin_ll left half at the scored frames.
+G4  HIRES_A geometry: the (224,384) sub-window of the 1024x1792 render's LEFT half is byte-identical to the native
+    origin_ll left half (all frames), else HIRES_A is dropped.
+
+=====================================================================================================================
+READINGS (fixed now)
+=====================================================================================================================
+R1  WHICH STAGE LOSES MOST DETAIL -- decided on the registration-free INPUT chain (PRIMARY):
+      retention r_VAEin = X(VAE_BR)/X(BR),   r_UNet = X(ORIGIN)/X(VAE_BR),   X in {edgeHF at BR edges, b1, b2}
+    plus the GT-chain alignment-free stage  r_view = b(BR)/b(GT)  (GT -> warped input, i.e. view change + splatting)
+    and the ceiling r_VAEgt = X(VAE_GT)/X(GT).  "Stage S loses most" = the smallest 12-clip mean retention (largest
+    log loss) for edgeHF AND for b1 (fine band); if edgeHF and b1 disagree, both are stated and no single stage is named.
+    The view stage counts as "loses detail" only if b(BR)/b(GT) < 1 and the LEFT eye's own bands are >= the GT's
+    (else the GT/LEFT camera difference, not splatting, is the cause).
+R2  VAE CEILING: M1 LPIPS(VAE_GT, GT) vs ORIGIN's REG_FRAME LPIPS -> share of origin's registered LPIPS that a perfect
+    latent would still pay (caveat: origin's number also contains geometry that VAE_GT does not).
+R3  NR GAP: per primary NR metric, gap = NR(ORIGIN) - NR(GT); closed fraction by DELIV and S25 = (NR(row)-NR(ORIGIN)) /
+    (NR(GT)-NR(ORIGIN)); where VAE_GT sits.  Anchor fairness: if |NR(GT)-NR(LEFT)| > |NR(ORIGIN)-NR(GT)| for a metric,
+    the regenerated right eye is not a fair "real camera" anchor for that metric (stated per format).
+R4  WORKING RESOLUTION (HIRES_B vs ORIGIN, the 2 clips): "SHARPER" iff on BOTH clips edgeHF retention vs BR AND b1 and
+    b2 ratios vs GT exceed ORIGIN's by more than the seed yardstick Y_m; "BETTER FIDELITY" iff REG_FRAME LPIPS < ORIGIN's
+    by more than Y_lpips on BOTH clips (UNREG reported too); "WORSE" by the mirrored rule; else "NO CLEAR CHANGE".
+    VAE_GTx vs VAE_GT (all 12 clips) says whether the VAE ceiling itself rises at 1.75x.  HIRES_A (4 clips) is read with
+    the same rule as CONTEXT (more field of view at the same density), never as the resolution answer.
+All numbers are quoted with their source file.  No training, no checkpoint is touched.
+
+ADDENDUM 1 (2026-10-04 22:18 JST) -- clerical only, no criterion changed: the header time "~22:30" is a guess; the
+file's actual write time is 2026-10-04 22:18:03.  At that time no score, VAE round trip or render of this lane
+existed; the only lane output since is the CPU extraction cache of the smoke clip 0204 (G1 PASS, no metric computed).
+
+ADDENDUM 2 (2026-10-04 22:53 JST) -- written AFTER seeing the smoke clip 0204's detail statistics (VAE rows, BR,
+ORIGIN, DELIV, S25, T5NAT/T5PAD, HIRES_A; scores_r2/detail/0204.json), BEFORE any HIRES_B render exists and before any
+LPIPS/NR value of this lane was read.  What I saw: the resampling-only control RS_GTx (bicubic up 1.75x, INTER_AREA down)
+keeps only 0.78 of GT's b1 band (0.0318 vs 0.0409) and VAE_GTx 0.73, i.e. the pre-registered INTER_AREA downsampler is
+itself a strong low-pass at this non-integer ratio.  R4 and every rule above are UNCHANGED and remain the verdict of
+record.  Added, as a SENSITIVITY only (never overrides R4):
+  R4-L  the same R4 rule with the downsampling filter replaced by PIL Image.LANCZOS (antialiased, kernel scaled to the
+        ratio), applied post hoc on CPU to the losslessly saved full-resolution right eye of each HIRES_B render
+        (<name>_hires_right_1024x1792.mkv) -> row HIRES_B_L, and the matching control RS_GTx_L (bicubic up -> LANCZOS down
+        of GT).  Reported next to R4 as "filter sensitivity"; a Lanczos-only improvement is stated as such.
+
+ADDENDUM 3 (2026-10-04 23:12 JST) -- procedure only, no metric, rule or verdict changed.  Written after the 0204 smoke
+(G0 PASS, its LPIPS/NR/detail values seen), before any other clip was scored.
+  (a) GPU 0 lock contention (13 waiters, flock wakes waiters in no fixed order) made ~30 per-step acquisitions
+      impractical.  GPU work is regrouped into three single acquisitions (VAE batch, render batch, scoring batch), each
+      < ~70 min.  chain_main_r2.sh was stopped while it only had a waiting flock (no render had started; the empty
+      dir hiresB_r2/clips/0170_ident_576x1024_1chunk/ + empty .log are left in place); its replacement uses new labels.
+  (b) VAE_GT32 (bf16-vs-fp32 sensitivity) is run on 5 clips (0204, 0052, 0301, 0170, 0042) instead of 12, because it
+      needs 82 s per clip of the contended lock and on 0204 it matched bf16 (LPIPS 0.0568 vs 0.0567, edgeHF/GT 0.757 vs
+      0.757).  Its reading is reported on those 5 clips only.
+  (c) LPIPS stays on GPU (a CPU test on 0204 deviated per frame by up to 5.5e-5 from the GPU values, too close to the
+      1e-4 G0 tolerance).
+
+ADDENDUM 4 (2026-10-04 23:14 JST) -- descriptive calibration only, no verdict changed.  Written after seeing only
+0204's NR values (MUSIQ / CLIP-IQA rated ORIGIN at or above GT there; NIQE ranked GT best), before any other clip's NR.
+  NR-CAL  CPU-only calibration of NR sensitivity to blur: clips 0042 0141 (4400) 0204 0301 (2160), every 4th scored
+          frame (10 per clip), registered GT and GT blurred by a Gaussian (sigma 0.5, 0.75, 1.0, 1.5 px; cv2, reflect),
+          primary metrics musiq / clipiqa / niqe, plus each variant's b1/GT ratio (same DoG definition as M3, full frame,
+          24-px border).  Reading: an NR metric "registers blur at origin's level" iff its change between GT and the
+          sigma whose b1/GT is nearest to ORIGIN's 12-clip mean b1/GT exceeds the seed yardstick Y of that metric, in the
+          direction of worse quality.  An NR metric that fails this is reported as unable to measure this blur.
+
+ADDENDUM 5 (2026-10-04 23:30 JST) -- sensitivity only, no rule or verdict changed.  Written after seeing the detail
+statistics of 0204 and 0052 (0052: RS_GTx b1/GT 0.847 with INTER_AREA vs RS_GTx_L 0.995 with LANCZOS), before any
+VAE_GTx_L exists and before any HIRES_B render.
+  VAE_GTx_L  the VAE_GTx path (bf16, 1.75x, deployed window grid) with the 1024x1792 output downsampled by PIL LANCZOS
+             instead of INTER_AREA, clips 0170 0204 0042 0052 (the HIRES clips).  The same run also re-derives the
+             INTER_AREA version and must reproduce VAE_GTx's recorded md5 (path-consistency check); a mismatch voids the
+             row.  One lock acquisition after the VAE batch.  RS_GTx_L is also made for 0204 (CPU).
+  Scored by score_addon_r2.py with the metric code copied verbatim from score_lpips_r2.py / score_detail_r2.py /
+  score_nr_r2.py (REG + VALID_GT LPIPS, GT-chain detail + raw stats, NR), written to scores_r2/addon/<clip>.json.
+  Reading: the "VAE ceiling at 1.75x" is stated with BOTH filters; a filter-dependent conclusion is stated as such.
+
+ADDENDUM 6 (2026-10-04 23:45 JST) -- procedure only.  chain_score_batch_r2.sh and chain_addon_r2.sh were stopped while
+they only ran sleep loops (no python, no lock held; detail of 0052 already done) and merged into chain_final_batch_r2.sh:
+one acquisition for VAE_GTx_L + add-on scoring + LPIPS/NR of the 11 clips (~80 min), saving one lock lottery.  Nothing
+about any metric, row or rule changed.
+
+ADDENDUM 7 (2026-10-05 01:07 JST) -- descriptive robustness check, no rule or verdict changed.  Written after seeing
+the detail statistics of 0204, 0052, 0125 only (no 12-clip aggregate, no LPIPS/NR beyond 0204).
+  Issue: edgeHF evaluates every row at the REFERENCE's own top-decile gradient pixels, which partly are the reference's
+  noise/compression peaks, so every row's ratio is pulled below 1 by selection (regression to the mean).  In R1 this
+  biases the VAE-on-input stage (reference BR is one of the two images) but not the UNet stage (neither ORIGIN nor
+  VAE_BR is the reference), i.e. it can tilt the edgeHF verdict toward "VAE" -- most on soft/noisy 4400-px clips.
+  The b1/b2 band RMS (all valid pixels, no selection) is not affected.
+  Check (CPU, detail_selfedge_r2.py, every row of every clip, same composites/valid set as M3):
+    (a) edgeHF_self = mean |Laplacian| at each image's OWN top-decile gradient pixels (no cross-selection);
+    (b) edgeHF_s1  = mean |Laplacian| at the top decile of the gradient of the Gaussian(sigma=1)-smoothed reference
+        (noise-suppressed edge set), GT chain and BR chain.
+  Stage retentions are recomputed with (a) and (b).  If the stage named by edgeHF changes under BOTH (a) and (b), the
+  R1 edgeHF reading is reported as selection-sensitive and the band-based (b1) reading carries the conclusion.
+
+ADDENDUM 8 (2026-10-05 03:04 JST) -- record of DESCRIPTIVE analysis additions (no rule or verdict changed).  Added to
+analyze_r2.py after seeing the detail statistics of 0204/0052/0125 and before any 12-clip aggregate or any LPIPS/NR of the
+other 11 clips: per-format R1 verdicts with per-clip counts (verdict of record stays the ALL one), VAE-on-input vs
+VAE-on-GT side by side (stripe-removal check), artefact ratios (flatHF/stripeE) through each stage, log-loss shares,
+contrast-normalised bands (b_k/b4), an HIRES_B/HIRES_A texture check (flatHF/stripeE vs ORIGIN), and paired-subset
+comparisons for VAE_GT32 and VAE_GTx_L.  nrcal_analyze_r2.py implements ADDENDUM 4's NR-CAL rule verbatim.
+Final run: TABLE_BLUR_DIAG_r2.txt/.json and NRCAL_r2.txt/.json written 2026-10-05 03:04.
+
+ADDENDUM 9 (2026-10-05 03:07 JST) -- POST-HOC control, written AFTER all results were seen; descriptive only, R4 and
+R4-L verdicts are unchanged.  Concern: HIRES_B_L lowered registered LPIPS on both clips while its edge energy fell
+beyond Y and MUSIQ/NIQE got worse -- the pattern of a low-pass being rewarded under residual misregistration.
+  Control (CPU, posthoc_resample_control_r2.py, clips 0042 0170): the EXISTING native ORIGIN render's right eye put through
+  the same resampling without any re-render -- bicubic up to 1024x1792 (align_corners=False, clamp, round to uint8) then
+  (a) cv2.INTER_AREA down = ORIGIN_RS, (b) PIL LANCZOS down = ORIGIN_RS_L.  Scored like-for-like on CPU in one process
+  together with ORIGIN, HIRES_B, HIRES_B_L: LPIPS REG / UNREG / VALID_BR (lpips alex, same calls) and edgeHF@BR, b1/GT,
+  b2/GT, flatHF/GT (M3 code).  Reading: if ORIGIN_RS_L improves REG LPIPS by a similar amount (>= half of HIRES_B_L's
+  gain), HIRES_B_L's gain is attributed to the resampling filter, not to the working resolution.

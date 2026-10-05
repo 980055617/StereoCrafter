@@ -1,0 +1,539 @@
+{
+ "labels": [
+  "origin_ll",
+  "mstudent2_step800_deliv_ll",
+  "s25_ll",
+  "AYS8_origin_g101",
+  "origin_g100_sd7",
+  "origin_g100_sd1fill",
+  "deliv_g100_sd7",
+  "deliv_g100_sd1fill",
+  "m2svid_fa_w16_ll",
+  "INPUT_fill",
+  "selMain250_s8",
+  "selMain250_s25",
+  "HIRES_B",
+  "HIRES_B_L",
+  "LEFT_AS_RIGHT"
+ ],
+ "cells": {
+  "0042": {
+   "origin_ll": {
+    "path": "outputs/beyond4_lossless/clips/0042_origin_ll/0042_inpainting_results_sbs.mkv"
+   },
+   "mstudent2_step800_deliv_ll": {
+    "path": "outputs/beyond_distil_mamba_scaled/clips/0042_mstudent2_step800_deliv_ll/0042_inpainting_results_sbs.mkv"
+   },
+   "s25_ll": {
+    "path": "outputs/skeptic1_stack/clips/0042_s25_ll/0042_inpainting_results_sbs.mkv"
+   },
+   "AYS8_origin_g101": {
+    "path": "outputs/more_20261004/judge/ays/clips/0042_AYS8_origin_g101/0042_inpainting_results_sbs.mkv"
+   },
+   "origin_g100_sd7": {
+    "path": "outputs/deep_20261004/sdedit/clips/0042_origin_g100_sd7/0042_inpainting_results_sbs.mkv"
+   },
+   "origin_g100_sd1fill": {
+    "path": "outputs/deep_20261004/sdedit/clips/0042_origin_g100_sd1fill/0042_inpainting_results_sbs.mkv"
+   },
+   "deliv_g100_sd7": {
+    "path": "outputs/deep_20261004/sdedit/clips/0042_deliv_g100_sd7/0042_inpainting_results_sbs.mkv"
+   },
+   "deliv_g100_sd1fill": {
+    "path": "outputs/deep_20261004/sdedit/clips/0042_deliv_g100_sd1fill/0042_inpainting_results_sbs.mkv"
+   },
+   "m2svid_fa_w16_ll": {
+    "path": "outputs/deep_20261004/external_models/clips/0042_m2svid_fa_w16_ll/0042_inpainting_results_sbs.mkv"
+   },
+   "INPUT_fill": {
+    "path": "outputs/deep_20261004/sdedit/input_rows/clips/0042_INPUT_fill/0042_inpainting_results_sbs.mkv"
+   },
+   "selMain250_s8": {
+    "path": "outputs/deep_20261004/scale_gt/renders/0042_selMain250_s8/0042_inpainting_results_sbs.mkv"
+   },
+   "selMain250_s25": {
+    "path": "outputs/deep_20261004/scale_gt/renders/0042_selMain250_s25/0042_inpainting_results_sbs.mkv"
+   },
+   "HIRES_B": {
+    "path": "outputs/deep_20261004/blur_diag/hiresB_r2/clips/0042_origin_upx175/0042_inpainting_results_sbs.mkv"
+   },
+   "HIRES_B_L": {
+    "path": "outputs/deep_20261004/blur_diag/hiresB_r2/lanczos/0042_origin_upx175_L/0042_inpainting_results_sbs.mkv"
+   },
+   "LEFT_AS_RIGHT": {
+    "path": "LEFTASRIGHT:outputs/beyond4_lossless/clips/0042_origin_ll/0042_inpainting_results_sbs.mkv"
+   }
+  },
+  "0052": {
+   "origin_ll": {
+    "path": "outputs/beyond4_lossless/clips/0052_origin_ll/0052_inpainting_results_sbs.mkv"
+   },
+   "mstudent2_step800_deliv_ll": {
+    "path": "outputs/beyond_distil_mamba_scaled/clips/0052_mstudent2_step800_deliv_ll/0052_inpainting_results_sbs.mkv"
+   },
+   "s25_ll": {
+    "path": "outputs/beyond4_lossless/clips/0052_s25_ll/0052_inpainting_results_sbs.mkv"
+   },
+   "AYS8_origin_g101": {
+    "path": "outputs/more_20261004/judge/ays/clips/0052_AYS8_origin_g101/0052_inpainting_results_sbs.mkv"
+   },
+   "origin_g100_sd7": {
+    "path": "outputs/deep_20261004/sdedit/clips/0052_origin_g100_sd7/0052_inpainting_results_sbs.mkv"
+   },
+   "origin_g100_sd1fill": {
+    "path": "outputs/deep_20261004/sdedit/clips/0052_origin_g100_sd1fill/0052_inpainting_results_sbs.mkv"
+   },
+   "deliv_g100_sd7": {
+    "path": "outputs/deep_20261004/sdedit/clips/0052_deliv_g100_sd7/0052_inpainting_results_sbs.mkv"
+   },
+   "deliv_g100_sd1fill": {
+    "path": "outputs/deep_20261004/sdedit/clips/0052_deliv_g100_sd1fill/0052_inpainting_results_sbs.mkv"
+   },
+   "m2svid_fa_w16_ll": {
+    "path": "outputs/deep_20261004/external_models/clips/0052_m2svid_fa_w16_ll/0052_inpainting_results_sbs.mkv"
+   },
+   "INPUT_fill": {
+    "path": "outputs/deep_20261004/sdedit/input_rows/clips/0052_INPUT_fill/0052_inpainting_results_sbs.mkv"
+   },
+   "selMain250_s8": {
+    "path": "outputs/deep_20261004/scale_gt/renders/0052_selMain250_s8/0052_inpainting_results_sbs.mkv"
+   },
+   "selMain250_s25": {
+    "path": "outputs/deep_20261004/scale_gt/renders/0052_selMain250_s25/0052_inpainting_results_sbs.mkv"
+   },
+   "LEFT_AS_RIGHT": {
+    "path": "LEFTASRIGHT:outputs/beyond4_lossless/clips/0052_origin_ll/0052_inpainting_results_sbs.mkv"
+   }
+  },
+  "0125": {
+   "origin_ll": {
+    "path": "outputs/beyond4_lossless/clips/0125_origin_ll/0125_inpainting_results_sbs.mkv"
+   },
+   "mstudent2_step800_deliv_ll": {
+    "path": "outputs/beyond_distil_mamba_scaled/clips/0125_mstudent2_step800_deliv_ll/0125_inpainting_results_sbs.mkv"
+   },
+   "s25_ll": {
+    "path": "outputs/skeptic1_stack/clips/0125_s25_ll/0125_inpainting_results_sbs.mkv"
+   },
+   "AYS8_origin_g101": {
+    "path": "outputs/more_20261004/judge/ays/clips/0125_AYS8_origin_g101/0125_inpainting_results_sbs.mkv"
+   },
+   "origin_g100_sd7": {
+    "path": "outputs/deep_20261004/sdedit/clips/0125_origin_g100_sd7/0125_inpainting_results_sbs.mkv"
+   },
+   "origin_g100_sd1fill": {
+    "path": "outputs/deep_20261004/sdedit/clips/0125_origin_g100_sd1fill/0125_inpainting_results_sbs.mkv"
+   },
+   "deliv_g100_sd7": {
+    "path": "outputs/deep_20261004/sdedit/clips/0125_deliv_g100_sd7/0125_inpainting_results_sbs.mkv"
+   },
+   "deliv_g100_sd1fill": {
+    "path": "outputs/deep_20261004/sdedit/clips/0125_deliv_g100_sd1fill/0125_inpainting_results_sbs.mkv"
+   },
+   "m2svid_fa_w16_ll": {
+    "path": "outputs/deep_20261004/external_models/clips/0125_m2svid_fa_w16_ll/0125_inpainting_results_sbs.mkv"
+   },
+   "INPUT_fill": {
+    "path": "outputs/deep_20261004/sdedit/input_rows/clips/0125_INPUT_fill/0125_inpainting_results_sbs.mkv"
+   },
+   "selMain250_s8": {
+    "path": "outputs/deep_20261004/scale_gt/renders/0125_selMain250_s8/0125_inpainting_results_sbs.mkv"
+   },
+   "selMain250_s25": {
+    "path": "outputs/deep_20261004/scale_gt/renders/0125_selMain250_s25/0125_inpainting_results_sbs.mkv"
+   },
+   "LEFT_AS_RIGHT": {
+    "path": "LEFTASRIGHT:outputs/beyond4_lossless/clips/0125_origin_ll/0125_inpainting_results_sbs.mkv"
+   }
+  },
+  "0128": {
+   "origin_ll": {
+    "path": "outputs/beyond4_lossless/clips/0128_origin_ll/0128_inpainting_results_sbs.mkv"
+   },
+   "mstudent2_step800_deliv_ll": {
+    "path": "outputs/beyond_distil_mamba_scaled/clips/0128_mstudent2_step800_deliv_ll/0128_inpainting_results_sbs.mkv"
+   },
+   "s25_ll": {
+    "path": "outputs/skeptic1_stack/clips/0128_s25_ll/0128_inpainting_results_sbs.mkv"
+   },
+   "AYS8_origin_g101": {
+    "path": "outputs/more_20261004/judge/ays/clips/0128_AYS8_origin_g101/0128_inpainting_results_sbs.mkv"
+   },
+   "origin_g100_sd7": {
+    "path": "outputs/deep_20261004/sdedit/clips/0128_origin_g100_sd7/0128_inpainting_results_sbs.mkv"
+   },
+   "origin_g100_sd1fill": {
+    "path": "outputs/deep_20261004/sdedit/clips/0128_origin_g100_sd1fill/0128_inpainting_results_sbs.mkv"
+   },
+   "deliv_g100_sd7": {
+    "path": "outputs/deep_20261004/sdedit/clips/0128_deliv_g100_sd7/0128_inpainting_results_sbs.mkv"
+   },
+   "deliv_g100_sd1fill": {
+    "path": "outputs/deep_20261004/sdedit/clips/0128_deliv_g100_sd1fill/0128_inpainting_results_sbs.mkv"
+   },
+   "m2svid_fa_w16_ll": {
+    "path": "outputs/deep_20261004/external_models/clips/0128_m2svid_fa_w16_ll/0128_inpainting_results_sbs.mkv"
+   },
+   "INPUT_fill": {
+    "path": "outputs/deep_20261004/sdedit/input_rows/clips/0128_INPUT_fill/0128_inpainting_results_sbs.mkv"
+   },
+   "selMain250_s8": {
+    "path": "outputs/deep_20261004/scale_gt/renders/0128_selMain250_s8/0128_inpainting_results_sbs.mkv"
+   },
+   "selMain250_s25": {
+    "path": "outputs/deep_20261004/scale_gt/renders/0128_selMain250_s25/0128_inpainting_results_sbs.mkv"
+   },
+   "LEFT_AS_RIGHT": {
+    "path": "LEFTASRIGHT:outputs/beyond4_lossless/clips/0128_origin_ll/0128_inpainting_results_sbs.mkv"
+   }
+  },
+  "0141": {
+   "origin_ll": {
+    "path": "outputs/beyond4_lossless/clips/0141_origin_ll/0141_inpainting_results_sbs.mkv"
+   },
+   "mstudent2_step800_deliv_ll": {
+    "path": "outputs/beyond_distil_mamba_scaled/clips/0141_mstudent2_step800_deliv_ll/0141_inpainting_results_sbs.mkv"
+   },
+   "s25_ll": {
+    "path": "outputs/skeptic1_stack/clips/0141_s25_ll/0141_inpainting_results_sbs.mkv"
+   },
+   "AYS8_origin_g101": {
+    "path": "outputs/more_20261004/judge/ays/clips/0141_AYS8_origin_g101/0141_inpainting_results_sbs.mkv"
+   },
+   "origin_g100_sd7": {
+    "path": "outputs/deep_20261004/sdedit/clips/0141_origin_g100_sd7/0141_inpainting_results_sbs.mkv"
+   },
+   "origin_g100_sd1fill": {
+    "path": "outputs/deep_20261004/sdedit/clips/0141_origin_g100_sd1fill/0141_inpainting_results_sbs.mkv"
+   },
+   "deliv_g100_sd7": {
+    "path": "outputs/deep_20261004/sdedit/clips/0141_deliv_g100_sd7/0141_inpainting_results_sbs.mkv"
+   },
+   "deliv_g100_sd1fill": {
+    "path": "outputs/deep_20261004/sdedit/clips/0141_deliv_g100_sd1fill/0141_inpainting_results_sbs.mkv"
+   },
+   "m2svid_fa_w16_ll": {
+    "path": "outputs/deep_20261004/external_models/clips/0141_m2svid_fa_w16_ll/0141_inpainting_results_sbs.mkv"
+   },
+   "INPUT_fill": {
+    "path": "outputs/deep_20261004/sdedit/input_rows/clips/0141_INPUT_fill/0141_inpainting_results_sbs.mkv"
+   },
+   "selMain250_s8": {
+    "path": "outputs/deep_20261004/scale_gt/renders/0141_selMain250_s8/0141_inpainting_results_sbs.mkv"
+   },
+   "selMain250_s25": {
+    "path": "outputs/deep_20261004/scale_gt/renders/0141_selMain250_s25/0141_inpainting_results_sbs.mkv"
+   },
+   "LEFT_AS_RIGHT": {
+    "path": "LEFTASRIGHT:outputs/beyond4_lossless/clips/0141_origin_ll/0141_inpainting_results_sbs.mkv"
+   }
+  },
+  "0147": {
+   "origin_ll": {
+    "path": "outputs/beyond4_lossless/clips/0147_origin_ll/0147_inpainting_results_sbs.mkv"
+   },
+   "mstudent2_step800_deliv_ll": {
+    "path": "outputs/beyond_distil_mamba_scaled/clips/0147_mstudent2_step800_deliv_ll/0147_inpainting_results_sbs.mkv"
+   },
+   "s25_ll": {
+    "path": "outputs/beyond4_lossless/clips/0147_s25_ll/0147_inpainting_results_sbs.mkv"
+   },
+   "AYS8_origin_g101": {
+    "path": "outputs/more_20261004/judge/ays/clips/0147_AYS8_origin_g101/0147_inpainting_results_sbs.mkv"
+   },
+   "origin_g100_sd7": {
+    "path": "outputs/deep_20261004/sdedit/clips/0147_origin_g100_sd7/0147_inpainting_results_sbs.mkv"
+   },
+   "origin_g100_sd1fill": {
+    "path": "outputs/deep_20261004/sdedit/clips/0147_origin_g100_sd1fill/0147_inpainting_results_sbs.mkv"
+   },
+   "deliv_g100_sd7": {
+    "path": "outputs/deep_20261004/sdedit/clips/0147_deliv_g100_sd7/0147_inpainting_results_sbs.mkv"
+   },
+   "deliv_g100_sd1fill": {
+    "path": "outputs/deep_20261004/sdedit/clips/0147_deliv_g100_sd1fill/0147_inpainting_results_sbs.mkv"
+   },
+   "m2svid_fa_w16_ll": {
+    "path": "outputs/deep_20261004/external_models/clips/0147_m2svid_fa_w16_ll/0147_inpainting_results_sbs.mkv"
+   },
+   "INPUT_fill": {
+    "path": "outputs/deep_20261004/sdedit/input_rows/clips/0147_INPUT_fill/0147_inpainting_results_sbs.mkv"
+   },
+   "selMain250_s8": {
+    "path": "outputs/deep_20261004/scale_gt/renders/0147_selMain250_s8/0147_inpainting_results_sbs.mkv"
+   },
+   "selMain250_s25": {
+    "path": "outputs/deep_20261004/scale_gt/renders/0147_selMain250_s25/0147_inpainting_results_sbs.mkv"
+   },
+   "LEFT_AS_RIGHT": {
+    "path": "LEFTASRIGHT:outputs/beyond4_lossless/clips/0147_origin_ll/0147_inpainting_results_sbs.mkv"
+   }
+  },
+  "0170": {
+   "origin_ll": {
+    "path": "outputs/beyond4_lossless/clips/0170_origin_ll/0170_inpainting_results_sbs.mkv"
+   },
+   "mstudent2_step800_deliv_ll": {
+    "path": "outputs/beyond_distil_mamba_scaled/clips/0170_mstudent2_step800_deliv_ll/0170_inpainting_results_sbs.mkv"
+   },
+   "s25_ll": {
+    "path": "outputs/skeptic1_stack/clips/0170_s25_ll/0170_inpainting_results_sbs.mkv"
+   },
+   "AYS8_origin_g101": {
+    "path": "outputs/more_20261004/judge/ays/clips/0170_AYS8_origin_g101/0170_inpainting_results_sbs.mkv"
+   },
+   "origin_g100_sd7": {
+    "path": "outputs/deep_20261004/sdedit/clips/0170_origin_g100_sd7/0170_inpainting_results_sbs.mkv"
+   },
+   "origin_g100_sd1fill": {
+    "path": "outputs/deep_20261004/sdedit/clips/0170_origin_g100_sd1fill/0170_inpainting_results_sbs.mkv"
+   },
+   "deliv_g100_sd7": {
+    "path": "outputs/deep_20261004/sdedit/clips/0170_deliv_g100_sd7/0170_inpainting_results_sbs.mkv"
+   },
+   "deliv_g100_sd1fill": {
+    "path": "outputs/deep_20261004/sdedit/clips/0170_deliv_g100_sd1fill/0170_inpainting_results_sbs.mkv"
+   },
+   "m2svid_fa_w16_ll": {
+    "path": "outputs/deep_20261004/external_models/clips/0170_m2svid_fa_w16_ll/0170_inpainting_results_sbs.mkv"
+   },
+   "INPUT_fill": {
+    "path": "outputs/deep_20261004/sdedit/input_rows/clips/0170_INPUT_fill/0170_inpainting_results_sbs.mkv"
+   },
+   "selMain250_s8": {
+    "path": "outputs/deep_20261004/scale_gt/renders/0170_selMain250_s8/0170_inpainting_results_sbs.mkv"
+   },
+   "selMain250_s25": {
+    "path": "outputs/deep_20261004/scale_gt/renders/0170_selMain250_s25/0170_inpainting_results_sbs.mkv"
+   },
+   "HIRES_B": {
+    "path": "outputs/deep_20261004/blur_diag/hiresB_r2/clips/0170_origin_upx175/0170_inpainting_results_sbs.mkv"
+   },
+   "HIRES_B_L": {
+    "path": "outputs/deep_20261004/blur_diag/hiresB_r2/lanczos/0170_origin_upx175_L/0170_inpainting_results_sbs.mkv"
+   },
+   "LEFT_AS_RIGHT": {
+    "path": "LEFTASRIGHT:outputs/beyond4_lossless/clips/0170_origin_ll/0170_inpainting_results_sbs.mkv"
+   }
+  },
+  "0204": {
+   "origin_ll": {
+    "path": "outputs/beyond4_lossless/clips/0204_origin_ll/0204_inpainting_results_sbs.mkv"
+   },
+   "mstudent2_step800_deliv_ll": {
+    "path": "outputs/beyond_distil_mamba_scaled/clips/0204_mstudent2_step800_deliv_ll/0204_inpainting_results_sbs.mkv"
+   },
+   "s25_ll": {
+    "path": "outputs/beyond4_lossless/clips/0204_s25_ll/0204_inpainting_results_sbs.mkv"
+   },
+   "AYS8_origin_g101": {
+    "path": "outputs/more_20261004/judge/ays/clips/0204_AYS8_origin_g101/0204_inpainting_results_sbs.mkv"
+   },
+   "origin_g100_sd7": {
+    "path": "outputs/deep_20261004/sdedit/clips/0204_origin_g100_sd7/0204_inpainting_results_sbs.mkv"
+   },
+   "origin_g100_sd1fill": {
+    "path": "outputs/deep_20261004/sdedit/clips/0204_origin_g100_sd1fill/0204_inpainting_results_sbs.mkv"
+   },
+   "deliv_g100_sd7": {
+    "path": "outputs/deep_20261004/sdedit/clips/0204_deliv_g100_sd7/0204_inpainting_results_sbs.mkv"
+   },
+   "deliv_g100_sd1fill": {
+    "path": "outputs/deep_20261004/sdedit/clips/0204_deliv_g100_sd1fill/0204_inpainting_results_sbs.mkv"
+   },
+   "m2svid_fa_w16_ll": {
+    "path": "outputs/deep_20261004/external_models/clips/0204_m2svid_fa_w16_ll/0204_inpainting_results_sbs.mkv"
+   },
+   "INPUT_fill": {
+    "path": "outputs/deep_20261004/sdedit/input_rows/clips/0204_INPUT_fill/0204_inpainting_results_sbs.mkv"
+   },
+   "selMain250_s8": {
+    "path": "outputs/deep_20261004/scale_gt/renders/0204_selMain250_s8/0204_inpainting_results_sbs.mkv"
+   },
+   "selMain250_s25": {
+    "path": "outputs/deep_20261004/scale_gt/renders/0204_selMain250_s25/0204_inpainting_results_sbs.mkv"
+   },
+   "LEFT_AS_RIGHT": {
+    "path": "LEFTASRIGHT:outputs/beyond4_lossless/clips/0204_origin_ll/0204_inpainting_results_sbs.mkv"
+   }
+  },
+  "0225": {
+   "origin_ll": {
+    "path": "outputs/beyond4_lossless/clips/0225_origin_ll/0225_inpainting_results_sbs.mkv"
+   },
+   "mstudent2_step800_deliv_ll": {
+    "path": "outputs/beyond_distil_mamba_scaled/clips/0225_mstudent2_step800_deliv_ll/0225_inpainting_results_sbs.mkv"
+   },
+   "s25_ll": {
+    "path": "outputs/skeptic1_stack/clips/0225_s25_ll/0225_inpainting_results_sbs.mkv"
+   },
+   "AYS8_origin_g101": {
+    "path": "outputs/more_20261004/judge/ays/clips/0225_AYS8_origin_g101/0225_inpainting_results_sbs.mkv"
+   },
+   "origin_g100_sd7": {
+    "path": "outputs/deep_20261004/sdedit/clips/0225_origin_g100_sd7/0225_inpainting_results_sbs.mkv"
+   },
+   "origin_g100_sd1fill": {
+    "path": "outputs/deep_20261004/sdedit/clips/0225_origin_g100_sd1fill/0225_inpainting_results_sbs.mkv"
+   },
+   "deliv_g100_sd7": {
+    "path": "outputs/deep_20261004/sdedit/clips/0225_deliv_g100_sd7/0225_inpainting_results_sbs.mkv"
+   },
+   "deliv_g100_sd1fill": {
+    "path": "outputs/deep_20261004/sdedit/clips/0225_deliv_g100_sd1fill/0225_inpainting_results_sbs.mkv"
+   },
+   "m2svid_fa_w16_ll": {
+    "path": "outputs/deep_20261004/external_models/clips/0225_m2svid_fa_w16_ll/0225_inpainting_results_sbs.mkv"
+   },
+   "INPUT_fill": {
+    "path": "outputs/deep_20261004/sdedit/input_rows/clips/0225_INPUT_fill/0225_inpainting_results_sbs.mkv"
+   },
+   "selMain250_s8": {
+    "path": "outputs/deep_20261004/scale_gt/renders/0225_selMain250_s8/0225_inpainting_results_sbs.mkv"
+   },
+   "selMain250_s25": {
+    "path": "outputs/deep_20261004/scale_gt/renders/0225_selMain250_s25/0225_inpainting_results_sbs.mkv"
+   },
+   "LEFT_AS_RIGHT": {
+    "path": "LEFTASRIGHT:outputs/beyond4_lossless/clips/0225_origin_ll/0225_inpainting_results_sbs.mkv"
+   }
+  },
+  "0251": {
+   "origin_ll": {
+    "path": "outputs/beyond4_lossless/clips/0251_origin_ll/0251_inpainting_results_sbs.mkv"
+   },
+   "mstudent2_step800_deliv_ll": {
+    "path": "outputs/beyond_distil_mamba_scaled/clips/0251_mstudent2_step800_deliv_ll/0251_inpainting_results_sbs.mkv"
+   },
+   "s25_ll": {
+    "path": "outputs/skeptic1_stack/clips/0251_s25_ll/0251_inpainting_results_sbs.mkv"
+   },
+   "AYS8_origin_g101": {
+    "path": "outputs/more_20261004/judge/ays/clips/0251_AYS8_origin_g101/0251_inpainting_results_sbs.mkv"
+   },
+   "origin_g100_sd7": {
+    "path": "outputs/deep_20261004/sdedit/clips/0251_origin_g100_sd7/0251_inpainting_results_sbs.mkv"
+   },
+   "origin_g100_sd1fill": {
+    "path": "outputs/deep_20261004/sdedit/clips/0251_origin_g100_sd1fill/0251_inpainting_results_sbs.mkv"
+   },
+   "deliv_g100_sd7": {
+    "path": "outputs/deep_20261004/sdedit/clips/0251_deliv_g100_sd7/0251_inpainting_results_sbs.mkv"
+   },
+   "deliv_g100_sd1fill": {
+    "path": "outputs/deep_20261004/sdedit/clips/0251_deliv_g100_sd1fill/0251_inpainting_results_sbs.mkv"
+   },
+   "m2svid_fa_w16_ll": {
+    "path": "outputs/deep_20261004/external_models/clips/0251_m2svid_fa_w16_ll/0251_inpainting_results_sbs.mkv"
+   },
+   "INPUT_fill": {
+    "path": "outputs/deep_20261004/sdedit/input_rows/clips/0251_INPUT_fill/0251_inpainting_results_sbs.mkv"
+   },
+   "selMain250_s8": {
+    "path": "outputs/deep_20261004/scale_gt/renders/0251_selMain250_s8/0251_inpainting_results_sbs.mkv"
+   },
+   "selMain250_s25": {
+    "path": "outputs/deep_20261004/scale_gt/renders/0251_selMain250_s25/0251_inpainting_results_sbs.mkv"
+   },
+   "LEFT_AS_RIGHT": {
+    "path": "LEFTASRIGHT:outputs/beyond4_lossless/clips/0251_origin_ll/0251_inpainting_results_sbs.mkv"
+   }
+  },
+  "0259": {
+   "origin_ll": {
+    "path": "outputs/beyond4_lossless/clips/0259_origin_ll/0259_inpainting_results_sbs.mkv"
+   },
+   "mstudent2_step800_deliv_ll": {
+    "path": "outputs/beyond_distil_mamba_scaled/clips/0259_mstudent2_step800_deliv_ll/0259_inpainting_results_sbs.mkv"
+   },
+   "s25_ll": {
+    "path": "outputs/skeptic1_stack/clips/0259_s25_ll/0259_inpainting_results_sbs.mkv"
+   },
+   "AYS8_origin_g101": {
+    "path": "outputs/more_20261004/judge/ays/clips/0259_AYS8_origin_g101/0259_inpainting_results_sbs.mkv"
+   },
+   "origin_g100_sd7": {
+    "path": "outputs/deep_20261004/sdedit/clips/0259_origin_g100_sd7/0259_inpainting_results_sbs.mkv"
+   },
+   "origin_g100_sd1fill": {
+    "path": "outputs/deep_20261004/sdedit/clips/0259_origin_g100_sd1fill/0259_inpainting_results_sbs.mkv"
+   },
+   "deliv_g100_sd7": {
+    "path": "outputs/deep_20261004/sdedit/clips/0259_deliv_g100_sd7/0259_inpainting_results_sbs.mkv"
+   },
+   "deliv_g100_sd1fill": {
+    "path": "outputs/deep_20261004/sdedit/clips/0259_deliv_g100_sd1fill/0259_inpainting_results_sbs.mkv"
+   },
+   "m2svid_fa_w16_ll": {
+    "path": "outputs/deep_20261004/external_models/clips/0259_m2svid_fa_w16_ll/0259_inpainting_results_sbs.mkv"
+   },
+   "INPUT_fill": {
+    "path": "outputs/deep_20261004/sdedit/input_rows/clips/0259_INPUT_fill/0259_inpainting_results_sbs.mkv"
+   },
+   "selMain250_s8": {
+    "path": "outputs/deep_20261004/scale_gt/renders/0259_selMain250_s8/0259_inpainting_results_sbs.mkv"
+   },
+   "selMain250_s25": {
+    "path": "outputs/deep_20261004/scale_gt/renders/0259_selMain250_s25/0259_inpainting_results_sbs.mkv"
+   },
+   "LEFT_AS_RIGHT": {
+    "path": "LEFTASRIGHT:outputs/beyond4_lossless/clips/0259_origin_ll/0259_inpainting_results_sbs.mkv"
+   }
+  },
+  "0301": {
+   "origin_ll": {
+    "path": "outputs/beyond4_lossless/clips/0301_origin_ll/0301_inpainting_results_sbs.mkv"
+   },
+   "mstudent2_step800_deliv_ll": {
+    "path": "outputs/beyond_distil_mamba_scaled/clips/0301_mstudent2_step800_deliv_ll/0301_inpainting_results_sbs.mkv"
+   },
+   "s25_ll": {
+    "path": "outputs/beyond4_lossless/clips/0301_s25_ll/0301_inpainting_results_sbs.mkv"
+   },
+   "AYS8_origin_g101": {
+    "path": "outputs/more_20261004/judge/ays/clips/0301_AYS8_origin_g101/0301_inpainting_results_sbs.mkv"
+   },
+   "origin_g100_sd7": {
+    "path": "outputs/deep_20261004/sdedit/clips/0301_origin_g100_sd7/0301_inpainting_results_sbs.mkv"
+   },
+   "origin_g100_sd1fill": {
+    "path": "outputs/deep_20261004/sdedit/clips/0301_origin_g100_sd1fill/0301_inpainting_results_sbs.mkv"
+   },
+   "deliv_g100_sd7": {
+    "path": "outputs/deep_20261004/sdedit/clips/0301_deliv_g100_sd7/0301_inpainting_results_sbs.mkv"
+   },
+   "deliv_g100_sd1fill": {
+    "path": "outputs/deep_20261004/sdedit/clips/0301_deliv_g100_sd1fill/0301_inpainting_results_sbs.mkv"
+   },
+   "m2svid_fa_w16_ll": {
+    "path": "outputs/deep_20261004/external_models/clips/0301_m2svid_fa_w16_ll/0301_inpainting_results_sbs.mkv"
+   },
+   "INPUT_fill": {
+    "path": "outputs/deep_20261004/sdedit/input_rows/clips/0301_INPUT_fill/0301_inpainting_results_sbs.mkv"
+   },
+   "selMain250_s8": {
+    "path": "outputs/deep_20261004/scale_gt/renders/0301_selMain250_s8/0301_inpainting_results_sbs.mkv"
+   },
+   "selMain250_s25": {
+    "path": "outputs/deep_20261004/scale_gt/renders/0301_selMain250_s25/0301_inpainting_results_sbs.mkv"
+   },
+   "LEFT_AS_RIGHT": {
+    "path": "LEFTASRIGHT:outputs/beyond4_lossless/clips/0301_origin_ll/0301_inpainting_results_sbs.mkv"
+   }
+  }
+ },
+ "clips": [
+  "0042",
+  "0052",
+  "0125",
+  "0128",
+  "0141",
+  "0147",
+  "0170",
+  "0204",
+  "0225",
+  "0251",
+  "0259",
+  "0301"
+ ]
+}

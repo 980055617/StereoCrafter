@@ -1,0 +1,66 @@
+PRE-REGISTRATION -- lane scale_gt (deep_20261004), GPU 1.  Written 2026-10-04 ~22:45 JST, BEFORE any training step of the
+main or contrast run, BEFORE any dev/test render of a fine-tuned checkpoint, and BEFORE the phase-A kept-fraction distribution
+was summarised (only the 2 smoke clips' kept values had been seen: 0160 0.44-0.47, 0094 0.07-0.22).
+
+QUESTION
+  Does GT-supervised diffusion-loss fine-tuning (target = the REAL right eye) still degrade the model when it sees ~290 clips
+  instead of the 1-28 clips of every earlier GT run?
+
+TRAINABLE / OPTIMISER (identical to every GT control, minift/xcheck_mini_ft.py): origin's 15 up_blocks.3 attn1 tensors, fp32
+  masters, AdamW lr 1e-5 betas (0.9,0.999) wd 0, clip_grad_norm 1.0, batch = one 14-frame window, sigma uniform over the 8
+  deployment sigmas, deployment timesteps, cond latents raw x1.0, seed 1234.  Loss = v-MSE over VALID latent cells only.
+
+DATA
+  Train pool: the 291 GT-valid clips of train_order (check_clips_v1.py: int<0310, not test/dev, not a train_leftGT_broken link,
+    real right eye differs from the left eye; result clips_valid_v1.json = 291/291 valid, test 12/12, dev 6/8).
+  Windows: 4 per clip, 14 frames, evenly spaced on the deployed stride-11 grid (starts 0,44,88,132 for 150/151-frame tiles).
+  Registration: one clip-global integer shift of the real right eye against the model's own input (train-tile BR), holes
+    excluded, ddy [-10,10], ddx [-240,40] (prep_crops_v3.py).  Estimator gate: REG_GATE_v2.txt PASS (12/12 test clips within
+    1 px of eval_robustness REG_CLIP; regB anchors 0301 (0,-11) vs (0,-12), 0204 exact).
+  Validity mask (latent 72x128 grid, per frame): local-shift consistency within +-2 px of the global shift, flat blocks valid,
+    hole-dominated cells inherit from informative cells within 2 cells, invalid dilated by 1 cell (prep_crops_v3.py header).
+  EXCLUSIONS (fixed now): a clip is excluded if its registration hits the search boundary (|ddy|=10 or ddx in {-240,40});
+    a window is excluded if its kept (valid) fraction < 0.25.
+  DEV (selection only): 0040 0082 0091 0184 0245 0268.  0311 and 0351 are NOT used (>= 0310 hard rule; 0311 also has no GT).
+    Registered dev metric = mean over the 5 clips 0040 0082 0184 0245 0268.  0091 is EXCLUDED from the registered metric: its
+    real right eye is shifted ~-270 px against the render (close-up; reg_dev_v2.log hits -240, a wide search peaks at -272),
+    outside the scorer's [-120,40] grid -> REG ill-posed; 0091 is reported unregistered only.
+  TEST: the 12 test clips, scored ONCE with the selected checkpoint, whatever dev shows.  Never trained on, never used to select.
+
+RUNS
+  MAIN    : all non-excluded windows of the 291 clips; 3000 steps; checkpoints every 250 (+ step0 = origin tensors).
+  CONTRAST: "8 clips" = the first 8 clips of train_order that are GT-valid AND keep >= 1 window after the exclusions;
+            same windows policy, exclusions, trainer, seed, lr; 1000 steps; checkpoints 250/500/750/1000.
+  The training loss is logged but NEVER used to select or judge anything.
+
+RENDER / SCORE PATH
+  Renders: run_render_v1.sh (unchanged copy of the finalcheck speed hook, md5 7f5bf0be...), origin weights + the checkpoint's
+    15 tensors swapped in, 8 Euler steps (25 for the 25-step reading), guidance 1.01, seed 1234, 576x1024, FFV1 lossless.
+  Control C1 (before any fine-tuned render counts): plain origin vs step0-swap render of dev 0184 must be md5-identical.
+  Control C2 (before the 25-step test): origin rendered through the same hook at 25 steps must reproduce the existing s25
+    renders' pre-encode md5: 0301 (beyond4_lossless, 72eb7257...) and 0042 (skeptic1_stack, 723c4df3...).  If C2 fails, origin
+    is re-rendered at 25 steps through the hook for all 12 test clips and that is the comparator.
+  Scores: score_clip_ll.py (UNREG, SCORE_STEP=4, the project's standard) and score_registered_scalegt_v1.py (copy of the
+    eval_robustness scorer, panel-only change): REG_FRAME = PRIMARY registered variant, REG_CLIP also reported.
+  Gates on the test scoring: UNREG must reproduce the published origin_ll / s25_ll lpips (|d| < 1e-5); REG_FRAME of origin_ll
+    must reproduce outputs/more_20261004/eval_robustness/score_v1/<clip>.json (|d| < 1e-5).
+
+DEV EVALUATION ORDER AND SELECTION (budget: GPU 1 is shared with another workflow)
+  Stage 1: origin; MAIN 250, 500, 1000, 1500, 2000, 2500, 3000; CONTRAST 250, 500, 1000 (6 dev clips each, 8 steps).
+  Stage 2: the 250-neighbours of the best Stage-1 MAIN checkpoint (by the registered dev metric) not yet evaluated.
+  SELECTED checkpoint = the evaluated MAIN checkpoint with the lowest registered dev metric (ties within 0.0005 -> earlier step).
+  Remaining MAIN checkpoints may be rendered afterwards for the curve only; they can never change the selection.
+
+OUTCOMES (test, 8 steps, guidance 1.01, REG_FRAME, 12 clips; deltas = selected - origin_ll, per clip then mean)
+  WORKS AT SCALE  : mean delta <= -0.005  AND  >= 9/12 clips with delta < 0  AND  sharpness not collapsing
+                    (12-clip mean "sharp" of the selected >= 0.90 x origin's)  AND  registered rPSNR not lower than origin's by
+                    more than 0.5 dB (no "fake texture" gain).
+  STILL DEGRADES  : the MAIN run's registered dev metric is worse than origin's at EVERY evaluated checkpoint.
+  NEITHER         : anything else.  Tie band for reading a mean delta: |delta| <= 0.002 (~3x the median per-clip re-seed proxy
+                    0.0007 of eval_robustness).  If dev improved somewhere but the test fails the bar: "dev gain did not transfer".
+  25-step reading (diagnostic, not a pass criterion): selected@25 - s25_ll with the same statistics.  A negative 25-step delta
+    with a non-negative 8-step delta is read as "better denoiser, but the deployed 8-step trajectory cannot use it" (regB).
+  Scale effect (descriptive): MAIN vs CONTRAST registered dev deltas at the matched steps 250/500/1000.  "Scale helps" iff MAIN's
+    delta is lower than CONTRAST's at all three.
+  Every headline contrast is reported UNREG and REG_FRAME (+REG_CLIP), with per-clip rows, 0125 flagged (ill-posed REG_FRAME in
+  eval_robustness) and an n=11 sensitivity.  Each number cites its source file.

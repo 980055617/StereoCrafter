@@ -1,0 +1,1 @@
+0184 smoke_step0_s8 /mnt/ssd_data/deep_20261004/scale_gt/smoke_v2/ck/smoke_v1b/step0.pt 8

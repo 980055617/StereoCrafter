@@ -1,0 +1,5 @@
+step0 /mnt/ssd_data/deep_20261004/scale_gt/ck/contrast8_v1/step0.pt md5 2dd7d012169d30f11197d042355ca334
+step250 /mnt/ssd_data/deep_20261004/scale_gt/ck/contrast8_v1/step250.pt md5 68866a31c64217f7e0618634e2fc1f6d
+step500 /mnt/ssd_data/deep_20261004/scale_gt/ck/contrast8_v1/step500.pt md5 f28e7589345609f5d72d776ed872efcb
+step750 /mnt/ssd_data/deep_20261004/scale_gt/ck/contrast8_v1/step750.pt md5 1704499591efa7e1ef9e9df9256a0238
+step1000 /mnt/ssd_data/deep_20261004/scale_gt/ck/contrast8_v1/step1000.pt md5 1ed76d05a7078f56b2007751399fa6b4

@@ -1,0 +1,26 @@
+ADDENDUM 4 (POST-HOC, written AFTER the S2 numbers were seen) -- deep_20261004 / sdedit lane: visual record of the S2 clips
+Written 2026-10-05 ~09:20 JST (shell stamp at the end).  This is NOT a pre-registration: the S2 preview table (scratchpad) and then
+TABLE_S2_EXT12.txt were read before these panels were opened.  It applies ADDENDUM 2 B1's own exception ("S2 adds no new
+visual judgement unless a 12-clip panel is opened, in which case only an artefact of the kinds named above may change a
+call, and that would be reported as such").
+
+OPENED (all CPU, from the S2 stage outputs):
+  outputs/deep_20261004/sdedit/panels_sd7_s2/        GT | deployed | sd7, both models, the 8 non-regime test clips
+  outputs/deep_20261004/sdedit/holezoom_s2/          0141 hole zooms (both models), 0141 light 6x zoom (deliv),
+                                                     0042 frame-32 left-border zoom (both models)
+FINDINGS
+  sd7  0042 (both models): a dark brownish smudge at the window's left-border disocclusion band (frame 32, around y 228-260,
+       x 0-12): the warp has black crack pixels there; the deployed renders paint pavement, sd7 keeps the darkness of the
+       cracks.  This IS an artefact of a kind named in B1 (dark crack remnant inside a disocclusion band), milder than
+       sd1's hatching.  0141 (deliv): the left half of a lamp inside a hole band is broken into a streaky blob (visible at
+       6x; the deployed deliverable instead doubles the lamp).  0251 and the other panels looked like deployed, slightly
+       sharper.
+  => B1's "sd7 CLEAN" call is changed to "MILD crack remnants in disocclusion bands (0042 both models; 0141 deliv)".
+     sd31, sd1, sd1fill calls unchanged (sd31 is not a P12 pass anyway).
+EFFECT ON THE A2 MAPPING: every P12 pass now carries a flag -- origin sd7 misses the round rule (-0.0045 > -0.005) and has
+  the warp-error flag (1.052); origin sd1fill has stripe flags (0170 1.110, 0225 1.101, 0301 1.243), the warp-error flag
+  (1.050) and is not clean; deliv sd7 meets the round rule but is not clean (this addendum); deliv sd1fill meets the round
+  rule but is not clean (B1, 0147 smear).  Lane verdict under A2: promising.  (Had this addendum not been written, deliv sd7
+  would have mapped to beyond_origin_shown on a -0.0014 increment over the deliverable, 9/12 clips -- the minimum P12 count;
+  the round-rule margin vs origin, -0.0146, is almost entirely the deliverable's own -0.0132.)
+--- recorded by the shell at 2026-10-05T09:21:23+09:00 ---

@@ -1,0 +1,4 @@
+Sharpness (mean |horizontal gradient|, non-hole pixels, frames 0 and 7 of each MAIN window):
+  registered REAL right eye (training target) vs warped LEFT eye (model input)
+  4400: n=360 windows  target 0.0114  input 0.0108  ratio target/input median 1.024 (p25 0.946, p75 1.086); windows with target softer than input: 0.42
+  2160: n=394 windows  target 0.0383  input 0.0310  ratio target/input median 1.205 (p25 1.075, p75 1.422); windows with target softer than input: 0.15

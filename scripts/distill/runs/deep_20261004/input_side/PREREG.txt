@@ -1,0 +1,114 @@
+PRE-REGISTRATION -- deep_20261004 / input_side lane (GPU 0 only, every GPU job under flock /tmp/claude-gpu0.lock)
+Written 2026-10-04 ~22:38 JST (timestamp corrected from a typo "~23:05" at 22:41), BEFORE any render of this lane exists and before any LPIPS/decomposition score of this
+lane has been computed. The only numbers seen so far are model-free input checks (feasibility of the depth recovery,
+FEASIBILITY notes below). Any later change is written as a dated PREREG_ADDENDUM_*.txt BEFORE the affected scores.
+
+QUESTION  Does a better INPUT raise the ceiling for every model?  Regime clips 0301 0204 0052 0147 (all < 0310, a
+          regenerated real right eye; validity is re-checked in CHECK_VALIDITY.txt), both models, deployed config.
+MODELS    origin   = weights/StereoCrafter, no unet state, MAMBA_SELF_ATTN_INCLUDE='__nomatch__'
+          deliv    = /mnt/ssd_data/stereocrafter_weights/_distill_injected/
+                     mamba5slot_plus_stepdistil_up3_train10clip_step800_20261001.pt (md5 08cf44850b8f392efb307e3a48cd82d1,
+                     verified 2026-10-04 22:4x) + the 5-slot Mamba env of finalcheck_20261004/speed/run_driver_speed_v1.sh
+CONFIG    deployed for both: 8 Euler steps, guidance 1.01 (min=max), 14-frame windows overlap 3, 576x1024 window,
+          noise_seed 1234, config/0160_overfit_inference_matched.json; FFV1 lossless writer (beyond4 infer_lossless.py).
+          Driver: run_driver_input_v1.sh -> infer_ll_hook_input_v1.py (= the speed hook + an array reader, IS_INPUT_DIR).
+
+------------------------------------------------------------------------------------------------------------------
+INPUT VARIANTS (all built by resplat_v1.py from ONE reconstruction, prep_v2.py; stored lossless as uint8 .npy)
+------------------------------------------------------------------------------------------------------------------
+Reconstruction: the depth the deployed splat used survives only as the inferno depth tile (TR) of
+video_data/splatting/<clip>_splatting_results.mp4 (mp4v).  d = nearest round-tripped LUT colour (the 256 inferno
+uint8 colours passed through the same cv2-mp4v writer + decord; a naive LUT is biased ~-1 level), exact ties averaged,
+then the exact least-squares inversion of DepthCrafter's bilinear upsampling (576x1024 iPhone / 1024x1024 AVP ->
+quadrant size).  Left source: video_data/left_eye_v2/<clip>.mp4 (iPhone 0301 0204) / video_data/left_eye/<clip>.mp4
+(AVP 0052 0147), decoded SEQUENTIALLY (decord random access mis-seeks on the HEVC sources; verified frame-exact at
+36-38 dB = the mp4v floor of the splatting TL).  Splat = splatlib.splat_rows (CPU, deterministic re-implementation of
+ForwardWarpStereo: bilinear Forward_Warp taps, soft-z weight 1.414**(disp-min), res = accum / weights).
+  DEP   the deployed input (windows decoded from the splatting video).  Existing renders: origin_ll / deliv_ll.
+  R1    re-splat at the deployed mapping: s=1, o=0, bilinear, base 1.414, no supersampling.  THE CONTROL for every
+        variant contrast (same reconstruction, same lossless storage; differs from DEP by depth-recovery error and by
+        the absence of the mp4v codec on the warped tile).
+  Probe 1 (disparity scale; ORACLE: fitted on each clip's own real right eye):
+  RF    s = s*, o = o* from fit_scale_v1.py (fine stage).  Changes the STEREO STRENGTH by s* and the convergence by o*.
+  RO    s = 1, o = o1 (the fitted offset at s=1, fine stage) = deployed relative geometry, real convergence.
+        RO separates the convergence (translation) part of the unregistered change from the scale part.
+  Probe 2 (splat quality, at s=1, o=0):
+  NA    nearest_acc (each source to round(x), soft-z weights accumulated; Forward_Warp's own 'Nearest' kernel assigns
+        racily with no z-test, so it is not used)
+  B1    bilinear, base 1.0 (no soft-z weighting)          B4  bilinear, base 4.0 (harder soft z)
+  ZB    zbuf_bilinear (hard z-buffer within 1 px of the max disparity, taps >= 0.25; Forward_Warp max_motion idea)
+  SS4   bilinear, 4x horizontal supersampling (linear upsampling) = sub-pixel accumulation
+  SS4C  as SS4 with bicubic upsampling of the source rows
+
+FIT (fit_scale_v1.py, GPU, model-free): frames 0,8,16,.. < n_GT; disp' = s*disp_deployed + o; estimator = the
+registered scorer's PSNR(real right eye TR, warped input) at the deployed window, holes excluded, over integer GT
+shifts ddy in [-4,4], ddx in [-240,80] (o = -ddx); common support per stage (holes of ANY candidate excluded for all);
+objective = PSNR of the SSE summed over the fit frames at one clip-level shift.  Coarse s = 0.50..5.00 step 0.25,
+fine = coarse best +-0.25 step 0.05 plus 1.00.  s* = fine argmax; a boundary hit (0.50 or 5.00) is reported.
+
+------------------------------------------------------------------------------------------------------------------
+METRICS  (score_input_v1.py = the published registered scorer + per-variant registration target; SCORE_STEP=4)
+------------------------------------------------------------------------------------------------------------------
+UNREG      score_clip_ll.py LPIPS-Alex verbatim (real right eye at the deployed window).
+REG_FRAME  PRIMARY registered: GT shifted per frame (median-5) to maximise PSNR against the variant's OWN input,
+           holes excluded (= the published estimator; for DEP it is bit-identical to the published target).
+REG_CLIP   one shift per clip.   BLK_LOCAL  3x4 blocks, local shifts within +-16 px of the frame shift (exploratory;
+           removes most of the depth-dependent residual misalignment, so it isolates appearance from geometry).
+Decomposition (reviewlib operators, GT regions from the REG_FRAME GT at the scored frames): edgeHF/GT, flatHF/GT,
+stripeE/GT for each render AND for the input warped window.  Registration-free: sharp (mean |dx|), selfEdgeHF,
+selfFlatHF, selfFlatStripe.  Lower LPIPS is better.  Every headline contrast is reported UNREG and REG_FRAME.
+
+------------------------------------------------------------------------------------------------------------------
+GATES (a failure blocks the affected rows until fixed)
+------------------------------------------------------------------------------------------------------------------
+G1  array-reader faithfulness: DEP through the array reader reproduces the existing pre-encode md5 for
+    origin 0301 (2e533d7755c950d2fc95043f6fb0a51d), deliv 0301 (3e367e6167e5ae62681f50b86579f6b6) and
+    origin 0147 (90637b7ea7521ff0b5358a60bef029ce, the AVP / T=172 path).  If G1 passes, the existing origin_ll /
+    deliv_ll renders serve as the DEP rows of all 4 clips.
+G2  scorer faithfulness: score_input_v1.py on DEP + the existing origin_ll / deliv_ll renders reproduces the published
+    UNREG and REG_FRAME / REG_CLIP clip LPIPS of outputs/more_20261004/eval_robustness/score_v1/<clip>.json within 1e-6.
+G3  RNG pairing: every render's per-window initial-latent md5 list equals that of the same clip's other renders
+    (same T, same draws), so every contrast is noise-paired.
+G4  lossless pass-through: FFV1 decode md5 == writer md5; left half bit-identical to DEP's.
+
+------------------------------------------------------------------------------------------------------------------
+DECISION RULES
+------------------------------------------------------------------------------------------------------------------
+R1-fidelity (reported, not a gate): R1 vs DEP per (clip, model): |dUNREG|, |dREG_FRAME|.  R1 is REPRESENTATIVE of
+  the deployed input iff mean |d| <= 0.003 and max |d| <= 0.006 over the 8 cells (UNREG and REG_FRAME separately).
+  Every variant contrast is against R1 regardless; if R1 is not representative this is flagged on every conclusion.
+
+PROBE 1 (geometry).  Contrast RF - R1, per model, 4 clips.
+  P1 PRIMARY: "a better-matched disparity raises the ceiling" for a model iff mean4 dREG_FRAME <= -0.005 AND >= 3/4
+     clips improved.  "For every model" iff it holds for origin AND deliv.
+  P1 interpretation: if additionally |mean4 dBLK_LOCAL| < 0.002, the gain is geometric alignment (the output sits where
+     the real camera saw things), not appearance; reported as such, not as "less blur".
+  Reported: dUNREG for RF-R1 and RO-R1 (the convergence part), dREG_CLIP, dBLK_LOCAL, edgeHF/GT, sharp, selfEdgeHF,
+     hole fraction; the deliverable-minus-origin gap on R1 vs on RF; s*, o* per clip and the fit PSNR curve.
+  Caveats stated with every RF number: ORACLE (fitted on the scored clip's own GT; per-clip DepthCrafter normalisation
+     means a per-device constant cannot reproduce it; a deployable version needs metric depth + the camera baseline),
+     and a PRODUCT decision (stereo strength x s*).
+
+PROBE 2 (splat quality).  Step A (model-free, CPU): input decomposition of every V in {NA,B1,B4,ZB,SS4,SS4C} vs R1.
+  P2A: V "lowers the input stripe energy" iff its INPUT stripeE/GT is >= 10 % below R1's on >= 3/4 clips AND its
+     INPUT edgeHF/GT is never more than 10 % below R1's (no blur-for-stripes trade).
+  Step B (renders, both models, 4 clips): every V passing P2A; if none passes, the single V with the largest mean
+     input stripeE reduction (so "does either model's output move" is still answered).
+  P2B: V improves a model iff mean4 dREG_FRAME (V - R1) <= -0.003 AND >= 3/4 clips improved AND the output's
+     stripeE/GT falls on average.  dUNREG reported alongside.
+
+SUCCESS CRITERION OF THE ROUND (for context, not this lane's gate): registered-GT LPIPS >= 0.005 better than origin
+  and better on >= 9/12 clips, without blur or fake texture.  This lane can only show a 4-clip, oracle signal.
+
+BUDGET  ~3 G1 renders + probe 1 (RF, RO, R1: 3 x 2 models x 4 clips = 24) + probe 2 (<= 2 variants x 8 = 16),
+  ~2.5-3 min each, GPU 0 under the lock per job; smoke on 0301 first.  Retry a failed run once at most.
+
+------------------------------------------------------------------------------------------------------------------
+FEASIBILITY NOTES (model-free, already seen; scripts/outputs in this lane)
+------------------------------------------------------------------------------------------------------------------
+- feas_v1/v2/v4: naive inferno inversion reproduces the deployed warp at 27-30 dB (0301); the decoded LUT is
+  ~2.3/1.5/2.6 darker (lut_roundtrip_v1.py) -> round-trip LUT removes a +0.2 px bias: 0204 37.07 dB at zero offset
+  (TL-vs-source codec floor 37.3), 0301 32.06 dB (floor 35.3; high-texture foliage).
+- frame_align_v1: every source is frame-aligned (offset 0) under sequential decode; AVP left_eye frames >= 151 are a
+  frozen copy of frame 151 in both the source and the splatting TL (consistent; no GT exists there).
+- prep_v1 (CG LS) was stopped unfinished in favour of the identical closed-form LS (prep_v2; 0.0001 px max diff).

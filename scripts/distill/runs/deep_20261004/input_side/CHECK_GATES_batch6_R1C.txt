@@ -1,0 +1,17 @@
+G4 PASS 0301_R1C_origin: decode==writer True  left==origin_ll left True  frames 151 (ref 151)
+G4 PASS 0301_R1C_deliv: decode==writer True  left==origin_ll left True  frames 151 (ref 151)
+G4 PASS 0301_R1_origin: decode==writer True  left==origin_ll left True  frames 151 (ref 151)
+G4 PASS 0204_R1C_origin: decode==writer True  left==origin_ll left True  frames 151 (ref 151)
+G4 PASS 0204_R1C_deliv: decode==writer True  left==origin_ll left True  frames 151 (ref 151)
+G4 PASS 0204_R1_origin: decode==writer True  left==origin_ll left True  frames 151 (ref 151)
+G4 PASS 0052_R1C_origin: decode==writer True  left==origin_ll left True  frames 168 (ref 168)
+G4 PASS 0052_R1C_deliv: decode==writer True  left==origin_ll left True  frames 168 (ref 168)
+G4 PASS 0052_R1_origin: decode==writer True  left==origin_ll left True  frames 168 (ref 168)
+G4 PASS 0147_R1C_origin: decode==writer True  left==origin_ll left True  frames 172 (ref 172)
+G4 PASS 0147_R1C_deliv: decode==writer True  left==origin_ll left True  frames 172 (ref 172)
+G4 PASS 0147_R1_origin: decode==writer True  left==origin_ll left True  frames 172 (ref 172)
+G3 PASS 0301: 3 renders, 14 windows, 1 distinct init-latent fingerprint lists
+G3 PASS 0204: 3 renders, 14 windows, 1 distinct init-latent fingerprint lists
+G3 PASS 0052: 3 renders, 15 windows, 1 distinct init-latent fingerprint lists
+G3 PASS 0147: 3 renders, 16 windows, 1 distinct init-latent fingerprint lists
+TOTAL failures: 0

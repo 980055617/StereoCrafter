@@ -1,0 +1,13 @@
+0040 origin_cap capture 97389cd5ad56abd52f113cd81f0bee9b init OK; published [('0040_origin_s8', True)] -> C1 PASS; stock re-decode 97389cd5ad56abd52f113cd81f0bee9b -> C2 PASS
+0040 deliv_cap  capture 0a1ca849573980dbdd6490a7c29ca632 init OK; published [('0040_mstudent2_step800_deliv_ll', True), ('0040_mstudent2_step800_ll', True)] -> C1 PASS; stock re-decode 0a1ca849573980dbdd6490a7c29ca632 -> C2 PASS
+0082 origin_cap capture 774b68d5723aeae6db62c13b2af02b0d init BAD; published [('0082_origin_s8', True)] -> C1 FAIL; stock re-decode 774b68d5723aeae6db62c13b2af02b0d -> C2 PASS
+0082 deliv_cap  capture 56c056174b0676e532b2e8fa9fd8f3c5 init BAD; published none (dev deliverable: capture is the reference) -> C1 FAIL; stock re-decode 56c056174b0676e532b2e8fa9fd8f3c5 -> C2 PASS
+0091 origin_cap capture be0c784b35aeba5bd4d1796e339bcdcf init BAD; published [('0091_origin_s8', True)] -> C1 FAIL; stock re-decode be0c784b35aeba5bd4d1796e339bcdcf -> C2 PASS
+0091 deliv_cap  capture dec24c798a2c7c5298a5c6f1766a9424 init BAD; published [('0091_mstudent2_step800_ll', True)] -> C1 FAIL; stock re-decode dec24c798a2c7c5298a5c6f1766a9424 -> C2 PASS
+0184 origin_cap capture d285af4763af42a03de3c2f52f82e44c init OK; published [('0184_origin_s8', True)] -> C1 PASS; stock re-decode d285af4763af42a03de3c2f52f82e44c -> C2 PASS
+0184 deliv_cap  capture aec0e35e211bb3178ff1806f6b4257a4 init OK; published [('0184_mstudent2_step800_ll', True)] -> C1 PASS; stock re-decode aec0e35e211bb3178ff1806f6b4257a4 -> C2 PASS
+0245 origin_cap capture 979e0f433457e293c76c0a102a1ae260 init OK; published [('0245_origin_s8', True)] -> C1 PASS; stock re-decode 979e0f433457e293c76c0a102a1ae260 -> C2 PASS
+0245 deliv_cap  capture e0f70d1c5c17b1046f1d662b66c1acc6 init OK; published [('0245_mstudent2_step800_ll', True)] -> C1 PASS; stock re-decode e0f70d1c5c17b1046f1d662b66c1acc6 -> C2 PASS
+0268 origin_cap capture 5d042fcbd870cc3f57d90a68377a271b init OK; published [('0268_origin_s8', True)] -> C1 PASS; stock re-decode 5d042fcbd870cc3f57d90a68377a271b -> C2 PASS
+0268 deliv_cap  capture a5b78f6b9d7274ba308ac7fc94c9afab init OK; published none (dev deliverable: capture is the reference) -> C1 PASS; stock re-decode a5b78f6b9d7274ba308ac7fc94c9afab -> C2 PASS
+GATES FAILURE

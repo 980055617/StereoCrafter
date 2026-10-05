@@ -1,0 +1,14 @@
+main_v1: relative weight change ||W_s - W_0|| / ||W_0|| over the 15 trainable tensors (fp32 masters)
+step   250  0.00074
+step   500  0.00102
+step   750  0.00126
+step  1000  0.00151
+step  1250  0.00174
+step  1500  0.00189
+step  1750  0.00204
+step  2000  0.00219
+step  2250  0.00236
+step  2500  0.00252
+step  2750  0.00263
+step  3000  0.00278
+reference: regB 1-clip registered-GT run, step 300: 0.00225 (clean_controls/regB/RESULTS.txt section 2)

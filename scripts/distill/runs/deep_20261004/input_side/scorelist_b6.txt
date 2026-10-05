@@ -1,0 +1,4 @@
+0301 R1C origin=outputs/deep_20261004/input_side/clips/0301_R1C_origin/0301_inpainting_results_sbs.mkv deliv=outputs/deep_20261004/input_side/clips/0301_R1C_deliv/0301_inpainting_results_sbs.mkv
+0204 R1C origin=outputs/deep_20261004/input_side/clips/0204_R1C_origin/0204_inpainting_results_sbs.mkv deliv=outputs/deep_20261004/input_side/clips/0204_R1C_deliv/0204_inpainting_results_sbs.mkv
+0052 R1C origin=outputs/deep_20261004/input_side/clips/0052_R1C_origin/0052_inpainting_results_sbs.mkv deliv=outputs/deep_20261004/input_side/clips/0052_R1C_deliv/0052_inpainting_results_sbs.mkv
+0147 R1C origin=outputs/deep_20261004/input_side/clips/0147_R1C_origin/0147_inpainting_results_sbs.mkv deliv=outputs/deep_20261004/input_side/clips/0147_R1C_deliv/0147_inpainting_results_sbs.mkv

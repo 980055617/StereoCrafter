@@ -1,0 +1,1 @@
+C1 control: 0184 origin_s8 md5 == 0184 smoke_step0_s8 md5 (d285af4763af42a03de3c2f52f82e44c), 0/15 tensors differ -> PASS

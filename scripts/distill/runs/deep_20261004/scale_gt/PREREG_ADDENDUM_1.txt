@@ -1,0 +1,13 @@
+PREREG ADDENDUM 1 -- 2026-10-04 23:30 JST, before any training step of MAIN/CONTRAST and before any fine-tuned render.
+Facts resolved by the pre-registered rules (no rule changed):
+  * phase A (prep_crops_v3.py, phaseA_summary_v1.json): 291 clips x 4 windows = 1164; kept fraction median 0.358 (p25 0.190,
+    p75 0.554); 8 clips hit the registration boundary (0077 0080 0090 0151 0097 0098 0137 0004) and are excluded;
+    windows with kept < 0.25 excluded -> MAIN = 754 windows of 215 clips (mean kept of used windows 0.515).
+  * residual disparity after the clip-global shift (informative, non-flat cells): 45.7 % within +-2 px, 58.0 % within +-4 px,
+    71.7 % within +-8 px (local search saturates at +-16 px for 16.6 %).  The real right eye's disparity differs from the render's
+    by a smooth depth-dependent field, not only near objects -- hence the ~50 % kept fraction.
+  * CONTRAST (first 8 clips of train_order with >= 1 kept window): 0160 0177 0144 0179 0105 0078 0165 0067 = 25 windows.
+  * Control C1 PASS (CONTROL_C1.txt): dev 0184 rendered with the step0 swap (origin's own 15 tensors via the checkpoint path)
+    is md5-identical to the plain origin render (d285af4763af42a03de3c2f52f82e44c), 0/15 tensors differ.
+  * Stage-1 render ORDER (all pre-registered checkpoints are still rendered; only the sequence was fixed for budget):
+    main 500, 1000, contrast 500, 1000, main 2000, 3000, 1500, 250, contrast 250, main 2500.

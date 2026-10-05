@@ -1,0 +1,57 @@
+external_models r2 -- M2SVid (full-attention weights, m2svid_fa_w16: 576x1024, 16-frame windows, 1 step) vs origin / deliverable
+LPIPS-Alex vs the real right eye, SCORE_STEP=4, lossless renders.  origin / deliverable = PUBLISHED GPU values (score_v1); M2SVid scored on CPU (D3/D4; backend error <= 5e-5, see paired check below)
+clips scored: 12 ['0301', '0204', '0052', '0147', '0042', '0125', '0128', '0141', '0170', '0225', '0251', '0259']
+
+clip  |           UNREG            |         REG_FRAME          |     M2-orig     |    M2-deliv     |  sharp/gtSharp  |  rPSNR REG 
+      |   origin    deliv   M2SVid |   origin    deliv   M2SVid |   UNREG     REG |   UNREG     REG |  origin  M2SVid |  orig    M2
+0301  |   0.4351   0.3965   0.4011 |   0.4051   0.3643   0.3667 | -0.0340 -0.0385 | +0.0046 +0.0023 |   0.466   0.536 | 17.39 17.12
+0204  |   0.2053   0.1867   0.1889 |   0.1340   0.1144   0.1161 | -0.0164 -0.0179 | +0.0022 +0.0017 |   0.564   0.561 | 23.48 23.50
+0052  |   0.4467   0.4395   0.4544 |   0.2231   0.2151   0.2625 | +0.0077 +0.0394 | +0.0149 +0.0474 |   1.314   1.120 | 17.75 17.60
+0147  |   0.5269   0.5244   0.5155 |   0.2100   0.2042   0.2049 | -0.0115 -0.0051 | -0.0089 +0.0007 |   1.584   1.386 | 19.11 19.37
+0042  |   0.4279   0.4218   0.4218 |   0.1599   0.1565   0.1705 | -0.0060 +0.0106 | +0.0001 +0.0140 |   1.253   1.024 | 23.70 23.56
+0125  |   0.4799   0.4655   0.4644 |   0.3610   0.3447   0.3563 | -0.0156 -0.0047 | -0.0012 +0.0116 |   0.828   0.759 | 19.96 19.87
+0128  |   0.4055   0.3882   0.3890 |   0.2291   0.2170   0.2026 | -0.0165 -0.0265 | +0.0007 -0.0144 |   1.287   1.398 | 21.88 21.95
+0141  |   0.4813   0.4681   0.4565 |   0.2864   0.2678   0.2714 | -0.0249 -0.0149 | -0.0116 +0.0036 |   1.360   1.211 | 22.11 22.14
+0170  |   0.2517   0.2446   0.2288 |   0.2058   0.1984   0.1804 | -0.0229 -0.0254 | -0.0158 -0.0180 |   0.507   0.563 | 20.94 21.25
+0225  |   0.2750   0.2587   0.2502 |   0.2080   0.1932   0.1795 | -0.0248 -0.0285 | -0.0084 -0.0137 |   0.895   0.992 | 18.70 18.94
+0251  |   0.3460   0.3355   0.3861 |   0.1798   0.1667   0.2525 | +0.0400 +0.0727 | +0.0505 +0.0858 |   0.479   0.386 | 25.43 20.71
+0259  |   0.4376   0.4357   0.4181 |   0.3140   0.3159   0.2842 | -0.0195 -0.0299 | -0.0176 -0.0317 |   0.693   0.772 | 18.11 18.81
+
+--- REGIME 4-clip set: 4 clips ['0301', '0204', '0052', '0147']
+  UNREG     origin 0.4035 (pub GPU 0.4035)  deliv 0.3868  M2SVid 0.3900  | M2-origin -0.0135 (better 3/4)  M2-deliv +0.0032 (better 1/4)
+  REG_CLIP  origin 0.2446 (pub GPU 0.2446)  deliv 0.2260  M2SVid 0.2389  | M2-origin -0.0056 (better 3/4)  M2-deliv +0.0129 (better 0/4)
+  REG_FRAME origin 0.2431 (pub GPU 0.2431)  deliv 0.2245  M2SVid 0.2375  | M2-origin -0.0055 (better 3/4)  M2-deliv +0.0130 (better 0/4)
+  BLK_LOCAL origin 0.2083 (pub GPU 0.2083)  deliv 0.1901  M2SVid 0.2055  | M2-origin -0.0029 (better 3/4)  M2-deliv +0.0154 (better 0/4)
+  published s25 (GPU): UNREG 0.3872  REG_FRAME 0.2252
+  PAIRED CPU check on ['0301', '0204', '0052', '0147']: M2-origin UNREG -0.0135 REG_FRAME -0.0055;  M2-deliv UNREG +0.0032 REG_FRAME +0.0130
+  sharp/gtSharp: origin 0.982  M2SVid 0.901
+  rightPSNR REG_FRAME: origin 19.433  deliv 19.251  M2SVid 19.398
+  temporal GT      tLP 0.1403  seam ratio (own grid) 0.994  (at M2SVid grid 1.028)
+  temporal origin  tLP 0.1261  seam ratio (own grid) 1.233  (at M2SVid grid 1.010)
+  temporal deliv   tLP 0.1318  seam ratio (own grid) 1.274  (at M2SVid grid 1.019)
+  temporal m2svid  tLP 0.1069  seam ratio (own grid) 1.455  (at M2SVid grid 1.455)
+  LANE RULE vs origin: dUNREG -0.0135 (better 3/4), dREG_FRAME -0.0055 (better 3/4) -> NO CLEAR DIFFERENCE
+  LANE RULE vs deliverable: dUNREG +0.0032 (better 1/4), dREG_FRAME +0.0130 (better 0/4) -> NO CLEAR DIFFERENCE
+
+--- ALL 12 TEST CLIPS: 12 clips ['0301', '0204', '0052', '0147', '0042', '0125', '0128', '0141', '0170', '0225', '0251', '0259']
+  UNREG     origin 0.3933 (pub GPU 0.3933)  deliv 0.3804  M2SVid 0.3812  | M2-origin -0.0120 (better 10/12)  M2-deliv +0.0008 (better 6/12)
+  REG_CLIP  origin 0.2454 (pub GPU 0.2454)  deliv 0.2320  M2SVid 0.2394  | M2-origin -0.0060 (better 9/12)  M2-deliv +0.0073 (better 4/12)
+  REG_FRAME origin 0.2430 (pub GPU 0.2430)  deliv 0.2298  M2SVid 0.2373  | M2-origin -0.0057 (better 9/12)  M2-deliv +0.0075 (better 4/12)
+  BLK_LOCAL origin 0.2069 (pub GPU 0.2069)  deliv 0.1942  M2SVid 0.2027  | M2-origin -0.0042 (better 9/12)  M2-deliv +0.0085 (better 4/12)
+  published s25 (GPU): UNREG 0.3786  REG_FRAME 0.2278
+  PAIRED CPU check on ['0301', '0204', '0052', '0147']: M2-origin UNREG -0.0135 REG_FRAME -0.0055;  M2-deliv UNREG +0.0032 REG_FRAME +0.0130
+  sharp/gtSharp: origin 0.936  M2SVid 0.892
+  rightPSNR REG_FRAME: origin 20.713  deliv 20.491  M2SVid 20.402
+  temporal GT      tLP 0.1007  seam ratio (own grid) 0.970  (at M2SVid grid 1.054)
+  temporal origin  tLP 0.0931  seam ratio (own grid) 1.329  (at M2SVid grid 1.028)
+  temporal deliv   tLP 0.1010  seam ratio (own grid) 1.417  (at M2SVid grid 1.030)
+  temporal m2svid  tLP 0.0761  seam ratio (own grid) 1.968  (at M2SVid grid 1.968)
+  LANE RULE vs origin: dUNREG -0.0120 (better 10/12), dREG_FRAME -0.0057 (better 9/12) -> NO CLEAR DIFFERENCE
+  PROGRAM RULE vs origin: REG_FRAME -0.0057, better on 9/12 -> MET
+  LANE RULE vs deliverable: dUNREG +0.0008 (better 6/12), dREG_FRAME +0.0075 (better 4/12) -> NO CLEAR DIFFERENCE
+  PROGRAM RULE vs deliverable: REG_FRAME +0.0075, better on 4/12 -> NOT MET
+
+backend reproduction (CPU vs published GPU, max |d| over 5 variants): 0301 origin 4.7e-05 deliv 3.8e-05, 0204 origin 1.2e-05 deliv 1.4e-05, 0052 origin 2.4e-05 deliv 2.6e-05, 0147 origin 3.6e-05 deliv 1.9e-05
+gates G0/G1: 0301 {'offset_equal': True, 'left_md5_equal_scored': True, 'unreg_two_scripts_equal': True, 'left_md5_all_frames_equal': True} {'frames': True, 'finite': True, 'lossless': True}; 0204 {'offset_equal': True, 'left_md5_equal_scored': True, 'unreg_two_scripts_equal': True, 'left_md5_all_frames_equal': True} {'frames': True, 'finite': True, 'lossless': True}; 0052 {'offset_equal': True, 'left_md5_equal_scored': True, 'unreg_two_scripts_equal': True, 'left_md5_all_frames_equal': True} {'frames': True, 'finite': True, 'lossless': True}; 0147 {'offset_equal': True, 'left_md5_equal_scored': True, 'unreg_two_scripts_equal': True, 'left_md5_all_frames_equal': True} {'frames': True, 'finite': True, 'lossless': True}; 0042 {'offset_equal': True, 'left_md5_equal_scored': True, 'unreg_two_scripts_equal': True, 'left_md5_all_frames_equal': True} {'frames': True, 'finite': True, 'lossless': True}; 0125 {'offset_equal': True, 'left_md5_equal_scored': True, 'unreg_two_scripts_equal': True, 'left_md5_all_frames_equal': True} {'frames': True, 'finite': True, 'lossless': True}; 0128 {'offset_equal': True, 'left_md5_equal_scored': True, 'unreg_two_scripts_equal': True, 'left_md5_all_frames_equal': True} {'frames': True, 'finite': True, 'lossless': True}; 0141 {'offset_equal': True, 'left_md5_equal_scored': True, 'unreg_two_scripts_equal': True, 'left_md5_all_frames_equal': True} {'frames': True, 'finite': True, 'lossless': True}; 0170 {'offset_equal': True, 'left_md5_equal_scored': True, 'unreg_two_scripts_equal': True, 'left_md5_all_frames_equal': True} {'frames': True, 'finite': True, 'lossless': True}; 0225 {'offset_equal': True, 'left_md5_equal_scored': True, 'unreg_two_scripts_equal': True, 'left_md5_all_frames_equal': True} {'frames': True, 'finite': True, 'lossless': True}; 0251 {'offset_equal': True, 'left_md5_equal_scored': True, 'unreg_two_scripts_equal': True, 'left_md5_all_frames_equal': True} {'frames': True, 'finite': True, 'lossless': True}; 0259 {'offset_equal': True, 'left_md5_equal_scored': True, 'unreg_two_scripts_equal': True, 'left_md5_all_frames_equal': True} {'frames': True, 'finite': True, 'lossless': True}
+speed (s per 16-frame 576x1024 window on the RTX 4090, official scale-1.0 CFG batch, decode in 8-frame chunks): 0301 7.10, 0204 6.80, 0052 6.94, 0147 6.93, 0042 6.79, 0125 6.78, 0128 6.76, 0141 6.85, 0170 6.71, 0225 6.66, 0251 6.78, 0259 6.76
+hole fraction after M2SVid closing+dilation (mean over clip): 0301 0.041, 0204 0.001, 0052 0.031, 0147 0.029, 0042 0.038, 0125 0.030, 0128 0.016, 0141 0.058, 0170 0.002, 0225 0.000, 0251 0.027, 0259 0.020

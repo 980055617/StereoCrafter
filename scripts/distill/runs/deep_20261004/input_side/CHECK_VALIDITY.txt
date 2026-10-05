@@ -1,0 +1,7 @@
+GT validity check (input_side lane, 2026-10-04): clip < 0310, readlink -f not in train_leftGT_broken, and the real
+right eye (train TR) differs from the left eye (train TL) -- PSNR(TL,TR) at the same pixels, every 15th frame;
+a left-copy 'right eye' would give >= 35 dB (codec noise only).
+0301: realpath /home/kawa/master_project/StereoCrafter/video_data/train/0301_train.mp4  n=151  PSNR(TL,TR) min 16.44 max 18.92 dB  -> VALID
+0204: realpath /home/kawa/master_project/StereoCrafter/video_data/train/0204_train.mp4  n=151  PSNR(TL,TR) min 21.84 max 22.92 dB  -> VALID
+0052: realpath /home/kawa/master_project/StereoCrafter/video_data/train/0052_train.mp4  n=150  PSNR(TL,TR) min 16.06 max 16.85 dB  -> VALID
+0147: realpath /home/kawa/master_project/StereoCrafter/video_data/train/0147_train.mp4  n=150  PSNR(TL,TR) min 17.58 max 17.98 dB  -> VALID

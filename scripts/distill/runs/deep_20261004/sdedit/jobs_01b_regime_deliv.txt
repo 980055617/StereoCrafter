@@ -1,0 +1,13 @@
+# S1 regime renders, DELIV part; launched only after the S0 deliv smoke renders passed K2/K3
+0204 deliv_g100_sd1 deliv 1.00 s1 8 warp
+0204 deliv_g100_sd1fill deliv 1.00 s1 8 warpfill
+0204 deliv_g100_sd7 deliv 1.00 s7 8 warp
+0204 deliv_g100_sd31 deliv 1.00 s31 8 warp
+0052 deliv_g100_sd1 deliv 1.00 s1 8 warp
+0052 deliv_g100_sd1fill deliv 1.00 s1 8 warpfill
+0052 deliv_g100_sd7 deliv 1.00 s7 8 warp
+0052 deliv_g100_sd31 deliv 1.00 s31 8 warp
+0147 deliv_g100_sd1 deliv 1.00 s1 8 warp
+0147 deliv_g100_sd1fill deliv 1.00 s1 8 warpfill
+0147 deliv_g100_sd7 deliv 1.00 s7 8 warp
+0147 deliv_g100_sd31 deliv 1.00 s31 8 warp

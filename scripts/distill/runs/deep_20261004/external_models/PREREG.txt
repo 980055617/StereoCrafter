@@ -1,0 +1,69 @@
+PRE-REGISTRATION -- deep_20261004 / external_models lane (GPU 0 under flock /tmp/claude-gpu0.lock)
+Written 2026-10-04 22:15 JST, BEFORE any render or score of an external model (no LPIPS of any external model has been
+computed by this lane at the time of writing; the only numbers read so far are the PUBLISHED origin / deliverable rows
+for 0301 and 0204 in more_20261004/eval_robustness/PUBLISHED_ROWS.json and outputs/more_20261004/eval_robustness/score_v1/).
+
+QUESTION  Is there an open model that generates a SHARPER, more correct right eye than StereoCrafter (origin) today, on
+          the SAME left eye / warp / mask?  If yes, can it serve as a TEACHER for distillation into the Mamba UNet?
+
+CANDIDATE CHOSEN (search done 2026-10-04 21:55-22:05; see CANDIDATES.txt in this dir)
+  M2SVid (Shvetsova et al., Google; arXiv 2505.16565), official code github.com/google-research/m2svid commit
+  11b0133093d6abfcc6ff953890edf05457975318, FULL-ATTENTION weights
+  https://storage.googleapis.com/gresearch/m2svid/m2svid_weights.pt  (md5 b8618e8d8995042a72038f45c356f2f6, 4.98 GB,
+  contains UNet + OpenCLIP-H image tower + 3 VAE encoders + SVD video VAE).
+  Why this one: SVD-based like StereoCrafter, takes EXACTLY our kind of input (left video + warped right + disocclusion
+  mask), additionally conditions on the LEFT video (information origin lacks: origin's UNet sees only warp+noise, and
+  its mask channel weights are 0), single feed-forward step, paper LPIPS 0.180 vs StereoCrafter 0.242 on Stereo4D,
+  fits 24 GB.  StereoPilot / StereoWorld (Wan2.1-1.3B) take only the mono video and choose their own disparity, so their
+  right eye cannot be scored against our real right eye on the same geometry -> not chosen (reported only).
+
+ENVIRONMENT  venv /mnt/ssd_data/deep_20261004/external_models/venv layered (--system-site-packages) on the stereocrafter
+  conda env python (torch 2.4.0+cu121, xformers 0.0.27.post2) + lane-local pip installs pinned by constraints.txt
+  (pytorch-lightning 1.9.5, omegaconf 2.3.0, open-clip-torch 2.29.0, kornia 0.6.9, ffmpeg-python, webdataset, timm).
+  DEVIATION from the official env: torch 2.4.0 instead of 2.0.1, PL 1.9.5 instead of 1.5.0.  The shared env is untouched.
+  Config deviation (inference-only, no effect on the forward pass): OpenCLIP built with pretrained=None (its weights come
+  from m2svid_weights.pt, so Hi3D ckpts.zip is not needed), loss_fn_config dropped (training-only LPIPS/VGG).  Gate G2
+  checks that every UNet / conditioner / first-stage tensor is restored (0 missing keys outside loss_fn).
+
+INPUTS (identical to the deployed origin run)
+  video_data/splatting/<clip>_splatting_results.mp4 : TL = left eye, BL = occlusion mask, BR = warped right eye;
+  crop to multiples of 128 then centre-crop 576x1024 (utils/inpainting.py + inpainting_inference._center_crop_frames,
+  reimplemented float32-exactly).  Then M2SVid's OFFICIAL preprocessing (inpaint_and_refine.py): mask -> closing 11 ->
+  warped[mask>0.5]=0 -> dilation 3 -> resize to latent res with antialias=0; videos *2-1; cond_aug 0.02; fps_id = 29.97;
+  motion_bucket_id 127; 1 step from zero latent at sigma 700 (configs/m2svid.yaml sampler, unchanged).
+
+PRIMARY CONFIG (fixed now, never tuned on test clips)  "m2svid_fa_w25"
+  576x1024 (the deployed window, SVD's native res; M2SVid was trained on 512x512 crops -> an extrapolation, reported),
+  25-frame windows (max the model accepts; trained on {4,16,25}), non-overlapping, the last window anchored to the clip
+  end (only its new frames kept), fp16, torch seed 1234 (only cond_aug noise is random), output = the model's fully
+  generated right eye (no compositing).  Writer: FFV1 lossless SBS [left | right] 576x2048, left half = origin's
+  float32 path ((u8/255)*255 -> uint8).
+SECONDARY (exploratory, only if time allows; any choice among variants is made on DEV clips 0040 0082 0091 0184 0245
+  0268 0351 (0311 has no GT tile), never on test):  window 16 ("m2svid_fa_w16"), and the no-full-attention weights.
+
+CLIPS  smoke: 0301 (one clip first).  Then 0204.  Then the regime set 0052 0147 (with 0301 0204 = the 4-clip set of
+  fulldata_v2/beyond4).  Then the remaining 8 test clips if the 3-hour cap allows.  No training of any kind in this lane.
+
+SCORING (lossless renders only)
+  UNREG      scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py verbatim (LPIPS-Alex, SCORE_STEP=4); also gives
+             'sharp' (mean |horizontal gradient| of the right eye) and gtSharp = the NO-REFERENCE sharpness proxy.
+  REG_FRAME  primary registered-GT LPIPS: copy of more_20261004/eval_robustness/score_registered_v1.py (only the panel
+             labels / input rows file changed); also REG_CLIP, BLK_LOCAL reported.  Registration is model-independent.
+  Reference rows (published, not recomputed unless the scorer copy needs them as rows): origin_ll, the deliverable
+  mstudent2_step800_deliv_ll, s25_ll.
+
+GATES
+  G0  scorer left-eye offset of the M2SVid render == the published offset of origin for that clip, and md5 of the
+      M2SVid render's left half == md5 of origin_ll's left half (same frames).  Fail -> the clip's numbers are void.
+  G1  render has the same frame count as origin_ll, no NaN/Inf, values not constant; one frame visually inspected.
+  G2  checkpoint restore: 0 missing keys outside loss_fn.*; unexpected keys only loss_fn.*.
+  One retry per failed run, errors quoted.
+
+DECISION RULES (per contrast, M2SVid minus origin, both UNREG and REG_FRAME; negative = M2SVid better)
+  CLEARLY BETTER  mean delta <= -0.010 in BOTH UNREG and REG_FRAME AND better on >= 3 of the 4 regime clips
+                  (>= 10/12 if all 12 test clips are run) in both.
+  CLEARLY WORSE   mean delta >= +0.010 in both and worse on >= 3/4 (>= 10/12) in both.
+  otherwise       NO CLEAR DIFFERENCE.
+  The same rule is applied vs the deliverable.  Sharpness is descriptive only (sharp/gtSharp ratio), never gating.
+  If CLEARLY BETTER: assess as teacher (license of code and weights, measured s/window at 576x1024 on the 4090, output
+  space: same SVD VAE as StereoCrafter? 25 frames vs 14, 13-ch vs 9-ch input).  If not: say so and why.

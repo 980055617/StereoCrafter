@@ -1,0 +1,176 @@
+PRE-REGISTRATION -- deep_20261004 / sdedit lane (GPU 0 only; every GPU job under flock /tmp/claude-gpu0.lock, held per job)
+Written 2026-10-04 ~22:30 JST, BEFORE any render of this lane and BEFORE any scorer / decomposition / temporal call of
+this lane.  What was looked at before writing: the code paths (pipeline, scheduler, hooks, scorers), the published
+baseline numbers quoted below, and the INPUTS only (test_sdfill_v1.py: the hole fill on 5 single input frames,
+outputs/deep_20261004/sdedit/inputcheck/).  No SDEdit render exists at the time of writing.
+No earlier sdedit files existed (the RESTART NOTE's partial files belong to other lanes).
+
+QUESTION  The warped input already contains the left eye's real pixels.  Can a TRAINING-FREE change keep more of that
+          real detail: start the sampler from the noised VAE latent of the warped input instead of pure noise
+          (SDEdit-style), so that the output beats the same model's deployed render on registered-GT LPIPS without
+          raising splatting-stripe energy?
+
+-------------------------------------------------------------------------------------------------------------------
+TREATMENT  infer_ll_hook_sdedit_v1.py (copy of the finalcheck speed hook + SD_MODE; nothing tracked is edited)
+-------------------------------------------------------------------------------------------------------------------
+  x_init = sf * z_src + sigma_start * eps        (EDM forward process x_sigma = x0 + sigma*eps, the parameterisation the
+                                                  scheduler's v-prediction c_skip/c_out/c_in assume)
+    sf    = vae.config.scaling_factor = 0.18215 (decode_latents divides by it)
+    eps   = the identical randn_tensor call the pipeline's prepare_latents makes, with the RNG padded to the deployed
+            8 draws per window (SK_RNG_PAD_TO=8) -> eps IS the deployed 8-step render's initial noise of every window
+            (paired; verified by K2)
+    z_src = warp      the window's conditioning latents (the pipeline's own VAE encode, latent_dist.mode(), of the
+                      warped right-eye frames; overlap_prev_weight=0 so every window frame is the warped input)
+            warpfill  the same encode of the warped frames with EVERY hole pixel (mask >= 0.5, the pipeline's own
+                      binarisation) filled by row-wise linear interpolation (sdfill_v1.fill_all_rowlin =
+                      crackfill_COPY.fill_rowlin applied to all hole runs, window + 16 px margin).  71-99.98 % of hole
+                      pixels lie in runs <= 3 px (stripes-lane logs), the rest in 4-8 px runs; filling all of them is
+                      the task's "fill crack pixels" with no black pixel left in the init source.  The conditioning
+                      latents, the CLIP embedding and the mask channel are UNCHANGED (the fill reaches z_src only).
+  sigma_start and the remaining schedule = the deployed default-8 Karras grid's own values and its tail:
+    sd31  30.993608474731445 -> 7.276163101196289 -> 1.1675708293914795 -> 0.09738767892122269 -> 0.0020000000949949026 -> 0
+          (5 UNet evaluations per window)
+    sd7   7.276163101196289 -> ... (4 evaluations)          sd1   1.1675708293914795 -> ... (3 evaluations)
+    sd1fill  = sd1 with z_src = warpfill.  The fill variant is run at sigma 1.17 ONLY, decided a priori: the fill
+          changes nothing but hole pixels (<= 3.6 % of the window), whose latent footprint is buried under noise of
+          std 31 / 7.3 at the other two starts (latent signal std ~1); at 1.17 the dark cracks would otherwise survive
+          into the init.  (The hook logs the fill's latent footprint mean|sf*(z_fill - z_cond)| per window.)
+  Guidance 1.00 (no CFG batch), 576x1024 centre crop, 14-frame windows overlap 3, bf16 -- everything else deployed.
+  MODELS  origin    no unet state, MAMBA_SELF_ATTN_INCLUDE=__nomatch__ (the beyond4 origin_ll environment)
+          deliv     the deliverable /mnt/ssd_data/stereocrafter_weights/_distill_injected/
+                    mamba5slot_plus_stepdistil_up3_train10clip_step800_20261001.pt (md5 08cf44850b8f392efb307e3a48cd82d1,
+                    read-only) + the 5-slot Mamba env (identical to the speed lane's deliv)
+  Renders: outputs/deep_20261004/sdedit/clips/<clip>_<model>_g100_<sd31|sd7|sd1|sd1fill>/ (FFV1, lossless writer).
+
+-------------------------------------------------------------------------------------------------------------------
+BASELINES (existing lossless renders, NOT re-rendered)
+-------------------------------------------------------------------------------------------------------------------
+  DEPLOYED (the pass reference, "the same model's deployed render"; 8 Euler steps, guidance 1.01):
+    origin  outputs/beyond4_lossless/clips/<c>_origin_ll/                         label origin_ll
+    deliv   outputs/beyond_distil_mamba_scaled/clips/<c>_mstudent2_step800_deliv_ll/   label mstudent2_step800_deliv_ll
+  GUIDANCE CONTROL (the deployed 8-step grid at the treatment's guidance 1.00; RNG-identical to the deployed render):
+    outputs/finalcheck_20261004/speed/clips/<c>_origin_g100_s8/ , <c>_deliv_g100_s8/
+    -> "SDEdit effect" = V - g100_s8 (isolates the init change); "net effect" = V - deployed (gated).
+  Published per-clip LPIPS used by K5 (score_clip_ll.py ROW lines, finalcheck speed SCORES_STEP1.txt), UNREG:
+    clip      origin_ll  deliv_ll   origin_g100_s8  deliv_g100_s8
+    0301      0.435095   0.396496   0.437519        0.396964
+    0204      0.205310   0.186734   0.206030        0.186784
+    0052      0.446689   0.439509   0.447028        0.439737
+    0147      0.526938   0.524394   0.526745        0.524226
+  Published REG_FRAME / REG_CLIP (outputs/more_20261004/eval_robustness/score_v1/<c>.json), origin_ll | deliv:
+    0301 0.405128 / 0.405686 | 0.364342 / 0.365119      0204 0.134036 / 0.134612 | 0.114405 / 0.114944
+    0052 0.223129 / 0.224404 | 0.215136 / 0.216427      0147 0.210025 / 0.213533 | 0.204162 / 0.207688
+    (0125 is scored with the widened grid, score_v1_wide: origin 0.362773 / 0.378199, deliv 0.346383.)
+
+-------------------------------------------------------------------------------------------------------------------
+STAGES
+-------------------------------------------------------------------------------------------------------------------
+  S0 SMOKE 0301: K1 control render + the 8 variant renders (4 variants x 2 models).  Gate = integrity only (K1-K4).
+     NO variant is dropped or added on the basis of any smoke QUALITY number.
+  S1 REGIME SET 0301 0204 0052 0147: the 8 variant renders on 0204 0052 0147.  Scored on all 4 clips.
+  S2 12 CLIPS: the other 8 test clips 0042 0125 0128 0141 0170 0225 0251 0259 are rendered for EVERY (variant, model)
+     that passes P4 at S1 (and only those).  Scored on all 12.
+  Test clips only, as the task prescribes; no dev clip is rendered (no deployed baseline exists on any dev clip, and
+  0311/0351 have no valid GT).  The rule below is fixed now, every variant is reported, and nothing is tuned.
+
+-------------------------------------------------------------------------------------------------------------------
+K. INTEGRITY GATES (a failure blocks the affected rows; one retry at most)
+-------------------------------------------------------------------------------------------------------------------
+K1 control: SD_MODE=off through this lane's driver+hook, 0301 origin, 8 steps, guidance 1.00, no pad, reproduces the
+   writer md5 486dcefba769a992be0342f1f5eea349 of finalcheck speed 0301_origin_g100_s8 (the addition is inert).
+K2 RNG pairing: every SDEdit render's per-window paired_ref_md5 (md5 of bf16(eps * default-8 init_noise_sigma)) equals
+   the per-window init_md5 list of <clip>_origin_g100_s8/speed_log.json (== deliv_g100_s8's); per-window UNet calls
+   = 5 / 4 / 3 and pad draws 3 / 4 / 5; the logged sigma_start equals the scheduler's first sigma (asserted at runtime).
+K3 pass-through: finalcheck speed check_passthrough_v1.py (unchanged): decoded FFV1 md5 == writer md5, decoded left half
+   bit-identical to origin_ll's, same frame count.
+K4 fill: warpfill renders found every conditioning frame in the fill map (asserted), changed > 0 window pixels and 0
+   non-hole pixels (asserted), full-row runs left unfilled reported; warp renders have no fill.
+K5 scorer reproduction: the baselines are re-scored in the SAME scorer runs: UNREG within +-0.0001 of the published
+   values above; REG_FRAME and REG_CLIP within +-0.0001 of eval_robustness score_v1 (score_v1_wide for 0125);
+   decomposition: run_decomp's own K5 check (origin_ll vs outputs/review_20261001/METRICS_WHOLEFRAME.txt) where the
+   review covered the clip.
+K6 temporal reproduction: origin_ll warp error reproduces V1_TEMPORAL_576_12CLIP.txt to 4 decimals
+   (0301 0.0493, 0204 0.0105, 0052 0.0217, 0147 0.0083).
+
+-------------------------------------------------------------------------------------------------------------------
+M. MEASUREMENTS (FFV1 renders only)
+-------------------------------------------------------------------------------------------------------------------
+M1  UNREG LPIPS   scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py UNCHANGED, SCORE_STEP=4 (ROW lpips, sharp).
+M1r REGISTERED    scripts/distill/runs/more_20261004/eval_robustness/score_registered_v1.py UNCHANGED (a ROWS json per
+    stage built from the M1 ROW lines), REG_FRAME = PRIMARY (per-frame shift vs the model input, median-5),
+    REG_CLIP = robustness; 0125 with score_registered_v1w.py, REG_DDY=-20,20 REG_DDX=-240,40 (the eval_robustness
+    addendum), its REG_FRAME flagged ILL-POSED as there, REG_CLIP reported beside it.
+M2  DECOMPOSITION  run_decomp_sdedit_v1.py = more_20261004/stripes run_decomp_v1.py + decomp_v1.py with the offset table
+    extended to all 12 test clips (scorer dy,dx from PUBLISHED_ROWS.json; every existing entry asserted unchanged):
+    whole 576x1024 window, frames range(0, nvalid, 8), GT regions from the disparity-registered real right eye
+    (build_review.py global shift).  stripeE = mean |horizontal difference| inside GT-flat pixels (FLAT-REGION STRIPE
+    ENERGY), edgeHF = mean |Laplacian| inside the GT's top-decile gradient pixels (EDGE ENERGY AT GT EDGES), flatHF,
+    haloFrac; stripeE split near (<= 2 px) / far from holes; --input adds the warped INPUT rows.
+M3  TEMPORAL  scripts/distill/runs/finalcheck_20261004/validate/score_temporal_ll.py UNCHANGED: RAFT warp error, tLP,
+    seam ratio.
+M4  cost: UNet evaluations and UNet GPU seconds per clip from speed_log.json.
+DESCRIPTIVE ROWS (never gating): INPUT_warp = [left | warped input with holes] and INPUT_fill = [left | warped input,
+    holes row-filled] written losslessly with the renders' own uint8 conversion (make_input_sbs_v1.py, CPU) for the
+    regime clips: the sigma -> 0 limits of sd1 and sd1fill, scored by M1/M1r/M2 like a render.
+
+-------------------------------------------------------------------------------------------------------------------
+P. PASS RULES, per variant V in {sd31, sd7, sd1, sd1fill} and model M in {origin, deliv}
+   (V vs M's DEPLOYED render; "improves" = strictly lower clip-mean REG_FRAME LPIPS from the same scorer run)
+-------------------------------------------------------------------------------------------------------------------
+P4  (S1, 4 regime clips): REG_FRAME improves on >= 3 of 4 clips  AND  stripe gate: the 4-clip mean of the per-clip
+    ratio stripeE(V) / stripeE(deployed M) <= 1.10.
+P12 (S2, 12 clips): REG_FRAME improves on >= 9 of 12 clips  AND  the 12-clip mean stripeE ratio <= 1.10.
+    (0125's REG_FRAME is the widened-grid value; the verdict is also shown with REG_CLIP and without 0125.)
+FLAGS (reported next to every verdict, not gating): any single clip with stripeE ratio > 1.10; mean edgeHF ratio;
+    mean RAFT warp-error ratio > 1.05; UNREG direction disagreeing with REG_FRAME on a clip; the same contrasts vs the
+    guidance control g100_s8.
+LANE VERDICT: YES if some V passes P12 for both models; PARTIAL if for one model only; NO if nothing passes P12
+    (NO at P4 already ends the lane).  A pass would still be a test-set result: it would need confirmation on the
+    valid-GT dev clips (0040 0082 0091 0184 0245 0268) before anyone ships it.
+VISUAL CHECK: per regime clip and model one PNG (GT registered | deployed | best SDEdit), best = the model's variant
+    with the lowest 4-clip mean REG_FRAME (display choice only); frame = the decomposition frame (densest disocclusion
+    in the window); top row whole window at half size, bottom row 384x384 native crops where |best - deployed| is
+    largest.  outputs/deep_20261004/sdedit/panels/.
+
+PREDICTION (written so it can be wrong; not a criterion): sd31 ~ deployed (the high-sigma steps are mostly reproduced
+    by the conditioning anyway); sd1 the sharpest (edgeHF up) but with stripe energy and crack remnants up (> 1.10),
+    sd1fill fewer crack remnants but the input's own stripes kept; registered LPIPS may still improve for sd7/sd1
+    because the input's real pixels are closer to the registered GT than a regenerated texture.
+--- recorded by the shell at 2026-10-04T22:17:39+09:00 ---
+files in the lane dirs at this moment (no render / score of this lane exists):
+outputs/deep_20261004/sdedit:
+total 12
+drwxrwxr-x 3 kawa kawa 4096 Oct  4 22:15 .
+drwxrwxr-x 8 kawa kawa 4096 Oct  4 22:10 ..
+drwxrwxr-x 2 kawa kawa 4096 Oct  4 22:15 inputcheck
+
+outputs/deep_20261004/sdedit/inputcheck:
+total 232
+drwxrwxr-x 2 kawa kawa  4096 Oct  4 22:15 .
+drwxrwxr-x 3 kawa kawa  4096 Oct  4 22:15 ..
+-rw-rw-r-- 1 kawa kawa 46731 Oct  4 22:15 0052_f040_fill_zoom_y320_x32.png
+-rw-rw-r-- 1 kawa kawa 43648 Oct  4 22:15 0147_f008_fill_zoom_y192_x672.png
+-rw-rw-r-- 1 kawa kawa 30612 Oct  4 22:15 0147_f072_fill_zoom_y128_x480.png
+-rw-rw-r-- 1 kawa kawa 30920 Oct  4 22:15 0204_f064_fill_zoom_y448_x800.png
+-rw-rw-r-- 1 kawa kawa 68171 Oct  4 22:15 0301_f040_fill_zoom_y288_x160.png
+
+scripts/distill/runs/deep_20261004/sdedit:
+total 104
+drwxrwxr-x 3 kawa kawa  4096 Oct  4 22:17 .
+drwxrwxr-x 8 kawa kawa  4096 Oct  4 22:10 ..
+-rw-rw-r-- 1 kawa kawa 13253 Oct  4 22:17 PREREG.txt
+drwxrwxr-x 2 kawa kawa  4096 Oct  4 22:15 __pycache__
+-rw-rw-r-- 1 kawa kawa  7670 Oct  4 22:12 crackfill_COPY.py
+-rw-rw-r-- 1 kawa kawa 27459 Oct  4 22:15 infer_ll_hook_sdedit_v1.py
+-rw-rw-r-- 1 kawa kawa 13667 Oct  4 22:12 infer_ll_hook_speed_v1_ORIG_COPY.py
+-rw-rw-r-- 1 kawa kawa  4385 Oct  4 22:14 run_driver_sdedit_v1.sh
+-rwxrwxr-x 1 kawa kawa  4677 Oct  4 22:12 run_driver_speed_v1_ORIG_COPY.sh
+-rw-rw-r-- 1 kawa kawa  1711 Oct  4 22:15 sdfill_v1.py
+-rw-rw-r-- 1 kawa kawa  3177 Oct  4 22:15 test_sdfill_v1.py
+b35855694d0933c6f06e4624941933d2  scripts/distill/runs/deep_20261004/sdedit/crackfill_COPY.py
+14d58976f793a7f6b4fae1ba19ff3925  scripts/distill/runs/deep_20261004/sdedit/infer_ll_hook_sdedit_v1.py
+7f5bf0becdd96e43a4a09075f35ad29d  scripts/distill/runs/deep_20261004/sdedit/infer_ll_hook_speed_v1_ORIG_COPY.py
+7bda5749c11d56e77ac315b0db9451a6  scripts/distill/runs/deep_20261004/sdedit/sdfill_v1.py
+2e5160771ba8aa19ac87637decce7a7e  scripts/distill/runs/deep_20261004/sdedit/test_sdfill_v1.py
+51941ffccb4757359958f486d81dad47  scripts/distill/runs/deep_20261004/sdedit/run_driver_sdedit_v1.sh
+924b1c255fb1cd7e0be372d4c5a60d4d  scripts/distill/runs/deep_20261004/sdedit/run_driver_speed_v1_ORIG_COPY.sh

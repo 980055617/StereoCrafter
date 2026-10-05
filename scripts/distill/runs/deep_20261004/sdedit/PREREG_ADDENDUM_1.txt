@@ -1,0 +1,34 @@
+PRE-REGISTRATION ADDENDUM 1 -- deep_20261004 / sdedit lane
+Written 2026-10-04 ~22:45 JST, BEFORE any score of this lane (no scorer, decomposition or temporal call has run; the only
+outputs read so far are the K1 control md5, the first smoke render's logs, and one quick-look image of 0301 frame 40
+(control | sd1 | input), which carries no number).  Nothing in PREREG.txt is changed; this adds three things.
+
+A1  CONTRAST WITH ORIGIN (reported for every variant row, NOT a gate of P4/P12)
+    The round's announced success rule ("registered GT: LPIPS at least 0.005 better than ORIGIN on the 12-clip mean, and
+    better on >= 9 of 12 clips; no gain by blur or fake texture") is evaluated for every variant at the stage it reaches:
+      dORIG = REG_FRAME(V) - REG_FRAME(origin_ll), clip-mean and count of clips with dORIG < 0.
+    For deliv-based variants both numbers are reported: the gap to origin (the deliverable alone is already about -0.013
+    registered) and the extra gain over the deliverable (= the P4/P12 contrast).  At S1 (4 clips) the line is
+    descriptive only; the round rule is only judged at 12 clips.
+A2  VERDICT MAPPING for this lane's report (fixed now):
+      nothing passes P4                                                     -> closed
+      something passes P4, nothing passes P12                              -> marginal
+      a pass of P12 that misses the round rule (A1) OR carries a stripe flag
+      (any single clip with stripeE ratio > 1.10) or a visible artefact in the
+      panels                                                                -> promising
+      a pass of P12 that meets the round rule, no stripe flag, clean panels -> beyond_origin_shown
+      an integrity failure that cannot be resolved with one retry          -> inconclusive
+    Any single clip with stripeE ratio > 1.10 is named in the answer itself, not only in the flag list.
+    Next to any pass the descriptive INPUT_warp row (REG_FRAME, UNREG, stripeE) is quoted: the REG_FRAME shift is
+    estimated against the warped input itself, so registered LPIPS rewards staying close to the input's pixels; if
+    INPUT_warp already beats the deployed render on REG_FRAME, the LPIPS rule can be met by copying the warp and the
+    stripe numbers and the panels decide.  UNREG (GT 10-60 px off) rewards blur; a REG_FRAME/UNREG direction split is
+    expected for the low-sigma variants and is reported, not treated as an error.
+A3  K2 ZERO-HOLE CLIPS: a clip whose deployed window has zero hole pixels in every frame (the stripes lane found 0225)
+    has nothing to fill.  Its sd1fill render then PASSES K2/K4 with a note iff its writer md5 equals the same model's
+    sd1 render (the fill is a no-op there).  check_k2_v1.py implements exactly this before its first use.
+Also (procedure, no rule change): the smoke stage 0301 is scored with M1/M1r/M2 (temporal skipped at smoke to save lock
+time, SKIP_TEMPORAL=1) purely to test the scoring chain end to end (build_rows, table, panels); its numbers gate nothing.
+--- recorded by the shell at 2026-10-04T22:38:47+09:00 ---
+score dirs present (must be none):
+ls: cannot access 'outputs/deep_20261004/sdedit/score_*': No such file or directory

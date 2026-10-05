@@ -1,0 +1,75 @@
+FINAL ADVERSARIAL JUDGE -- deep_20261004 round.  PRE-REGISTRATION, written 2026-10-05 ~13:10 JST, BEFORE any score of this
+lane exists (no score file under outputs/deep_20261004/final_judge/ yet; START_CHECKS.txt taken 12:57).
+Records: scripts/distill/runs/deep_20261004/final_judge/     Renders/scores: outputs/deep_20261004/final_judge/
+Nothing tracked is edited; no checkpoint is touched; every GPU job holds /tmp/claude-gpu{0,1}.lock of the GPU it uses.
+
+---------------------------------------------------------------------------------------------------------------
+A. WHAT IS RE-SCORED (every row any lane of this round would quote as a gain, plus the references it is quoted against)
+---------------------------------------------------------------------------------------------------------------
+12 test clips 0042 0052 0125 0128 0141 0147 0170 0204 0225 0251 0259 0301, the published 38-frame grid (SCORE_STEP=4),
+LPIPS-Alex, lossless FFV1 renders already on disk (no new render):
+  origin_ll                    deployed origin                         outputs/beyond4_lossless/clips/<c>_origin_ll/
+  mstudent2_step800_deliv_ll   the deliverable                          outputs/beyond_distil_mamba_scaled/clips/<c>_mstudent2_step800_deliv_ll/
+  s25_ll                       origin 25 steps                          path from eval_robustness/PUBLISHED_ROWS.json
+  AYS8_origin_g101             Align-Your-Steps 8-step origin           outputs/more_20261004/judge/ays/clips/<c>_AYS8_origin_g101/
+  origin_g100_sd7 / _sd1fill   sdedit lane, origin                      outputs/deep_20261004/sdedit/clips/<c>_<row>/
+  deliv_g100_sd7 / _sd1fill    sdedit lane, deliverable                 outputs/deep_20261004/sdedit/clips/<c>_<row>/
+  m2svid_fa_w16_ll             external_models lane (M2SVid)            outputs/deep_20261004/external_models/clips/<c>_<row>/
+  INPUT_fill                   NO MODEL: warped input, holes row-filled outputs/deep_20261004/sdedit/input_rows/clips/<c>_INPUT_fill/
+  LEFT_AS_RIGHT (virtual)      NO STEREO: the render's own left eye used as the right eye (built in memory from origin_ll)
+  selMain250_s8 / _s25         scale_gt selected checkpoint (a loss; deciding evidence)  outputs/deep_20261004/scale_gt/renders/
+  HIRES_B / HIRES_B_L          blur_diag 1.75x working resolution, INTER_AREA / Lanczos down (0042, 0170 only)
+                               outputs/deep_20261004/blur_diag/hiresB_r2/{clips,lanczos}/
+input_side RF/R1 (oracle disparity fit, 4 clips) is re-scored with that lane's own scorer copy (score_input_v1.py: GT
+registered to each input variant's own warp), into my own dir, as a reproduction check only -- it is an ORACLE fitted on
+the test clips' real right eye and can never be a deployable gain.
+
+Scorer: a COPY of more_20261004/eval_robustness/score_registered_v1.py (judge_score_v1.py), changes only:
+  (a) per-clip label list (rows that exist for that clip); (b) the virtual LEFT_AS_RIGHT row; (c) the registration grid
+  comes from env (default = the PREREG grid ddy[-10,10] ddx[-120,40]; 0125 uses the eval_robustness ADDENDUM wide grid
+  ddy[-20,20] ddx[-240,40], as every published 0125 registered value does); (d) the train-BR anchor check is dropped
+  (model-independent, affects no value); (e) ADDED per row: reviewlib edge/flat decomposition (flatHF, edgeHF, stripeE,
+  halo) against the REG_FRAME-registered GT on the 38 scored frames, registration-free self metrics (score_clip_ll
+  sharpness, own top-decile |Laplacian|, own flat-half |Laplacian|), md5 of the decoded scored right halves and left halves.
+No-reference: NIQE (lower better) and MUSIQ-KonIQ (higher better), pyiqa 0.1.14.1 read-only from
+/mnt/ssd_data/deep_20261004/blur_diag/pylib (blur_diag's calibration: both register blur at origin's level, monotone);
+same 38 frames; GT = REG_FRAME-registered real right eye crop.
+Integrity (CPU): full decode md5 of every render == its <file>.mkv.md5; left halves identical across rows.
+
+---------------------------------------------------------------------------------------------------------------
+B. GATES (a failed gate is reported; my GPU values are then the judge's values and the discrepancy is named)
+---------------------------------------------------------------------------------------------------------------
+J0  reproduction: per-clip UNREG / REG_FRAME / REG_CLIP of origin_ll, deliverable, s25_ll equal eval_robustness
+    score_v1 (+score_v1_wide for 0125) within 1e-4.  Every other row: my values vs the lane's published per-clip values
+    within 2e-4 (CPU-scored lanes allowed 2e-4).  Smoke on 0301 first; full run only if the smoke passes J0.
+J1  integrity: decoded md5 == .mkv.md5 for every render that has one; all left halves identical to origin_ll's.
+J2  protected checkpoints (08cf4485... deliverable, e9c23287... predecessor) unchanged at the end; git status shows no
+    modified tracked file (untracked deep_20261004/ only, as at START_CHECKS.txt).
+
+---------------------------------------------------------------------------------------------------------------
+C. CONTRASTS AND THE BAR (every row vs origin_ll; also vs AYS8 and vs the deliverable for any row that passes)
+---------------------------------------------------------------------------------------------------------------
+Reported for UNREG, REG_FRAME (primary), REG_CLIP: 12-clip mean delta, clips improved, percentile-bootstrap 95% CI over
+clips (10000 resamples, seed 20261005), and n=11 without 0125 (ill-posed registration).
+BAR (the round's, pre-set): mean dREG_FRAME <= -0.005 vs origin AND improved on >= 9/12 clips.
+STRICT BAR (skeptic): the same margin vs AYS8_origin_g101 (training-free, equal cost) on >= 9/12.
+
+HACKING FLAGS, judged on 12-clip means vs origin_ll (thresholds fixed now):
+  F1 UNREG>REG    (-dUNREG) > (-dREG_FRAME) + 0.002     -> gain comes from where the GT is, not from fidelity
+  F2 PSNR-TEXTURE registered PSNR (REG_FRAME) falls by > 0.10 dB while dREG_FRAME < 0  -> sharpening / invented texture
+  F3 BLUR         edgeHF ratio (row/origin, at GT edges) < 0.95, or own-edge sharpness ratio < 0.95
+  F4 FLAT-TEXTURE flatHF ratio > 1.10 while edgeHF ratio < 1.05
+  F5 STRIPES      stripeE ratio > 1.10 on the mean, or on >= 3 clips  (the user's splatting-stripe objection)
+  F6 NR-WORSE     NIQE worse by > 0.10 AND MUSIQ worse by > 0.55 (2x / 1x blur_diag's seed yardsticks 0.052 / 0.55)
+  F7 VISUAL       3 clips (0301, 0170, 0042) frame 76, crops of every bar-passing row vs origin, deliverable, registered GT:
+                  cracks, smears, haze, ghosting, doubled structures.  This check is post hoc by nature and labelled so.
+  F8 SEPARATION   the row's variant/checkpoint/schedule was selected or tuned using test clips (or test GT) -> its
+                  12-clip number is not a clean test result.
+CERTIFIED GAIN = passes BAR, and none of F1-F8.  A row that passes BAR with flags is reported as "LPIPS-only, not
+certified", with the flags named.  Per-clip deltas below 0.004 are within the measured seed spread (eval_robustness
+SUPPLEMENT_seed_yardstick 0.0038) and are called unresolved.
+
+---------------------------------------------------------------------------------------------------------------
+D. SEPARATION AUDIT (CPU, from records): training clip lists of scale_gt main_v1/contrast8_v1, decoder_ft main_v1, the
+deliverable's mstudent2 run, the skeptic's train sample, vs test (12) and dev (8); clips >= 0310 in any GT-supervised
+training or GT-scored evaluation; which lanes selected anything on test clips.

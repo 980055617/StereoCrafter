@@ -1,0 +1,8 @@
+# origin on the remaining dev clips (0184 was rendered by the smoke chain) + control C2 (25-step path md5 vs existing s25 renders)
+0040 origin_s8 - 8
+0082 origin_s8 - 8
+0091 origin_s8 - 8
+0245 origin_s8 - 8
+0268 origin_s8 - 8
+0301 origin_s25_ctlC2 - 25
+0042 origin_s25_ctlC2 - 25

@@ -1,0 +1,17 @@
+NR-CAL (PREREG ADDENDUM 4).  ORIGIN 12-clip mean b1/GT = 0.737  (source TABLE_BLUR_DIAG_r2.json)
+calibration data: outputs/deep_20261004/blur_diag/nr_calib_r2/nr_calib.json
+  musiq    mean change GT->matched blur -3.0702 (Y 0.5505) -> REGISTERS blur at origin level; worse on 4/4 clips; monotone in sigma on all clips: True
+      0042: sigma 0.75 (b1 0.68) d -3.3257 worse
+      0141: sigma 0.75 (b1 0.72) d -3.2779 worse
+      0204: sigma 0.5 (b1 0.73) d -3.3520 worse
+      0301: sigma 0.5 (b1 0.77) d -2.3250 worse
+  clipiqa  mean change GT->matched blur -0.0092 (Y 0.0036) -> REGISTERS blur at origin level; worse on 3/4 clips; monotone in sigma on all clips: False
+      0042: sigma 0.75 (b1 0.68) d -0.0365 worse
+      0141: sigma 0.75 (b1 0.72) d +0.0079 NOT worse
+      0204: sigma 0.5 (b1 0.73) d -0.0079 worse
+      0301: sigma 0.5 (b1 0.77) d -0.0001 worse
+  niqe     mean change GT->matched blur +0.8007 (Y 0.0518) -> REGISTERS blur at origin level; worse on 4/4 clips; monotone in sigma on all clips: True
+      0042: sigma 0.75 (b1 0.68) d +1.3617 worse
+      0141: sigma 0.75 (b1 0.72) d +1.1370 worse
+      0204: sigma 0.5 (b1 0.73) d +0.3123 worse
+      0301: sigma 0.5 (b1 0.77) d +0.3916 worse

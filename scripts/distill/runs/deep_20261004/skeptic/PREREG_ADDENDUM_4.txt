@@ -1,0 +1,8 @@
+PREREG ADDENDUM 4 -- EXPLORATORY, non-gating (written before job_aniso_v1.py produced any number).
+reviewlib's stripeE (mean |horizontal difference| in GT-flat regions) is confounded by residual misregistration: on AVP clips
+output edges land in GT-flat regions, so every row is inflated (origin stripeE/GT 3.04 on 0042 in comp_v1).  A stripe-specific
+statistic: forward-splat stripes are thin VERTICAL cracks, which raise horizontal differences but not vertical ones.
+aniso = mean|dY/dx| / mean|dY/dy| over GT-flat, non-hole pixels (reviewlib regions 'lo'), S6 frames, reported relative to the
+GT's own aniso.  Rows: origin, s25, deliverable, COMP_origin, COMP_telea, BR_raw.  Reading: a row with rel aniso clearly above
+origin's (and above 1) carries extra vertical-stripe energy.  Descriptive only; no pass/fail rule.
+2026-10-04 23:48:15 JST

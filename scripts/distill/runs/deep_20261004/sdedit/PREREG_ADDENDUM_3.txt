@@ -1,0 +1,34 @@
+PRE-REGISTRATION ADDENDUM 3 -- deep_20261004 / sdedit lane: the A3 zero-hole gate rested on a false assumption
+Written 2026-10-05 ~07:15 JST (shell stamp below), during S2 render hold B, BEFORE any S2 score exists (no S2 stage directory exists; the only
+S2 files read are render logs / sdedit_log.json of finished renders and an interim K2 run to the scratchpad).
+
+WHAT HAPPENED
+  0225 is the zero-hole clip (make_input_sbs_v1_ext8.log: "hole px 0").  Its origin sd1fill render's sdedit_log.json shows
+  hole_px_window 0 and changed_px_window 0 (the source frames handed to the second VAE encode are bit-identical to the
+  conditioning frames: the fill map is keyed by the md5 of the unfilled window frame and nothing was filled), yet the
+  second encode's latents differ from the conditioning encode's in ~40 % of the elements (per window: mean |sf*dz|
+  0.0016-0.0020, max 0.31-0.96, i.e. ~0.15 % of sigma_start 1.17).  So two encodes of identical frames inside one process
+  are NOT bit-identical on this GPU stack (the first encode is reproducible across processes -- K1 -- so the difference is
+  state-dependent kernel selection / rounding in bf16, not randomness in the inputs).  A3 assumed bit-exactness:
+  "sd1fill passes iff its writer md5 equals the same model's sd1 render" (deliv) / "init latents unchanged" (origin, which
+  has no sd1 render at S2).  Both checks therefore fail on 0225 for a reason that says nothing about the fill.
+  The same encode-noise floor is present in every sd1fill render (it is part of what the variant does: its init source is
+  re-encoded); on clips with holes it is small next to the fill's own footprint (e.g. 0301 mean 0.053) and both are small
+  next to sigma_start.
+CORRECTED GATE A3' (replaces A3 for zero-hole clips; check_k2_v2.py; decided before any S2 score)
+  A zero-hole sd1fill render passes K2/K4 iff (i) its fill log shows hole_px_window == 0 and changed_px_window == 0 and the
+  render finished (every map lookup succeeded), and (ii) the per-window latent difference to the conditioning encode is at
+  the encode-noise floor: mean |sf*dz| <= 0.01 (a sanity bound, ~5x the 0225 values; it does NOT separate noise from a
+  small real fill -- 0204's 0.0048 with 0.03 % holes is below it -- which is why condition (i), no pixel to fill and no
+  pixel changed, is the actual no-op proof).  The output difference between deliv
+  sd1fill and deliv sd1 on 0225 is REPORTED (mean |diff| in 8-bit levels, CPU) as the practical no-op measure.
+  Every other K2 condition of check_k2_v1.py is unchanged.
+REPORTING
+  sd1fill's P12 count is shown both WITH 0225 (primary, A3') and WITHOUT 0225 (11 clips, count only), next to the
+  without-0125 line of ADDENDUM 2 B2.  No rule threshold changes.
+--- recorded by the shell at 2026-10-05T07:16:22+09:00 ---
+S2 state: 42 of 56 S2 renders finished; RUN 0225 deliv_g100_sd1fill model=deliv guid=1.00 sigmas=s1 pad=8 sdmode=warpfil
+score_ext12 present: ls: cannot access 'outputs/deep_20261004/sdedit/score_ext12': No such file or di
+--- wording of A3' (ii) corrected (the bound is a sanity bound, condition (i) is the proof) before any S2 score; see stamp below ---
+--- correction stamped at 2026-10-05T07:16:34+09:00
+    ls: cannot access '/home/kawa/master_project/StereoCrafter/outputs/deep_20261004/sdedit/score_ext12': No such file or directory

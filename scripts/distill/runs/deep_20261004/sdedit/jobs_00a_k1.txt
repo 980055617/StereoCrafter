@@ -1,0 +1,2 @@
+# S0 smoke on 0301.  K1 control first (SD off, deployed 8-step grid, g1.00, no pad): writer md5 must equal 486dcefba769a992be0342f1f5eea349
+0301 origin_g100_s8_k1ctl origin 1.00 - - off

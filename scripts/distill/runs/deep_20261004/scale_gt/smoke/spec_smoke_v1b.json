@@ -1,0 +1,44 @@
+{
+ "name": "smoke_v1b",
+ "latent_dir": "/mnt/ssd_data/deep_20261004/scale_gt/smoke_v2/latents",
+ "windows": [
+  [
+   "0160",
+   0
+  ],
+  [
+   "0160",
+   44
+  ],
+  [
+   "0160",
+   88
+  ],
+  [
+   "0160",
+   132
+  ],
+  [
+   "0094",
+   0
+  ],
+  [
+   "0094",
+   44
+  ],
+  [
+   "0094",
+   88
+  ],
+  [
+   "0094",
+   132
+  ]
+ ],
+ "steps": 20,
+ "ck_every": 10,
+ "seed": 1234,
+ "lr": 1e-05,
+ "ck_dir": "/mnt/ssd_data/deep_20261004/scale_gt/smoke_v2/ck",
+ "rec_dir": "scripts/distill/runs/deep_20261004/scale_gt/smoke"
+}

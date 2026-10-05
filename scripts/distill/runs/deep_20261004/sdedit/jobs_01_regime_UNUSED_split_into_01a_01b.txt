@@ -1,0 +1,25 @@
+# S1 regime renders (0301 done at S0): 4 variants x 2 models x 3 clips, all g1.00, RNG padded to 8
+0204 origin_g100_sd1 origin 1.00 s1 8 warp
+0204 origin_g100_sd1fill origin 1.00 s1 8 warpfill
+0204 origin_g100_sd7 origin 1.00 s7 8 warp
+0204 origin_g100_sd31 origin 1.00 s31 8 warp
+0204 deliv_g100_sd1 deliv 1.00 s1 8 warp
+0204 deliv_g100_sd1fill deliv 1.00 s1 8 warpfill
+0204 deliv_g100_sd7 deliv 1.00 s7 8 warp
+0204 deliv_g100_sd31 deliv 1.00 s31 8 warp
+0052 origin_g100_sd1 origin 1.00 s1 8 warp
+0052 origin_g100_sd1fill origin 1.00 s1 8 warpfill
+0052 origin_g100_sd7 origin 1.00 s7 8 warp
+0052 origin_g100_sd31 origin 1.00 s31 8 warp
+0052 deliv_g100_sd1 deliv 1.00 s1 8 warp
+0052 deliv_g100_sd1fill deliv 1.00 s1 8 warpfill
+0052 deliv_g100_sd7 deliv 1.00 s7 8 warp
+0052 deliv_g100_sd31 deliv 1.00 s31 8 warp
+0147 origin_g100_sd1 origin 1.00 s1 8 warp
+0147 origin_g100_sd1fill origin 1.00 s1 8 warpfill
+0147 origin_g100_sd7 origin 1.00 s7 8 warp
+0147 origin_g100_sd31 origin 1.00 s31 8 warp
+0147 deliv_g100_sd1 deliv 1.00 s1 8 warp
+0147 deliv_g100_sd1fill deliv 1.00 s1 8 warpfill
+0147 deliv_g100_sd7 deliv 1.00 s7 8 warp
+0147 deliv_g100_sd31 deliv 1.00 s31 8 warp

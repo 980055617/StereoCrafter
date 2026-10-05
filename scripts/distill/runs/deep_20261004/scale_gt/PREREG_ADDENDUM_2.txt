@@ -1,0 +1,21 @@
+PREREG ADDENDUM 2 -- 2026-10-05 ~03:45 JST, BEFORE any test render and before any REGISTERED dev score of a fine-tuned checkpoint
+(only the monitoring UNREG dev rows of main 500/1000 and contrast 500 had been seen).  The primary rules are UNCHANGED; this adds
+reported rows and one flag.
+Reason: two diagnostics (heldout_loss_v1.json / HELDOUT_LOSS_v1.txt and color_shift_v1.py) show that the GT-trained model shifts the
+right eye's mean colour by about (+2,+2,+4)/255 -- the training data's mean offset between the real right camera and the warped
+left input is (+2.1,+2.7,+4.9) -- i.e. it learns the right camera's colour response (an inter-ocular colour mismatch).  The WORKS
+rule cannot detect a colour-driven gain: matching the right camera's colour RAISES PSNR vs the GT, so the rPSNR guard only checks
+the opposite direction.
+Added (reported, not selection):
+  * COLOUR-REMOVED SENSITIVITY on the test: for sel_s8 (reference origin_ll) and sel_s25 (reference s25_ll), subtract the per-clip
+    mean-RGB difference of the right halves (fine-tuned minus the ORIGIN reference, never the GT) with color_remove_v1.py, write
+    FFV1, score UNREG + REG_FRAME/REG_CLIP exactly like the primary rows.
+  * FLAG: if the primary rule says WORKS AT SCALE but the colour-removed 8-step REG_FRAME row fails the same bar (mean <= -0.005
+    and >= 9/12), the verdict is reported as "WORKS, colour-driven" and not as a detail/sharpness improvement.
+  * The same colour-removed rows are reported on dev for the evaluated checkpoints (diagnostic; selection uses only the primary
+    registered dev metric of PREREG.txt).
+
+SELECTION RECORD (06:15 JST, from TABLE_DEV_stage1.txt, before any test render): Stage-1 evaluated MAIN 250..3000; lowest registered
+dev metric at step 250 (0.2695; 2500 = 0.2699 is within the 0.0005 tie band -> earliest wins); its 250-neighbours are 0 (not a
+checkpoint) and 500 (already evaluated) -> Stage 2 is empty.  SELECTED = main_v1 step 250.  STILL-DEGRADES condition met on dev
+(every evaluated MAIN checkpoint worse than origin, 0/5 clips better at each).  The one-time test of step 250 follows (8 and 25 steps).

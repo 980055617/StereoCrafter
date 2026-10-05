@@ -1,0 +1,10 @@
+decoder_ft PREREG ADDENDUM 2 (2026-10-05 10:19 JST; no dev or test quality number of any fine-tuned decoder exists yet).
+
+Procedure-only change for DEV scoring (cost): score_clip_ll.py is run on the two STOCK rows per dev clip only.  Every dev
+row of a clip shares the identical left half (copied from the capture render), so its left alignment is identical; the
+other labels' rows (make_rows_shared_v1.py) take the stock row's dy/dx and carry lpips = NaN (a field the registered
+scorer only prints).  The dev UNREG of record for every row is the registered scorer's UNREG column, which is
+score_clip_ll's verbatim math (eval_robustness / scale_gt gate G0: |d| <= 5e-7).  analyze_dev_v1.py asserts identical
+left-half md5 and left alignment for every label of a clip, and that the stock rows' registered-scorer UNREG equals their
+score_clip_ll ROW lpips within 1e-6.  The TEST keeps score_clip_ll on every row (6 rows per clip), as pre-registered.
+No selection rule, metric, threshold or clip set changes.

@@ -1,0 +1,3 @@
+0040 origin_cap capture 97389cd5ad56abd52f113cd81f0bee9b full-window noise OK (14-window fingerprint match); published [('0040_origin_s8', True)] -> C1 PASS; stock re-decode 97389cd5ad56abd52f113cd81f0bee9b -> C2 PASS; s0 re-decode 97389cd5ad56abd52f113cd81f0bee9b -> C3 PASS
+0040 deliv_cap  capture 0a1ca849573980dbdd6490a7c29ca632 full-window noise OK (14-window fingerprint match); published [('0040_mstudent2_step800_deliv_ll', True), ('0040_mstudent2_step800_ll', True)] -> C1 PASS; stock re-decode 0a1ca849573980dbdd6490a7c29ca632 -> C2 PASS; s0 re-decode 0a1ca849573980dbdd6490a7c29ca632 -> C3 PASS
+GATES ALL PASS

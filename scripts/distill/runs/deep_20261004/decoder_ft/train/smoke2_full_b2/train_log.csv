@@ -1,0 +1,2 @@
+step,loss,lpips_vgg,l1,gnorm_preclip,clipped,lr,s_per_step,peak_gib
+1,0.307410,0.189453,0.117957,0.3837,0,4.000e-06,3.013,22.75

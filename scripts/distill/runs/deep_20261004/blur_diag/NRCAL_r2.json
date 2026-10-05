@@ -1,0 +1,41 @@
+{
+ "musiq": {
+  "mean_change": -3.0701709747314396,
+  "Y": 0.5505329935174288,
+  "registers": true,
+  "per_clip": [
+   "0042: sigma 0.75 (b1 0.68) d -3.3257 worse",
+   "0141: sigma 0.75 (b1 0.72) d -3.2779 worse",
+   "0204: sigma 0.5 (b1 0.73) d -3.3520 worse",
+   "0301: sigma 0.5 (b1 0.77) d -2.3250 worse"
+  ],
+  "monotone_all_clips": true,
+  "n_clips_worse": 4
+ },
+ "clipiqa": {
+  "mean_change": -0.009159495867788806,
+  "Y": 0.0036073719200335197,
+  "registers": true,
+  "per_clip": [
+   "0042: sigma 0.75 (b1 0.68) d -0.0365 worse",
+   "0141: sigma 0.75 (b1 0.72) d +0.0079 NOT worse",
+   "0204: sigma 0.5 (b1 0.73) d -0.0079 worse",
+   "0301: sigma 0.5 (b1 0.77) d -0.0001 worse"
+  ],
+  "monotone_all_clips": false,
+  "n_clips_worse": 3
+ },
+ "niqe": {
+  "mean_change": 0.8006626697166891,
+  "Y": 0.05181335746961402,
+  "registers": true,
+  "per_clip": [
+   "0042: sigma 0.75 (b1 0.68) d +1.3617 worse",
+   "0141: sigma 0.75 (b1 0.72) d +1.1370 worse",
+   "0204: sigma 0.5 (b1 0.73) d +0.3123 worse",
+   "0301: sigma 0.5 (b1 0.77) d +0.3916 worse"
+  ],
+  "monotone_all_clips": true,
+  "n_clips_worse": 4
+ }
+}

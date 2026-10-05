@@ -1,0 +1,20 @@
+PREREG ADDENDUM 1 -- codec control R1C (input_side lane).  Written 2026-10-05 ~03:37 JST, BEFORE any R1C render exists
+and before any R1C score.  Already seen at the time of writing (the reason for this addendum): R1-vs-DEP REG_FRAME on
+0301 (origin +0.0034, deliv -0.0002) and 0204 (origin -0.0059, deliv -0.0023); 0204 is the clip whose re-splat
+reproduces the deployed warp at the codec floor (37.01 vs 37.22 dB), i.e. there R1-vs-DEP is close to a pure
+"no mp4v intermediate" contrast.  R1-vs-DEP mixes two changes (depth-reconstruction error + removal of the cv2-mp4v
+codec on the 2x2 splatting intermediate), so it cannot attribute anything.  This addendum adds the clean control.
+
+INPUT  R1C = R1's exact deployed-window arrays (warped BR + mask BL) embedded in full 2x2 frames built exactly like
+       depth_splatting_inference_origin.py writes them ([left source | inferno depth ; mask | warped], uint8 by
+       np.clip(v*255).astype(uint8), RGB->BGR, cv2.VideoWriter 'mp4v', the splatting video's fps, full size), the rest
+       of the frame from a full-frame re-splat at the deployed mapping; decoded with decord sequentially; windows
+       stored as inputs_v1/<clip>/R1C (make_r1c_v1.py).  R1 and R1C differ ONLY by the lossy intermediate.
+RENDERS R1C x {origin, deliv} x 4 regime clips, the same driver/config as every other render (deployed: 8 steps,
+       guidance 1.01, seed 1234); scored with score_input_v1.py (registration to R1C's own input).
+RULE P3  "the lossy mp4v splatting intermediate costs quality" for a model iff
+       mean4 dREG_FRAME (R1 - R1C) <= -0.002 AND R1 better on >= 3/4 clips.  If it holds for BOTH models, lossless
+       splatting intermediates are reported as a FREE, deployable input fix (no oracle, no stereo-strength change);
+       dUNREG, output edgeHF/GT, stripeE/GT and sharp are reported alongside.  Gates G3/G4 as in PREREG.txt.
+       Sanity (reported): PSNR(R1C window, R1 window) should sit near the deployed TL-vs-source codec floor
+       (prep_v2 meta: 0301 35.3, 0204 37.2, 0052 37.4, 0147 38.1 dB).

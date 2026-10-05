@@ -1,0 +1,11 @@
+PREREG ADDENDUM 2 (before any full M3 run; the v1 M3 units were stopped ~1 min after start with no output written).
+job_m3_v2.py = job_m3_v1.py + (a) M4 U3, which v1 had omitted by mistake: share of RAFT-consistent pixels with
+|Y(O_Acc) - Y(TRg)| > 24/255, exactly as PREREG M4 defines it; (b) EXPLORATORY, non-gating rows: LPIPS(row, BR) for
+origin / AYS8 / deliverable / s25 (whole frame, and the spatial map averaged over non-hole pixels) = how far each
+output is from its own model input.  M6 runs as job_m6_v2.py = job_m6_v1.py + cached GT features for LPIPS-alex /
+LPIPS-vgg (numerically identical; asserted against the plain lpips forward at the start of every clip).
+Also recorded: skeplib.lab_mean was edited (reshape fix) while the S38 driver was running; job_s38_v1.py never calls
+lab_mean, so the S38 numbers are unaffected.  G0 note: the train-sample G0 rule (MAD > 5) excluded AVP 0007 and
+0013 (MAD 4.34 / 4.00); verification.tsv lists both as correct views with low inter-eye MAD (6.4 / 3.3), i.e. valid but
+low-texture -- they are simply not in the sample.
+2026-10-04 23:11:45 JST

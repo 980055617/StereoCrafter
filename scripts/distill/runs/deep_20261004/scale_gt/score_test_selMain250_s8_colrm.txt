@@ -1,0 +1,45 @@
+/home/kawa/miniconda3/envs/stereocrafter/lib/python3.11/site-packages/torchvision/models/_utils.py:208: UserWarning: The parameter 'pretrained' is deprecated since 0.13 and may be removed in the future, please use 'weights' instead.
+  warnings.warn(
+/home/kawa/miniconda3/envs/stereocrafter/lib/python3.11/site-packages/torchvision/models/_utils.py:223: UserWarning: Arguments other than a weight enum or `None` for 'weights' are deprecated since 0.13 and may be removed in the future. The current behavior is equivalent to passing `weights=AlexNet_Weights.IMAGENET1K_V1`. You can also use `weights=AlexNet_Weights.DEFAULT` to get the most up-to-date weights.
+  warnings.warn(msg)
+/home/kawa/miniconda3/envs/stereocrafter/lib/python3.11/site-packages/lpips/lpips.py:107: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  self.load_state_dict(torch.load(model_path, map_location='cpu'), strict=False)
+Setting up [LPIPS] perceptual loss: trunk [alex], v[0.1], spatial [off]
+Loading model from: /home/kawa/miniconda3/envs/stereocrafter/lib/python3.11/site-packages/lpips/weights/v0.1/alex.pth
+clip/config                           offset  leftPSNR    LPIPS    sharp    rPSNR   nf
+--- 0042 GT ---                                          0.0000   0.0070
+0042_selMain250_s8_colrm           (-12,-12)     40.02   0.4457   0.0077   17.418   38
+ROW clip=0042 tag=0042_selMain250_s8_colrm dy=-12 dx=-12 leftPSNR=40.0232 lpips=0.445691 sharp=0.007670 gtSharp=0.007023 rightPSNR=17.4180 n=38 path=outputs/deep_20261004/scale_gt/diag_colorremoved_test_v1/0042_selMain250_s8_colrm/0042_inpainting_results_sbs.mkv
+--- 0052 GT ---                                          0.0000   0.0099
+0052_selMain250_s8_colrm           (-12,-12)     40.70   0.4591   0.0115   13.279   38
+ROW clip=0052 tag=0052_selMain250_s8_colrm dy=-12 dx=-12 leftPSNR=40.6982 lpips=0.459102 sharp=0.011548 gtSharp=0.009881 rightPSNR=13.2791 n=38 path=outputs/deep_20261004/scale_gt/diag_colorremoved_test_v1/0052_selMain250_s8_colrm/0052_inpainting_results_sbs.mkv
+--- 0125 GT ---                                          0.0000   0.0114
+0125_selMain250_s8_colrm           (-12,-12)     40.46   0.5290   0.0076   16.776   38
+ROW clip=0125 tag=0125_selMain250_s8_colrm dy=-12 dx=-12 leftPSNR=40.4643 lpips=0.529025 sharp=0.007557 gtSharp=0.011358 rightPSNR=16.7763 n=38 path=outputs/deep_20261004/scale_gt/diag_colorremoved_test_v1/0125_selMain250_s8_colrm/0125_inpainting_results_sbs.mkv
+--- 0128 GT ---                                          0.0000   0.0105
+0128_selMain250_s8_colrm           (-12,-12)     39.75   0.4650   0.0110   18.714   38
+ROW clip=0128 tag=0128_selMain250_s8_colrm dy=-12 dx=-12 leftPSNR=39.7484 lpips=0.465002 sharp=0.010975 gtSharp=0.010493 rightPSNR=18.7145 n=38 path=outputs/deep_20261004/scale_gt/diag_colorremoved_test_v1/0128_selMain250_s8_colrm/0128_inpainting_results_sbs.mkv
+--- 0141 GT ---                                          0.0000   0.0036
+0141_selMain250_s8_colrm           (-12,-12)     40.09   0.4854   0.0044   15.600   38
+ROW clip=0141 tag=0141_selMain250_s8_colrm dy=-12 dx=-12 leftPSNR=40.0934 lpips=0.485379 sharp=0.004386 gtSharp=0.003613 rightPSNR=15.5998 n=38 path=outputs/deep_20261004/scale_gt/diag_colorremoved_test_v1/0141_selMain250_s8_colrm/0141_inpainting_results_sbs.mkv
+--- 0147 GT ---                                          0.0000   0.0039
+0147_selMain250_s8_colrm           (-12,-12)     40.40   0.5259   0.0057   15.459   38
+ROW clip=0147 tag=0147_selMain250_s8_colrm dy=-12 dx=-12 leftPSNR=40.4039 lpips=0.525890 sharp=0.005740 gtSharp=0.003901 rightPSNR=15.4588 n=38 path=outputs/deep_20261004/scale_gt/diag_colorremoved_test_v1/0147_selMain250_s8_colrm/0147_inpainting_results_sbs.mkv
+--- 0170 GT ---                                          0.0000   0.0323
+0170_selMain250_s8_colrm             (-28,0)     39.79   0.2841   0.0142   17.507   38
+ROW clip=0170 tag=0170_selMain250_s8_colrm dy=-28 dx=0 leftPSNR=39.7902 lpips=0.284080 sharp=0.014238 gtSharp=0.032309 rightPSNR=17.5065 n=38 path=outputs/deep_20261004/scale_gt/diag_colorremoved_test_v1/0170_selMain250_s8_colrm/0170_inpainting_results_sbs.mkv
+--- 0204 GT ---                                          0.0000   0.0116
+0204_selMain250_s8_colrm             (-28,0)     41.16   0.2422   0.0058   20.183   38
+ROW clip=0204 tag=0204_selMain250_s8_colrm dy=-28 dx=0 leftPSNR=41.1620 lpips=0.242152 sharp=0.005848 gtSharp=0.011577 rightPSNR=20.1825 n=38 path=outputs/deep_20261004/scale_gt/diag_colorremoved_test_v1/0204_selMain250_s8_colrm/0204_inpainting_results_sbs.mkv
+--- 0225 GT ---                                          0.0000   0.0132
+0225_selMain250_s8_colrm             (-28,0)     40.93   0.3233   0.0103   16.199   38
+ROW clip=0225 tag=0225_selMain250_s8_colrm dy=-28 dx=0 leftPSNR=40.9278 lpips=0.323326 sharp=0.010270 gtSharp=0.013156 rightPSNR=16.1990 n=38 path=outputs/deep_20261004/scale_gt/diag_colorremoved_test_v1/0225_selMain250_s8_colrm/0225_inpainting_results_sbs.mkv
+--- 0251 GT ---                                          0.0000   0.0173
+0251_selMain250_s8_colrm             (-28,0)     41.23   0.3645   0.0073   18.672   38
+ROW clip=0251 tag=0251_selMain250_s8_colrm dy=-28 dx=0 leftPSNR=41.2340 lpips=0.364492 sharp=0.007327 gtSharp=0.017307 rightPSNR=18.6721 n=38 path=outputs/deep_20261004/scale_gt/diag_colorremoved_test_v1/0251_selMain250_s8_colrm/0251_inpainting_results_sbs.mkv
+--- 0259 GT ---                                          0.0000   0.0450
+0259_selMain250_s8_colrm             (-28,0)     40.72   0.4815   0.0290   13.504   38
+ROW clip=0259 tag=0259_selMain250_s8_colrm dy=-28 dx=0 leftPSNR=40.7219 lpips=0.481459 sharp=0.029006 gtSharp=0.044964 rightPSNR=13.5045 n=38 path=outputs/deep_20261004/scale_gt/diag_colorremoved_test_v1/0259_selMain250_s8_colrm/0259_inpainting_results_sbs.mkv
+--- 0301 GT ---                                          0.0000   0.0505
+0301_selMain250_s8_colrm             (-28,0)     40.25   0.5608   0.0168   16.132   38
+ROW clip=0301 tag=0301_selMain250_s8_colrm dy=-28 dx=0 leftPSNR=40.2464 lpips=0.560782 sharp=0.016832 gtSharp=0.050529 rightPSNR=16.1323 n=38 path=outputs/deep_20261004/scale_gt/diag_colorremoved_test_v1/0301_selMain250_s8_colrm/0301_inpainting_results_sbs.mkv

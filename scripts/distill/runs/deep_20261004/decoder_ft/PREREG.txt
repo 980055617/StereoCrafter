@@ -1,0 +1,116 @@
+deep_20261004 / decoder_ft lane -- PRE-REGISTRATION (written 2026-10-05 ~10:00 JST, BEFORE any decoder checkpoint exists and
+before any quality number of this lane exists; the only numbers seen so far are md5 gates and the trainer smoke's
+speed/memory, which carry no quality information).
+
+======================================================================================================================
+0. QUESTION AND CHOICE OF OPTION
+======================================================================================================================
+Option (B) of the training phase, and ONLY (B).  Question: does fine-tuning ONLY the SVD temporal VAE decoder on real
+right-eye frames (latent of the real right eye -> that same frame; LPIPS-VGG + L1) make the deployed outputs of BOTH
+origin and the deliverable closer to the real right eye -- without blur, fake texture, stripes or temporal artefacts --
+and by more than a GT-free sharpening filter does?
+Evidence that licenses (B) (blur_diag lane, TABLE_BLUR_DIAG_r2.txt): the VAE round trip is the largest detail-loss
+stage (registration-free input chain, 12 clips: VAE keeps edgeHF 0.733 / b1 0.797 vs UNet 0.891 / 0.876; VAE loses more
+on 10/12 clips; 63-71 % of the input->origin edge/b1 log loss); a perfect latent of the real right eye through the stock
+decoder keeps only 0.712 edge energy, LPIPS 0.0856 vs itself; the deliverable already recovers ~60 % of the UNet-stage
+loss, so its remaining blur is mostly the decoder's.  The decoder objective needs NO registration (target = the frame
+that was encoded), so it avoids the GT/conditioning geometric inconsistency that the scale_gt lane names as the leading
+explanation of the diffusion-loss failure.
+Not run: (C) excluded by its precondition (scale_gt: STILL DEGRADES, 7/7 dev checkpoints and 12/12 test clips worse);
+(A) its target is the same globally registered real right eye (45.7 % of informative cells within +-2 px; AVP residual
+2.5-15.7 px; skeptic: the GT adds no learnable information beyond the input) and an output-space loss on a misaligned
+target rewards haze or warping toward the GT geometry -- nothing in the probes fixes that target; (D) no input-side or
+training-free lever passed its own pre-registration cleanly (sd1fill selected on test clips with smear/stripe flags;
+HIRES_B_L is a post-hoc 2-clip sensitivity whose pre-registered INTER_AREA version showed no clear change; input_side's
+P1 pass is an oracle).
+
+======================================================================================================================
+1. DATA (hard rules: no test/dev clip in training, GT only from clips < 0310 with a real right eye)
+======================================================================================================================
+TRAIN  the 291 GT-valid train clips of scale_gt/clips_valid_v1.json summary.train_valid (int < 0310, not a
+       train_leftGT_broken link, real right eye != left eye; asserted disjoint from test and dev), 4 windows each on the
+       deployed stride-11 grid (scale_gt's lossless registered real-right-eye crops cache_v1/crops/<clip>/w*/tgt.npy,
+       md5-checked against clip.json), 14 frames -> 7 consecutive PAIRS per window = 8148 pairs / 16296 frames.
+       Latents: encode_gt_v1.py (the deployed conditioning encode, mode, bf16).  Gate T1 (gate_traindata_v1.py) must PASS.
+DEV    0040 0082 0091 0184 0245 0268 (the 6 valid dev clips; 0311/0351 are >= 0310 and excluded).  Registered metrics on
+       5 clips (0091's real right eye is outside the scorer's [-120,40] px grid -> UNREG only, as scale_gt).
+TEST   0042 0052 0125 0128 0141 0147 0170 0204 0225 0251 0259 0301 -- evaluated ONCE, with the dev-selected checkpoint.
+
+======================================================================================================================
+2. TRAINING (train_decoder_v1.py; run "main_v1"; GPU 1 under its lock)
+======================================================================================================================
+trainable vae.decoder.* only (63.58M), fp32 masters initialised from the deployed fp16 weights (exact upcast: step 0 cast
+to bf16 == the deployed decoder); encoder frozen (it makes the UNet's conditioning).  Input = the deployed scaling round
+trip bf16(1/sf * bf16(mode*sf)); num_frames=2 per pair (deployed decode_chunk_size=2).  Loss = LPIPS-VGG + 1.0 * L1 on
+[-1,1].  AdamW lr 2e-5 (betas .9/.999, wd 0), warmup 100 steps then constant, grad clip 1.0, bf16 autocast, gradient
+checkpointing, seed 1234.  CROP = FULL deployed frame 72x128 latent cells (576x1024 px: the decoder's mid-block attention
+and frame borders exactly as deployed), B = 2 pairs per step (or 1 pair x ACC 2 if 2 pairs do not fit in memory; GroupNorm
+is per-sample so the two are equivalent up to summation order).  STEPS = 3000 if the smoke's s/step <= 2.2 (fits in one
+< 2 h lock hold), else 2000.  Checkpoints at 250, 500, 1000, 1500, 2000, 3000 (those <= STEPS).  The fallback if the full
+frame does not fit even at 1 pair: crop 40x64 cells, B = 4 pairs.  Training loss is logged and NEVER used for anything.
+
+======================================================================================================================
+3. EVALUATION RENDERS (exact, deployment-faithful)
+======================================================================================================================
+The deployed config has overlap_prev_weight = 0.0 (inpainting_inference.main takes the `<= 0.0: pass` branch): decoded
+pixels never feed a later window, so the output with decoder D == D applied to the sampled pre-decode latents.
+capture_hook_v1.py saves every window's pre-decode latents (bf16 [1,14,4,72,128]) during a deployed render;
+redecode_v1.py decodes them with the pipeline's own decode_latents (chunk 2) / tensor2vid / keep rule / FFV1 writer.
+GATES (all must hold before any score is used):
+  C1  every capture render's pre-encode writer md5 == the existing published lossless render (test: beyond4_lossless
+      origin_ll, beyond_distil_mamba_scaled mstudent2_step800_deliv_ll; dev origin: scale_gt renders/<c>_origin_s8;
+      dev deliverable on 0040: beyond_distil_mamba_scaled 0040_mstudent2_step800_deliv_ll), and init_md5_all ==
+      6db474cbe7ebf98270a6d5399dd57987 for every capture.
+  C2  stock re-decode md5 == capture md5 for EVERY clip x model used (this is also the "stock" row).
+  C3  the step-0 checkpoint re-decoded on one clip x both models == stock md5.
+
+======================================================================================================================
+4. DEV SELECTION (checkpoints 250..3000; cells = clip x model {origin, deliverable})
+======================================================================================================================
+Scorers: score_clip_ll.py (UNREG; SCORE_STEP 4), score_registered_df_v1.py (= scale_gt's copy of eval_robustness
+score_registered_v1.py, panel-only change; REG_FRAME / REG_CLIP / BLK_LOCAL / rPSNR), score_aux_v1.py (DISTS, NIQE,
+MUSIQ, LPIPS-VGG, decompose on the REG_FRAME-registered GT).
+PRIMARY  dREG(c) = mean over the 10 registered dev cells (5 clips x 2 models) of REG_FRAME LPIPS-Alex(c) - (stock).
+ELIGIBLE iff  (e1) mean registered-PSNR change (score_registered REG_FRAME rPSNR, 10 cells) >= -0.10 dB,
+              (e2) mean NIQE change (12 cells) <= +0.05 (blur_diag seed yardstick 0.052),
+              (e3) mean UNREG LPIPS-Alex change (12 cells) <= +0.001.
+SELECT   the eligible checkpoint with the lowest dREG; within 0.0005 of the best -> the EARLIER step.  If no checkpoint is
+         eligible, nothing is tested and the verdict is CLOSED (no test evaluation).
+BASELINE (GT-free sharpening the decoder must beat; skeptic: unsharp alone reaches -0.0051): unsharp mask
+         y = x + a (x - Gauss_sigma(x)) on the stock outputs of both models (make_unsharp_v1.py = skeptic's filter),
+         grid sigma {1, 2} x a {0.15, 0.30, 0.50}; select on dev the (sigma, a) with the lowest dREG over the same 10 cells
+         (no eligibility filter: it is the LPIPS-optimal sharpener).  Its test rows are scored with the selected decoder.
+
+======================================================================================================================
+5. TEST (once) -- rows per clip: origin stock, origin+D*, deliverable stock, deliverable+D*, origin+US*, deliverable+US*,
+   plus published references origin_ll / s25_ll / AYS8_origin_g101 / mstudent2_step800_deliv_ll (scored by the same
+   scorers; ays_20261004/robust/ROWS_pass1.json paths)
+======================================================================================================================
+CONTRASTS (paired per clip, 12 clips; REG_FRAME is primary; REG_CLIP, BLK_LOCAL, UNREG always reported alongside):
+  T1  origin + D*        vs origin (stock decoder)          -- what the decoder adds to origin
+  T2  deliverable + D*   vs deliverable (stock decoder)      -- what the decoder adds to the deliverable
+  T3  deliverable + D* and origin + D* vs origin             -- the round's bar (the deliverable's own -0.0132 is NOT
+                                                                credited to the decoder; T2 is the decoder's share)
+  T4  both vs AYS8 (training-free, already meets the round bar) and vs s25, overall and AVP / iPhone separately
+      (AVP 0042 0052 0125 0128 0141 0147; iPhone 0170 0204 0225 0251 0259 0301)
+GUARDS (each evaluated per model on T1 / T2):
+  g1  registered PSNR change (12-clip mean) >= -0.10 dB
+  g2  NIQE change <= +0.05
+  g3  DISTS change < 0
+  g4  no fake texture / stripes: stripeE(D*)/stripeE(stock) 12-clip mean <= 1.10, and fewer than 3 clips where that ratio
+      > 1.10 AND stripeE(D*) > stripeE(GT); the same rule for flatHF
+  g5  temporal (score_temporal_ll.py + score_pairflicker_v1.py): tLP and RAFT warp error ratio D*/stock 12-clip mean <=
+      1.05 unless D*'s value stays <= GT's; window-seam ratio change <= +0.05; decode-pair flicker ratio (across-pair /
+      within-pair frame difference, deployed decode pairs) change <= +0.05
+  g6  beats the dev-selected unsharp baseline on the same latents: dREG_FRAME(D*) < dREG_FRAME(US*) AND
+      dDISTS(D*) < dDISTS(US*)
+  g7  no gain inflation: |dUNREG| <= 2 |dREG_FRAME|  (flag otherwise)
+  g8  visual 2-panel check (stock | D*, plus registered GT) on 0301, 0170, 0052 at frame 76, written down BEFORE the
+      verdict is stated
+VERDICT per model (T1, T2 separately):
+  DECODER GAIN   REG_FRAME mean change <= -0.005 AND better on >= 9/12 clips AND UNREG change < 0 AND g1-g7 pass
+  SMALL GAIN     REG_FRAME mean change < 0, better on >= 9/12, g1-g7 pass, but magnitude < 0.005
+  NO GAIN        anything else (a guard failure is reported by name)
+Per-clip changes |d| < 0.004 are reported as unresolved (skeptic's seed spread) in addition to the raw counts.
+LPIPS-VGG is the training-loss family: reported, never used as a guard or for selection.
+Diagnostic only (never selection): decoder-only GT round trip (roundtrip_v1.py) on dev and test GT.

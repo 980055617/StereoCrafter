@@ -1,0 +1,120 @@
+RESULTS r2 -- deep_20261004 / external_models lane (GPU 0, flock /tmp/claude-gpu0.lock)        written 2026-10-04 23:25 JST
+Pre-registration: PREREG_r2.txt (+ PREREG_ADDENDUM_r2_dev_mask.txt for the dev-only mask check).  Deviations D1-D5:
+DEVIATIONS_r2.txt.  Candidate search: CANDIDATES_r2.txt.  GT validity: GT_VALIDITY_r2.txt (all 12 test + 6 dev clips valid;
+0311 missing, 0351 -> train_leftGT_broken, both excluded).
+
+QUESTION  Is there an open model that generates a sharper, more correct right eye than StereoCrafter today?
+
+ANSWER (written first on the regime 4-clip set; the 12-clip extension below FINISHED and supersedes it as the headline)
+  The best runnable open candidate, M2SVid (Google, 3DV 2026; Apache-2.0 code, full-attention weights released 2026-03),
+  fed EXACTLY origin's left eye / warp / mask, is better than origin on 3/4 clips but NOT clearly (lane rule), and it is
+  NOT better than the deliverable (worse on REG_FRAME on 4/4 clips).  It is visibly crisper on some clips, but it has two
+  failure modes that LPIPS and the panels both show: thin foreground objects get erased (0052) and visible temporal seams
+  at its 16-frame window boundaries.  Not a teacher for the Mamba model (one-step x0 regressor, below the deliverable).
+
+  TABLE (TABLE_REGIME_r2.txt / .json; LPIPS-Alex vs the real right eye, SCORE_STEP=4, lossless FFV1 renders;
+  origin / deliverable = published GPU values from outputs/more_20261004/eval_robustness/score_v1/<clip>.json; M2SVid
+  scored on CPU; the same deltas re-computed fully paired on CPU agree to 4 dp)
+    clip   UNREG origin / deliv / M2SVid     REG_FRAME origin / deliv / M2SVid     M2-origin (UNREG, REG)   M2-deliv
+    0301   0.4351 / 0.3965 / 0.4011           0.4051 / 0.3643 / 0.3667              -0.0340  -0.0385          +0.0046 +0.0023
+    0204   0.2053 / 0.1867 / 0.1889           0.1340 / 0.1144 / 0.1161              -0.0164  -0.0179          +0.0022 +0.0017
+    0052   0.4467 / 0.4395 / 0.4544           0.2231 / 0.2151 / 0.2625              +0.0077  +0.0394          +0.0149 +0.0474
+    0147   0.5269 / 0.5244 / 0.5155           0.2100 / 0.2042 / 0.2049              -0.0115  -0.0051          -0.0089 +0.0007
+    mean   0.4035 / 0.3868 / 0.3900           0.2431 / 0.2245 / 0.2375              -0.0135  -0.0055          +0.0032 +0.0130
+    (published s25 on the same 4 clips: UNREG 0.3872, REG_FRAME 0.2252)
+  LANE RULE vs origin: dUNREG -0.0135 (better 3/4), dREG_FRAME -0.0055 (better 3/4) -> NO CLEAR DIFFERENCE
+  LANE RULE vs deliverable: dUNREG +0.0032 (better 1/4), dREG_FRAME +0.0130 (better 0/4) -> NO CLEAR DIFFERENCE
+  REG_CLIP / BLK_LOCAL agree in sign (M2-origin -0.0056 / -0.0029; M2-deliv +0.0129 / +0.0154).
+  rightPSNR REG_FRAME: origin 19.43, deliverable 19.25, M2SVid 19.40.  sharp/gtSharp: origin 0.98, M2SVid 0.90 (|dx|
+  includes splatting stripes; descriptive only).
+  TEMPORAL (CPU copy of the published metric; reproduces the published origin / deliverable / GT tLP and seam ratios on
+  0301 to 4 dp): tLP GT 0.140, origin 0.126, deliverable 0.132, M2SVid 0.107 (stiffer than the real right eye within a
+  window); seam ratio at each method's own window boundaries: origin 1.23, deliverable 1.27, M2SVid 1.46 (0204: 2.26)
+  -> M2SVid pops every 16 frames (non-overlapping windows; the released weights support temporal stitching via
+  generated-frame conditioning, not implemented here).
+  NO-REFERENCE (pyiqa, CPU; finished only for 0204): MUSIQ GT 73.0 / origin 72.1 / deliverable 71.2 / M2SVid 71.1;
+  CLIP-IQA 0.695 / 0.735 / 0.705 / 0.685; NIQE (lower better) 3.10 / 3.85 / 3.63 / 3.92 -> no NR advantage for M2SVid.
+
+  WHERE IT WINS / LOSES (panels under outputs/deep_20261004/external_models/clips/<clip>_m2svid_fa_w16_ll/)
+  - 0301 / 0204: crisper foliage, fence, houses than origin; as faithful to the warp as the deliverable outside the holes
+    (input-fidelity LPIPS 0.29 / 0.09 vs origin 0.34 / 0.13; INPUT_FIDELITY_posthoc_r2.json, post hoc).
+  - 0052: the foreground handlebar (left edge) is erased and replaced by a background-coloured smear; outside the holes
+    M2SVid departs from its own warp much more than origin (input-fidelity LPIPS 0.145 vs 0.100, L1 7.2 vs 4.6).  The
+    erased area extends well BEYOND the closed hole mask (0052_mask_overlay_f076.png), so the cause is not only the
+    soft-mask semantics; reliance on the left-view conditioning at this disparity is a plausible, UNVERIFIED cause.
+
+TEACHER ASSESSMENT (pre-registered framing)
+  - Not a trajectory teacher: 1 Euler step from a zero latent at sigma 700 = a conditional x0 regressor; there is no
+    sampling trajectory to distil.  As a point target it is below the deliverable on the regime set (REG_FRAME +0.013,
+    0/4) and point-target families are closed in this project -> not recommended as a teacher.
+  - License: code Apache-2.0 (vendored Hi3D sgm MIT); weights carry no separate license in the repo and are an SVD-XT
+    fine-tune -> SVD-XT terms apply (same constraint class as StereoCrafter; verify before any shipping use).
+  - Speed (RTX 4090, 576x1024): 6.8-7.1 s per 16-frame window incl. 2 VAE encoders + CLIP + one UNet pass with the
+    redundant scale-1.0 CFG batch + VAE decode (8-frame chunks); peak 15.3 GiB.  Deployed origin: 8.5 s per 14-frame
+    window in-loop EXCLUDING decode (finalcheck_20261004/speed/TABLE_TIMING_final.txt; 118.8 s in-loop per 151-frame
+    clip) -> not like-for-like: per output frame M2SVid ~0.46 s incl. decode (70 s / 151 frames on 0301) vs origin
+    ~0.79 s excl. decode.  Dropping the redundant unconditional half (identical at scale 1.0) would roughly halve the
+    UNet share.
+  - Output space: same SVD VAE (scale 0.18215); UNet input 13 ch (noise + LEFT latent + warp latent + mask, mask channel
+    actively used: mean|w| 0.019) vs StereoCrafter's 9 ch (mask channel weights 0).
+
+OUTPUT FOLDERS (renders are lossless FFV1 SBS [left | right] 576x2048; left halves byte-identical to origin_ll)
+  outputs/deep_20261004/external_models/clips/<clip>_m2svid_fa_w16_ll/  (render, run json, panels, zooms)
+  outputs/deep_20261004/external_models/score_reg_cpu_m2svid_fa_w16_r2/  temporal_cpu_m2svid_fa_w16_r2/  nr_cpu_m2svid_fa_w16_r2/
+  outputs/deep_20261004/external_models/smoke_r2_w16/ (input quadrant panels)
+  /mnt/ssd_data/deep_20261004/external_models/m2svid/outputs/deep_20261004/external_models/smoke_r2_w16_dec8/ (smoke json+png,
+  written relative to the M2SVid repo dir)
+  /mnt/ssd_data/deep_20261004/external_models/{m2svid,ckpts,venv,pylib_iqa,torch_home} (repo, weights, env)
+
+=====================================================================================================================
+12-CLIP EXTENSION (all 12 test clips; TABLE_12CLIP_r2.txt / .json; render B 00:06-00:19, CPU-scored as each clip landed)
+=====================================================================================================================
+  REG_FRAME mean: origin 0.2430 | M2SVid 0.2373 | deliverable 0.2298 | s25 (published) 0.2278
+  UNREG mean:     origin 0.3933 | M2SVid 0.3812 | deliverable 0.3804 | s25 (published) 0.3786
+  M2SVid - origin:      UNREG -0.0120 (better 10/12), REG_FRAME -0.0057 (better 9/12), REG_CLIP -0.0060, BLK_LOCAL -0.0042
+  M2SVid - deliverable: UNREG +0.0008 (better 6/12),  REG_FRAME +0.0075 (better 4/12), REG_CLIP +0.0073, BLK_LOCAL +0.0085
+  LANE RULE vs origin       -> NO CLEAR DIFFERENCE   (REG_FRAME delta -0.0057 does not reach -0.010)
+  PROGRAM RULE vs origin    -> MET, at the margin    (REG_FRAME -0.0057 <= -0.005, better on 9/12 = the minimum)
+  LANE RULE vs deliverable  -> NO CLEAR DIFFERENCE
+  PROGRAM RULE vs deliverable -> NOT MET             (REG_FRAME +0.0075, better on 4/12)
+  per clip REG_FRAME M2-origin: 0301 -0.039, 0259 -0.030, 0225 -0.029, 0128 -0.027, 0170 -0.025, 0204 -0.018, 0141 -0.015,
+     0147 -0.005, 0125 -0.005 | 0042 +0.011, 0052 +0.039, 0251 +0.073 (rightPSNR 20.7 vs origin 25.4)
+  rightPSNR REG_FRAME mean: origin 20.71, deliverable 20.49, M2SVid 20.40.  sharp/gtSharp: origin 0.94, M2SVid 0.89.
+  TEMPORAL (12 clips): tLP GT 0.101 / origin 0.093 / deliverable 0.101 / M2SVid 0.076; seam ratio at each method's own
+     window boundaries: GT 0.97, origin 1.33, deliverable 1.42, M2SVid 1.97 -> M2SVid's 16-frame windows pop clearly.
+  FAILURE MODE 2 (0251): the whole window 48-63 is hazy / desaturated with a ghosted (doubled) foreground person
+     (panel clips/0251_m2svid_fa_w16_ll/0251_badwindow_f052.png; per-frame REG_FRAME +0.16..+0.20 in that window, worse
+     than origin on every scored frame).  0052 (erased handlebar) and 0251 are both close-foreground / large-disocclusion
+     scenes.
+  All 12 renders pass G0 (left half byte-identical to origin_ll, all frames) and G1 (frame count, finite, lossless).
+
+FINAL ANSWER
+  No open model found today gives a clearly sharper AND more correct right eye than what this project already has.
+  M2SVid, the only runnable open model that accepts our exact warp + mask, edges out ORIGIN on average (REG_FRAME
+  -0.0057, 9/12 -- the program criterion is met only at its margin; the lane's stricter rule is not), is crisper than
+  origin on its good clips, but is NOT better than the deliverable (REG_FRAME +0.0075, 4/12; UNREG tie +0.0008) and has
+  two failure modes a viewer will see: foreground erasure / ghosting on close large-disparity subjects (0052, 0251) and
+  window seams every 16 frames (seam ratio 1.97 vs origin 1.33).  The paper's 0.180-vs-0.242 margin over StereoCrafter
+  (each method with its OWN warper, 512x512, 16 frames @5 fps) does not transfer to this setting: here M2SVid is also
+  worse than StereoCrafter at 25 steps (REG_FRAME 0.2373 vs s25 0.2278).  Confounds not separated: 576x1024 is beyond its
+  512 training resolution, non-overlapping 16-frame windows, F2 chunked decode, our soft occlusion map.  "Sharper" is
+  only visual on the good clips (0301 0259 0225 0170); sharp/gtSharp over 12 clips is 0.89 (M2SVid) vs 0.94 (origin)
+  and NR (0204 only) shows no advantage.  Mechanism of the failures: the mask-threshold hypothesis is refuted (0052
+  overlay; dev 0040 t95 null); left-view reliance at close range is UNVERIFIED.  Single seed (cond_aug noise; the smoke
+  rerun differed by up to 121 levels per pixel).
+
+DEV-ONLY MASK CHECK (PREREG_ADDENDUM_r2_dev_mask.txt): see DEV_MASK_UNREG_r2.txt.  INCOMPLETE -- the driver's G0 check
+  reads origin_ll, which does not exist for dev clips, so each dev process crashed after writing its FIRST clip (0040):
+  at most 1 of the 3 pre-registered dev clips per variant exists -> the selection rule (3 clips) cannot be applied; any
+  0040 number is descriptive only (deviation D6).
+  DEV 0040 (the only dev clip rendered for both variants; descriptive): UNREG primary 0.513893, t95 0.513966
+  (t95 - primary +0.00007) -> the soft-vs-binary mask choice makes no measurable difference on 0040 (whose mask has real
+  black holes: 6.2% of pixels > 0.5, 67% of them dark in the warp).  Consistent with the 0052 overlay: the erasure /
+  ghosting is NOT explained by the mask threshold.  Renders: outputs/deep_20261004/external_models/clips/0040_m2svid_fa_w16_ll/,
+  .../0040_m2svid_fa_w16_t95_ll/ (mkv + md5 only; run json missing because of D6).
+
+TEACHER ASSESSMENT (final): not a teacher for the Mamba model -- one-step x0 regressor (no trajectory), below the
+  deliverable on registered GT (+0.0075, 4/12), with visible failure modes; code Apache-2.0, weights an SVD-XT fine-tune
+  (SVD-XT terms; verify before any use), 6.7-7.1 s per 16-frame 576x1024 window on the 4090 (~0.46 s/frame incl. decode,
+  vs origin ~0.79 s/frame in-loop excl. decode; not like-for-like), same SVD VAE latent space, 13-ch UNet input (uses
+  the LEFT view, which origin's UNet never sees).

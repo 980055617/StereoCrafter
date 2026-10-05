@@ -1,0 +1,305 @@
+======================================================================================================================
+deep_20261004 / sdedit -- stage score_smoke0301  rule SMOKE  clips 0301
+SDEdit start x = 0.18215*z_src + sigma_start*eps (eps = the deployed window's own initial noise), guidance 1.00, lossless FFV1
+======================================================================================================================
+K5 scorer reproduction: 8/8 cells within +-0.0001 of the published values (scripts/distill/runs/finalcheck_20261004/speed/SCORES_STEP1.txt; outputs/more_20261004/eval_robustness/score_v1[_wide]/<clip>.json)  -> PASS
+K6 temporal reproduction (origin_ll warp error vs scripts/distill/runs/finalcheck_20261004/validate/V1_TEMPORAL_576_12CLIP.txt, 4 dp): 0/0 -> not run  []
+K5 decomposition (run_decomp's own check vs outputs/review_20261001/METRICS_WHOLEFRAME.txt, clips the review covered): ['PASS']
+
+--- REGISTERED LPIPS, REG_FRAME (PRIMARY; per-frame GT shift; 0125 widened grid) -- lower is better ---
+  row                                0301     MEAN
+  origin_ll                        0.4051   0.4051
+  origin_g100_s8                   0.4077   0.4077
+  origin_g100_sd31                 0.3995   0.3995
+  origin_g100_sd7                  0.3806   0.3806
+  origin_g100_sd1                  0.3377   0.3377
+  origin_g100_sd1fill              0.3433   0.3433
+  mstudent2_step800_deliv_ll       0.3643   0.3643
+  deliv_g100_s8                    0.3650   0.3650
+  deliv_g100_sd31                  0.3611   0.3611
+  deliv_g100_sd7                   0.3527   0.3527
+  deliv_g100_sd1                   0.3401   0.3401
+  deliv_g100_sd1fill               0.3454   0.3454
+  INPUT_warp                       0.2555   0.2555
+  INPUT_fill                       0.2471   0.2471
+
+--- REGISTERED LPIPS, REG_CLIP (one GT shift per clip; robustness) ---
+  row                                0301     MEAN
+  origin_ll                        0.4057   0.4057
+  origin_g100_s8                   0.4083   0.4083
+  origin_g100_sd31                 0.4000   0.4000
+  origin_g100_sd7                  0.3813   0.3813
+  origin_g100_sd1                  0.3390   0.3390
+  origin_g100_sd1fill              0.3450   0.3450
+  mstudent2_step800_deliv_ll       0.3651   0.3651
+  deliv_g100_s8                    0.3657   0.3657
+  deliv_g100_sd31                  0.3618   0.3618
+  deliv_g100_sd7                   0.3534   0.3534
+  deliv_g100_sd1                   0.3413   0.3413
+  deliv_g100_sd1fill               0.3470   0.3470
+  INPUT_warp                       0.2568   0.2568
+  INPUT_fill                       0.2491   0.2491
+
+--- UNREGISTERED LPIPS (published scorer, score_clip_ll.py) ---
+  row                                0301     MEAN
+  origin_ll                        0.4351   0.4351
+  origin_g100_s8                   0.4375   0.4375
+  origin_g100_sd31                 0.4302   0.4302
+  origin_g100_sd7                  0.4136   0.4136
+  origin_g100_sd1                  0.3777   0.3777
+  origin_g100_sd1fill              0.3843   0.3843
+  mstudent2_step800_deliv_ll       0.3965   0.3965
+  deliv_g100_s8                    0.3970   0.3970
+  deliv_g100_sd31                  0.3938   0.3938
+  deliv_g100_sd7                   0.3870   0.3870
+  deliv_g100_sd1                   0.3792   0.3792
+  deliv_g100_sd1fill               0.3859   0.3859
+  INPUT_warp                       0.3172   0.3172
+  INPUT_fill                       0.3133   0.3133
+
+--- FLAT-REGION STRIPE ENERGY stripeE (mean |horizontal diff| in GT-flat pixels; GT row = the real right eye) ---
+  row                                0301     MEAN
+  GT                              0.02115  0.02115
+  origin_ll                       0.01686  0.01686
+  origin_g100_s8                  0.01668  0.01668
+  origin_g100_sd31                0.01712  0.01712
+  origin_g100_sd7                 0.01820  0.01820
+  origin_g100_sd1                 0.02173  0.02173
+  origin_g100_sd1fill             0.02095  0.02095
+  mstudent2_step800_deliv_ll      0.02101  0.02101
+  deliv_g100_s8                   0.02086  0.02086
+  deliv_g100_sd31                 0.02122  0.02122
+  deliv_g100_sd7                  0.02199  0.02199
+  deliv_g100_sd1                  0.02346  0.02346
+  deliv_g100_sd1fill              0.02262  0.02262
+  INPUT_warp                      0.03800  0.03800
+  INPUT_fill                      0.03594  0.03594
+  INPUT warped (none)             0.03800  0.03800
+
+--- EDGE ENERGY AT GT EDGES edgeHF (mean |Laplacian| in GT top-decile gradient pixels) ---
+  row                                0301     MEAN
+  GT                              0.31472  0.31472
+  origin_ll                       0.07743  0.07743
+  origin_g100_s8                  0.07689  0.07689
+  origin_g100_sd31                0.07881  0.07881
+  origin_g100_sd7                 0.08325  0.08325
+  origin_g100_sd1                 0.08982  0.08982
+  origin_g100_sd1fill             0.08648  0.08648
+  mstudent2_step800_deliv_ll      0.08775  0.08775
+  deliv_g100_s8                   0.08748  0.08748
+  deliv_g100_sd31                 0.08912  0.08912
+  deliv_g100_sd7                  0.09251  0.09251
+  deliv_g100_sd1                  0.09331  0.09331
+  deliv_g100_sd1fill              0.08963  0.08963
+  INPUT_warp                      0.15578  0.15578
+  INPUT_fill                      0.15161  0.15161
+  INPUT warped (none)             0.15578  0.15578
+
+--- stripeE near holes (GT-flat pixels within 2 px of a hole) ---
+  row                                0301     MEAN
+  origin_ll                       0.02308  0.02308
+  origin_g100_s8                  0.02284  0.02284
+  origin_g100_sd31                0.02344  0.02344
+  origin_g100_sd7                 0.02494  0.02494
+  origin_g100_sd1                 0.03164  0.03164
+  origin_g100_sd1fill             0.02570  0.02570
+  mstudent2_step800_deliv_ll      0.02967  0.02967
+  deliv_g100_s8                   0.02946  0.02946
+  deliv_g100_sd31                 0.03000  0.03000
+  deliv_g100_sd7                  0.03123  0.03123
+  deliv_g100_sd1                  0.03577  0.03577
+  deliv_g100_sd1fill              0.02862  0.02862
+  INPUT_warp                      0.07100  0.07100
+  INPUT_fill                      0.03562  0.03562
+
+--- RAFT WARP ERROR (lower = more temporally stable; GT row = the real right eye) ---
+  row                                0301     MEAN
+  origin_ll                           n/a      n/a
+  origin_g100_s8                      n/a      n/a
+  origin_g100_sd31                    n/a      n/a
+  origin_g100_sd7                     n/a      n/a
+  origin_g100_sd1                     n/a      n/a
+  origin_g100_sd1fill                 n/a      n/a
+  mstudent2_step800_deliv_ll          n/a      n/a
+  deliv_g100_s8                       n/a      n/a
+  deliv_g100_sd31                     n/a      n/a
+  deliv_g100_sd7                      n/a      n/a
+  deliv_g100_sd1                      n/a      n/a
+  deliv_g100_sd1fill                  n/a      n/a
+  INPUT_warp                          n/a      n/a
+  INPUT_fill                          n/a      n/a
+
+--- sharpness / GT sharpness (score_clip_ll.py 'sharp') ---
+  row                                0301     MEAN
+  origin_ll                         0.466    0.466
+  origin_g100_s8                    0.460    0.460
+  origin_g100_sd31                  0.474    0.474
+  origin_g100_sd7                   0.507    0.507
+  origin_g100_sd1                   0.594    0.594
+  origin_g100_sd1fill               0.575    0.575
+  mstudent2_step800_deliv_ll        0.565    0.565
+  deliv_g100_s8                     0.561    0.561
+  deliv_g100_sd31                   0.571    0.571
+  deliv_g100_sd7                    0.597    0.597
+  deliv_g100_sd1                    0.633    0.633
+  deliv_g100_sd1fill                0.612    0.612
+  INPUT_warp                        1.016    1.016
+  INPUT_fill                        0.982    0.982
+
+======================================================================================================================
+CONTRASTS vs THE SAME MODEL'S DEPLOYED RENDER (negative LPIPS delta = better; ratios: 1.00 = unchanged)
+======================================================================================================================
+
+[origin_g100_sd31]  vs origin_ll (deployed)  |  SDEdit effect vs origin_g100_s8 (guidance-1.00 control)  |  UNet evals/window [5] (deployed 8)
+                               0301     MEAN  improved
+  dLPIPS REG_FRAME          -0.0057  -0.0057  1/1
+  dLPIPS REG_CLIP           -0.0056  -0.0056  1/1
+  dLPIPS UNREG              -0.0049  -0.0049  1/1
+  dREG_FRAME vs ctl         -0.0083  -0.0083  1/1
+  dUNREG vs ctl             -0.0073  -0.0073  1/1
+  dREG_FRAME vs ORIGIN      -0.0057  -0.0057  1/1
+  dREG_CLIP vs ORIGIN       -0.0056  -0.0056  1/1
+  dUNREG vs ORIGIN          -0.0049  -0.0049  1/1
+  stripeE ratio               1.016    1.016
+  stripeE-near ratio          1.015    1.015
+  edgeHF ratio                1.018    1.018
+  warp-error ratio              n/a      n/a
+  ROUND RULE vs ORIGIN (A1; judged at 12 clips only): mean dREG_FRAME -0.0057 (need <= -0.0050), improved 1/1 (need >= 9/12) -> descriptive at 1 clips
+  FLAGS: clips with stripeE ratio > 1.10: none; mean edgeHF ratio 1.018; mean warp-error ratio nan; UNREG direction differs on: none; REG_CLIP improved 1/1
+
+[origin_g100_sd7]  vs origin_ll (deployed)  |  SDEdit effect vs origin_g100_s8 (guidance-1.00 control)  |  UNet evals/window [4] (deployed 8)
+                               0301     MEAN  improved
+  dLPIPS REG_FRAME          -0.0245  -0.0245  1/1
+  dLPIPS REG_CLIP           -0.0244  -0.0244  1/1
+  dLPIPS UNREG              -0.0215  -0.0215  1/1
+  dREG_FRAME vs ctl         -0.0271  -0.0271  1/1
+  dUNREG vs ctl             -0.0239  -0.0239  1/1
+  dREG_FRAME vs ORIGIN      -0.0245  -0.0245  1/1
+  dREG_CLIP vs ORIGIN       -0.0244  -0.0244  1/1
+  dUNREG vs ORIGIN          -0.0215  -0.0215  1/1
+  stripeE ratio               1.080    1.080
+  stripeE-near ratio          1.081    1.081
+  edgeHF ratio                1.075    1.075
+  warp-error ratio              n/a      n/a
+  ROUND RULE vs ORIGIN (A1; judged at 12 clips only): mean dREG_FRAME -0.0245 (need <= -0.0050), improved 1/1 (need >= 9/12) -> descriptive at 1 clips
+  FLAGS: clips with stripeE ratio > 1.10: none; mean edgeHF ratio 1.075; mean warp-error ratio nan; UNREG direction differs on: none; REG_CLIP improved 1/1
+
+[origin_g100_sd1]  vs origin_ll (deployed)  |  SDEdit effect vs origin_g100_s8 (guidance-1.00 control)  |  UNet evals/window [3] (deployed 8)
+                               0301     MEAN  improved
+  dLPIPS REG_FRAME          -0.0674  -0.0674  1/1
+  dLPIPS REG_CLIP           -0.0667  -0.0667  1/1
+  dLPIPS UNREG              -0.0573  -0.0573  1/1
+  dREG_FRAME vs ctl         -0.0700  -0.0700  1/1
+  dUNREG vs ctl             -0.0598  -0.0598  1/1
+  dREG_FRAME vs ORIGIN      -0.0674  -0.0674  1/1
+  dREG_CLIP vs ORIGIN       -0.0667  -0.0667  1/1
+  dUNREG vs ORIGIN          -0.0573  -0.0573  1/1
+  stripeE ratio               1.289    1.289
+  stripeE-near ratio          1.371    1.371
+  edgeHF ratio                1.160    1.160
+  warp-error ratio              n/a      n/a
+  ROUND RULE vs ORIGIN (A1; judged at 12 clips only): mean dREG_FRAME -0.0674 (need <= -0.0050), improved 1/1 (need >= 9/12) -> descriptive at 1 clips
+  FLAGS: clips with stripeE ratio > 1.10: ['0301']; mean edgeHF ratio 1.160; mean warp-error ratio nan; UNREG direction differs on: none; REG_CLIP improved 1/1
+
+[origin_g100_sd1fill]  vs origin_ll (deployed)  |  SDEdit effect vs origin_g100_s8 (guidance-1.00 control)  |  UNet evals/window [3] (deployed 8)
+                               0301     MEAN  improved
+  dLPIPS REG_FRAME          -0.0618  -0.0618  1/1
+  dLPIPS REG_CLIP           -0.0607  -0.0607  1/1
+  dLPIPS UNREG              -0.0508  -0.0508  1/1
+  dREG_FRAME vs ctl         -0.0644  -0.0644  1/1
+  dUNREG vs ctl             -0.0532  -0.0532  1/1
+  dREG_FRAME vs ORIGIN      -0.0618  -0.0618  1/1
+  dREG_CLIP vs ORIGIN       -0.0607  -0.0607  1/1
+  dUNREG vs ORIGIN          -0.0508  -0.0508  1/1
+  stripeE ratio               1.243    1.243
+  stripeE-near ratio          1.114    1.114
+  edgeHF ratio                1.117    1.117
+  warp-error ratio              n/a      n/a
+  ROUND RULE vs ORIGIN (A1; judged at 12 clips only): mean dREG_FRAME -0.0618 (need <= -0.0050), improved 1/1 (need >= 9/12) -> descriptive at 1 clips
+  FLAGS: clips with stripeE ratio > 1.10: ['0301']; mean edgeHF ratio 1.117; mean warp-error ratio nan; UNREG direction differs on: none; REG_CLIP improved 1/1
+
+[deliv_g100_sd31]  vs mstudent2_step800_deliv_ll (deployed)  |  SDEdit effect vs deliv_g100_s8 (guidance-1.00 control)  |  UNet evals/window [5] (deployed 8)
+                               0301     MEAN  improved
+  dLPIPS REG_FRAME          -0.0032  -0.0032  1/1
+  dLPIPS REG_CLIP           -0.0033  -0.0033  1/1
+  dLPIPS UNREG              -0.0027  -0.0027  1/1
+  dREG_FRAME vs ctl         -0.0039  -0.0039  1/1
+  dUNREG vs ctl             -0.0032  -0.0032  1/1
+  dREG_FRAME vs ORIGIN      -0.0440  -0.0440  1/1
+  dREG_CLIP vs ORIGIN       -0.0438  -0.0438  1/1
+  dUNREG vs ORIGIN          -0.0413  -0.0413  1/1
+  stripeE ratio               1.010    1.010
+  stripeE-near ratio          1.011    1.011
+  edgeHF ratio                1.016    1.016
+  warp-error ratio              n/a      n/a
+  ROUND RULE vs ORIGIN (A1; judged at 12 clips only): mean dREG_FRAME -0.0440 (need <= -0.0050), improved 1/1 (need >= 9/12) -> descriptive at 1 clips
+  FLAGS: clips with stripeE ratio > 1.10: none; mean edgeHF ratio 1.016; mean warp-error ratio nan; UNREG direction differs on: none; REG_CLIP improved 1/1
+
+[deliv_g100_sd7]  vs mstudent2_step800_deliv_ll (deployed)  |  SDEdit effect vs deliv_g100_s8 (guidance-1.00 control)  |  UNet evals/window [4] (deployed 8)
+                               0301     MEAN  improved
+  dLPIPS REG_FRAME          -0.0116  -0.0116  1/1
+  dLPIPS REG_CLIP           -0.0117  -0.0117  1/1
+  dLPIPS UNREG              -0.0095  -0.0095  1/1
+  dREG_FRAME vs ctl         -0.0122  -0.0122  1/1
+  dUNREG vs ctl             -0.0100  -0.0100  1/1
+  dREG_FRAME vs ORIGIN      -0.0524  -0.0524  1/1
+  dREG_CLIP vs ORIGIN       -0.0523  -0.0523  1/1
+  dUNREG vs ORIGIN          -0.0481  -0.0481  1/1
+  stripeE ratio               1.047    1.047
+  stripeE-near ratio          1.053    1.053
+  edgeHF ratio                1.054    1.054
+  warp-error ratio              n/a      n/a
+  ROUND RULE vs ORIGIN (A1; judged at 12 clips only): mean dREG_FRAME -0.0524 (need <= -0.0050), improved 1/1 (need >= 9/12) -> descriptive at 1 clips
+  FLAGS: clips with stripeE ratio > 1.10: none; mean edgeHF ratio 1.054; mean warp-error ratio nan; UNREG direction differs on: none; REG_CLIP improved 1/1
+
+[deliv_g100_sd1]  vs mstudent2_step800_deliv_ll (deployed)  |  SDEdit effect vs deliv_g100_s8 (guidance-1.00 control)  |  UNet evals/window [3] (deployed 8)
+                               0301     MEAN  improved
+  dLPIPS REG_FRAME          -0.0242  -0.0242  1/1
+  dLPIPS REG_CLIP           -0.0238  -0.0238  1/1
+  dLPIPS UNREG              -0.0173  -0.0173  1/1
+  dREG_FRAME vs ctl         -0.0249  -0.0249  1/1
+  dUNREG vs ctl             -0.0177  -0.0177  1/1
+  dREG_FRAME vs ORIGIN      -0.0650  -0.0650  1/1
+  dREG_CLIP vs ORIGIN       -0.0644  -0.0644  1/1
+  dUNREG vs ORIGIN          -0.0559  -0.0559  1/1
+  stripeE ratio               1.117    1.117
+  stripeE-near ratio          1.205    1.205
+  edgeHF ratio                1.063    1.063
+  warp-error ratio              n/a      n/a
+  ROUND RULE vs ORIGIN (A1; judged at 12 clips only): mean dREG_FRAME -0.0650 (need <= -0.0050), improved 1/1 (need >= 9/12) -> descriptive at 1 clips
+  FLAGS: clips with stripeE ratio > 1.10: ['0301']; mean edgeHF ratio 1.063; mean warp-error ratio nan; UNREG direction differs on: none; REG_CLIP improved 1/1
+
+[deliv_g100_sd1fill]  vs mstudent2_step800_deliv_ll (deployed)  |  SDEdit effect vs deliv_g100_s8 (guidance-1.00 control)  |  UNet evals/window [3] (deployed 8)
+                               0301     MEAN  improved
+  dLPIPS REG_FRAME          -0.0189  -0.0189  1/1
+  dLPIPS REG_CLIP           -0.0182  -0.0182  1/1
+  dLPIPS UNREG              -0.0106  -0.0106  1/1
+  dREG_FRAME vs ctl         -0.0195  -0.0195  1/1
+  dUNREG vs ctl             -0.0110  -0.0110  1/1
+  dREG_FRAME vs ORIGIN      -0.0597  -0.0597  1/1
+  dREG_CLIP vs ORIGIN       -0.0587  -0.0587  1/1
+  dUNREG vs ORIGIN          -0.0492  -0.0492  1/1
+  stripeE ratio               1.077    1.077
+  stripeE-near ratio          0.965    0.965
+  edgeHF ratio                1.021    1.021
+  warp-error ratio              n/a      n/a
+  ROUND RULE vs ORIGIN (A1; judged at 12 clips only): mean dREG_FRAME -0.0597 (need <= -0.0050), improved 1/1 (need >= 9/12) -> descriptive at 1 clips
+  FLAGS: clips with stripeE ratio > 1.10: none; mean edgeHF ratio 1.021; mean warp-error ratio nan; UNREG direction differs on: none; REG_CLIP improved 1/1
+
+======================================================================================================================
+SUMMARY (mean over clips; d = variant - same model's deployed render)
+  row                        REG_FRAME  dREG_FR  impr  dREG_CL   dUNREG  impr d vs ctl d vs ORIG  impr stripeR  edgeR  warpR  verdict
+  origin_g100_sd31              0.3995  -0.0057  1/1   -0.0056  -0.0049  1/1   -0.0083   -0.0057  1/1    1.016  1.018    nan        -
+  origin_g100_sd7               0.3806  -0.0245  1/1   -0.0244  -0.0215  1/1   -0.0271   -0.0245  1/1    1.080  1.075    nan        -
+  origin_g100_sd1               0.3377  -0.0674  1/1   -0.0667  -0.0573  1/1   -0.0700   -0.0674  1/1    1.289  1.160    nan        -
+  origin_g100_sd1fill           0.3433  -0.0618  1/1   -0.0607  -0.0508  1/1   -0.0644   -0.0618  1/1    1.243  1.117    nan        -
+  deliv_g100_sd31               0.3611  -0.0032  1/1   -0.0033  -0.0027  1/1   -0.0039   -0.0440  1/1    1.010  1.016    nan        -
+  deliv_g100_sd7                0.3527  -0.0116  1/1   -0.0117  -0.0095  1/1   -0.0122   -0.0524  1/1    1.047  1.054    nan        -
+  deliv_g100_sd1                0.3401  -0.0242  1/1   -0.0238  -0.0173  1/1   -0.0249   -0.0650  1/1    1.117  1.063    nan        -
+  deliv_g100_sd1fill            0.3454  -0.0189  1/1   -0.0182  -0.0106  1/1   -0.0195   -0.0597  1/1    1.077  1.021    nan        -
+  origin_ll                     0.4051   (deployed reference)   UNREG 0.4351
+  mstudent2_step800_deliv_ll    0.3643   (deployed reference)   UNREG 0.3965
+  INPUT_warp                    0.2555   (descriptive: raw warped input) d vs origin_ll -0.1496 (1/1 better), d vs deliv -0.1089 (1/1); UNREG 0.3172; stripeE ratio vs origin_ll 2.254, vs deliv 1.809
+  INPUT_fill                    0.2471   (descriptive: raw warped input) d vs origin_ll -0.1580 (1/1 better), d vs deliv -0.1172 (1/1); UNREG 0.3133; stripeE ratio vs origin_ll 2.132, vs deliv 1.711
+
+PROVENANCE: outputs/deep_20261004/sdedit/score_smoke0301/SCORES.txt; outputs/deep_20261004/sdedit/score_smoke0301/reg/<clip>.json; outputs/deep_20261004/sdedit/score_smoke0301/reg_wide/0125.json (if 0125); outputs/deep_20261004/sdedit/score_smoke0301/decomp/decomp.json + DECOMP.txt; outputs/deep_20261004/sdedit/score_smoke0301/temporal/temporal.json; outputs/deep_20261004/sdedit/clips/*/speed_log.json

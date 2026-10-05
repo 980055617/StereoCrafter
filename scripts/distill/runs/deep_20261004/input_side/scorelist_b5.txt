@@ -1,0 +1,2 @@
+0052 SS4 origin=outputs/deep_20261004/input_side/clips/0052_SS4_origin/0052_inpainting_results_sbs.mkv deliv=outputs/deep_20261004/input_side/clips/0052_SS4_deliv/0052_inpainting_results_sbs.mkv
+0147 SS4 origin=outputs/deep_20261004/input_side/clips/0147_SS4_origin/0147_inpainting_results_sbs.mkv deliv=outputs/deep_20261004/input_side/clips/0147_SS4_deliv/0147_inpainting_results_sbs.mkv

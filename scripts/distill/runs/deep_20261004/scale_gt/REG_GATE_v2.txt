@@ -1,0 +1,15 @@
+0042  mine (-1,-36) psnr 23.48 (zero 17.45)  eval_robustness REG_CLIP (-1,-35) psnr 23.72  diff (+0,-1) ok
+0052  mine (+0,-40) psnr 17.66 (zero 13.15)  eval_robustness REG_CLIP (-1,-40) psnr 17.66  diff (+1,+0) ok
+0125  mine (+0,-32) psnr 20.05 (zero 17.21)  eval_robustness REG_CLIP (+0,-32) psnr 19.49  diff (+0,+0) ok
+0128  mine (+0,-31) psnr 21.22 (zero 17.93)  eval_robustness REG_CLIP (+0,-31) psnr 21.29  diff (+0,+0) ok
+0141  mine (+0,-61) psnr 21.84 (zero 15.45)  eval_robustness REG_CLIP (+0,-60) psnr 22.00  diff (+0,-1) ok
+0147  mine (+0,-44) psnr 18.96 (zero 15.59)  eval_robustness REG_CLIP (+0,-44) psnr 19.05  diff (+0,+0) ok
+0170  mine (-1,-9) psnr 19.53 (zero 16.59)  eval_robustness REG_CLIP (-1,-10) psnr 20.50  diff (+0,+1) ok
+0204  mine (-1,-17) psnr 23.26 (zero 18.60)  eval_robustness REG_CLIP (-1,-17) psnr 23.72  diff (+0,+0) ok
+0225  mine (-1,-14) psnr 18.59 (zero 15.29)  eval_robustness REG_CLIP (-1,-14) psnr 18.48  diff (+0,+0) ok
+0251  mine (-1,-19) psnr 25.48 (zero 18.35)  eval_robustness REG_CLIP (-1,-19) psnr 26.46  diff (+0,+0) ok
+0259  mine (+0,-17) psnr 18.21 (zero 12.85)  eval_robustness REG_CLIP (+0,-17) psnr 18.17  diff (+0,+0) ok
+0301  mine (+0,-11) psnr 16.50 (zero 14.31)  eval_robustness REG_CLIP (+0,-12) psnr 16.47  diff (+0,+1) ok
+regB anchor 0301: mine (+0,-11) vs regB (+0,-12)
+regB anchor 0204: mine (-1,-17) vs regB (-1,-17)
+GATE PASS: 12/12 within (1,2) px, worst |diff| 1 px

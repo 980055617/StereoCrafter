@@ -1,0 +1,171 @@
+SCALE_GT -- does GT-supervised diffusion-loss fine-tuning still degrade the model when it sees 100+ clips instead of 1-28?
+lane deep_20261004/scale_gt, GPU 1, 2026-10-04 22:00 -> 2026-10-05.  Every number below cites the file it comes from (this dir
+unless a path is given).  Pre-registration: PREREG.txt (22:45, before any training), PREREG_ADDENDUM_1.txt (23:30, data facts),
+PREREG_ADDENDUM_2.txt (03:45, colour-removed rows + flag, before any test render; selection record 06:15).
+
+=====================================================================================================================================
+0. ANSWER
+=====================================================================================================================================
+YES, IT STILL DEGRADES.  Trained on 754 registered windows from 215 different clips (vs 1-28 before), every evaluated checkpoint
+(7 of 12: steps 250, 500, 1000, 1500, 2000, 2500, 3000) is worse than origin on the registered dev metric (+0.013 to +0.015
+REG_FRAME LPIPS, 0/5 clips better at each) -> the pre-registered outcome "STILL DEGRADES".  The one-time test of the dev-selected checkpoint (step 250) agrees:
+8 steps REG_FRAME 0.2430 -> 0.2896 (+0.0466, 95 % CI [+0.029,+0.068], 12/12 clips worse, one-sided sign p = 0.5^12 = 2.4e-4;
+UNREG +0.0378, 12/12 worse; sharpness x0.856),
+and it is not only 8-step fragility: at 25 steps it is also worse than origin at 25 steps (+0.0207 REG_FRAME, 12/12 worse;
+UNREG +0.0156, 11/12 worse).
+Scale is not irrelevant: at matched steps the 8-clip run is clearly worse (registered dev delta +0.016/+0.021/+0.017 at 250/500/1000
+vs +0.013/+0.013/+0.014 for 215 clips, i.e. scale removes 20-35 % of the damage) and the weights move ~20-25 % less per step -- but
+the sign does not change, the damage appears within 250 steps and then plateaus, so neither more data nor more steps is the lever.
+Separately, the held-out denoising loss on unseen dev clips IMPROVES (-3.4 to -4.0 %) -- for the 8-clip run as much as for the
+215-clip run (0.3007 at step 500 for both), so this shows the denoiser generalises in MSE, not a scale effect.  The MSE gain does
+not reach what the sampler draws (8 or 25 steps): outputs get blurrier/hazier (sharpness -7 to -11 %), registered right-eye PSNR
+rises (+0.16 to +0.22 dB) while LPIPS gets worse -- the posterior-mean signature -- and the model learns the real right camera's
+colour response (+2,+2,+4 /255, an inter-ocular colour mismatch).  Removing that colour shift leaves the LPIPS damage unchanged,
+so colour is not the cause.
+SCOPE OF "CLOSED": closed is exactly this -- data scale alone (215 clips, 754 windows) does not rescue per-sample diffusion-loss
+fine-tuning of origin's 15 up_blocks.3 attn1 tensors toward the globally registered real right eye, at 8 or at 25 steps.
+NOT tested here (all differ from how the original model was trained): a larger trainable scope than 15 tensors in one block;
+a continuous (log-normal) sigma distribution instead of the 8 deployment sigmas (1/8 of steps sit at sigma 0.002 where the loss
+is ~1.0 and irreducible); batch > 1; and above all a target that is geometrically consistent with the condition -- after the best
+global shift only 45.7 % of informative cells are within +-2 px, because the real baseline differs from the rendered disparity by
+a depth-dependent factor (input_side lane, scripts/distill/runs/deep_20261004/input_side/TABLE_FIT.txt: oracle-fitted
+disparity scale 0.35-3.45 on its 4 clips).  That mismatch is the leading untested
+explanation of why this loss on this target produces haze.
+
+=====================================================================================================================================
+1. DATA (what "scale" means here)
+=====================================================================================================================================
+* GT validity (check_clips_v1.py -> clips_valid_v1.json): of train_order's 333 clips, 291 are GT-valid (int < 0310, not a
+  train_leftGT_broken link, real right eye != left eye); test 12/12 valid; dev 6/8 valid (0311, 0351 are >= 0310).
+* Registration (prep_crops_v3.py; estimator gate REG_GATE_v2.txt PASS: 12/12 test clips within 1 px of eval_robustness REG_CLIP,
+  regB anchors 0301 (0,-11) vs (0,-12) and 0204 exact): one global integer shift per clip, ddy [-10,10], ddx [-240,40].
+* 4 windows per clip (14 frames, deployed stride-11 grid) = 1164 windows.  Validity mask = local-shift consistency within +-2 px.
+  Kept fraction median 0.358 (p25 0.190, p75 0.554) [phaseA_summary_v1.json].  Pre-registered exclusions: 8 clips at the
+  registration boundary, windows with kept < 0.25 -> MAIN = 754 windows of 215 clips (mean kept 0.515).
+* Why only ~half of each frame is usable: after the best global shift only 45.7 % of informative cells are within +-2 px of it,
+  58.0 % within +-4 px, 71.7 % within +-8 px [PREREG_ADDENDUM_1.txt].  The real right eye's disparity differs from the rendered
+  disparity by a smooth depth-dependent field (real baseline >> rendered), not only near objects.  Kept cells are 79 % textured
+  and registration-consistent, 20 % flat, 0.3 % hole-dominated [KEPT_COMPOSITION_v1.txt].
+* The targets are not blurrier than the inputs: registered real right eye / warped left input sharpness ratio median 1.02 (4400
+  format) and 1.21 (2160) [GT_SHARPNESS_v1.txt].  Training data colour offset (real right - warped input) = (+2.1,+2.7,+4.9)/255.
+* CONTRAST run = first 8 train_order clips keeping >= 1 window: 0160 0177 0144 0179 0105 0078 0165 0067 (25 windows).
+
+=====================================================================================================================================
+2. TRAINING (train_scale_gt_v1.py = minift/xcheck_mini_ft.py + cached windows + masked loss + clip-interleaved order)
+=====================================================================================================================================
+origin's 15 up_blocks.3 attn1 tensors, fp32 masters, AdamW lr 1e-5, clip 1.0, batch 1 window, 8 deployment sigmas, seed 1234.
+  MAIN     3000 steps, 52 min, 1.03 s/step, peak 15.22 GiB; mean pre-clip grad norm 0.499, 10.7 % clipped [train/main_v1/]
+  CONTRAST 1000 steps, 17 min; mean grad norm 0.364, 0.9 % clipped [train/contrast8_v1/]
+  weight drift ||W-W0||/||W0||: MAIN 0.00074 (250) 0.00151 (1000) 0.00219 (2000) 0.00278 (3000); CONTRAST 0.00091 / 0.00134 /
+  0.00204 at 250/500/1000 (35 % faster), cos(delta_contrast, delta_main) 0.44-0.55 [train/*/weight_drift.txt]; regB 1-clip run
+  0.00225 at 300 steps.  Training loss logged, never used.
+
+=====================================================================================================================================
+3. CONTROLS
+=====================================================================================================================================
+C1 PASS: dev 0184 rendered with the step0 swap == plain origin, md5 d285af4763af42a03de3c2f52f82e44c, 0/15 tensors differ
+   [CONTROL_C1.txt]; MAIN step0.pt has the same md5 (2dd7d012...) as the smoke step0 used in C1.
+C2 PASS: the 25-step hook path reproduces the existing s25 comparators byte for byte: 0301 72eb7257... (beyond4_lossless),
+   0042 723c4df3... (skeptic1_stack) [CONTROL_C2.txt].
+G0 PASS: registered-scorer UNREG == score_clip_ll lpips on all 84 dev cells, max |d| 4.97e-07 [TABLE_DEV_stage1.txt].
+All renders: same initial-noise fingerprint as every deployed render (init_md5_all 6db474cb...), 14 windows, 112 UNet calls, batch 2.
+
+=====================================================================================================================================
+4. DEV CURVE (renders: outputs/deep_20261004/scale_gt/renders/; registered scores outputs/deep_20261004/scale_gt/score_reg_dev_stage1/;
+   table TABLE_DEV_stage1.txt).  REG_FRAME5 = PRIMARY (5 clips; 0091 unregistrable), delta vs origin_s8; 8 steps, guidance 1.01.
+=====================================================================================================================================
+                    REG_FRAME5   delta  better | REG_CLIP5 delta | UNREG6  delta  better | sharp ratio | rPSNRreg delta
+  origin            0.2568                     | 0.2555          | 0.4616                |   1.000     |  20.093
+  MAIN   250        0.2695     +0.0127   0/5   | +0.0127         | 0.4707 +0.0091  1/6   |   0.893     |  +0.217 dB
+  MAIN   500        0.2701     +0.0133   0/5   | +0.0129         | 0.4716 +0.0100  0/6   |   0.928     |  +0.179
+  MAIN  1000        0.2703     +0.0136   0/5   | +0.0137         | 0.4713 +0.0097  0/6   |   0.902     |  +0.165
+  MAIN  1500        0.2717     +0.0149   0/5   | +0.0145         | 0.4723 +0.0107  0/6   |   0.913     |  +0.211
+  MAIN  2000        0.2708     +0.0140   0/5   | +0.0136         | 0.4717 +0.0101  0/6   |   0.917     |  +0.206
+  MAIN  2500        0.2699     +0.0132   0/5   | +0.0130         | 0.4712 +0.0096  0/6   |   0.922     |  +0.190
+  MAIN  3000        0.2703     +0.0135   0/5   | +0.0133         | 0.4708 +0.0092  1/6   |   0.931     |  +0.178
+  CONTRAST8 250     0.2726     +0.0159   0/5   | +0.0157         | 0.4737 +0.0121  0/6   |   0.887     |  +0.229
+  CONTRAST8 500     0.2773     +0.0205   0/5   | +0.0199         | 0.4775 +0.0159  0/6   |   0.870     |  +0.213
+  CONTRAST8 1000    0.2741     +0.0173   0/5   | +0.0170         | 0.4747 +0.0132  0/6   |   0.897     |  +0.158
+  colour-removed (diagnostic): MAIN 500 +0.0134, MAIN 1000 +0.0137, CONTRAST 500 +0.0201 (REG_FRAME5) -- unchanged.
+Selection (PREREG): lowest registered dev metric = step 250 (0.2695; 2500 = 0.2699 within the 0.0005 tie band -> earliest);
+neighbours 0/500 -> Stage 2 empty.  STILL-DEGRADES rule met: MAIN worse than origin at every evaluated checkpoint (7/7).
+Scale effect: MAIN better than CONTRAST at all three matched steps (250/500/1000) -> "scale helps" (descriptive), but it
+removes only ~20-35 % of the damage and does not change its sign.
+The damage appears within the first 250 steps and then plateaus (+0.013 to +0.015 for 250..3000): not slow over-fitting.
+
+=====================================================================================================================================
+5. MECHANISM DIAGNOSTICS (never used for selection)
+=====================================================================================================================================
+(a) Held-out denoising loss [HELDOUT_LOSS_v1.txt; heldout_loss_v1.json]: masked v-MSE vs the dev clips' registered real right eye,
+    17 windows of 5 dev clips, same noise for every checkpoint: origin 0.3114 -> MAIN 0.3007 (250) 0.3007 (500) 0.3007 (1000)
+    0.2989 (2000) 0.2997 (3000); CONTRAST 0.3023 / 0.3007 / 0.3012 (250/500/1000).  Gains concentrated at sigma >= 7
+    (e.g. sigma 7.28: 0.173 -> 0.150).  The GT-trained denoiser GENERALISES in its own objective to clips it never saw, while the
+    samples it produces get worse: this loss on this target is misaligned with sample quality.  The same loss trained the original
+    model successfully, so the loss alone cannot be blamed; the leading untested explanation is the geometric inconsistency of the
+    target (section 0, SCOPE).
+(b) Colour [COLOR_SHIFT_DEV_v1.txt]: right-eye mean RGB shift vs origin, 6 dev clips: MAIN 250 (+1.5,+1.2,+3.1), 500..3000
+    (+2.1..2.3, +1.6..1.7, +4.0..4.2); training-data offset (+2.1,+2.7,+4.9).  Left eye unchanged (0.00).  The model learns the
+    right camera's colour response -> an inter-ocular colour mismatch.  Colour-removed rows (color_remove_v1.py, reference =
+    origin render) keep the full LPIPS damage (section 4) -> colour is not what LPIPS penalises; blur/haze is.
+(c) Sharpness drops 7-13 % on dev at every checkpoint while registered rPSNR rises 0.16-0.23 dB: regression toward the
+    conditional mean.  On test clip 0301 the selected checkpoint renders foliage as a low-contrast haze with speckle
+    [outputs/deep_20261004/scale_gt/panels/0301_f076_crop_origin_vs_selMain250s8_vs_regGT.png: origin | selected | registered GT].
+
+=====================================================================================================================================
+6. TEST (one time, selected MAIN step 250; renders outputs/deep_20261004/scale_gt/renders/<clip>_selMain250_s{8,25}/; registered
+   scores outputs/deep_20261004/scale_gt/score_reg_test_main_v1_s250/; full per-clip table TABLE_TEST_main_v1_s250.txt)
+=====================================================================================================================================
+Gates: G0 PASS (registered-scorer UNREG == score_clip_ll on 72 cells, max |d| 4.91e-07); G-REG PASS (origin_ll / s25_ll UNREG,
+REG_CLIP, REG_FRAME reproduce eval_robustness score_v1 exactly, 72 cells, max |d| 0).
+                              origin -> selected     delta     pct-boot95 CI          better   n=11 (no 0125)   sharp ratio  rPSNRreg
+  8 steps  REG_FRAME (PRIMARY) 0.2430 -> 0.2896     +0.0466   [+0.0288,+0.0676]       0/12     +0.0450 0/11     0.856        +0.056 dB
+  8 steps  REG_CLIP            0.2454 -> 0.2920     +0.0466   [+0.0288,+0.0675]       0/12
+  8 steps  UNREG               0.3933 -> 0.4310     +0.0378   [+0.0211,+0.0582]       0/12     +0.0368 0/11
+  25 steps REG_FRAME vs s25    0.2278 -> 0.2485     +0.0207   [+0.0142,+0.0279]       0/12     +0.0189 0/11     0.886        +0.091 dB
+  25 steps REG_CLIP            0.2301 -> 0.2510     +0.0209                           0/12
+  25 steps UNREG               0.3786 -> 0.3942     +0.0156   [+0.0095,+0.0220]       1/12     +0.0144 1/11
+  colour-removed 8 steps REG_FRAME +0.0460 (0/12), 25 steps +0.0201 (0/12)   [PREREG_ADDENDUM_2 rows: colour is not the cause]
+  test colour shift of the selected model vs origin (mean of 12 clips): 8 steps (+1.7,+1.1,+2.9)/255, 25 steps (+1.5,+1.1,+3.2)/255
+  [color_remove_test_v1.log]
+Worst clip 0301: 8 steps REG_FRAME 0.4051 -> 0.5408 (+0.136), UNREG 0.4351 -> 0.5622, sharpness 0.0235 -> 0.0168; nearly as bad
+as the 1-clip regB run that was TRAINED on 0301 (UNREG 0.5959 at step 200, clean_controls/regB/RESULTS.txt) -- the scale model
+never saw 0301.  Least affected: 0147 +0.0035, 0141 +0.0078 (REG_FRAME).  The table's p_sign tests the improvement direction
+(1.0000); in the degradation direction 12/12 clips are worse at 8 steps (one-sided p = 2.4e-4) and 12/12 at 25 steps REG_FRAME.
+PRE-REGISTERED READOUT
+  WORKS AT SCALE : NO (8-step REG_FRAME +0.0466, 0/12, sharpness 0.856 < 0.90).
+  STILL DEGRADES : YES (dev: all 7 evaluated MAIN checkpoints worse, 0/5 each); the test agrees at 8 steps (0/12) and at 25 steps
+                   (0/12).
+  25-step reading: NOT "a better denoiser the 8-step trajectory cannot use" -- the 25-step samples are worse than origin's
+                   25-step samples too (+0.021, 0/12); the 8-step trajectory roughly doubles the damage (+0.047).
+  Dev -> test: the test clips are hit ~3.5x harder than dev (+0.047 vs +0.013 registered); the dev clips are low-texture (origin
+               UNREG 0.46 vs 0.39 on test) and the blur/haze costs most on textured clips.
+
+=====================================================================================================================================
+7. DEVIATIONS / FAILURES (all recorded before the numbers they could affect)
+=====================================================================================================================================
+* Dev = 6 clips, not 8 (0311, 0351 are >= 0310); the registered dev metric uses 5 (0091's real right eye is ~-270 px away,
+  beyond the scorer's grid) [PREREG.txt].
+* Not every 250-step checkpoint was rendered on dev: Stage 1 = MAIN 250/500/1000/1500/2000/2500/3000 + CONTRAST 250/500/1000,
+  Stage 2 (neighbours of the best) was empty; MAIN 750/1250/1750/2250/2750 exist on disk but were not rendered (budget; GPU 1
+  shared with another workflow).  The curve is flat (+0.013..+0.015), so they could not change the verdict.
+* Smoke v1 crashed on an over-strict "no two consecutive steps from one clip" assertion with 2 clips; the ordering was replaced
+  by a greedy interleave (tested offline: 0 adjacent pairs) and re-smoked (smoke_v1b).  The first registration range [-120,40]
+  was too narrow for train clip 0094 (-140 px) -> widened to [-240,40] (prep v2/v3) and the estimator gate re-run (PASS).
+* Only 754 of 1164 windows / 215 of 291 clips survived the pre-registered validity exclusions (8 clips at the registration
+  boundary, 410 windows with < 25 % registrable area).  76 clips contributed nothing.
+* The held-out-loss, colour-shift, colour-removed, GT-sharpness and kept-composition analyses are diagnostics added after the first
+  monitoring rows were seen; they never entered selection (declared in their headers and PREREG_ADDENDUM_2 before any test render).
+
+=====================================================================================================================================
+8. OUTPUT FOLDERS (all new; nothing pre-existing overwritten or deleted; no tracked file edited)
+=====================================================================================================================================
+  records  : scripts/distill/runs/deep_20261004/scale_gt/  (scripts, PREREG*, tables, logs, train/main_v1, train/contrast8_v1)
+  renders  : outputs/deep_20261004/scale_gt/renders/<clip>_<label>/ (FFV1; dev: origin_s8, main_v1_s{250..3000}_s8,
+             contrast8_v1_s{250,500,1000}_s8, smoke_step0_s8; test: selMain250_s8, selMain250_s25; controls: origin_s25_ctlC2)
+  scores   : outputs/deep_20261004/scale_gt/score_reg_dev_stage1/, outputs/deep_20261004/scale_gt/score_reg_test_main_v1_s250/
+  diagnost.: outputs/deep_20261004/scale_gt/diag_colorremoved_v1/ (dev), outputs/deep_20261004/scale_gt/diag_colorremoved_test_v1/,
+             outputs/deep_20261004/scale_gt/panels/0301_f076_crop_origin_vs_selMain250s8_vs_regGT.png
+  big files: /mnt/ssd_data/deep_20261004/scale_gt/cache_v1/{crops (82 GB lossless uint8 crops), latents (754 windows)},
+             /mnt/ssd_data/deep_20261004/scale_gt/dev_cache_v1/, /mnt/ssd_data/deep_20261004/scale_gt/ck/{main_v1,contrast8_v1}/
+             (step0..3000 fp32 15-tensor checkpoints + optimizer state), smoke_v1/ (empty, aborted prep), smoke_v1b/ (prep v1 smoke),
+             smoke_v2/ (prep v2 smoke crops, latents, ck/smoke_v1b), regGate_v1/, regGate_v2/ (registration-gate jsons)

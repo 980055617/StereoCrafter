@@ -1,0 +1,3 @@
+# G1: the deployed windows through the array reader must reproduce the existing md5s
+0301 g1_dep_origin origin deployed
+0301 g1_dep_deliv deliv deployed

@@ -1,0 +1,16 @@
+training data (MAIN windows, n=754): registered real right eye - warped input, mean RGB offset [2.06, 2.71, 4.87] (median [2.26, 2.29, 4.19])
+render right-eye mean RGB minus origin_s8 right-eye mean RGB (every 8th frame), and left-eye check (must be 0)
+0040  main_v1_s250_s8: [1.12, 1.07, 2.34] (left 0.00) | main_v1_s500_s8: [1.76, 1.61, 3.31] (left 0.00) | main_v1_s1000_s8: [1.86, 1.56, 3.19] (left 0.00) | main_v1_s2000_s8: [2.11, 1.66, 3.32] (left 0.00) | main_v1_s3000_s8: [2.29, 1.73, 3.26] (left 0.00) | contrast8_v1_s250_s8: [1.36, 1.27, 3.29] (left 0.00) | contrast8_v1_s1000_s8: [1.04, 0.89, 3.19] (left 0.00) | smoke_step0_s8: -
+0082  main_v1_s250_s8: [0.99, 1.12, 2.48] (left 0.00) | main_v1_s500_s8: [1.45, 1.47, 3.16] (left 0.00) | main_v1_s1000_s8: [1.59, 1.36, 2.97] (left 0.00) | main_v1_s2000_s8: [1.6, 1.12, 2.63] (left 0.00) | main_v1_s3000_s8: [1.7, 1.04, 2.42] (left 0.00) | contrast8_v1_s250_s8: [0.91, 1.02, 3.15] (left 0.00) | contrast8_v1_s1000_s8: [0.83, 0.68, 2.81] (left 0.00) | smoke_step0_s8: -
+0091  main_v1_s250_s8: [0.63, 0.46, 1.8] (left 0.00) | main_v1_s500_s8: [0.99, 0.62, 2.26] (left 0.00) | main_v1_s1000_s8: [1.49, 0.96, 2.56] (left 0.00) | main_v1_s2000_s8: [1.53, 0.6, 2.13] (left 0.00) | main_v1_s3000_s8: [1.54, 0.48, 1.89] (left 0.00) | contrast8_v1_s250_s8: [0.52, 0.12, 2.17] (left 0.00) | contrast8_v1_s1000_s8: [0.57, -0.25, 1.81] (left 0.00) | smoke_step0_s8: -
+0184  main_v1_s250_s8: [2.35, 1.87, 3.75] (left 0.00) | main_v1_s500_s8: [3.33, 2.64, 5.16] (left 0.00) | main_v1_s1000_s8: [2.9, 2.17, 4.67] (left 0.00) | main_v1_s2000_s8: [3.3, 2.48, 5.1] (left 0.00) | main_v1_s3000_s8: [3.34, 2.52, 5.07] (left 0.00) | contrast8_v1_s250_s8: [2.96, 2.47, 5.3] (left 0.00) | contrast8_v1_s1000_s8: [3.43, 2.92, 6.03] (left 0.00) | smoke_step0_s8: [0.0, 0.0, 0.0] (left 0.00)
+0245  main_v1_s250_s8: [1.94, 0.75, 3.55] (left 0.00) | main_v1_s500_s8: [2.96, 1.29, 4.82] (left 0.00) | main_v1_s1000_s8: [3.05, 0.95, 5.83] (left 0.00) | main_v1_s2000_s8: [3.51, 1.48, 5.93] (left 0.00) | main_v1_s3000_s8: [3.56, 1.96, 5.96] (left 0.00) | contrast8_v1_s250_s8: [3.13, 0.64, 5.89] (left 0.00) | contrast8_v1_s1000_s8: [3.36, 1.22, 6.71] (left 0.00) | smoke_step0_s8: -
+0268  main_v1_s250_s8: [1.73, 2.01, 4.74] (left 0.00) | main_v1_s500_s8: [2.21, 2.79, 6.46] (left 0.00) | main_v1_s1000_s8: [2.2, 2.32, 5.62] (left 0.00) | main_v1_s2000_s8: [1.94, 2.09, 5.65] (left 0.00) | main_v1_s3000_s8: [1.6, 1.82, 5.27] (left 0.00) | contrast8_v1_s250_s8: [2.27, 1.95, 5.99] (left 0.00) | contrast8_v1_s1000_s8: [2.57, 1.9, 5.27] (left 0.00) | smoke_step0_s8: -
+MEAN over 6 clips  main_v1_s250_s8: [1.46, 1.21, 3.11]
+MEAN over 6 clips  main_v1_s500_s8: [2.12, 1.74, 4.19]
+MEAN over 6 clips  main_v1_s1000_s8: [2.18, 1.55, 4.14]
+MEAN over 6 clips  main_v1_s2000_s8: [2.33, 1.57, 4.13]
+MEAN over 6 clips  main_v1_s3000_s8: [2.34, 1.59, 3.98]
+MEAN over 6 clips  contrast8_v1_s250_s8: [1.86, 1.25, 4.3]
+MEAN over 6 clips  contrast8_v1_s1000_s8: [1.97, 1.23, 4.3]
+MEAN over 1 clips  smoke_step0_s8: [0.0, 0.0, 0.0]

@@ -1,0 +1,427 @@
+{
+ "clip": "0204",
+ "registration_from": "outputs/deep_20261004/input_side/scores_inputonly_v1/0204__R1.json",
+ "frames": [
+  0,
+  4,
+  8,
+  12,
+  16,
+  20,
+  24,
+  28,
+  32,
+  36,
+  40,
+  44,
+  48,
+  52,
+  56,
+  60,
+  64,
+  68,
+  72,
+  76,
+  80,
+  84,
+  88,
+  92,
+  96,
+  100,
+  104,
+  108,
+  112,
+  116,
+  120,
+  124,
+  128,
+  132,
+  136,
+  140,
+  144,
+  148
+ ],
+ "gt": {
+  "haloFrac": 0.0,
+  "haloMean": 0.0,
+  "flatHF": 0.008165217936038971,
+  "edgeHF": 0.29086291790008545,
+  "stripeE": 0.0010614977218210697
+ },
+ "gt_self": {
+  "sharp": 0.009718229994177818,
+  "selfFlatHF": 0.008165217936038971,
+  "selfFlatStripe": 0.0010614977218210697,
+  "selfEdgeHF": 0.29086291790008545
+ },
+ "variants": {
+  "deployed": {
+   "decomp": {
+    "haloFrac": 14.980670619876912,
+    "haloMean": 0.01809259131550789,
+    "flatHF": 0.012051904574036598,
+    "edgeHF": 0.2695506513118744,
+    "stripeE": 0.0025963399093598127
+   },
+   "ratio": {
+    "flatHF": 1.4760052540475237,
+    "edgeHF": 0.9267274538051219,
+    "stripeE": 2.4459213204015358
+   },
+   "self": {
+    "sharp": 0.009753530845046043,
+    "selfFlatHF": 0.010058341547846794,
+    "selfFlatStripe": 0.00153218989726156,
+    "selfEdgeHF": 0.3224758505821228
+   },
+   "self_ratio": {
+    "sharp": 1.003632436245013,
+    "selfFlatHF": 1.2318521840613843,
+    "selfFlatStripe": 1.443422690190033,
+    "selfEdgeHF": 1.1086867068180095
+   },
+   "hole_frac": 0.0002749259011787281,
+   "params": {
+    "clip": "0204",
+    "variant": "deployed",
+    "source": "deployed windows decoded from /home/kawa/master_project/StereoCrafter/video_data/splatting/0204_splatting_results.mp4",
+    "md5_warped": "7f36a0bbf87549881da4b6aef549185e",
+    "md5_mask": "48d693dbb278acab89a68c93fa6da383"
+   }
+  },
+  "R1": {
+   "decomp": {
+    "haloFrac": 15.399919438637017,
+    "haloMean": 0.018689081072807312,
+    "flatHF": 0.013726781122386456,
+    "edgeHF": 0.2742743194103241,
+    "stripeE": 0.003156197490170598
+   },
+   "ratio": {
+    "flatHF": 1.68112856630566,
+    "edgeHF": 0.9429676405314076,
+    "stripeE": 2.9733436306918604
+   },
+   "self": {
+    "sharp": 0.010043617337942123,
+    "selfFlatHF": 0.010837255977094173,
+    "selfFlatStripe": 0.0019488334655761719,
+    "selfEdgeHF": 0.3271389901638031
+   },
+   "self_ratio": {
+    "sharp": 1.033482161253566,
+    "selfFlatHF": 1.3272463836221173,
+    "selfFlatStripe": 1.835928071736997,
+    "selfEdgeHF": 1.1247187937383578
+   },
+   "hole_frac": 0.0002018889488532529,
+   "params": {
+    "clip": "0204",
+    "variant": "R1",
+    "s": 1.0,
+    "o": 0.0,
+    "mode": "bilinear",
+    "base": 1.414,
+    "ss": 1,
+    "upmode": "bilinear",
+    "formula": "disp = s*(2d-1)*20 + o ; flow = -disp",
+    "prep": "/mnt/ssd_data/deep_20261004/input_side/prep_v2/0204",
+    "mean_hole_frac": 0.0001966463808981788,
+    "mean_hole_disagree_vs_deployed": 0.00025497560030928075,
+    "median_psnr_vs_deployed_nonhole": 37.012326609143464,
+    "md5_warped": "4b7854737ecc71ce27ae77a3b2a56eee",
+    "md5_mask": "ef8611481572c826ce4053b3a15db432",
+    "seconds": 56.60808801651001
+   }
+  },
+  "NA": {
+   "decomp": {
+    "haloFrac": 16.57532220089366,
+    "haloMean": 0.02124093472957611,
+    "flatHF": 0.027894102036952972,
+    "edgeHF": 0.2981931269168854,
+    "stripeE": 0.007599113509058952
+   },
+   "ratio": {
+    "flatHF": 3.416210351696342,
+    "edgeHF": 1.0252015934850724,
+    "stripeE": 7.158859932381361
+   },
+   "self": {
+    "sharp": 0.015365079045295715,
+    "selfFlatHF": 0.014713112264871597,
+    "selfFlatStripe": 0.0018067939672619104,
+    "selfEdgeHF": 0.42800161242485046
+   },
+   "self_ratio": {
+    "sharp": 1.5810573586446213,
+    "selfFlatHF": 1.8019252370389363,
+    "selfFlatStripe": 1.7021176118609427,
+    "selfEdgeHF": 1.471489097045618
+   },
+   "hole_frac": 0.004219322873834977,
+   "params": {
+    "clip": "0204",
+    "variant": "NA",
+    "s": 1.0,
+    "o": 0.0,
+    "mode": "nearest_acc",
+    "base": 1.414,
+    "ss": 1,
+    "upmode": "bilinear",
+    "formula": "disp = s*(2d-1)*20 + o ; flow = -disp",
+    "prep": "/mnt/ssd_data/deep_20261004/input_side/prep_v2/0204",
+    "mean_hole_frac": 0.004577210056509842,
+    "mean_hole_disagree_vs_deployed": 0.004573605883375874,
+    "median_psnr_vs_deployed_nonhole": 35.20758079870009,
+    "md5_warped": "c0f4c6117cf139255b0b320f89d809fe",
+    "md5_mask": "d7d2e57e0e4ea692fddd2e6bd4dc3820",
+    "seconds": 81.95741963386536
+   }
+  },
+  "B1": {
+   "decomp": {
+    "haloFrac": 15.404018800027805,
+    "haloMean": 0.018693789839744568,
+    "flatHF": 0.013211289420723915,
+    "edgeHF": 0.27428361773490906,
+    "stripeE": 0.0029024151153862476
+   },
+   "ratio": {
+    "flatHF": 1.6179959339986514,
+    "edgeHF": 0.9429996085961306,
+    "stripeE": 2.734264102241277
+   },
+   "self": {
+    "sharp": 0.009892044588923454,
+    "selfFlatHF": 0.010310815647244453,
+    "selfFlatStripe": 0.0016809672815725207,
+    "selfEdgeHF": 0.3270781636238098
+   },
+   "self_ratio": {
+    "sharp": 1.0178854168763003,
+    "selfFlatHF": 1.2627728650983605,
+    "selfFlatStripe": 1.5835806775813988,
+    "selfEdgeHF": 1.1245096693149612
+   },
+   "hole_frac": 0.0002018889488532529,
+   "params": {
+    "clip": "0204",
+    "variant": "B1",
+    "s": 1.0,
+    "o": 0.0,
+    "mode": "bilinear",
+    "base": 1.0,
+    "ss": 1,
+    "upmode": "bilinear",
+    "formula": "disp = s*(2d-1)*20 + o ; flow = -disp",
+    "prep": "/mnt/ssd_data/deep_20261004/input_side/prep_v2/0204",
+    "mean_hole_frac": 0.0001966463808981788,
+    "mean_hole_disagree_vs_deployed": 0.00025497560030928075,
+    "median_psnr_vs_deployed_nonhole": 36.91988981536165,
+    "md5_warped": "7c1d9de1de81631dcff4eea145811b98",
+    "md5_mask": "ef8611481572c826ce4053b3a15db432",
+    "seconds": 108.49764752388
+   }
+  },
+  "B4": {
+   "decomp": {
+    "haloFrac": 15.404152474855765,
+    "haloMean": 0.018694821745157242,
+    "flatHF": 0.013740749098360538,
+    "edgeHF": 0.27430108189582825,
+    "stripeE": 0.0031567353289574385
+   },
+   "ratio": {
+    "flatHF": 1.682839234175581,
+    "edgeHF": 0.9430596511792322,
+    "stripeE": 2.973850309863925
+   },
+   "self": {
+    "sharp": 0.010043611750006676,
+    "selfFlatHF": 0.010834942571818829,
+    "selfFlatStripe": 0.0019483185606077313,
+    "selfEdgeHF": 0.32732105255126953
+   },
+   "self_ratio": {
+    "sharp": 1.0334815862583817,
+    "selfFlatHF": 1.3269630592462751,
+    "selfFlatStripe": 1.8354429977157762,
+    "selfEdgeHF": 1.1253447325441046
+   },
+   "hole_frac": 0.0002018889488532529,
+   "params": {
+    "clip": "0204",
+    "variant": "B4",
+    "s": 1.0,
+    "o": 0.0,
+    "mode": "bilinear",
+    "base": 4.0,
+    "ss": 1,
+    "upmode": "bilinear",
+    "formula": "disp = s*(2d-1)*20 + o ; flow = -disp",
+    "prep": "/mnt/ssd_data/deep_20261004/input_side/prep_v2/0204",
+    "mean_hole_frac": 0.0001966463808981788,
+    "mean_hole_disagree_vs_deployed": 0.00025497560030928075,
+    "median_psnr_vs_deployed_nonhole": 36.99771174398814,
+    "md5_warped": "34fbbe3c36628719be933392d54c45e2",
+    "md5_mask": "ef8611481572c826ce4053b3a15db432",
+    "seconds": 117.92855167388916
+   }
+  },
+  "ZB": {
+   "decomp": {
+    "haloFrac": 15.557031919766587,
+    "haloMean": 0.01886431872844696,
+    "flatHF": 0.01419372484087944,
+    "edgeHF": 0.27650561928749084,
+    "stripeE": 0.003294884692877531
+   },
+   "ratio": {
+    "flatHF": 1.7383154928703541,
+    "edgeHF": 0.9506389514474771,
+    "stripeE": 3.103996009737014
+   },
+   "self": {
+    "sharp": 0.010410499759018421,
+    "selfFlatHF": 0.01114791352301836,
+    "selfFlatStripe": 0.001972304889932275,
+    "selfEdgeHF": 0.33104339241981506
+   },
+   "self_ratio": {
+    "sharp": 1.0712341409140698,
+    "selfFlatHF": 1.365292832395154,
+    "selfFlatStripe": 1.858039682410863,
+    "selfEdgeHF": 1.1381423070696555
+   },
+   "hole_frac": 0.00032150536252741226,
+   "params": {
+    "clip": "0204",
+    "variant": "ZB",
+    "s": 1.0,
+    "o": 0.0,
+    "mode": "zbuf_bilinear",
+    "base": 1.414,
+    "ss": 1,
+    "upmode": "bilinear",
+    "formula": "disp = s*(2d-1)*20 + o ; flow = -disp",
+    "prep": "/mnt/ssd_data/deep_20261004/input_side/prep_v2/0204",
+    "mean_hole_frac": 0.00031638127903099706,
+    "mean_hole_disagree_vs_deployed": 0.0003322463775926692,
+    "median_psnr_vs_deployed_nonhole": 36.65797892926341,
+    "md5_warped": "b3035a11ddaa811305c6f7e3e0e105c0",
+    "md5_mask": "6c26532a5cf23140c843d35d905f3815",
+    "seconds": 120.98727369308472
+   }
+  },
+  "SS4": {
+   "decomp": {
+    "haloFrac": 15.127267347873591,
+    "haloMean": 0.018358226865530014,
+    "flatHF": 0.013128946535289288,
+    "edgeHF": 0.2714894413948059,
+    "stripeE": 0.0029158685356378555
+   },
+   "ratio": {
+    "flatHF": 1.6079113427385467,
+    "edgeHF": 0.9333931026851126,
+    "stripeE": 2.7469381004751376
+   },
+   "self": {
+    "sharp": 0.00951685942709446,
+    "selfFlatHF": 0.010456935502588749,
+    "selfFlatStripe": 0.0018374400679022074,
+    "selfEdgeHF": 0.32473281025886536
+   },
+   "self_ratio": {
+    "sharp": 0.9792790902042862,
+    "selfFlatHF": 1.2806682668486755,
+    "selfFlatStripe": 1.730988234953493,
+    "selfEdgeHF": 1.116446237297305
+   },
+   "hole_frac": 2.2397403828581868e-05,
+   "params": {
+    "clip": "0204",
+    "variant": "SS4",
+    "s": 1.0,
+    "o": 0.0,
+    "mode": "bilinear",
+    "base": 1.414,
+    "ss": 4,
+    "upmode": "bilinear",
+    "formula": "disp = s*(2d-1)*20 + o ; flow = -disp",
+    "prep": "/mnt/ssd_data/deep_20261004/input_side/prep_v2/0204",
+    "mean_hole_frac": 2.11310088415195e-05,
+    "mean_hole_disagree_vs_deployed": 0.0002738610184131255,
+    "median_psnr_vs_deployed_nonhole": 37.15552216444374,
+    "md5_warped": "e4317ac3b20155b52b06faac8958d5f5",
+    "md5_mask": "788135688dd2b224a321dd68f9be2a11",
+    "seconds": 269.7067496776581
+   }
+  },
+  "SS4C": {
+   "decomp": {
+    "haloFrac": 15.677205590103071,
+    "haloMean": 0.01902146451175213,
+    "flatHF": 0.014324856922030449,
+    "edgeHF": 0.27594685554504395,
+    "stripeE": 0.0035685314796864986
+   },
+   "ratio": {
+    "flatHF": 1.7543753313435233,
+    "edgeHF": 0.9487178961734637,
+    "stripeE": 3.3617891082841385
+   },
+   "self": {
+    "sharp": 0.010704473592340946,
+    "selfFlatHF": 0.012081535533070564,
+    "selfFlatStripe": 0.0024422553833574057,
+    "selfEdgeHF": 0.3286438286304474
+   },
+   "self_ratio": {
+    "sharp": 1.1014838709059145,
+    "selfFlatHF": 1.479634178500744,
+    "selfFlatStripe": 2.300763659829203,
+    "selfEdgeHF": 1.129892497136194
+   },
+   "hole_frac": 2.2397403828581868e-05,
+   "params": {
+    "clip": "0204",
+    "variant": "SS4C",
+    "s": 1.0,
+    "o": 0.0,
+    "mode": "bilinear",
+    "base": 1.414,
+    "ss": 4,
+    "upmode": "bicubic",
+    "formula": "disp = s*(2d-1)*20 + o ; flow = -disp",
+    "prep": "/mnt/ssd_data/deep_20261004/input_side/prep_v2/0204",
+    "mean_hole_frac": 2.11310088415195e-05,
+    "mean_hole_disagree_vs_deployed": 0.0002738610184131255,
+    "median_psnr_vs_deployed_nonhole": 36.8827303079003,
+    "md5_warped": "4e517c0eb1979032982a08a9482a412e",
+    "md5_mask": "788135688dd2b224a321dd68f9be2a11",
+    "seconds": 294.84130239486694
+   }
+  }
+ },
+ "check_R1_vs_scorer": {
+  "flatHF": [
+   0.013726781122386456,
+   0.013726781122386456
+  ],
+  "edgeHF": [
+   0.2742743194103241,
+   0.2742743194103241
+  ],
+  "stripeE": [
+   0.003156197490170598,
+   0.003156197490170598
+  ],
+  "haloFrac": [
+   15.399919438637017,
+   15.399919438637017
+  ]
+ },
+ "check_R1_vs_scorer_pass": true
+}

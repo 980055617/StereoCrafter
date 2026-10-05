@@ -1,0 +1,90 @@
+PRE-REGISTRATION r2 -- deep_20261004 / external_models lane (GPU 0, every GPU command under flock /tmp/claude-gpu0.lock)
+Written 2026-10-04 22:15 JST, BEFORE any render or score of an external model.  Supersedes PREREG.txt (written by the
+stopped first attempt of this round; kept unmodified).  At the time of writing no external model has been run or scored
+by this lane; the only numbers read are the PUBLISHED origin / deliverable rows (more_20261004/eval_robustness/
+PUBLISHED_ROWS.json, outputs/more_20261004/eval_robustness/score_v1/<clip>.json).
+
+QUESTION  Is there an open model that generates a SHARPER, more correct right eye than StereoCrafter (origin) today, on
+          the SAME left eye / warp / mask?  If yes, can it serve as a TEACHER for distillation into the Mamba UNet?
+
+CANDIDATE (search record: CANDIDATES_r2.txt)
+  M2SVid (Shvetsova et al., 3DV 2026; arXiv 2505.16565), code github.com/google-research/m2svid commit 11b0133 (Apache-2.0),
+  FULL-ATTENTION weights https://storage.googleapis.com/gresearch/m2svid/m2svid_weights.pt, md5
+  b8618e8d8995042a72038f45c356f2f6 (verified), /mnt/ssd_data/deep_20261004/external_models/ckpts/.
+  SVD-based; inputs = left video + warped right + disocclusion mask (exactly our inputs) and it ADDITIONALLY conditions on
+  the left video (VAE latent concat + per-frame CLIP) -- information origin's UNet does not get.  1 feed-forward step.
+  Paper (Table 1, Stereo4D, 512x512, 16 frames @5 fps): LPIPS 0.180 vs StereoCrafter-25-step 0.242.
+
+ENVIRONMENT  venv /mnt/ssd_data/deep_20261004/external_models/venv (--system-site-packages on the stereocrafter conda python:
+  torch 2.4.0+cu121, xformers 0.0.27.post2) + lane-local pins (constraints.txt; pytorch-lightning 1.9.5, omegaconf 2.3.0,
+  open-clip-torch 2.29.0, kornia 0.6.9, pytorch-msssim 1.0.0 --no-deps, ...).  Shared envs untouched.
+  Deviations from the official env: torch 2.4.0 (official 2.0.1), PL 1.9.5 (1.5.0).
+  Config m2svid_fa_infer.yaml (this dir) = configs/m2svid.yaml with inference-neutral changes only: OpenCLIP built with
+  pretrained=None (its weights are inside m2svid_weights.pt), loss_fn_config + lightning section dropped (training only),
+  conditioner encoders chunked 5 frames at a time (per-frame 2D encoder: same math).  The sgm VGG-LPIPS that
+  VideoLDM.__init__ builds for test_step metrics is stubbed (no parameters in the state dict, avoids VGG downloads).
+  cwd = the m2svid repo dir under the lane, TORCH_HOME lane-local, absolute paths for all clip I/O.
+
+INPUTS (identical to the deployed origin run)
+  video_data/splatting/<clip>_splatting_results.mp4: TL left eye, BL occlusion mask, BR warped right eye; every quadrant
+  cropped to multiples of 128 (top-left) then centre-cropped 576x1024, float32 (u8/255; mask = mean over RGB), exactly as
+  utils/inpainting.read_and_prepare_video + inpainting_inference._center_crop_frames.
+  Then M2SVid's OFFICIAL preprocessing (inpaint_and_refine.py): closing 11 on the mask -> warped[mask>0.5]=0 ->
+  dilation 3 -> videos *2-1 -> mask resized to latent res with antialias=0 (channel 0); cond_aug 0.02; fps_id = the clip's
+  real fps (official inference; training sampled fps in [5,30]); motion_bucket_id 127; 1 Euler step from a ZERO latent at
+  sigma 700 (configs/m2svid.yaml sampler unchanged); whole model .half() as the official script.
+
+PRIMARY CONFIG (fixed now)  "m2svid_fa_w16"
+  576x1024 full frame (SVD's native resolution; M2SVid trained on <=512x512 crops but the paper's qualitative / user-study
+  results were generated at 640x1152 with 16 frames -> 576x1024 x 16 frames is the closest setting the authors used),
+  16-frame NON-overlapping windows, the last window anchored to the clip end (only its new frames kept), seed 1234 via
+  pytorch_lightning.seed_everything once per clip (only cond_aug noise is random), output = the model's fully generated
+  right eye (NO compositing).  float16 decode -> official conversion (((x+1)/2).clip(0,1)*255).astype(uint8).
+  Writer: FFV1 lossless SBS [left | right] 576x2048 (same writer as fulldata_v2/beyond4/infer_lossless.py), left half =
+  origin's float32 path ((u8/255)*255 -> uint8).
+  MEMORY FALLBACK ORDER (only if the primary OOMs on the smoke window, recorded as a deviation):
+    F1 identity guider: drop the unconditional half (LinearPredictionGuider at scale 1.0 returns x_u + 1*(x_c - x_u)
+       = x_c), F2 chunked VAE decode, F3 shorter windows (8).
+SECONDARY (exploratory, DEV clips only: 0040 0082 0091 0184 0245 0268; 0311 has no train bundle and 0351 resolves into
+  train_leftGT_broken -> both excluded, see GT_VALIDITY_r2.txt): 25-frame windows ("m2svid_fa_w25"), the no-full-attention
+  weights, 512 spatial tiling.  Any choice among variants is made on DEV clips only, never on a test clip.
+
+CLIPS  smoke: the FIRST 16-frame window of 0301 only (G2 key counts, peak VRAM, s/window, mask polarity, one frame looked
+  at).  Then full 0301, 0204.  Then the regime set 0052 0147 (with 0301 0204 = the 4-clip set of fulldata_v2/beyond4).  Then
+  the remaining 8 test clips (0042 0125 0128 0141 0170 0225 0251 0259) if the ~3-hour cap allows.  All 12 test clips are
+  verified valid GT (GT_VALIDITY_r2.txt).  No training of any kind in this lane.
+
+SCORING (lossless renders only)
+  UNREG      scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py verbatim (LPIPS-Alex, SCORE_STEP=4); also 'sharp'
+             (mean |horizontal gradient| of the right eye), gtSharp and rightPSNR.  origin_ll is re-scored in the same
+             call and must reproduce its published lpips (|d| < 1e-5).
+  REG_FRAME  primary registered-GT LPIPS: copy of more_20261004/eval_robustness/score_registered_v1.py (labels / rows file
+             and inspection-panel slot changed only); rows = [origin_ll, mstudent2_step800_deliv_ll, m2svid]; origin's
+             UNREG and REG_FRAME must reproduce score_v1/<clip>.json.  REG_CLIP, BLK_LOCAL also reported.
+  NO-REF     sharp / gtSharp ratio (descriptive, never gating); a GT-free IQA metric only if a finished scorer exists in
+             another lane (copied, not modified).
+  Reference rows: origin_ll, mstudent2_step800_deliv_ll (deliverable), s25_ll (published).
+
+GATES
+  G0  scorer left-eye offset of the M2SVid render == origin's published offset; md5 of the render's left half == md5 of
+      origin_ll's left half (all frames).  Fail -> that clip's numbers are void.
+  G1  frame count == origin_ll's; no NaN/Inf; not constant; one frame visually inspected per clip set.
+  G2  checkpoint restore: 0 missing keys; unexpected keys only from dropped training-only modules (loss_fn.*).
+  One retry per failed run, errors quoted.
+
+DECISION RULES (per contrast, M2SVid minus origin, computed in BOTH UNREG and REG_FRAME; negative = M2SVid better)
+  LANE RULE    CLEARLY BETTER  mean delta <= -0.010 in BOTH UNREG and REG_FRAME AND better on >= 3/4 regime clips
+                               (>= 10/12 when all 12 test clips are run) in both.
+               CLEARLY WORSE   mean delta >= +0.010 in both and worse on >= 3/4 (>= 10/12) in both.
+               otherwise       NO CLEAR DIFFERENCE.
+  PROGRAM RULE (the round's pre-set success criterion, reported alongside): REG_FRAME mean delta <= -0.005 vs origin AND
+               better on >= 9/12 clips (only evaluable if all 12 test clips are run).
+  The same rules are applied vs the deliverable.  Caveat fixed now: M2SVid was trained with an LPIPS(VGG)+L1 image loss, so
+  an LPIPS-Alex win is partly in its training metric; rightPSNR, sharp/gtSharp and the inspection panels are reported next
+  to it and a win with a large sharpness loss (sharp/gtSharp well below origin's) is flagged as possible blur.
+TEACHER FRAMING (fixed now)  M2SVid is a one-step x0 regressor: it has no sampling trajectory, so it cannot be a
+  trajectory teacher in this project's sense (distil the trajectory, never a point target; point-target families are
+  closed).  If it wins, the assessment covers: license (code Apache-2.0; weights = SVD-XT fine-tune -> SVD terms), speed
+  (measured s/window on the 4090), output space (same SVD VAE, scale 0.18215; 13-ch vs 9-ch UNet input), temporal seams
+  (tLP needed because windows do not overlap), and whether it is better used directly / stacked / as output-space
+  supervision than as a distillation teacher.

@@ -1,0 +1,27 @@
+G4 PASS 0204_R1_origin: decode==writer True  left==origin_ll left True  frames 151 (ref 151)
+G4 PASS 0204_R1_deliv: decode==writer True  left==origin_ll left True  frames 151 (ref 151)
+G4 PASS 0204_RF_origin: decode==writer True  left==origin_ll left True  frames 151 (ref 151)
+G4 PASS 0204_RF_deliv: decode==writer True  left==origin_ll left True  frames 151 (ref 151)
+G4 PASS 0204_RO_origin: decode==writer True  left==origin_ll left True  frames 151 (ref 151)
+G4 PASS 0204_RO_deliv: decode==writer True  left==origin_ll left True  frames 151 (ref 151)
+G4 PASS 0052_R1_origin: decode==writer True  left==origin_ll left True  frames 168 (ref 168)
+G4 PASS 0052_R1_deliv: decode==writer True  left==origin_ll left True  frames 168 (ref 168)
+G4 PASS 0052_RF_origin: decode==writer True  left==origin_ll left True  frames 168 (ref 168)
+G4 PASS 0052_RF_deliv: decode==writer True  left==origin_ll left True  frames 168 (ref 168)
+G4 PASS 0052_RO_origin: decode==writer True  left==origin_ll left True  frames 168 (ref 168)
+G4 PASS 0052_RO_deliv: decode==writer True  left==origin_ll left True  frames 168 (ref 168)
+G4 PASS 0147_R1_origin: decode==writer True  left==origin_ll left True  frames 172 (ref 172)
+G4 PASS 0147_R1_deliv: decode==writer True  left==origin_ll left True  frames 172 (ref 172)
+G4 PASS 0147_RF_origin: decode==writer True  left==origin_ll left True  frames 172 (ref 172)
+G4 PASS 0147_RF_deliv: decode==writer True  left==origin_ll left True  frames 172 (ref 172)
+G4 PASS 0147_RO_origin: decode==writer True  left==origin_ll left True  frames 172 (ref 172)
+G4 PASS 0147_RO_deliv: decode==writer True  left==origin_ll left True  frames 172 (ref 172)
+G4 PASS 0301_SS4_origin: decode==writer True  left==origin_ll left True  frames 151 (ref 151)
+G4 PASS 0301_SS4_deliv: decode==writer True  left==origin_ll left True  frames 151 (ref 151)
+G4 PASS 0204_SS4_origin: decode==writer True  left==origin_ll left True  frames 151 (ref 151)
+G4 PASS 0204_SS4_deliv: decode==writer True  left==origin_ll left True  frames 151 (ref 151)
+G3 PASS 0204: 8 renders, 14 windows, 1 distinct init-latent fingerprint lists
+G3 PASS 0052: 6 renders, 15 windows, 1 distinct init-latent fingerprint lists
+G3 PASS 0147: 6 renders, 16 windows, 1 distinct init-latent fingerprint lists
+G3 PASS 0301: 2 renders, 14 windows, 1 distinct init-latent fingerprint lists
+TOTAL failures: 0

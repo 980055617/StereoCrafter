@@ -1,0 +1,246 @@
+======================================================================================================================
+SKEPTIC LANE (deep_20261004) -- TABLES_v1.  CPU only.  Pre-registration: PREREG.txt + ADDENDUM_1..5 (3-5 exploratory).
+FRAME SETS: S38 = the 38 published scored frames (origin REG_FRAME 0.2432); S10 = every 4th of them (oracle set; origin 0.2455);
+S6 = 6 frames for the slow held-out metrics.  Deltas are only ever taken within one frame set.
+inputs: outputs/deep_20261004/skeptic/s38_v1 (12 clips), m3_v2 (12), m6_v2 (12), trainsample_v1.json (yes), m5supp_v1.json (yes)
+======================================================================================================================
+
+--- GATES ---
+G0 validity (12 test clips): 12/12 valid; min MAD(TL,TR) 8.70 [scripts/distill/runs/deep_20261004/skeptic/G0_test12.json]
+G1 temporal alignment: 24 gate comparisons (splat TL vs left_v2, train TR vs right_v2), best k = 0 on 24/24
+G2 CPU LPIPS reproduces eval_robustness / ays registered cells: 144 cells, max |dev| 1.99e-04 (0141 origin); rule 2e-4 -> PASS
+G0 train sample AVP: 22/24 valid; excluded by MAD<=5: ['0007', '0013']
+G0 train sample iPhone: 24/24 valid; excluded by MAD<=5: []
+
+--- THE ROUND'S BAR vs EXISTING ROWS (REG_FRAME, 12 clips, S38; my CPU re-score of the published cells) ---
+bar = 'registered LPIPS >= 0.005 better than origin on >= 9/12 clips'
+  AYS8         mean d -0.0114  improved 12/12  t95 [-0.0167,-0.0062]  -> PASSES the bar  (TRAINING-FREE)
+  deliverable  mean d -0.0132  improved 11/12  t95 [-0.0200,-0.0063]  -> PASSES the bar
+  s25          mean d -0.0152  improved 11/12  t95 [-0.0230,-0.0075]  -> PASSES the bar  (TRAINING-FREE)
+
+--- Q1 CAMERA DIFFERENCES: left eye vs REAL right eye on the deployed 576x1024 window ---
+rho_b = sqrt(P_right/P_left) of Hann-windowed luma power, bands b1 [1/32,1/16) b2 [1/16,1/8) b3 [1/8,1/4) b4 [1/4,1/2]
+cyc/px.  T = train tile (what the metric sees), V = crf-12 v2 sources (the cameras).  <1 = right eye has LESS detail.
+clip  fam                   rho_T b1..b4                rho_V b1..b4 sh R/L T sh R/L V    dY8   dL*   da*   db*   nzL   nzR sig_rel
+0042  AVP     0.965  0.965  0.990  0.980  0.962  0.963  0.978  0.973    0.976    0.979  +0.15 +0.06 +0.02 -0.07  0.59  0.57  +0.250
+0052  AVP     1.147  1.150  1.165  1.116  1.145  1.148  1.156  1.120    1.215    1.214  -2.79 -1.27 -0.01 -0.04  0.83  0.92  -0.677
+0125  AVP     1.033  1.027  0.986  0.886  1.036  1.032  0.991  0.876    1.038    1.046  +0.37 +0.20 +0.05 -0.05  0.70  0.68  -0.177
+0128  AVP     1.004  0.992  0.994  1.034  1.002  0.988  0.988  1.027    1.031    1.030  -0.10 -0.03 -0.03 +0.25  0.93  0.92  +0.000
+0141  AVP     0.927  0.891  0.850  0.901  0.927  0.891  0.854  0.901    1.014    1.017  +0.21 +0.09 -0.22 +0.03  0.45  0.46  +0.500
+0147  AVP     0.962  0.971  0.977  0.983  0.964  0.972  0.982  1.011    0.941    0.965  -0.42 -0.18 +0.01 +0.09  0.42  0.42  +0.250
+0170  iPhone  1.006  1.003  1.078  1.304  1.006  1.002  1.075  1.298    1.427    1.433  -0.59 -0.05 +0.28 -1.87  2.76  4.19  -0.146
+0204  iPhone  0.949  0.827  0.732  0.821  0.950  0.826  0.730  0.818    0.896    0.903  +2.77 +1.45 +0.68 -3.11  1.05  0.96  +0.604
+0225  iPhone  1.155  0.995  0.894  1.020  1.154  0.993  0.895  1.021    1.125    1.137 -11.10 -4.83 +0.03 -1.05  1.94  2.25  +0.604
+0251  iPhone  0.926  0.909  0.953  1.042  0.925  0.908  0.963  1.044    1.100    1.107  +2.58 +1.32 -0.01 -2.90  1.11  1.14  +0.000
+0259  iPhone  0.996  0.885  0.712  0.833  0.994  0.883  0.713  0.822    0.834    0.836  +2.33 +1.12 -1.18 +0.22  3.94  3.26  +0.854
+0301  iPhone  0.916  0.889  0.954  1.203  0.915  0.887  0.952  1.195    1.116    1.113  -3.03 -1.12 -0.78 -0.31  3.64  4.10  -0.750
+  AVP    pooled test+train n=28: median rho_T [0.97, 0.964, 0.932, 0.896]  rho_V [0.969, 0.961, 0.922, 0.895]  b3 IQR T [0.856,0.989]  share b3<0.87: 0.36  share b3>1.15: 0.07
+  R1 AVP: median b3 T 0.932 V 0.922 -> no material asymmetry
+  R2 AVP: median bias-corrected sigma_rel +0.125 px over 6 test clips -> not material  (raw [0.25, -0.5, 0.0, 0.0, 0.5, 0.25], ctrl [0.0, 0.25, 0.25, 0.0, 0.0, 0.0])
+  iPhone pooled test+train n=30: median rho_T [0.986, 0.931, 0.934, 1.096]  rho_V [0.983, 0.928, 0.93, 1.093]  b3 IQR T [0.826,1.077]  share b3<0.87: 0.37  share b3>1.15: 0.10
+  R1 iPhone: median b3 T 0.934 V 0.930 -> no material asymmetry
+  R2 iPhone: median bias-corrected sigma_rel +0.302 px over 6 test clips -> not material  (raw [-0.5, 0.25, 0.25, 0.0, 0.5, -0.75], ctrl [-0.5, -0.5, -0.5, 0.0, -0.5, 0.0])
+  train sample AVP n=22: exposure dY median +1.63 (IQR +1.40,+2.27) | Lab offset median [0.66, 0.37, -0.63] | noise V L/R median 0.57/0.55 | copy-left LPIPS (global reg.) median 0.2499
+  train sample iPhone n=24: exposure dY median +1.46 (IQR +0.08,+3.93) | Lab offset median [0.54, 0.29, -2.15] | noise V L/R median 2.01/2.56 | copy-left LPIPS (global reg.) median 0.1592
+
+DETAIL KEPT FROM THE INPUT (amplitude ratio output/input-left, same window, S10; b1..b4) -- the blur the user sees:
+  rho_origin_vs_input    median [0.898, 0.84, 0.687, 0.671]  min b3 0.441 max b3 0.852
+  rho_deliv_vs_input     median [0.973, 0.925, 0.795, 0.748]  min b3 0.557 max b3 0.983
+  rho_s25_vs_input       median [0.945, 0.892, 0.76, 0.672]  min b3 0.585 max b3 0.934
+  rho_GT_vs_input        median [0.985, 0.969, 0.952, 1.0]  min b3 0.703 max b3 1.115
+Mean-gradient sharpness (score_clip_ll 'sharp', S38): left input | real right GT | origin | s25
+  0042 0.0105 | 0.0102 | 0.0088 | 0.0097   origin/left 0.84  GT/left 0.97  s25/left 0.93
+  0052 0.0163 | 0.0197 | 0.0130 | 0.0137   origin/left 0.80  GT/left 1.21  s25/left 0.84
+  0125 0.0152 | 0.0160 | 0.0094 | 0.0107   origin/left 0.62  GT/left 1.05  s25/left 0.71
+  0128 0.0212 | 0.0217 | 0.0135 | 0.0157   origin/left 0.64  GT/left 1.02  s25/left 0.74
+  0141 0.0064 | 0.0065 | 0.0049 | 0.0057   origin/left 0.77  GT/left 1.01  s25/left 0.89
+  0147 0.0075 | 0.0071 | 0.0062 | 0.0067   origin/left 0.82  GT/left 0.95  s25/left 0.89
+  0170 0.0277 | 0.0396 | 0.0164 | 0.0175   origin/left 0.59  GT/left 1.43  s25/left 0.63
+  0204 0.0110 | 0.0101 | 0.0065 | 0.0076   origin/left 0.59  GT/left 0.91  s25/left 0.69
+  0225 0.0213 | 0.0243 | 0.0118 | 0.0135   origin/left 0.55  GT/left 1.14  s25/left 0.63
+  0251 0.0133 | 0.0146 | 0.0083 | 0.0093   origin/left 0.62  GT/left 1.10  s25/left 0.70
+  0259 0.0555 | 0.0453 | 0.0312 | 0.0319   origin/left 0.56  GT/left 0.82  s25/left 0.58
+  0301 0.0563 | 0.0632 | 0.0235 | 0.0295   origin/left 0.42  GT/left 1.12  s25/left 0.52
+  medians: origin/left 0.62  GT/left 1.04  s25/left 0.70
+
+--- M2 COPY-LEFT (a NO-STEREO output: the input left eye shipped as the right eye), S38 ---
+clip   origin U  origin R    CL U    CL R  CL OPT OPTpsnr   s25 R deliv R
+0042     0.4278    0.1599  0.3503  0.2532  0.1805   22.66  0.1544  0.1565
+0052     0.4467    0.2231  0.3862  0.2474  0.2189   16.87  0.2133  0.2152
+0125     0.4799    0.3627  0.3659  0.3410  0.3045   19.56  0.3240  0.3463
+0128     0.4056    0.2292  0.2845  0.2718  0.1812   20.72  0.2166  0.2170
+0141     0.4812    0.2862  0.4129  0.2808  0.2764   21.07  0.2617  0.2677
+0147     0.5269    0.2100  0.5067  0.2501  0.2510   18.14  0.2015  0.2042
+0170     0.2517    0.2058  0.1638  0.1284  0.1199   20.51  0.1987  0.1985
+0204     0.2053    0.1340  0.0897  0.1861  0.0794   24.96  0.1182  0.1144  near-mono
+0225     0.2751    0.2080  0.1377  0.2277  0.1327   19.00  0.1943  0.1932  near-mono
+0251     0.3461    0.1799  0.1674  0.2738  0.1610   23.01  0.1706  0.1667  near-mono
+0259     0.4376    0.3141  0.2949  0.4206  0.2936   17.55  0.3142  0.3159  near-mono
+0301     0.4351    0.4052  0.2165  0.2847  0.2074   17.91  0.3678  0.3644  near-mono
+mean     0.3933    0.2432  0.2814  0.2638  0.2005          0.2279  0.2300
+  copy-left beats origin: UNREG 12/12 (mean d -0.1119); REG_FRAME 4/12 (mean d +0.0206); OPT-vs-origin REG 10/12 (mean d -0.0426)
+  copy-left OPT beats s25 REG on 8/12; copy-left UNREG beats s25 UNREG on 12/12
+  R3 near-mono clips ['0204', '0225', '0251', '0259', '0301']: CL-OPT < origin REG_FRAME on 5/5 -> TRUE: copying the left eye beats origin on near-mono clips
+
+--- M3 ORACLES = THE CEILING, S10 frames, target = REG_FRAME GT ---
+clip       origin        AYS8 deliverable         s25      BR_raw         O_C       O_Ccc O_Ccc_naive         O_A       O_Acc         O_B copyleft_wi          K1          K2
+0042       0.1640      0.1556      0.1590      0.1589      0.1884      0.1555      0.1562      0.1699      0.0595      0.0597      0.1092      0.2542      0.0193      0.0077
+0052       0.2271      0.2206      0.2186      0.2166      0.2248      0.2133      0.2127      0.2258      0.0987      0.0969      0.1719      0.2490      0.0221      0.0145
+0125       0.3656      0.3427      0.3498      0.3253      0.3122      0.2957      0.2956      0.3018      0.1343      0.1341      0.2120      0.3428      0.0267      0.0235
+0128       0.2317      0.2213      0.2203      0.2212      0.1889      0.1885      0.1892      0.2417      0.1113      0.1105      0.1056      0.2750      0.0311      0.0135
+0141       0.2905      0.2794      0.2716      0.2658      0.2695      0.2535      0.2534      0.2524      0.0935      0.0928      0.1734      0.2823      0.0114      0.0211
+0147       0.2154      0.2110      0.2093      0.2060      0.2514      0.2029      0.2029      0.2230      0.0535      0.0534      0.1328      0.2523      0.0107      0.0187
+0170       0.2077      0.2006      0.2002      0.1989      0.1227      0.1216      0.1143      0.1185      0.1008      0.0927      0.0531      0.1299      0.0599      0.0271
+0204       0.1349      0.1218      0.1162      0.1198      0.0936      0.0936      0.0877      0.0879      0.0777      0.0710      0.0394      0.1866      0.0408      0.0237
+0225       0.2088      0.1982      0.1951      0.1964      0.1465      0.1465      0.1383      0.1462      0.1201      0.1112      0.0619      0.2280      0.0610      0.0301
+0251       0.1856      0.1773      0.1721      0.1755      0.1762      0.1443      0.1405      0.1410      0.1066      0.1003      0.0277      0.2750      0.0246      0.0104
+0259       0.3138      0.3110      0.3169      0.3106      0.3012      0.2848      0.2759      0.2775      0.2511      0.2399      0.0837      0.4158      0.0511      0.0244
+0301       0.4006      0.3691      0.3618      0.3632      0.2531      0.2434      0.2472      0.2873      0.1824      0.1848      0.1240      0.2821      0.0765      0.0368
+mean12        0.2455      0.2341      0.2326      0.2299      0.2107      0.1953      0.1928      0.2061      0.1158      0.1123      0.1079      0.2644      0.0363      0.0210
+AVP           0.2490      0.2384      0.2381      0.2323      0.2392      0.2182      0.2183      0.2358      0.0918      0.0912      0.1508      0.2759      0.0202      0.0165
+iPhone        0.2419      0.2297      0.2271      0.2274      0.1822      0.1724      0.1673      0.1764      0.1398      0.1333      0.0650      0.2529      0.0523      0.0254
+n11 -0125     0.2346      0.2242      0.2219      0.2212      0.2015      0.1862      0.1835      0.1974      0.1141      0.1103      0.0984      0.2573      0.0371      0.0207
+  R4 H_C = origin - O_C: mean +0.0502 t95 [+0.0241,+0.0763] positive on 12/12  -> substantial in principle
+  R4 H_Ccc = origin - O_Ccc: mean +0.0527 t95 [+0.0268,+0.0785] positive on 12/12  -> substantial in principle
+  R4 H_BRraw = origin - BR_raw: mean +0.0348 t95 [+0.0031,+0.0664] positive on 10/12  -> modest
+  R5 geometry-dominated clips (O_B >= 0.5 x origin): 5/12 ['0042', '0052', '0125', '0141', '0147']
+  O_B / origin ratio per clip: 0042:0.67 0052:0.76 0125:0.58 0128:0.46 0141:0.60 0147:0.62 0170:0.26 0204:0.29 0225:0.30 0251:0.15 0259:0.27 0301:0.31
+  share of the origin->O_C gap that s25 / deliverable / AYS8 already close: s25:0.31 deliverable:0.26 AYS8:0.23
+
+Spatial LPIPS map means (S10): non-hole | model hole | true-occluded | consistent non-hole ; mass share in holes / true-occl.
+  origin     0.2448 | 0.3063 | 0.2867 | 0.2402 ; 0.013 / 0.096
+  s25        0.2292 | 0.2913 | 0.2700 | 0.2247 ; 0.014 / 0.097
+  BR_raw     0.2061 | 0.5773 | 0.3606 | 0.1968 ; 0.031 / 0.129
+  O_C        0.1933 | 0.3628 | 0.2792 | 0.1867 ; 0.021 / 0.113
+  O_A        0.1157 | 0.1206 | 0.1102 | 0.1165 ; 0.012 / 0.073
+  O_B        0.1073 | 0.1792 | 0.1436 | 0.1055 ; 0.017 / 0.100
+
+Residual geometry after the per-frame global registration: |model disparity - true disparity| on textured, consistent,
+non-hole pixels (RAFT, S10): median | p90 | share >2px | >4px | >8px     (+ true disparity median, p5-p95 vs TRg)
+  0042  4.11 |  7.17 | 0.77 | 0.61 | 0.08     true occl 0.105  hole 0.015  U3 0.007
+  0052  6.43 | 18.96 | 0.82 | 0.67 | 0.39     true occl 0.137  hole 0.010  U3 0.051
+  0125 15.74 | 46.98 | 0.69 | 0.56 | 0.41     true occl 0.124  hole 0.012  U3 0.050
+  0128  3.68 |  7.12 | 0.72 | 0.45 | 0.06     true occl 0.075  hole 0.006  U3 0.033
+  0141 14.54 | 28.91 | 0.81 | 0.77 | 0.70     true occl 0.289  hole 0.028  U3 0.014
+  0147  2.48 | 30.44 | 0.55 | 0.30 | 0.12     true occl 0.133  hole 0.016  U3 0.004
+  0170  0.70 |  1.84 | 0.08 | 0.00 | 0.00     true occl 0.000  hole 0.001  U3 0.036
+  0204  1.67 |  5.48 | 0.43 | 0.21 | 0.01     true occl 0.003  hole 0.000  U3 0.020
+  0225  1.72 |  7.01 | 0.43 | 0.24 | 0.06     true occl 0.006  hole 0.000  U3 0.125
+  0251  0.44 |  1.55 | 0.07 | 0.01 | 0.00     true occl 0.033  hole 0.019  U3 0.007
+  0259  0.67 |  1.51 | 0.03 | 0.02 | 0.02     true occl 0.033  hole 0.012  U3 0.175
+  0301  1.99 |  7.36 | 0.48 | 0.30 | 0.08     true occl 0.033  hole 0.014  U3 0.186
+Controls: K1 = GT bicubic-shifted by (0.5,0.5) px; K2 = GT round-tripped through the two RAFT warps.  mean K1 0.0363, K2 0.0210
+
+Input fidelity (EXPLORATORY): LPIPS(row, model input BR), spatial mean over non-hole pixels
+  origin       0042:0.151 0052:0.118 0125:0.226 0128:0.162 0141:0.177 0147:0.143 0170:0.121 0204:0.129 0225:0.149 0251:0.149 0259:0.236 0301:0.337   mean 0.1749
+  AYS8         0042:0.142 0052:0.114 0125:0.201 0128:0.150 0141:0.163 0147:0.138 0170:0.113 0204:0.109 0225:0.133 0251:0.146 0259:0.234 0301:0.302   mean 0.1620
+  deliverable  0042:0.143 0052:0.113 0125:0.207 0128:0.148 0141:0.146 0147:0.137 0170:0.115 0204:0.095 0225:0.125 0251:0.146 0259:0.236 0301:0.294   mean 0.1587
+  s25          0042:0.146 0052:0.115 0125:0.186 0128:0.151 0141:0.147 0147:0.136 0170:0.111 0204:0.100 0225:0.125 0251:0.150 0259:0.254 0301:0.295   mean 0.1598
+
+--- M4 UNOBSERVABLE SHARE ---
+U1 model-hole fraction (S38): 0042:0.015 0052:0.010 0125:0.012 0128:0.006 0141:0.029 0147:0.016 0170:0.001 0204:0.000 0225:0.000 0251:0.017 0259:0.013 0301:0.015  mean 0.011
+U2 true-occlusion + out-of-view + flow-failure fraction of GT (S10): 0042:0.105 0052:0.137 0125:0.124 0128:0.075 0141:0.289 0147:0.133 0170:0.000 0204:0.003 0225:0.006 0251:0.033 0259:0.033 0301:0.033  mean 0.081
+U3 consistent pixels with |dY| > 24/255 after colour fit: 0042:0.007 0052:0.051 0125:0.050 0128:0.033 0141:0.014 0147:0.004 0170:0.036 0204:0.020 0225:0.125 0251:0.007 0259:0.175 0301:0.186
+U4 origin's spatial-LPIPS mass in model holes / in true-occluded pixels: 0042:0.019/0.122 0052:0.014/0.170 0125:0.014/0.159 0128:0.009/0.130 0141:0.038/0.323 0147:0.011/0.101 0170:0.001/0.000 0204:0.000/0.000 0225:0.000/0.002 0251:0.022/0.037 0259:0.018/0.069 0301:0.015/0.039
+
+--- Q3 SEED SPREAD: LPIPS between two equally good outputs (deliverable T5@1.00 natural vs RNG-padded, windows>=1) ---
+  0042 LPIPS(out,out') 0.0578  PSNR 32.24  |dLPIPS to GT| 0.0021  mass in holes 0.016 (hole area 0.015)  vs LPIPS to GT 0.1609
+  0052 LPIPS(out,out') 0.0434  PSNR 31.48  |dLPIPS to GT| 0.0001  mass in holes 0.017 (hole area 0.011)  vs LPIPS to GT 0.2164
+  0125 LPIPS(out,out') 0.0886  PSNR 30.85  |dLPIPS to GT| 0.0006  mass in holes 0.019 (hole area 0.013)  vs LPIPS to GT 0.3486
+  0128 LPIPS(out,out') 0.0917  PSNR 29.67  |dLPIPS to GT| 0.0009  mass in holes 0.007 (hole area 0.006)  vs LPIPS to GT 0.2170
+  0141 LPIPS(out,out') 0.0511  PSNR 34.22  |dLPIPS to GT| 0.0014  mass in holes 0.062 (hole area 0.030)  vs LPIPS to GT 0.2665
+  0147 LPIPS(out,out') 0.0350  PSNR 34.82  |dLPIPS to GT| 0.0001  mass in holes 0.026 (hole area 0.016)  vs LPIPS to GT 0.2058
+  0170 LPIPS(out,out') 0.0517  PSNR 28.76  |dLPIPS to GT| 0.0013  mass in holes 0.001 (hole area 0.001)  vs LPIPS to GT 0.1989
+  0204 LPIPS(out,out') 0.0594  PSNR 28.40  |dLPIPS to GT| 0.0003  mass in holes 0.000 (hole area 0.000)  vs LPIPS to GT 0.1153
+  0225 LPIPS(out,out') 0.0755  PSNR 25.94  |dLPIPS to GT| 0.0012  mass in holes 0.000 (hole area 0.000)  vs LPIPS to GT 0.1947
+  0251 LPIPS(out,out') 0.0693  PSNR 30.64  |dLPIPS to GT| 0.0004  mass in holes 0.029 (hole area 0.017)  vs LPIPS to GT 0.1680
+  0259 LPIPS(out,out') 0.1337  PSNR 22.48  |dLPIPS to GT| 0.0042  mass in holes 0.021 (hole area 0.013)  vs LPIPS to GT 0.3155
+  0301 LPIPS(out,out') 0.1953  PSNR 21.87  |dLPIPS to GT| 0.0003  mass in holes 0.020 (hole area 0.016)  vs LPIPS to GT 0.3672
+  mean LPIPS(out,out') 0.0794; ratio to the outputs' own REG LPIPS 0.34
+  supplement (LOSSY mp4v, origin whole-clip seeds, 0042): pairs {"s1_s2": {"lpips": 0.03795798416984709, "psnr": 34.82625107348494}, "s1_s3": {"lpips": 0.03780435314892154, "psnr": 35.02563824616455}, "s2_s3": {"lpips": 0.03852177421121221, "psnr": 34.38661261790466}}; codec control LPIPS(mp4v(origin_ll), origin_ll) 0.0380 (PSNR 38.25); to GT {"s1": 0.16903381520196012, "s2": 0.16732184314414075, "s3": 0.1683566562439266, "origin_ll": 0.1598713296024423, "origin_ll_mp4v": 0.1676431310019995}; left-half check PSNR 40.09
+
+--- Q4 LPIPS HACKABILITY: GT-independent post-processing of ORIGIN (M6), 12-clip means of the change vs P0 ---
+clips: 12  P12 choice AVP P7 / iPhone P0 (flow-registered choice: P7 / P0)
+row           dAlexREG  impr  dAlexUN   dPSNR     dVGG   dDISTS  dBRISQ flatHF/GT stripe/GT sharp/GT
+P0             +0.0000   0/12  +0.0000  +0.000  +0.0000  +0.0000   +0.00     0.873     2.061    0.632
+P1             -0.0009   7/12  -0.0006  -0.143  -0.0001  -0.0025   -3.75     0.974     2.196    0.697
+P2             +0.0013   6/12  +0.0012  -0.322  +0.0034  -0.0046   -8.16     1.167     2.467    0.783
+P3             +0.0084   2/12  +0.0069  -0.598  +0.0126  -0.0052  -13.65     1.508     2.953    0.911
+P4             -0.0051   8/12  -0.0040  -0.293  +0.0007  -0.0022   -3.13     1.060     2.374    0.753
+P5             -0.0032   7/12  -0.0029  -0.669  +0.0072  -0.0003   -6.33     1.327     2.835    0.892
+P6             +0.0063   5/12  +0.0036  -1.233  +0.0205  +0.0067   -9.35     1.699     3.505    1.079
+P7             +0.0091   4/12  +0.0075  +0.100  +0.0035  +0.0045   +5.16     0.761     1.937    0.573
+P8             +0.0920   0/12  +0.0775  +0.174  +0.0282  +0.0226  +19.17     0.443     1.538    0.450
+P9             +0.0164   0/12  +0.0151  -0.040  +0.0464  -0.0003   -7.02     2.131     4.016    1.016
+P10            +0.0765   0/12  +0.0669  -0.153  +0.0822  +0.0060   -4.56     3.736     6.550    1.535
+P11            +0.0025   2/12  +0.0014  +0.103  -0.0012  +0.0020   +0.25     0.847     1.981    0.611
+P12            +0.0008   3/12  +0.0004  +0.035  -0.0003  +0.0005   +1.60     0.827     2.003    0.613
+P12f           +0.0008   3/12  +0.0004  +0.035  -0.0003  +0.0005   +1.60     0.827     2.003    0.613
+P13            +0.0034   2/12  +0.0019  +0.135  -0.0015  +0.0026   +1.76     0.803     1.927    0.593
+AYS8           -0.0114  12/12  -0.0105  -0.056  -0.0037  -0.0074   +0.52     0.938     2.230    0.667
+deliverable    -0.0132  11/12  -0.0128  -0.233  -0.0006  -0.0102   -0.72     1.072     2.502    0.722
+s25            -0.0152  11/12  -0.0146  -0.142  -0.0022  -0.0129   +1.11     1.021     2.474    0.706
+  cross-fit AVP->iPhone: chose P4 on the selection family; held-out family mean d -0.0074, improved 5/6
+  cross-fit iPhone->AVP: chose P4 on the selection family; held-out family mean d -0.0027, improved 3/6
+  cross-fitted P over all 12 clips: mean d -0.0051, improved 8/12
+  R6 bar GAMEABLE by a GT-independent / train-fitted post-filter: NO  (candidates [('cross-fit', -0.0051, 8), ('P11', 0.0025, 2), ('P12', 0.0008, 3), ('P12f', 0.0008, 3), ('P13', 0.0034, 2)])
+  descriptive: best single grid filter on all 12 (test-selected, NOT a headline): P4 mean d -0.0051, improved 8/12
+  R7 P4           alex -0.0051: VGG catches, DISTS agrees (dVGG +0.0007, dDISTS -0.0022, dPSNR -0.293)
+  R7 AYS8         alex -0.0114: VGG agrees, DISTS agrees (dVGG -0.0037, dDISTS -0.0074, dPSNR -0.056)
+  R7 deliverable  alex -0.0132: VGG agrees, DISTS agrees (dVGG -0.0006, dDISTS -0.0102, dPSNR -0.233)
+  R7 s25          alex -0.0152: VGG agrees, DISTS agrees (dVGG -0.0022, dDISTS -0.0129, dPSNR -0.142)
+  R7 reference AYS8         dVGG -0.0037 (9/12)  dDISTS -0.0074 (12/12) -> confirmed by both held-out metrics
+  R7 reference deliverable  dVGG -0.0006 (4/12)  dDISTS -0.0102 (11/12) -> confirmed by both held-out metrics
+  R7 reference s25          dVGG -0.0022 (5/12)  dDISTS -0.0129 (12/12) -> confirmed by both held-out metrics
+
+M7 stereo retention (DIS, S6): slope of d_output on d_input (1 = geometry kept, 0 = collapsed to the left eye)
+  origin       slope median 0.977 (min 0.873)  mean|d_O-d_BR| median 0.526px
+  AYS8         slope median 0.974 (min 0.739)  mean|d_O-d_BR| median 0.519px
+  deliverable  slope median 0.977 (min 0.764)  mean|d_O-d_BR| median 0.534px
+  s25          slope median 0.978 (min 0.733)  mean|d_O-d_BR| median 0.563px
+  P4           slope median 0.973 (min 0.881)  mean|d_O-d_BR| median 0.508px
+  P8           slope median 0.981 (min 0.789)  mean|d_O-d_BR| median 0.627px
+
+--- EXPLORATORY (ADDENDUM 3): does LPIPS reward outputs the user rejected?  (S38 alex/PSNR; S6 vgg/DISTS/decompose) ---
+clips 12.  COMP_origin = model input BR + origin inside the holes (user-REJECTED mask-only compositing); COMP_telea = BR + Telea fill (NO generative model)
+row            alexU   alexR   dAlexR  impr  PSNR_R     VGG   DISTS flatHF/GT stripeE/GT
+origin        0.3933  0.2432  +0.0000   0/12   20.81  0.3443  0.1278     0.873      2.061
+s25           0.3786  0.2279  -0.0152  11/12   20.67  0.3421  0.1149     1.021      2.474
+COMP_origin   0.3591  0.1924  -0.0507  12/12   20.82  0.2960  0.0890     1.578      3.011
+COMP_telea    0.3579  0.1911  -0.0521  12/12   20.78  0.2950  0.0910     1.484      2.882
+  per clip alexR origin -> COMP_telea: 0042:0.160->0.139 0052:0.223->0.200 0125:0.363->0.290 0128:0.229->0.181 0141:0.286->0.243 0147:0.210->0.201 0170:0.206->0.121 0204:0.134->0.092 0225:0.208->0.144 0251:0.180->0.141 0259:0.314->0.296 0301:0.405->0.245
+
+--- EXPLORATORY (ADDENDUM 5): registration bookkeeping control, S10 (same frames as the oracles) ---
+clip   origin     BRt  X@orig  X0ctrl   bookk      Og |F|orig |F|ctrl     H_C  H_C-bk  gapBRt gapBRt-bk
+0042   0.1640  0.1406  0.1371  0.1407 -0.0036  0.1609    0.80    0.04 +0.0084 +0.0120 +0.0234   +0.0270
+0052   0.2271  0.2019  0.1995  0.2019 -0.0024  0.2255    0.54    0.02 +0.0138 +0.0162 +0.0252   +0.0275
+0125   0.3656  0.2892  0.2861  0.2889 -0.0029  0.3616    0.81    0.04 +0.0700 +0.0728 +0.0764   +0.0793
+0128   0.2317  0.1825  0.1818  0.1825 -0.0006  0.2290    0.48    0.04 +0.0432 +0.0438 +0.0492   +0.0498
+0141   0.2905  0.2440  0.2439  0.2439 -0.0001  0.2886    1.27    0.03 +0.0370 +0.0371 +0.0465   +0.0465
+0147   0.2154  0.2026  0.1944  0.2026 -0.0082  0.2208    1.71    0.03 +0.0125 +0.0207 +0.0127   +0.0209
+0170   0.2077  0.1216  0.1292  0.1221 +0.0071  0.2071    0.35    0.04 +0.0861 +0.0789 +0.0861   +0.0790
+0204   0.1349  0.0937  0.1019  0.0947 +0.0071  0.1343    2.01    0.14 +0.0413 +0.0341 +0.0411   +0.0340
+0225   0.2088  0.1465  0.1568  0.1477 +0.0091  0.2088    0.68    0.10 +0.0623 +0.0533 +0.0623   +0.0533
+0251   0.1856  0.1457  0.1396  0.1456 -0.0061  0.1891    0.70    0.03 +0.0413 +0.0473 +0.0399   +0.0460
+0259   0.3138  0.2877  0.2896  0.2874 +0.0022  0.3137    0.48    0.04 +0.0290 +0.0268 +0.0262   +0.0240
+0301   0.4006  0.2438  0.2513  0.2441 +0.0072  0.3937    0.87    0.05 +0.1573 +0.1501 +0.1569   +0.1497
+mean  bookkeeping +0.0007; H_C raw +0.0502 -> corrected +0.0494 t95 [+0.0253,+0.0735] positive 12/12; origin-BRt (no-model composite, S10) raw +0.0538 -> corrected +0.0531 positive 12/12
+  AVP: H_C raw +0.0308 corrected +0.0338; s25 gain (S10) +0.0167
+  iPhone: H_C raw +0.0695 corrected +0.0651; s25 gain (S10) +0.0145
+
+--- EXPLORATORY (ADDENDUM 4): vertical-stripe anisotropy in GT-flat, non-hole regions, relative to the GT (S6) ---
+clip  GT aniso      origin         s25 deliverable COMP_origin  COMP_telea      BR_raw
+0042     0.853       1.218       1.133       1.153       1.183       1.145       1.261
+0052     0.769       1.110       1.084       1.090       1.120       1.102       1.127
+0125     1.160       1.009       0.990       0.968       0.968       0.953       0.973
+0128     0.945       1.090       1.053       1.039       1.014       1.008       1.010
+0141     0.956       1.314       1.243       1.225       1.428       1.376       1.428
+0147     1.299       1.286       1.183       1.165       1.263       1.268       1.205
+0170     0.747       0.686       0.662       0.653       0.722       0.721       0.721
+0204     0.417       1.306       1.188       1.155       1.019       1.012       1.011
+0225     0.766       0.622       0.609       0.591       0.578       0.578       0.578
+0251     0.797       1.112       1.101       1.097       1.098       1.078       1.067
+0259     0.963       0.870       0.851       0.844       0.848       0.845       0.853
+0301     1.054       0.999       0.998       0.976       0.946       0.936       0.941
+median                1.100       1.069       1.065       1.016       1.010       1.010
+  COMP_telea minus origin (rel aniso): 0042:-0.073 0052:-0.008 0125:-0.056 0128:-0.082 0141:+0.062 0147:-0.018 0170:+0.035 0204:-0.294 0225:-0.044 0251:-0.035 0259:-0.024 0301:-0.062

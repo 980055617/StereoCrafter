@@ -1,0 +1,14 @@
+PRE-REGISTRATION ADDENDUM (r2) -- DEV-only mask-threshold variant.  Written 2026-10-04 23:15 JST, BEFORE any dev-clip render.
+Trigger (post hoc, from TEST clip 0052 inspection): with the official preprocessing applied to StereoCrafter's SOFT occlusion
+map (mask>0.5 -> closing 11), stretch stripes over thin foreground objects merge into solid holes and M2SVid inpaints them
+away (0052 f76: the foreground handlebar is erased; panel clips/0052_m2svid_fa_w16_ll/0052_foreground_f076.png; input
+fidelity 0.145 vs origin 0.100).  M2SVid's own warper marks only coverage==0 pixels, i.e. our map ~1.
+VARIANT  "m2svid_fa_w16_t95": identical to the primary except the soft map is binarized at > 0.95 before the official
+         closing/zeroing/dilation (--mask_thresh 0.95).
+DEV CLIPS (neutral rule: the first three valid dev clips in split order): 0040 0082 0091.  Primary and variant rendered on
+         the same dev clips in the same lock hold.
+SELECTION RULE (dev only): choose the variant if its mean UNREG LPIPS (score_clip_ll_cpu_r2.py, paired, same GT) is lower
+         than the primary's by >= 0.005 AND lower on >= 2/3 dev clips; otherwise keep the primary.  Registered GT is not
+         published for dev clips, so UNREG only (same geometry for both variants -> paired comparison is fair).
+TEST     the primary's test numbers stay the pre-registered result.  If the variant is selected and time allows, it is run
+         ONCE on the test clips and reported as a separate, dev-selected row (never replacing the primary row).

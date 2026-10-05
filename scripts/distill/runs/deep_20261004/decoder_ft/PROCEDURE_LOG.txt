@@ -1,0 +1,36 @@
+decoder_ft lane -- procedure log (2026-10-05, JST).  Every deviation from the plan is listed here with its time.
+
+09:36  lane dirs created; speed-lane hook/driver copied verbatim (md5 7f5bf0be..) as *_ORIG_COPY.
+09:37  capture smoke 0301 (GPU0 lock): origin capture md5 2e533d77.. == published origin_ll; deliverable 3e367e61.. ==
+       published deliverable; init_md5_all 6db474cb.. (deployed noise fingerprint).
+09:41  stock re-decode gate 0301 origin (GPU1 lock): md5 2e533d77.. == capture (re-decode path is exact).
+09:42  encode_gt_v1.py (GPU1): 1164 windows / 291 GT-valid train clips, 890 s.
+09:43  dev (12) + test (22) captures queued on GPU0 (two lock holds); dev stock chain and G0 gate queued behind them.
+09:44  extract_gt_v1.py (CPU): dev real-right-eye crops; PSNR(left,right) 11.6-25.7 dB (no left copy; 0268 is the
+       highest, iPhone short baseline).
+09:57  GATE T1: 3/4 windows OK; 0215 w000 flagged by the LPIPS<0.2 plausibility bound only (dense forsythia, LPIPS
+       0.27; fresh-encode identical, scaling path bit-equal) -> PREREG_ADDENDUM_1 item 1 (data accepted unchanged).
+09:57  trainer v1 smokes OOM (block-level checkpointing): smoke_c40x64_b4, smoke_full_b2 (their ck dirs hold only step0).
+09:59  trainer v2 (finer checkpointing) smokes: full frame 1 pair x ACC2 2.94 s/step 12.3 GiB; 2 pairs OOM;
+       40x64 x 4 pairs 1.36 s/step.  -> PREREG_ADDENDUM_1 item 3: full frame, 1x2 pairs, 2000 steps.
+10:00  main_v1 launched on GPU1 (lock held for the whole run, expected ~100 min).
+10:05  chain_dev_ckpt_v1.sh / chain_test_v1.sh rewritten into stages (never executed before the rewrite) so the two
+       GPUs can share the dev/test work; analyze_test_v1.py is run only after the g8 visual note is written.
+11:29  dev stock chain: stock re-decodes done; C2 PASS on all 12 dev cells; C1 'init BAD' on 0082/0091 = mis-specified
+       fingerprint rule for 15-window clips -> PREREG_ADDENDUM_3 (substantive md5 checks pass).
+11:29  dev unsharp grid: every make_unsharp_v1.py process segfaulted at import (cv2 imported before torch/diffusers); no
+       row was written.  Fixed the import order (writer module first) and re-ran the grid as run_unsharp_dev_v1b.sh (11:33).
+11:29  G0 gate (chain_g0_v1.sh) failed before scoring: make_rows_v1.py --base merged all 12 published clips while only 0301
+       had the lane row.  Re-run as chain_g0_v1b.sh with a 0301-only rows file (11:35, GPU0 queue).
+11:34  dev orchestrator v1 stopped while waiting (its GPU0 re-decode failed at checkpoint load: weights_only=True vs TorchVersion in the ckpt config); redecode/roundtrip load own ckpts with weights_only=False; orchestrate_dev_v2.sh launched (failed log kept as *_FAILED_attempt1.log).
+11:39  main_v1 TRAIN_DONE (2000 steps, 5908 s).
+11:56  C3 PASS (step-0 re-decode == stock on 0040 both models).  12:00 all 60 dev re-decodes + stock UNREG done.
+11:35  G0 (v1b) PASS: lane chain reproduces published 0301 origin UNREG/REG_CLIP/REG_FRAME/BLK_LOCAL exactly.
+12:17  dev registered + aux scoring done; analyze_dev_v1.py: NO checkpoint eligible (NIQE +0.35..+0.54 at every step; s2000
+       also UNREG), and dREG_FRAME > 0 at every step -> PREREG section 4: nothing goes to test; verdict CLOSED.
+12:41  decoder-only dev round trip (diagnostic, after the selection): the decoder improves real-latent reconstruction
+       (LPIPS-Alex 0.0452 -> 0.0423..0.0430, PSNR +0.9..+1.1 dB) -> the failure is non-transfer to the models' latents.
+12:45  dev diagnostic panels + DEV_LEVELS_main_v1.txt + RESULTS.txt written.  No test clip was scored or rendered by
+       this lane beyond the passive latent captures (whose md5s equal the published renders).
+12:52  post-hoc latent check (latent_hf_check_v1/v2.py, dev only): sampled latents keep ~0.94-1.01x of the input latent's edge HF, structure corr 0.72-0.77; RESULTS.txt section 5.
+12:58  RESULTS.txt wording scoped per final review (latent check scale limits; decoder adaptation listed as untested variant with its target problem and cost; >=0310 wording).

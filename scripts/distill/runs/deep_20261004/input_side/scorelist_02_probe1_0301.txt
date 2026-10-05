@@ -1,0 +1,3 @@
+0301 R1 origin=outputs/deep_20261004/input_side/clips/0301_R1_origin/0301_inpainting_results_sbs.mkv deliv=outputs/deep_20261004/input_side/clips/0301_R1_deliv/0301_inpainting_results_sbs.mkv
+0301 RF origin=outputs/deep_20261004/input_side/clips/0301_RF_origin/0301_inpainting_results_sbs.mkv deliv=outputs/deep_20261004/input_side/clips/0301_RF_deliv/0301_inpainting_results_sbs.mkv
+0301 RO origin=outputs/deep_20261004/input_side/clips/0301_RO_origin/0301_inpainting_results_sbs.mkv deliv=outputs/deep_20261004/input_side/clips/0301_RO_deliv/0301_inpainting_results_sbs.mkv

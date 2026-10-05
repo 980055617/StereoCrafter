@@ -1,0 +1,1058 @@
+{
+ "labels": [
+  "origin_ll",
+  "s25_ll",
+  "selMain250_s8",
+  "selMain250_s25",
+  "selMain250_s8_colrm",
+  "selMain250_s25_colrm"
+ ],
+ "cells": {
+  "0042": {
+   "selMain250_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.0232,
+    "lpips": 0.446443,
+    "sharp": 0.00767,
+    "gtSharp": 0.007023,
+    "rightPSNR": 17.4101,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0042_selMain250_s8/0042_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s8.txt"
+    ]
+   },
+   "selMain250_s25": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.0232,
+    "lpips": 0.428112,
+    "sharp": 0.008389,
+    "gtSharp": 0.007023,
+    "rightPSNR": 17.3882,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0042_selMain250_s25/0042_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s25.txt"
+    ]
+   },
+   "selMain250_s8_colrm": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.0232,
+    "lpips": 0.445691,
+    "sharp": 0.00767,
+    "gtSharp": 0.007023,
+    "rightPSNR": 17.418,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_test_v1/0042_selMain250_s8_colrm/0042_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s8_colrm.txt"
+    ]
+   },
+   "selMain250_s25_colrm": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.0232,
+    "lpips": 0.427668,
+    "sharp": 0.008389,
+    "gtSharp": 0.007023,
+    "rightPSNR": 17.4051,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_test_v1/0042_selMain250_s25_colrm/0042_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s25_colrm.txt"
+    ]
+   },
+   "origin_ll": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.0232,
+    "lpips": 0.427856,
+    "sharp": 0.008799,
+    "gtSharp": 0.007023,
+    "rightPSNR": 17.3374,
+    "n": 38,
+    "path": "outputs/beyond4_lossless/clips/0042_origin_ll/0042_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/more_20261004/eval_robustness/PUBLISHED_ROWS.json"
+    ]
+   },
+   "s25_ll": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.0232,
+    "lpips": 0.417468,
+    "sharp": 0.009738,
+    "gtSharp": 0.007023,
+    "rightPSNR": 17.3033,
+    "n": 38,
+    "path": "outputs/skeptic1_stack/clips/0042_s25_ll/0042_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/more_20261004/eval_robustness/PUBLISHED_ROWS.json"
+    ]
+   }
+  },
+  "0052": {
+   "selMain250_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.6982,
+    "lpips": 0.459816,
+    "sharp": 0.011548,
+    "gtSharp": 0.009881,
+    "rightPSNR": 13.2579,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0052_selMain250_s8/0052_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s8.txt"
+    ]
+   },
+   "selMain250_s25": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.6982,
+    "lpips": 0.447563,
+    "sharp": 0.012333,
+    "gtSharp": 0.009881,
+    "rightPSNR": 13.2405,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0052_selMain250_s25/0052_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s25.txt"
+    ]
+   },
+   "selMain250_s8_colrm": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.6982,
+    "lpips": 0.459102,
+    "sharp": 0.011548,
+    "gtSharp": 0.009881,
+    "rightPSNR": 13.2791,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_test_v1/0052_selMain250_s8_colrm/0052_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s8_colrm.txt"
+    ]
+   },
+   "selMain250_s25_colrm": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.6982,
+    "lpips": 0.446528,
+    "sharp": 0.012333,
+    "gtSharp": 0.009881,
+    "rightPSNR": 13.2628,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_test_v1/0052_selMain250_s25_colrm/0052_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s25_colrm.txt"
+    ]
+   },
+   "origin_ll": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.6982,
+    "lpips": 0.446689,
+    "sharp": 0.012979,
+    "gtSharp": 0.009881,
+    "rightPSNR": 13.2028,
+    "n": 38,
+    "path": "outputs/beyond4_lossless/clips/0052_origin_ll/0052_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/more_20261004/eval_robustness/PUBLISHED_ROWS.json"
+    ]
+   },
+   "s25_ll": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.6982,
+    "lpips": 0.438371,
+    "sharp": 0.013702,
+    "gtSharp": 0.009881,
+    "rightPSNR": 13.1772,
+    "n": 38,
+    "path": "outputs/beyond4_lossless/clips/0052_s25_ll/0052_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/more_20261004/eval_robustness/PUBLISHED_ROWS.json"
+    ]
+   }
+  },
+  "0125": {
+   "selMain250_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.4643,
+    "lpips": 0.52863,
+    "sharp": 0.007557,
+    "gtSharp": 0.011358,
+    "rightPSNR": 16.7791,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0125_selMain250_s8/0125_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s8.txt"
+    ]
+   },
+   "selMain250_s25": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.4643,
+    "lpips": 0.475705,
+    "sharp": 0.00901,
+    "gtSharp": 0.011358,
+    "rightPSNR": 16.7203,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0125_selMain250_s25/0125_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s25.txt"
+    ]
+   },
+   "selMain250_s8_colrm": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.4643,
+    "lpips": 0.529025,
+    "sharp": 0.007557,
+    "gtSharp": 0.011358,
+    "rightPSNR": 16.7763,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_test_v1/0125_selMain250_s8_colrm/0125_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s8_colrm.txt"
+    ]
+   },
+   "selMain250_s25_colrm": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.4643,
+    "lpips": 0.476643,
+    "sharp": 0.00901,
+    "gtSharp": 0.011358,
+    "rightPSNR": 16.7154,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_test_v1/0125_selMain250_s25_colrm/0125_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s25_colrm.txt"
+    ]
+   },
+   "origin_ll": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.4643,
+    "lpips": 0.479943,
+    "sharp": 0.009408,
+    "gtSharp": 0.011358,
+    "rightPSNR": 16.602,
+    "n": 38,
+    "path": "outputs/beyond4_lossless/clips/0125_origin_ll/0125_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/more_20261004/eval_robustness/PUBLISHED_ROWS.json"
+    ]
+   },
+   "s25_ll": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.4643,
+    "lpips": 0.446941,
+    "sharp": 0.010749,
+    "gtSharp": 0.011358,
+    "rightPSNR": 16.5374,
+    "n": 38,
+    "path": "outputs/skeptic1_stack/clips/0125_s25_ll/0125_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/more_20261004/eval_robustness/PUBLISHED_ROWS.json"
+    ]
+   }
+  },
+  "0128": {
+   "selMain250_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 39.7484,
+    "lpips": 0.466292,
+    "sharp": 0.010975,
+    "gtSharp": 0.010493,
+    "rightPSNR": 18.7024,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0128_selMain250_s8/0128_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s8.txt"
+    ]
+   },
+   "selMain250_s25": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 39.7484,
+    "lpips": 0.41922,
+    "sharp": 0.01291,
+    "gtSharp": 0.010493,
+    "rightPSNR": 18.5059,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0128_selMain250_s25/0128_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s25.txt"
+    ]
+   },
+   "selMain250_s8_colrm": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 39.7484,
+    "lpips": 0.465002,
+    "sharp": 0.010975,
+    "gtSharp": 0.010493,
+    "rightPSNR": 18.7145,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_test_v1/0128_selMain250_s8_colrm/0128_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s8_colrm.txt"
+    ]
+   },
+   "selMain250_s25_colrm": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 39.7484,
+    "lpips": 0.417562,
+    "sharp": 0.01291,
+    "gtSharp": 0.010493,
+    "rightPSNR": 18.5199,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_test_v1/0128_selMain250_s25_colrm/0128_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s25_colrm.txt"
+    ]
+   },
+   "origin_ll": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 39.7484,
+    "lpips": 0.405492,
+    "sharp": 0.013506,
+    "gtSharp": 0.010493,
+    "rightPSNR": 18.4504,
+    "n": 38,
+    "path": "outputs/beyond4_lossless/clips/0128_origin_ll/0128_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/more_20261004/eval_robustness/PUBLISHED_ROWS.json"
+    ]
+   },
+   "s25_ll": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 39.7484,
+    "lpips": 0.387646,
+    "sharp": 0.015669,
+    "gtSharp": 0.010493,
+    "rightPSNR": 18.2234,
+    "n": 38,
+    "path": "outputs/skeptic1_stack/clips/0128_s25_ll/0128_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/more_20261004/eval_robustness/PUBLISHED_ROWS.json"
+    ]
+   }
+  },
+  "0141": {
+   "selMain250_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.0934,
+    "lpips": 0.484065,
+    "sharp": 0.004388,
+    "gtSharp": 0.003613,
+    "rightPSNR": 15.6016,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0141_selMain250_s8/0141_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s8.txt"
+    ]
+   },
+   "selMain250_s25": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.0934,
+    "lpips": 0.464386,
+    "sharp": 0.004971,
+    "gtSharp": 0.003613,
+    "rightPSNR": 15.5902,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0141_selMain250_s25/0141_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s25.txt"
+    ]
+   },
+   "selMain250_s8_colrm": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.0934,
+    "lpips": 0.485379,
+    "sharp": 0.004386,
+    "gtSharp": 0.003613,
+    "rightPSNR": 15.5998,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_test_v1/0141_selMain250_s8_colrm/0141_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s8_colrm.txt"
+    ]
+   },
+   "selMain250_s25_colrm": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.0934,
+    "lpips": 0.465303,
+    "sharp": 0.004968,
+    "gtSharp": 0.003613,
+    "rightPSNR": 15.5896,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_test_v1/0141_selMain250_s25_colrm/0141_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s25_colrm.txt"
+    ]
+   },
+   "origin_ll": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.0934,
+    "lpips": 0.481324,
+    "sharp": 0.004912,
+    "gtSharp": 0.003613,
+    "rightPSNR": 15.5686,
+    "n": 38,
+    "path": "outputs/beyond4_lossless/clips/0141_origin_ll/0141_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/more_20261004/eval_robustness/PUBLISHED_ROWS.json"
+    ]
+   },
+   "s25_ll": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.0934,
+    "lpips": 0.462095,
+    "sharp": 0.005664,
+    "gtSharp": 0.003613,
+    "rightPSNR": 15.5434,
+    "n": 38,
+    "path": "outputs/skeptic1_stack/clips/0141_s25_ll/0141_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/more_20261004/eval_robustness/PUBLISHED_ROWS.json"
+    ]
+   }
+  },
+  "0147": {
+   "selMain250_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.4039,
+    "lpips": 0.527049,
+    "sharp": 0.00574,
+    "gtSharp": 0.003901,
+    "rightPSNR": 15.4402,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0147_selMain250_s8/0147_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s8.txt"
+    ]
+   },
+   "selMain250_s25": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.4039,
+    "lpips": 0.521936,
+    "sharp": 0.006115,
+    "gtSharp": 0.003901,
+    "rightPSNR": 15.4659,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0147_selMain250_s25/0147_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s25.txt"
+    ]
+   },
+   "selMain250_s8_colrm": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.4039,
+    "lpips": 0.52589,
+    "sharp": 0.00574,
+    "gtSharp": 0.003901,
+    "rightPSNR": 15.4588,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_test_v1/0147_selMain250_s8_colrm/0147_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s8_colrm.txt"
+    ]
+   },
+   "selMain250_s25_colrm": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.4039,
+    "lpips": 0.520565,
+    "sharp": 0.006114,
+    "gtSharp": 0.003901,
+    "rightPSNR": 15.4872,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_test_v1/0147_selMain250_s25_colrm/0147_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s25_colrm.txt"
+    ]
+   },
+   "origin_ll": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.4039,
+    "lpips": 0.526938,
+    "sharp": 0.006179,
+    "gtSharp": 0.003901,
+    "rightPSNR": 15.458,
+    "n": 38,
+    "path": "outputs/beyond4_lossless/clips/0147_origin_ll/0147_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/more_20261004/eval_robustness/PUBLISHED_ROWS.json"
+    ]
+   },
+   "s25_ll": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.4039,
+    "lpips": 0.522009,
+    "sharp": 0.00669,
+    "gtSharp": 0.003901,
+    "rightPSNR": 15.4636,
+    "n": 38,
+    "path": "outputs/beyond4_lossless/clips/0147_s25_ll/0147_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/more_20261004/eval_robustness/PUBLISHED_ROWS.json"
+    ]
+   }
+  },
+  "0170": {
+   "selMain250_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 39.7902,
+    "lpips": 0.28514,
+    "sharp": 0.014238,
+    "gtSharp": 0.032309,
+    "rightPSNR": 17.566,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0170_selMain250_s8/0170_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s8.txt"
+    ]
+   },
+   "selMain250_s25": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 39.7902,
+    "lpips": 0.260869,
+    "sharp": 0.015577,
+    "gtSharp": 0.032309,
+    "rightPSNR": 17.4262,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0170_selMain250_s25/0170_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s25.txt"
+    ]
+   },
+   "selMain250_s8_colrm": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 39.7902,
+    "lpips": 0.28408,
+    "sharp": 0.014238,
+    "gtSharp": 0.032309,
+    "rightPSNR": 17.5065,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_test_v1/0170_selMain250_s8_colrm/0170_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s8_colrm.txt"
+    ]
+   },
+   "selMain250_s25_colrm": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 39.7902,
+    "lpips": 0.25974,
+    "sharp": 0.015577,
+    "gtSharp": 0.032309,
+    "rightPSNR": 17.3813,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_test_v1/0170_selMain250_s25_colrm/0170_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s25_colrm.txt"
+    ]
+   },
+   "origin_ll": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 39.7902,
+    "lpips": 0.251735,
+    "sharp": 0.016394,
+    "gtSharp": 0.032309,
+    "rightPSNR": 17.1683,
+    "n": 38,
+    "path": "outputs/beyond4_lossless/clips/0170_origin_ll/0170_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/more_20261004/eval_robustness/PUBLISHED_ROWS.json"
+    ]
+   },
+   "s25_ll": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 39.7902,
+    "lpips": 0.244962,
+    "sharp": 0.01747,
+    "gtSharp": 0.032309,
+    "rightPSNR": 17.0464,
+    "n": 38,
+    "path": "outputs/skeptic1_stack/clips/0170_s25_ll/0170_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/more_20261004/eval_robustness/PUBLISHED_ROWS.json"
+    ]
+   }
+  },
+  "0204": {
+   "selMain250_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 41.162,
+    "lpips": 0.242573,
+    "sharp": 0.005851,
+    "gtSharp": 0.011577,
+    "rightPSNR": 20.2909,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0204_selMain250_s8/0204_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s8.txt"
+    ]
+   },
+   "selMain250_s25": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 41.162,
+    "lpips": 0.203398,
+    "sharp": 0.006924,
+    "gtSharp": 0.011577,
+    "rightPSNR": 19.9293,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0204_selMain250_s25/0204_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s25.txt"
+    ]
+   },
+   "selMain250_s8_colrm": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 41.162,
+    "lpips": 0.242152,
+    "sharp": 0.005848,
+    "gtSharp": 0.011577,
+    "rightPSNR": 20.1825,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_test_v1/0204_selMain250_s8_colrm/0204_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s8_colrm.txt"
+    ]
+   },
+   "selMain250_s25_colrm": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 41.162,
+    "lpips": 0.203686,
+    "sharp": 0.00692,
+    "gtSharp": 0.011577,
+    "rightPSNR": 19.8063,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_test_v1/0204_selMain250_s25_colrm/0204_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s25_colrm.txt"
+    ]
+   },
+   "origin_ll": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 41.162,
+    "lpips": 0.20531,
+    "sharp": 0.006527,
+    "gtSharp": 0.011577,
+    "rightPSNR": 19.8959,
+    "n": 38,
+    "path": "outputs/beyond4_lossless/clips/0204_origin_ll/0204_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/more_20261004/eval_robustness/PUBLISHED_ROWS.json"
+    ]
+   },
+   "s25_ll": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 41.162,
+    "lpips": 0.189684,
+    "sharp": 0.007608,
+    "gtSharp": 0.011577,
+    "rightPSNR": 19.5481,
+    "n": 38,
+    "path": "outputs/beyond4_lossless/clips/0204_s25_ll/0204_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/more_20261004/eval_robustness/PUBLISHED_ROWS.json"
+    ]
+   }
+  },
+  "0225": {
+   "selMain250_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.9278,
+    "lpips": 0.324904,
+    "sharp": 0.01027,
+    "gtSharp": 0.013156,
+    "rightPSNR": 16.0436,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0225_selMain250_s8/0225_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s8.txt"
+    ]
+   },
+   "selMain250_s25": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.9278,
+    "lpips": 0.282562,
+    "sharp": 0.012184,
+    "gtSharp": 0.013156,
+    "rightPSNR": 15.8566,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0225_selMain250_s25/0225_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s25.txt"
+    ]
+   },
+   "selMain250_s8_colrm": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.9278,
+    "lpips": 0.323326,
+    "sharp": 0.01027,
+    "gtSharp": 0.013156,
+    "rightPSNR": 16.199,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_test_v1/0225_selMain250_s8_colrm/0225_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s8_colrm.txt"
+    ]
+   },
+   "selMain250_s25_colrm": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.9278,
+    "lpips": 0.281096,
+    "sharp": 0.012184,
+    "gtSharp": 0.013156,
+    "rightPSNR": 16.0041,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_test_v1/0225_selMain250_s25_colrm/0225_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s25_colrm.txt"
+    ]
+   },
+   "origin_ll": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.9278,
+    "lpips": 0.275038,
+    "sharp": 0.01177,
+    "gtSharp": 0.013156,
+    "rightPSNR": 16.068,
+    "n": 38,
+    "path": "outputs/beyond4_lossless/clips/0225_origin_ll/0225_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/more_20261004/eval_robustness/PUBLISHED_ROWS.json"
+    ]
+   },
+   "s25_ll": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.9278,
+    "lpips": 0.260343,
+    "sharp": 0.013474,
+    "gtSharp": 0.013156,
+    "rightPSNR": 15.8669,
+    "n": 38,
+    "path": "outputs/skeptic1_stack/clips/0225_s25_ll/0225_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/more_20261004/eval_robustness/PUBLISHED_ROWS.json"
+    ]
+   }
+  },
+  "0251": {
+   "selMain250_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 41.234,
+    "lpips": 0.361966,
+    "sharp": 0.007328,
+    "gtSharp": 0.017307,
+    "rightPSNR": 18.7437,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0251_selMain250_s8/0251_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s8.txt"
+    ]
+   },
+   "selMain250_s25": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 41.234,
+    "lpips": 0.344719,
+    "sharp": 0.008264,
+    "gtSharp": 0.017307,
+    "rightPSNR": 18.7159,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0251_selMain250_s25/0251_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s25.txt"
+    ]
+   },
+   "selMain250_s8_colrm": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 41.234,
+    "lpips": 0.364492,
+    "sharp": 0.007327,
+    "gtSharp": 0.017307,
+    "rightPSNR": 18.6721,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_test_v1/0251_selMain250_s8_colrm/0251_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s8_colrm.txt"
+    ]
+   },
+   "selMain250_s25_colrm": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 41.234,
+    "lpips": 0.347004,
+    "sharp": 0.008263,
+    "gtSharp": 0.017307,
+    "rightPSNR": 18.6511,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_test_v1/0251_selMain250_s25_colrm/0251_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s25_colrm.txt"
+    ]
+   },
+   "origin_ll": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 41.234,
+    "lpips": 0.34604,
+    "sharp": 0.008295,
+    "gtSharp": 0.017307,
+    "rightPSNR": 18.5801,
+    "n": 38,
+    "path": "outputs/beyond4_lossless/clips/0251_origin_ll/0251_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/more_20261004/eval_robustness/PUBLISHED_ROWS.json"
+    ]
+   },
+   "s25_ll": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 41.234,
+    "lpips": 0.338475,
+    "sharp": 0.00932,
+    "gtSharp": 0.017307,
+    "rightPSNR": 18.5031,
+    "n": 38,
+    "path": "outputs/skeptic1_stack/clips/0251_s25_ll/0251_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/more_20261004/eval_robustness/PUBLISHED_ROWS.json"
+    ]
+   }
+  },
+  "0259": {
+   "selMain250_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.7219,
+    "lpips": 0.483183,
+    "sharp": 0.029007,
+    "gtSharp": 0.044964,
+    "rightPSNR": 13.5195,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0259_selMain250_s8/0259_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s8.txt"
+    ]
+   },
+   "selMain250_s25": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.7219,
+    "lpips": 0.448033,
+    "sharp": 0.030408,
+    "gtSharp": 0.044964,
+    "rightPSNR": 13.5297,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0259_selMain250_s25/0259_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s25.txt"
+    ]
+   },
+   "selMain250_s8_colrm": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.7219,
+    "lpips": 0.481459,
+    "sharp": 0.029006,
+    "gtSharp": 0.044964,
+    "rightPSNR": 13.5045,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_test_v1/0259_selMain250_s8_colrm/0259_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s8_colrm.txt"
+    ]
+   },
+   "selMain250_s25_colrm": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.7219,
+    "lpips": 0.445865,
+    "sharp": 0.030407,
+    "gtSharp": 0.044964,
+    "rightPSNR": 13.5181,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_test_v1/0259_selMain250_s25_colrm/0259_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s25_colrm.txt"
+    ]
+   },
+   "origin_ll": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.7219,
+    "lpips": 0.437586,
+    "sharp": 0.031178,
+    "gtSharp": 0.044964,
+    "rightPSNR": 13.3021,
+    "n": 38,
+    "path": "outputs/beyond4_lossless/clips/0259_origin_ll/0259_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/more_20261004/eval_robustness/PUBLISHED_ROWS.json"
+    ]
+   },
+   "s25_ll": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.7219,
+    "lpips": 0.436699,
+    "sharp": 0.03192,
+    "gtSharp": 0.044964,
+    "rightPSNR": 13.3189,
+    "n": 38,
+    "path": "outputs/skeptic1_stack/clips/0259_s25_ll/0259_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/more_20261004/eval_robustness/PUBLISHED_ROWS.json"
+    ]
+   }
+  },
+  "0301": {
+   "selMain250_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.2464,
+    "lpips": 0.562225,
+    "sharp": 0.016832,
+    "gtSharp": 0.050529,
+    "rightPSNR": 16.0865,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0301_selMain250_s8/0301_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s8.txt"
+    ]
+   },
+   "selMain250_s25": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.2464,
+    "lpips": 0.433662,
+    "sharp": 0.024808,
+    "gtSharp": 0.050529,
+    "rightPSNR": 15.4915,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0301_selMain250_s25/0301_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s25.txt"
+    ]
+   },
+   "selMain250_s8_colrm": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.2464,
+    "lpips": 0.560782,
+    "sharp": 0.016832,
+    "gtSharp": 0.050529,
+    "rightPSNR": 16.1323,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_test_v1/0301_selMain250_s8_colrm/0301_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s8_colrm.txt"
+    ]
+   },
+   "selMain250_s25_colrm": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.2464,
+    "lpips": 0.432547,
+    "sharp": 0.024808,
+    "gtSharp": 0.050529,
+    "rightPSNR": 15.5254,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_test_v1/0301_selMain250_s25_colrm/0301_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_test_selMain250_s25_colrm.txt"
+    ]
+   },
+   "origin_ll": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.2464,
+    "lpips": 0.435095,
+    "sharp": 0.023528,
+    "gtSharp": 0.050529,
+    "rightPSNR": 15.4667,
+    "n": 38,
+    "path": "outputs/beyond4_lossless/clips/0301_origin_ll/0301_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/more_20261004/eval_robustness/PUBLISHED_ROWS.json"
+    ]
+   },
+   "s25_ll": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.2464,
+    "lpips": 0.398593,
+    "sharp": 0.029482,
+    "gtSharp": 0.050529,
+    "rightPSNR": 15.013,
+    "n": 38,
+    "path": "outputs/beyond4_lossless/clips/0301_s25_ll/0301_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/more_20261004/eval_robustness/PUBLISHED_ROWS.json"
+    ]
+   }
+  }
+ },
+ "clips": [
+  "0042",
+  "0052",
+  "0125",
+  "0128",
+  "0141",
+  "0147",
+  "0170",
+  "0204",
+  "0225",
+  "0251",
+  "0259",
+  "0301"
+ ]
+}

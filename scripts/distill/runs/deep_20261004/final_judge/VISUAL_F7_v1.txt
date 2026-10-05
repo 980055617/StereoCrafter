@@ -1,0 +1,13 @@
+F7 VISUAL CHECK (post hoc by nature), frame 76, 1:1 crops and 2x nearest zooms in outputs/deep_20261004/final_judge/visual_v1/
+Viewed 2026-10-05 ~13:20-13:36 JST.
+0301 (iPhone forest; texture + hole crops + hole zoom): the warped input and the real right eye show fine twigs; origin is
+  smooth and painterly; deliverable, s25, AYS8, sdedit (sd7/sd1fill), M2SVid are all close to origin (slightly more
+  contrast), none recovers the input's twig detail.  scale_gt GT-ft (selMain250_s8) is visibly hazy / low contrast.
+  INPUT_fill (no model) keeps the detail but shows long smeared streaks in the hole bands (trunk edges).
+0170 (cobblestones; texture crop + 2x zoom): real right eye has granular stone surfaces; every model output has smooth
+  stones with crisp joints; HIRES_B_L looks as smooth or smoother; no row restores the grain.
+0042 (AVP railing; hole crop + 2x zoom): hole band along the post and bin: the sharper rows (deliverable, s25, AYS8,
+  sd1fill both models) show faint diagonal hatching in the band, strongest for deliv_g100_sd7; INPUT_fill shows an
+  obvious vertical smear at the post edge; M2SVid is hazier there (post lighter, bin grid washed out).
+Verdict F7: no row is visibly and cleanly sharper than origin; differences among the gain rows are subtle; hatching in
+hole bands appears on every row that is sharper than origin, not on one row only.

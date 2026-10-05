@@ -1,0 +1,13 @@
+decoder_ft PREREG ADDENDUM 3 (2026-10-05 11:40 JST; still no quality number of any fine-tuned decoder exists).
+
+Gate C1's sub-rule "init_md5_all == 6db474cb.. for every capture" was mis-specified: that fingerprint is the md5 over the
+per-window initial-noise md5s of a 14-WINDOW clip (whose last window has 11 frames).  Dev clips 0082 (168 splat frames) and
+0091 (164) have 15 windows, so their concatenated fingerprint necessarily differs (GATES_C1C2_dev.txt marked them "init BAD").
+Checked instead (speed_log.json init_md5 per window): the first 13 windows' noise fingerprints are identical across ALL 7
+captured clips checked (0301 0040 0082 0091 0184 0245 0268: aea4e6.., 036f8a.., c0a957.., ...), and 0082/0091 share the same
+14th-window fingerprint fa95bc.. (a full 14-frame window there).  The substantive C1 check -- capture render md5 == the
+published lossless render -- PASSES for 0082 origin (== 0082_origin_s8), 0091 origin (== 0091_origin_s8) and 0091 deliverable
+(== 0091_mstudent2_step800_ll, same weights as the deliverable; md5-identical renders on 0040 0091 0184 0245).  0082 and 0268
+deliverable have no published render; their capture is the reference (as pre-registered).  C2 passes on all 12 dev cells.
+Corrected C1 rule (applied to dev and test alike): capture md5 == published render md5 where one exists, AND per-window
+initial-noise fingerprints equal the common sequence for every window index the clips share with full 14-frame windows.

@@ -1,0 +1,9 @@
+# S0 smoke variants on 0301 (run only after K1 passed)
+0301 origin_g100_sd1 origin 1.00 s1 8 warp
+0301 origin_g100_sd1fill origin 1.00 s1 8 warpfill
+0301 origin_g100_sd7 origin 1.00 s7 8 warp
+0301 origin_g100_sd31 origin 1.00 s31 8 warp
+0301 deliv_g100_sd1 deliv 1.00 s1 8 warp
+0301 deliv_g100_sd1fill deliv 1.00 s1 8 warpfill
+0301 deliv_g100_sd7 deliv 1.00 s7 8 warp
+0301 deliv_g100_sd31 deliv 1.00 s31 8 warp

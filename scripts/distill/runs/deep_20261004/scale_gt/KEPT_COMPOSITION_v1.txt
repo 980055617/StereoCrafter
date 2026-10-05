@@ -1,0 +1,6 @@
+MAIN windows (754): composition of the KEPT (supervised) latent cells
+  kept cells 50114875 of 97284096 (0.515)
+  flat (texture too weak to register; carries colour/brightness but little detail): 0.204
+  textured and registration-consistent (+-2 px):                                    0.793
+  hole-dominated (inherited validity):                                              0.003
+  per-window flat share of kept cells: median 0.063, p25 0.004, p75 0.395

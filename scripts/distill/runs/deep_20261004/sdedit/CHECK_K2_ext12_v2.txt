@@ -1,0 +1,89 @@
+PASS 0042_deliv_g100_sd1          windows 14 paired 14/14 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0001
+PASS 0042_deliv_g100_sd1fill      windows 14 paired 14/14 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0001 fill: hole_frac_window 0.01490 changed 1323877/1344335 full_rows_unfilled 0 lat|d| mean 0.09504
+PASS 0042_deliv_g100_sd31         windows 14 paired 14/14 sigma_start 30.993608474731445 calls [5] pads [3] resid/sigma std 1.0001
+PASS 0042_deliv_g100_sd7          windows 14 paired 14/14 sigma_start 7.276163101196289 calls [4] pads [4] resid/sigma std 1.0001
+PASS 0042_origin_g100_sd1fill     windows 14 paired 14/14 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0001 fill: hole_frac_window 0.01490 changed 1323877/1344335 full_rows_unfilled 0 lat|d| mean 0.09504
+PASS 0042_origin_g100_sd31        windows 14 paired 14/14 sigma_start 30.993608474731445 calls [5] pads [3] resid/sigma std 1.0001
+PASS 0042_origin_g100_sd7         windows 14 paired 14/14 sigma_start 7.276163101196289 calls [4] pads [4] resid/sigma std 1.0001
+PASS 0052_deliv_g100_sd1          windows 15 paired 15/15 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0002
+PASS 0052_deliv_g100_sd1fill      windows 15 paired 15/15 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0002 fill: hole_frac_window 0.01064 changed 1029487/1054108 full_rows_unfilled 0 lat|d| mean 0.05168
+PASS 0052_deliv_g100_sd31         windows 15 paired 15/15 sigma_start 30.993608474731445 calls [5] pads [3] resid/sigma std 1.0002
+PASS 0052_deliv_g100_sd7          windows 15 paired 15/15 sigma_start 7.276163101196289 calls [4] pads [4] resid/sigma std 1.0002
+PASS 0052_origin_g100_sd1         windows 15 paired 15/15 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0002
+PASS 0052_origin_g100_sd1fill     windows 15 paired 15/15 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0002 fill: hole_frac_window 0.01064 changed 1029487/1054108 full_rows_unfilled 0 lat|d| mean 0.05168
+PASS 0052_origin_g100_sd31        windows 15 paired 15/15 sigma_start 30.993608474731445 calls [5] pads [3] resid/sigma std 1.0002
+PASS 0052_origin_g100_sd7         windows 15 paired 15/15 sigma_start 7.276163101196289 calls [4] pads [4] resid/sigma std 1.0002
+PASS 0125_deliv_g100_sd1          windows 15 paired 15/15 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0002
+PASS 0125_deliv_g100_sd1fill      windows 15 paired 15/15 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0002 fill: hole_frac_window 0.01206 changed 1134692/1145374 full_rows_unfilled 0 lat|d| mean 0.05901
+PASS 0125_deliv_g100_sd31         windows 15 paired 15/15 sigma_start 30.993608474731445 calls [5] pads [3] resid/sigma std 1.0002
+PASS 0125_deliv_g100_sd7          windows 15 paired 15/15 sigma_start 7.276163101196289 calls [4] pads [4] resid/sigma std 1.0002
+PASS 0125_origin_g100_sd1fill     windows 15 paired 15/15 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0002 fill: hole_frac_window 0.01206 changed 1134692/1145374 full_rows_unfilled 0 lat|d| mean 0.05901
+PASS 0125_origin_g100_sd31        windows 15 paired 15/15 sigma_start 30.993608474731445 calls [5] pads [3] resid/sigma std 1.0002
+PASS 0125_origin_g100_sd7         windows 15 paired 15/15 sigma_start 7.276163101196289 calls [4] pads [4] resid/sigma std 1.0002
+PASS 0128_deliv_g100_sd1          windows 14 paired 14/14 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0001
+PASS 0128_deliv_g100_sd1fill      windows 14 paired 14/14 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0001 fill: hole_frac_window 0.00596 changed 531648/537939 full_rows_unfilled 0 lat|d| mean 0.02556
+PASS 0128_deliv_g100_sd31         windows 14 paired 14/14 sigma_start 30.993608474731445 calls [5] pads [3] resid/sigma std 1.0001
+PASS 0128_deliv_g100_sd7          windows 14 paired 14/14 sigma_start 7.276163101196289 calls [4] pads [4] resid/sigma std 1.0001
+PASS 0128_origin_g100_sd1fill     windows 14 paired 14/14 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0001 fill: hole_frac_window 0.00596 changed 531648/537939 full_rows_unfilled 0 lat|d| mean 0.02556
+PASS 0128_origin_g100_sd31        windows 14 paired 14/14 sigma_start 30.993608474731445 calls [5] pads [3] resid/sigma std 1.0001
+PASS 0128_origin_g100_sd7         windows 14 paired 14/14 sigma_start 7.276163101196289 calls [4] pads [4] resid/sigma std 1.0001
+PASS 0141_deliv_g100_sd1          windows 14 paired 14/14 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0001
+PASS 0141_deliv_g100_sd1fill      windows 14 paired 14/14 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0001 fill: hole_frac_window 0.02868 changed 2440280/2571338 full_rows_unfilled 0 lat|d| mean 0.07427
+PASS 0141_deliv_g100_sd31         windows 14 paired 14/14 sigma_start 30.993608474731445 calls [5] pads [3] resid/sigma std 1.0001
+PASS 0141_deliv_g100_sd7          windows 14 paired 14/14 sigma_start 7.276163101196289 calls [4] pads [4] resid/sigma std 1.0001
+PASS 0141_origin_g100_sd1fill     windows 14 paired 14/14 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0001 fill: hole_frac_window 0.02868 changed 2440280/2571338 full_rows_unfilled 0 lat|d| mean 0.07427
+PASS 0141_origin_g100_sd31        windows 14 paired 14/14 sigma_start 30.993608474731445 calls [5] pads [3] resid/sigma std 1.0001
+PASS 0141_origin_g100_sd7         windows 14 paired 14/14 sigma_start 7.276163101196289 calls [4] pads [4] resid/sigma std 1.0001
+PASS 0147_deliv_g100_sd1          windows 16 paired 16/16 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0001
+PASS 0147_deliv_g100_sd1fill      windows 16 paired 16/16 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0001 fill: hole_frac_window 0.01636 changed 1651384/1659474 full_rows_unfilled 0 lat|d| mean 0.06556
+PASS 0147_deliv_g100_sd31         windows 16 paired 16/16 sigma_start 30.993608474731445 calls [5] pads [3] resid/sigma std 1.0001
+PASS 0147_deliv_g100_sd7          windows 16 paired 16/16 sigma_start 7.276163101196289 calls [4] pads [4] resid/sigma std 1.0001
+PASS 0147_origin_g100_sd1         windows 16 paired 16/16 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0001
+PASS 0147_origin_g100_sd1fill     windows 16 paired 16/16 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0001 fill: hole_frac_window 0.01636 changed 1651384/1659474 full_rows_unfilled 0 lat|d| mean 0.06556
+PASS 0147_origin_g100_sd31        windows 16 paired 16/16 sigma_start 30.993608474731445 calls [5] pads [3] resid/sigma std 1.0001
+PASS 0147_origin_g100_sd7         windows 16 paired 16/16 sigma_start 7.276163101196289 calls [4] pads [4] resid/sigma std 1.0001
+PASS 0170_deliv_g100_sd1          windows 14 paired 14/14 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0001
+PASS 0170_deliv_g100_sd1fill      windows 14 paired 14/14 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0001 fill: hole_frac_window 0.00060 changed 52841/53174 full_rows_unfilled 0 lat|d| mean 0.00496
+PASS 0170_deliv_g100_sd31         windows 14 paired 14/14 sigma_start 30.993608474731445 calls [5] pads [3] resid/sigma std 1.0001
+PASS 0170_deliv_g100_sd7          windows 14 paired 14/14 sigma_start 7.276163101196289 calls [4] pads [4] resid/sigma std 1.0001
+PASS 0170_origin_g100_sd1fill     windows 14 paired 14/14 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0001 fill: hole_frac_window 0.00060 changed 52841/53174 full_rows_unfilled 0 lat|d| mean 0.00496
+PASS 0170_origin_g100_sd31        windows 14 paired 14/14 sigma_start 30.993608474731445 calls [5] pads [3] resid/sigma std 1.0001
+PASS 0170_origin_g100_sd7         windows 14 paired 14/14 sigma_start 7.276163101196289 calls [4] pads [4] resid/sigma std 1.0001
+PASS 0204_deliv_g100_sd1          windows 14 paired 14/14 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0001
+PASS 0204_deliv_g100_sd1fill      windows 14 paired 14/14 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0001 fill: hole_frac_window 0.00028 changed 24549/24587 full_rows_unfilled 0 lat|d| mean 0.00481
+PASS 0204_deliv_g100_sd31         windows 14 paired 14/14 sigma_start 30.993608474731445 calls [5] pads [3] resid/sigma std 1.0001
+PASS 0204_deliv_g100_sd7          windows 14 paired 14/14 sigma_start 7.276163101196289 calls [4] pads [4] resid/sigma std 1.0001
+PASS 0204_origin_g100_sd1         windows 14 paired 14/14 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0001
+PASS 0204_origin_g100_sd1fill     windows 14 paired 14/14 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0001 fill: hole_frac_window 0.00028 changed 24549/24587 full_rows_unfilled 0 lat|d| mean 0.00481
+PASS 0204_origin_g100_sd31        windows 14 paired 14/14 sigma_start 30.993608474731445 calls [5] pads [3] resid/sigma std 1.0001
+PASS 0204_origin_g100_sd7         windows 14 paired 14/14 sigma_start 7.276163101196289 calls [4] pads [4] resid/sigma std 1.0001
+PASS 0225_deliv_g100_sd1          windows 14 paired 14/14 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0001
+PASS 0225_deliv_g100_sd1fill      windows 14 paired 14/14 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0001 fill: ZERO-HOLE window (A3'): changed px 0, latent mean|d| max over windows 0.00197 (max |d| 0.962) <= 0.01
+PASS 0225_deliv_g100_sd31         windows 14 paired 14/14 sigma_start 30.993608474731445 calls [5] pads [3] resid/sigma std 1.0001
+PASS 0225_deliv_g100_sd7          windows 14 paired 14/14 sigma_start 7.276163101196289 calls [4] pads [4] resid/sigma std 1.0001
+PASS 0225_origin_g100_sd1fill     windows 14 paired 14/14 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0001 fill: ZERO-HOLE window (A3'): changed px 0, latent mean|d| max over windows 0.00197 (max |d| 0.962) <= 0.01
+PASS 0225_origin_g100_sd31        windows 14 paired 14/14 sigma_start 30.993608474731445 calls [5] pads [3] resid/sigma std 1.0001
+PASS 0225_origin_g100_sd7         windows 14 paired 14/14 sigma_start 7.276163101196289 calls [4] pads [4] resid/sigma std 1.0001
+PASS 0251_deliv_g100_sd1          windows 14 paired 14/14 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0001
+PASS 0251_deliv_g100_sd1fill      windows 14 paired 14/14 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0001 fill: hole_frac_window 0.01713 changed 1513541/1515162 full_rows_unfilled 0 lat|d| mean 0.06135
+PASS 0251_deliv_g100_sd31         windows 14 paired 14/14 sigma_start 30.993608474731445 calls [5] pads [3] resid/sigma std 1.0001
+PASS 0251_deliv_g100_sd7          windows 14 paired 14/14 sigma_start 7.276163101196289 calls [4] pads [4] resid/sigma std 1.0001
+PASS 0251_origin_g100_sd1fill     windows 14 paired 14/14 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0001 fill: hole_frac_window 0.01713 changed 1513541/1515162 full_rows_unfilled 0 lat|d| mean 0.06135
+PASS 0251_origin_g100_sd31        windows 14 paired 14/14 sigma_start 30.993608474731445 calls [5] pads [3] resid/sigma std 1.0001
+PASS 0251_origin_g100_sd7         windows 14 paired 14/14 sigma_start 7.276163101196289 calls [4] pads [4] resid/sigma std 1.0001
+PASS 0259_deliv_g100_sd1          windows 14 paired 14/14 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0001
+PASS 0259_deliv_g100_sd1fill      windows 14 paired 14/14 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0001 fill: hole_frac_window 0.01287 changed 1145838/1146653 full_rows_unfilled 0 lat|d| mean 0.05337
+PASS 0259_deliv_g100_sd31         windows 14 paired 14/14 sigma_start 30.993608474731445 calls [5] pads [3] resid/sigma std 1.0001
+PASS 0259_deliv_g100_sd7          windows 14 paired 14/14 sigma_start 7.276163101196289 calls [4] pads [4] resid/sigma std 1.0001
+PASS 0259_origin_g100_sd1fill     windows 14 paired 14/14 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0001 fill: hole_frac_window 0.01287 changed 1145838/1146653 full_rows_unfilled 0 lat|d| mean 0.05337
+PASS 0259_origin_g100_sd31        windows 14 paired 14/14 sigma_start 30.993608474731445 calls [5] pads [3] resid/sigma std 1.0001
+PASS 0259_origin_g100_sd7         windows 14 paired 14/14 sigma_start 7.276163101196289 calls [4] pads [4] resid/sigma std 1.0001
+PASS 0301_deliv_g100_sd1          windows 14 paired 14/14 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0001
+PASS 0301_deliv_g100_sd1fill      windows 14 paired 14/14 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0001 fill: hole_frac_window 0.01444 changed 1275376/1285928 full_rows_unfilled 0 lat|d| mean 0.05287
+PASS 0301_deliv_g100_sd31         windows 14 paired 14/14 sigma_start 30.993608474731445 calls [5] pads [3] resid/sigma std 1.0001
+PASS 0301_deliv_g100_sd7          windows 14 paired 14/14 sigma_start 7.276163101196289 calls [4] pads [4] resid/sigma std 1.0001
+PASS 0301_origin_g100_sd1         windows 14 paired 14/14 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0001
+PASS 0301_origin_g100_sd1fill     windows 14 paired 14/14 sigma_start 1.1675708293914795 calls [3] pads [5] resid/sigma std 1.0001 fill: hole_frac_window 0.01444 changed 1275376/1285928 full_rows_unfilled 0 lat|d| mean 0.05287
+PASS 0301_origin_g100_sd31        windows 14 paired 14/14 sigma_start 30.993608474731445 calls [5] pads [3] resid/sigma std 1.0001
+PASS 0301_origin_g100_sd7         windows 14 paired 14/14 sigma_start 7.276163101196289 calls [4] pads [4] resid/sigma std 1.0001
+SUMMARY checked=88 failed=0

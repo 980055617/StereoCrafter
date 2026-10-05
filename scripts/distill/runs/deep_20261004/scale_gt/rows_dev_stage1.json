@@ -1,0 +1,1216 @@
+{
+ "labels": [
+  "origin_s8",
+  "main_v1_s250_s8",
+  "main_v1_s500_s8",
+  "main_v1_s1000_s8",
+  "main_v1_s1500_s8",
+  "main_v1_s2000_s8",
+  "main_v1_s2500_s8",
+  "main_v1_s3000_s8",
+  "contrast8_v1_s250_s8",
+  "contrast8_v1_s500_s8",
+  "contrast8_v1_s1000_s8",
+  "main_v1_s500_s8_colrm",
+  "main_v1_s1000_s8_colrm",
+  "contrast8_v1_s500_s8_colrm"
+ ],
+ "cells": {
+  "0040": {
+   "origin_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 39.9129,
+    "lpips": 0.5076,
+    "sharp": 0.007297,
+    "gtSharp": 0.004318,
+    "rightPSNR": 12.7385,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0040_origin_s8/0040_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_origin_s8.txt"
+    ]
+   },
+   "main_v1_s250_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 39.9129,
+    "lpips": 0.50909,
+    "sharp": 0.006483,
+    "gtSharp": 0.004318,
+    "rightPSNR": 12.7604,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0040_main_v1_s250_s8/0040_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s250.txt"
+    ]
+   },
+   "main_v1_s500_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 39.9129,
+    "lpips": 0.509547,
+    "sharp": 0.006628,
+    "gtSharp": 0.004318,
+    "rightPSNR": 12.7247,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0040_main_v1_s500_s8/0040_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s500.txt"
+    ]
+   },
+   "main_v1_s1000_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 39.9129,
+    "lpips": 0.509561,
+    "sharp": 0.006488,
+    "gtSharp": 0.004318,
+    "rightPSNR": 12.7804,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0040_main_v1_s1000_s8/0040_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s1000.txt"
+    ]
+   },
+   "main_v1_s1500_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 39.9129,
+    "lpips": 0.509321,
+    "sharp": 0.006335,
+    "gtSharp": 0.004318,
+    "rightPSNR": 12.7865,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0040_main_v1_s1500_s8/0040_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s1500.txt"
+    ]
+   },
+   "main_v1_s2000_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 39.9129,
+    "lpips": 0.509473,
+    "sharp": 0.006391,
+    "gtSharp": 0.004318,
+    "rightPSNR": 12.7915,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0040_main_v1_s2000_s8/0040_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s2000.txt"
+    ]
+   },
+   "main_v1_s2500_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 39.9129,
+    "lpips": 0.509839,
+    "sharp": 0.006359,
+    "gtSharp": 0.004318,
+    "rightPSNR": 12.789,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0040_main_v1_s2500_s8/0040_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s2500.txt"
+    ]
+   },
+   "main_v1_s3000_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 39.9129,
+    "lpips": 0.508756,
+    "sharp": 0.006477,
+    "gtSharp": 0.004318,
+    "rightPSNR": 12.8101,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0040_main_v1_s3000_s8/0040_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s3000.txt"
+    ]
+   },
+   "contrast8_v1_s250_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 39.9129,
+    "lpips": 0.510371,
+    "sharp": 0.006321,
+    "gtSharp": 0.004318,
+    "rightPSNR": 12.7366,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0040_contrast8_v1_s250_s8/0040_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_contrast8_v1_s250.txt"
+    ]
+   },
+   "contrast8_v1_s500_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 39.9129,
+    "lpips": 0.512212,
+    "sharp": 0.006211,
+    "gtSharp": 0.004318,
+    "rightPSNR": 12.7139,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0040_contrast8_v1_s500_s8/0040_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_contrast8_v1_s500.txt"
+    ]
+   },
+   "contrast8_v1_s1000_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 39.9129,
+    "lpips": 0.510629,
+    "sharp": 0.006326,
+    "gtSharp": 0.004318,
+    "rightPSNR": 12.7188,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0040_contrast8_v1_s1000_s8/0040_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_contrast8_v1_s1000.txt"
+    ]
+   },
+   "main_v1_s500_s8_colrm": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 39.9129,
+    "lpips": 0.509491,
+    "sharp": 0.006628,
+    "gtSharp": 0.004318,
+    "rightPSNR": 12.7191,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_v1/0040_main_v1_s500_s8_colrm/0040_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s500_s8_colrm.txt"
+    ]
+   },
+   "main_v1_s1000_s8_colrm": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 39.9129,
+    "lpips": 0.509506,
+    "sharp": 0.006488,
+    "gtSharp": 0.004318,
+    "rightPSNR": 12.7744,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_v1/0040_main_v1_s1000_s8_colrm/0040_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s1000_s8_colrm.txt"
+    ]
+   },
+   "contrast8_v1_s500_s8_colrm": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 39.9129,
+    "lpips": 0.511566,
+    "sharp": 0.006211,
+    "gtSharp": 0.004318,
+    "rightPSNR": 12.709,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_v1/0040_contrast8_v1_s500_s8_colrm/0040_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_contrast8_v1_s500_s8_colrm.txt"
+    ]
+   }
+  },
+  "0082": {
+   "origin_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.1472,
+    "lpips": 0.377106,
+    "sharp": 0.004858,
+    "gtSharp": 0.003094,
+    "rightPSNR": 14.6397,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0082_origin_s8/0082_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_origin_s8.txt"
+    ]
+   },
+   "main_v1_s250_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.1472,
+    "lpips": 0.376577,
+    "sharp": 0.004405,
+    "gtSharp": 0.003094,
+    "rightPSNR": 14.6317,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0082_main_v1_s250_s8/0082_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s250.txt"
+    ]
+   },
+   "main_v1_s500_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.1472,
+    "lpips": 0.377148,
+    "sharp": 0.004429,
+    "gtSharp": 0.003094,
+    "rightPSNR": 14.5926,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0082_main_v1_s500_s8/0082_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s500.txt"
+    ]
+   },
+   "main_v1_s1000_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.1472,
+    "lpips": 0.37745,
+    "sharp": 0.00432,
+    "gtSharp": 0.003094,
+    "rightPSNR": 14.6457,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0082_main_v1_s1000_s8/0082_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s1000.txt"
+    ]
+   },
+   "main_v1_s1500_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.1472,
+    "lpips": 0.377879,
+    "sharp": 0.004221,
+    "gtSharp": 0.003094,
+    "rightPSNR": 14.6603,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0082_main_v1_s1500_s8/0082_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s1500.txt"
+    ]
+   },
+   "main_v1_s2000_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.1472,
+    "lpips": 0.3779,
+    "sharp": 0.004263,
+    "gtSharp": 0.003094,
+    "rightPSNR": 14.668,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0082_main_v1_s2000_s8/0082_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s2000.txt"
+    ]
+   },
+   "main_v1_s2500_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.1472,
+    "lpips": 0.377585,
+    "sharp": 0.004242,
+    "gtSharp": 0.003094,
+    "rightPSNR": 14.6751,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0082_main_v1_s2500_s8/0082_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s2500.txt"
+    ]
+   },
+   "main_v1_s3000_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.1472,
+    "lpips": 0.376599,
+    "sharp": 0.004271,
+    "gtSharp": 0.003094,
+    "rightPSNR": 14.6922,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0082_main_v1_s3000_s8/0082_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s3000.txt"
+    ]
+   },
+   "contrast8_v1_s250_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.1472,
+    "lpips": 0.378454,
+    "sharp": 0.004241,
+    "gtSharp": 0.003094,
+    "rightPSNR": 14.6059,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0082_contrast8_v1_s250_s8/0082_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_contrast8_v1_s250.txt"
+    ]
+   },
+   "contrast8_v1_s500_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.1472,
+    "lpips": 0.38078,
+    "sharp": 0.004096,
+    "gtSharp": 0.003094,
+    "rightPSNR": 14.6025,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0082_contrast8_v1_s500_s8/0082_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_contrast8_v1_s500.txt"
+    ]
+   },
+   "contrast8_v1_s1000_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.1472,
+    "lpips": 0.37886,
+    "sharp": 0.004098,
+    "gtSharp": 0.003094,
+    "rightPSNR": 14.6376,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0082_contrast8_v1_s1000_s8/0082_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_contrast8_v1_s1000.txt"
+    ]
+   },
+   "main_v1_s500_s8_colrm": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.1472,
+    "lpips": 0.379147,
+    "sharp": 0.004429,
+    "gtSharp": 0.003094,
+    "rightPSNR": 14.5915,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_v1/0082_main_v1_s500_s8_colrm/0082_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s500_s8_colrm.txt"
+    ]
+   },
+   "main_v1_s1000_s8_colrm": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.1472,
+    "lpips": 0.379161,
+    "sharp": 0.00432,
+    "gtSharp": 0.003094,
+    "rightPSNR": 14.6455,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_v1/0082_main_v1_s1000_s8_colrm/0082_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s1000_s8_colrm.txt"
+    ]
+   },
+   "contrast8_v1_s500_s8_colrm": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.1472,
+    "lpips": 0.381297,
+    "sharp": 0.004096,
+    "gtSharp": 0.003094,
+    "rightPSNR": 14.5999,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_v1/0082_contrast8_v1_s500_s8_colrm/0082_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_contrast8_v1_s500_s8_colrm.txt"
+    ]
+   }
+  },
+  "0091": {
+   "origin_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.2881,
+    "lpips": 0.647698,
+    "sharp": 0.003807,
+    "gtSharp": 0.003117,
+    "rightPSNR": 12.9491,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0091_origin_s8/0091_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_origin_s8.txt"
+    ]
+   },
+   "main_v1_s250_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.2881,
+    "lpips": 0.648532,
+    "sharp": 0.003485,
+    "gtSharp": 0.003117,
+    "rightPSNR": 12.9341,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0091_main_v1_s250_s8/0091_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s250.txt"
+    ]
+   },
+   "main_v1_s500_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.2881,
+    "lpips": 0.649917,
+    "sharp": 0.00355,
+    "gtSharp": 0.003117,
+    "rightPSNR": 12.8953,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0091_main_v1_s500_s8/0091_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s500.txt"
+    ]
+   },
+   "main_v1_s1000_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.2881,
+    "lpips": 0.649116,
+    "sharp": 0.003424,
+    "gtSharp": 0.003117,
+    "rightPSNR": 12.9495,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0091_main_v1_s1000_s8/0091_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s1000.txt"
+    ]
+   },
+   "main_v1_s1500_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.2881,
+    "lpips": 0.649873,
+    "sharp": 0.003375,
+    "gtSharp": 0.003117,
+    "rightPSNR": 12.9319,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0091_main_v1_s1500_s8/0091_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s1500.txt"
+    ]
+   },
+   "main_v1_s2000_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.2881,
+    "lpips": 0.649764,
+    "sharp": 0.003405,
+    "gtSharp": 0.003117,
+    "rightPSNR": 12.9349,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0091_main_v1_s2000_s8/0091_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s2000.txt"
+    ]
+   },
+   "main_v1_s2500_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.2881,
+    "lpips": 0.650299,
+    "sharp": 0.003409,
+    "gtSharp": 0.003117,
+    "rightPSNR": 12.9207,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0091_main_v1_s2500_s8/0091_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s2500.txt"
+    ]
+   },
+   "main_v1_s3000_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.2881,
+    "lpips": 0.65039,
+    "sharp": 0.003421,
+    "gtSharp": 0.003117,
+    "rightPSNR": 12.9321,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0091_main_v1_s3000_s8/0091_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s3000.txt"
+    ]
+   },
+   "contrast8_v1_s250_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.2881,
+    "lpips": 0.649863,
+    "sharp": 0.003358,
+    "gtSharp": 0.003117,
+    "rightPSNR": 12.9279,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0091_contrast8_v1_s250_s8/0091_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_contrast8_v1_s250.txt"
+    ]
+   },
+   "contrast8_v1_s500_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.2881,
+    "lpips": 0.651124,
+    "sharp": 0.003241,
+    "gtSharp": 0.003117,
+    "rightPSNR": 12.9155,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0091_contrast8_v1_s500_s8/0091_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_contrast8_v1_s500.txt"
+    ]
+   },
+   "contrast8_v1_s1000_s8": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.2881,
+    "lpips": 0.650452,
+    "sharp": 0.003209,
+    "gtSharp": 0.003117,
+    "rightPSNR": 12.9286,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0091_contrast8_v1_s1000_s8/0091_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_contrast8_v1_s1000.txt"
+    ]
+   },
+   "main_v1_s500_s8_colrm": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.2881,
+    "lpips": 0.649953,
+    "sharp": 0.00355,
+    "gtSharp": 0.003117,
+    "rightPSNR": 12.8726,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_v1/0091_main_v1_s500_s8_colrm/0091_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s500_s8_colrm.txt"
+    ]
+   },
+   "main_v1_s1000_s8_colrm": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.2881,
+    "lpips": 0.649334,
+    "sharp": 0.003424,
+    "gtSharp": 0.003117,
+    "rightPSNR": 12.9194,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_v1/0091_main_v1_s1000_s8_colrm/0091_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s1000_s8_colrm.txt"
+    ]
+   },
+   "contrast8_v1_s500_s8_colrm": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.2881,
+    "lpips": 0.64877,
+    "sharp": 0.003241,
+    "gtSharp": 0.003117,
+    "rightPSNR": 12.8979,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_v1/0091_contrast8_v1_s500_s8_colrm/0091_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_contrast8_v1_s500_s8_colrm.txt"
+    ]
+   }
+  },
+  "0184": {
+   "origin_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 39.6799,
+    "lpips": 0.503703,
+    "sharp": 0.008263,
+    "gtSharp": 0.010259,
+    "rightPSNR": 11.429,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0184_origin_s8/0184_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_origin_s8.txt"
+    ]
+   },
+   "main_v1_s250_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 39.6799,
+    "lpips": 0.51044,
+    "sharp": 0.007508,
+    "gtSharp": 0.010259,
+    "rightPSNR": 11.3884,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0184_main_v1_s250_s8/0184_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s250.txt"
+    ]
+   },
+   "main_v1_s500_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 39.6799,
+    "lpips": 0.508927,
+    "sharp": 0.007658,
+    "gtSharp": 0.010259,
+    "rightPSNR": 11.3396,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0184_main_v1_s500_s8/0184_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s500.txt"
+    ]
+   },
+   "main_v1_s1000_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 39.6799,
+    "lpips": 0.512168,
+    "sharp": 0.007427,
+    "gtSharp": 0.010259,
+    "rightPSNR": 11.3844,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0184_main_v1_s1000_s8/0184_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s1000.txt"
+    ]
+   },
+   "main_v1_s1500_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 39.6799,
+    "lpips": 0.509838,
+    "sharp": 0.007471,
+    "gtSharp": 0.010259,
+    "rightPSNR": 11.3767,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0184_main_v1_s1500_s8/0184_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s1500.txt"
+    ]
+   },
+   "main_v1_s2000_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 39.6799,
+    "lpips": 0.509492,
+    "sharp": 0.007515,
+    "gtSharp": 0.010259,
+    "rightPSNR": 11.384,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0184_main_v1_s2000_s8/0184_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s2000.txt"
+    ]
+   },
+   "main_v1_s2500_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 39.6799,
+    "lpips": 0.510857,
+    "sharp": 0.007515,
+    "gtSharp": 0.010259,
+    "rightPSNR": 11.3516,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0184_main_v1_s2500_s8/0184_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s2500.txt"
+    ]
+   },
+   "main_v1_s3000_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 39.6799,
+    "lpips": 0.508422,
+    "sharp": 0.00756,
+    "gtSharp": 0.010259,
+    "rightPSNR": 11.4033,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0184_main_v1_s3000_s8/0184_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s3000.txt"
+    ]
+   },
+   "contrast8_v1_s250_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 39.6799,
+    "lpips": 0.510405,
+    "sharp": 0.007387,
+    "gtSharp": 0.010259,
+    "rightPSNR": 11.3785,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0184_contrast8_v1_s250_s8/0184_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_contrast8_v1_s250.txt"
+    ]
+   },
+   "contrast8_v1_s500_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 39.6799,
+    "lpips": 0.511989,
+    "sharp": 0.007216,
+    "gtSharp": 0.010259,
+    "rightPSNR": 11.3553,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0184_contrast8_v1_s500_s8/0184_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_contrast8_v1_s500.txt"
+    ]
+   },
+   "contrast8_v1_s1000_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 39.6799,
+    "lpips": 0.509631,
+    "sharp": 0.007405,
+    "gtSharp": 0.010259,
+    "rightPSNR": 11.3639,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0184_contrast8_v1_s1000_s8/0184_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_contrast8_v1_s1000.txt"
+    ]
+   },
+   "main_v1_s500_s8_colrm": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 39.6799,
+    "lpips": 0.510957,
+    "sharp": 0.007655,
+    "gtSharp": 0.010259,
+    "rightPSNR": 11.339,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_v1/0184_main_v1_s500_s8_colrm/0184_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s500_s8_colrm.txt"
+    ]
+   },
+   "main_v1_s1000_s8_colrm": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 39.6799,
+    "lpips": 0.516008,
+    "sharp": 0.007425,
+    "gtSharp": 0.010259,
+    "rightPSNR": 11.3801,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_v1/0184_main_v1_s1000_s8_colrm/0184_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s1000_s8_colrm.txt"
+    ]
+   },
+   "contrast8_v1_s500_s8_colrm": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 39.6799,
+    "lpips": 0.515605,
+    "sharp": 0.007213,
+    "gtSharp": 0.010259,
+    "rightPSNR": 11.3534,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_v1/0184_contrast8_v1_s500_s8_colrm/0184_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_contrast8_v1_s500_s8_colrm.txt"
+    ]
+   }
+  },
+  "0245": {
+   "origin_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.6934,
+    "lpips": 0.53628,
+    "sharp": 0.019073,
+    "gtSharp": 0.019571,
+    "rightPSNR": 13.3245,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0245_origin_s8/0245_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_origin_s8.txt"
+    ]
+   },
+   "main_v1_s250_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.6934,
+    "lpips": 0.54251,
+    "sharp": 0.016662,
+    "gtSharp": 0.019571,
+    "rightPSNR": 13.4786,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0245_main_v1_s250_s8/0245_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s250.txt"
+    ]
+   },
+   "main_v1_s500_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.6934,
+    "lpips": 0.547781,
+    "sharp": 0.017643,
+    "gtSharp": 0.019571,
+    "rightPSNR": 13.3646,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0245_main_v1_s500_s8/0245_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s500.txt"
+    ]
+   },
+   "main_v1_s1000_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.6934,
+    "lpips": 0.542034,
+    "sharp": 0.01706,
+    "gtSharp": 0.019571,
+    "rightPSNR": 13.4739,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0245_main_v1_s1000_s8/0245_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s1000.txt"
+    ]
+   },
+   "main_v1_s1500_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.6934,
+    "lpips": 0.547024,
+    "sharp": 0.017623,
+    "gtSharp": 0.019571,
+    "rightPSNR": 13.4137,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0245_main_v1_s1500_s8/0245_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s1500.txt"
+    ]
+   },
+   "main_v1_s2000_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.6934,
+    "lpips": 0.545708,
+    "sharp": 0.017651,
+    "gtSharp": 0.019571,
+    "rightPSNR": 13.4162,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0245_main_v1_s2000_s8/0245_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s2000.txt"
+    ]
+   },
+   "main_v1_s2500_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.6934,
+    "lpips": 0.546469,
+    "sharp": 0.01795,
+    "gtSharp": 0.019571,
+    "rightPSNR": 13.3395,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0245_main_v1_s2500_s8/0245_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s2500.txt"
+    ]
+   },
+   "main_v1_s3000_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.6934,
+    "lpips": 0.545437,
+    "sharp": 0.018132,
+    "gtSharp": 0.019571,
+    "rightPSNR": 13.4018,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0245_main_v1_s3000_s8/0245_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s3000.txt"
+    ]
+   },
+   "contrast8_v1_s250_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.6934,
+    "lpips": 0.549854,
+    "sharp": 0.016786,
+    "gtSharp": 0.019571,
+    "rightPSNR": 13.5057,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0245_contrast8_v1_s250_s8/0245_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_contrast8_v1_s250.txt"
+    ]
+   },
+   "contrast8_v1_s500_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.6934,
+    "lpips": 0.555649,
+    "sharp": 0.016631,
+    "gtSharp": 0.019571,
+    "rightPSNR": 13.4429,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0245_contrast8_v1_s500_s8/0245_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_contrast8_v1_s500.txt"
+    ]
+   },
+   "contrast8_v1_s1000_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.6934,
+    "lpips": 0.550874,
+    "sharp": 0.017526,
+    "gtSharp": 0.019571,
+    "rightPSNR": 13.4076,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0245_contrast8_v1_s1000_s8/0245_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_contrast8_v1_s1000.txt"
+    ]
+   },
+   "main_v1_s500_s8_colrm": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.6934,
+    "lpips": 0.545502,
+    "sharp": 0.017634,
+    "gtSharp": 0.019571,
+    "rightPSNR": 13.371,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_v1/0245_main_v1_s500_s8_colrm/0245_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s500_s8_colrm.txt"
+    ]
+   },
+   "main_v1_s1000_s8_colrm": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.6934,
+    "lpips": 0.53923,
+    "sharp": 0.017054,
+    "gtSharp": 0.019571,
+    "rightPSNR": 13.4849,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_v1/0245_main_v1_s1000_s8_colrm/0245_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s1000_s8_colrm.txt"
+    ]
+   },
+   "contrast8_v1_s500_s8_colrm": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.6934,
+    "lpips": 0.552773,
+    "sharp": 0.016624,
+    "gtSharp": 0.019571,
+    "rightPSNR": 13.4539,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_v1/0245_contrast8_v1_s500_s8_colrm/0245_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_contrast8_v1_s500_s8_colrm.txt"
+    ]
+   }
+  },
+  "0268": {
+   "origin_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.9714,
+    "lpips": 0.197105,
+    "sharp": 0.008523,
+    "gtSharp": 0.020219,
+    "rightPSNR": 23.9376,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0268_origin_s8/0268_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_origin_s8.txt"
+    ]
+   },
+   "main_v1_s250_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.9714,
+    "lpips": 0.236789,
+    "sharp": 0.007737,
+    "gtSharp": 0.020219,
+    "rightPSNR": 24.5696,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0268_main_v1_s250_s8/0268_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s250.txt"
+    ]
+   },
+   "main_v1_s500_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.9714,
+    "lpips": 0.23644,
+    "sharp": 0.008194,
+    "gtSharp": 0.020219,
+    "rightPSNR": 24.4868,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0268_main_v1_s500_s8/0268_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s500.txt"
+    ]
+   },
+   "main_v1_s1000_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.9714,
+    "lpips": 0.237516,
+    "sharp": 0.008027,
+    "gtSharp": 0.020219,
+    "rightPSNR": 24.4596,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0268_main_v1_s1000_s8/0268_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s1000.txt"
+    ]
+   },
+   "main_v1_s1500_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.9714,
+    "lpips": 0.239853,
+    "sharp": 0.008286,
+    "gtSharp": 0.020219,
+    "rightPSNR": 24.3686,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0268_main_v1_s1500_s8/0268_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s1500.txt"
+    ]
+   },
+   "main_v1_s2000_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.9714,
+    "lpips": 0.237866,
+    "sharp": 0.00832,
+    "gtSharp": 0.020219,
+    "rightPSNR": 24.3511,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0268_main_v1_s2000_s8/0268_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s2000.txt"
+    ]
+   },
+   "main_v1_s2500_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.9714,
+    "lpips": 0.232176,
+    "sharp": 0.008283,
+    "gtSharp": 0.020219,
+    "rightPSNR": 24.3042,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0268_main_v1_s2500_s8/0268_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s2500.txt"
+    ]
+   },
+   "main_v1_s3000_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.9714,
+    "lpips": 0.235055,
+    "sharp": 0.008403,
+    "gtSharp": 0.020219,
+    "rightPSNR": 24.3111,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0268_main_v1_s3000_s8/0268_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s3000.txt"
+    ]
+   },
+   "contrast8_v1_s250_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.9714,
+    "lpips": 0.243295,
+    "sharp": 0.007853,
+    "gtSharp": 0.020219,
+    "rightPSNR": 24.4329,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0268_contrast8_v1_s250_s8/0268_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_contrast8_v1_s250.txt"
+    ]
+   },
+   "contrast8_v1_s500_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.9714,
+    "lpips": 0.253068,
+    "sharp": 0.007693,
+    "gtSharp": 0.020219,
+    "rightPSNR": 24.3062,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0268_contrast8_v1_s500_s8/0268_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_contrast8_v1_s500.txt"
+    ]
+   },
+   "contrast8_v1_s1000_s8": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.9714,
+    "lpips": 0.248009,
+    "sharp": 0.00793,
+    "gtSharp": 0.020219,
+    "rightPSNR": 24.2433,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/renders/0268_contrast8_v1_s1000_s8/0268_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_contrast8_v1_s1000.txt"
+    ]
+   },
+   "main_v1_s500_s8_colrm": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.9714,
+    "lpips": 0.235181,
+    "sharp": 0.008193,
+    "gtSharp": 0.020219,
+    "rightPSNR": 24.0143,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_v1/0268_main_v1_s500_s8_colrm/0268_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s500_s8_colrm.txt"
+    ]
+   },
+   "main_v1_s1000_s8_colrm": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.9714,
+    "lpips": 0.234768,
+    "sharp": 0.008027,
+    "gtSharp": 0.020219,
+    "rightPSNR": 23.9805,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_v1/0268_main_v1_s1000_s8_colrm/0268_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_main_v1_s1000_s8_colrm.txt"
+    ]
+   },
+   "contrast8_v1_s500_s8_colrm": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.9714,
+    "lpips": 0.249298,
+    "sharp": 0.007693,
+    "gtSharp": 0.020219,
+    "rightPSNR": 23.7991,
+    "n": 38,
+    "path": "outputs/deep_20261004/scale_gt/diag_colorremoved_v1/0268_contrast8_v1_s500_s8_colrm/0268_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/scale_gt/score_dev_contrast8_v1_s500_s8_colrm.txt"
+    ]
+   }
+  }
+ },
+ "clips": [
+  "0040",
+  "0082",
+  "0091",
+  "0184",
+  "0245",
+  "0268"
+ ]
+}

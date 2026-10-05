@@ -1,0 +1,1 @@
+step,loss,lpips_vgg,l1,gnorm_preclip,clipped,lr,s_per_step,peak_gib

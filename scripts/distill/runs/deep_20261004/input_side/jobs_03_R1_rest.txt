@@ -1,0 +1,7 @@
+# reconstruction control R1 on the other three clips (after the 0301 smoke renders succeeded)
+0204 R1_origin origin R1
+0204 R1_deliv deliv R1
+0052 R1_origin origin R1
+0052 R1_deliv deliv R1
+0147 R1_origin origin R1
+0147 R1_deliv deliv R1

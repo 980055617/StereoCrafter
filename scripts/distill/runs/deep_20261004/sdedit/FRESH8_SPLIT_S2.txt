@@ -1,0 +1,10 @@
+FRESH-CLIP SPLIT (post hoc, descriptive; from TABLE_S2_EXT12.json): the 4 regime clips decided P4, so the 12-clip
+counts are not independent of that selection.  Shown: the 8 clips NOT used at P4 vs the 4 regime clips.
+  variant                fresh8 REG wins fresh8 mean dREG fresh8 UNREG wins fresh8 mean dUNREG | regime4 wins regime4 mean | fresh8 dREG vs ORIGIN
+  origin_g100_sd31                 3/8             -0.0000             3/8               -0.0000 |        3/4         -0.0021 |      -0.0000 (3/8)
+  origin_g100_sd7                  6/8             -0.0021             6/8               -0.0013 |        4/4         -0.0093 |      -0.0021 (6/8)
+  origin_g100_sd1fill              8/8             -0.0105             7/8               -0.0076 |        3/4         -0.0224 |      -0.0105 (8/8)
+  deliv_g100_sd31                  4/8             +0.0001             5/8               -0.0001 |        3/4         -0.0011 |      -0.0104 (7/8)
+  deliv_g100_sd7                   5/8             -0.0003             5/8               -0.0001 |        4/4         -0.0036 |      -0.0108 (7/8)
+  deliv_g100_sd1                   3/8             +0.0007             4/8               +0.0007 |        3/4         +0.0014 |      -0.0098 (5/8)
+  deliv_g100_sd1fill               6/8             -0.0050             4/8               -0.0023 |        3/4         -0.0055 |      -0.0155 (8/8)

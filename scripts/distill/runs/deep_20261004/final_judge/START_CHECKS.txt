@@ -1,0 +1,15 @@
+2026-10-05 12:57:10
+08cf44850b8f392efb307e3a48cd82d1  /mnt/ssd_data/stereocrafter_weights/_distill_injected/mamba5slot_plus_stepdistil_up3_train10clip_step800_20261001.pt
+e9c232878319d041680e7fb3be74bf10  /mnt/ssd_data/stereocrafter_weights/_distill_injected/light_lvl0_fulldata333_v2_8k_mamba_only.pt
+--- git status --porcelain
+?? scripts/distill/runs/deep_20261004/
+--- HEAD
+c24b8ea59b89b2623cb5827184e1addccce3e3c6
+attn1_only_version
+--- tracked scorer md5
+a6695eb066971e1ca211e4ad9c85fac7  scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py
+4cb3c07da50c90c3fdddcb6f8c5c7ee9  scripts/distill/score_temporal.py
+c9532d5a5cde42f7024a2caebb855c3f  scripts/distill/runs/more_20261004/eval_robustness/score_registered_v1.py
+2506656d86c8c5a24dd7546a2689e8f6  scripts/distill/runs/review_20261001/reviewlib.py
+scripts/distill/runs/fulldata_v2/beyond4/score_clip_ll.py
+scripts/distill/runs/more_20261004/eval_robustness/score_registered_v1.py

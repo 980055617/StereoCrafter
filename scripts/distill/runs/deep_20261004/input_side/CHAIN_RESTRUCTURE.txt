@@ -1,0 +1,10 @@
+2026-10-05 01:15 input_side: GPU-0 lock is taken by other lanes' 20-50 min batches; my 8 single-job waiter units
+(render-01/02/03/04, fit-rest, score-g2, score-inputonly-R1, score-0301) were stopped while WAITING (none held the lock,
+none had started) and their work is resubmitted as <= ~40-min batches under one flock each (batch_*.sh, nolock drivers).
+Removed only zero-byte placeholders those never-started jobs had created (rmdir refuses non-empty dirs):
+  removed empty dir outputs/deep_20261004/input_side/clips/0204_RF_origin/ and zero-byte outputs/deep_20261004/input_side/clips/0204_RF_origin.log
+  removed empty dir outputs/deep_20261004/input_side/clips/0301_R1_origin/ and zero-byte outputs/deep_20261004/input_side/clips/0301_R1_origin.log
+  removed empty dir outputs/deep_20261004/input_side/clips/0301_RF_deliv/ and zero-byte outputs/deep_20261004/input_side/clips/0301_RF_deliv.log
+  removed zero-byte outputs/deep_20261004/input_side/scores_v1/0204__deployed.log
+  removed zero-byte outputs/deep_20261004/input_side/scores_inputonly_v1/0204__R1.log
+  removed zero-byte /mnt/ssd_data/deep_20261004/input_side/logs/fit_v1_0052.log

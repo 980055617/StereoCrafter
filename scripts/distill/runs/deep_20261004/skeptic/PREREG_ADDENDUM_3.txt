@@ -1,0 +1,9 @@
+PREREG ADDENDUM 3 -- EXPLORATORY, non-gating (written before job_comp_v1.py produced any number).
+Motivation (from M3 0301/0170, already seen): the raw model input BR scores far better than origin against the registered
+GT (0301: 0.2531 vs 0.4006; 0170: 0.1227 vs 0.2077).  Question: does LPIPS reward outputs the user has already rejected?
+Rows (no model change): COMP_origin = BR with origin's pixels inside the model holes (the user-rejected "mask-only
+compositing"); COMP_telea = BR with the holes filled by cv2 Telea inpainting (no generative model).  References: origin,
+s25.  Metrics as M6: LPIPS-alex UNREG / REG_FRAME, PSNR REG (S38); LPIPS-vgg, DISTS, reviewlib flatHF / edgeHF / stripeE
+against the REG_FRAME GT (S6).  Reading (descriptive): if COMP_* beat origin on LPIPS-alex while stripeE/GT rises above
+origin's, LPIPS rewards an output the user rejects; the "real gain" definition must then carry a stripe guard.
+2026-10-04 23:26:59 JST

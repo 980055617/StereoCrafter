@@ -1,0 +1,40 @@
+VERDICTS -- input_side lane (deep_20261004), every rule as pre-registered.  Source JSONs: outputs/deep_20261004/input_side/scores_v1/<clip>__<input>.json
+Clips 0301 0204 0052 0147; models origin (deployed) and deliv (the deliverable .pt); LPIPS-Alex, lower = better.
+
+R1-FIDELITY (PREREG, reported): R1 vs DEP.  Representative iff mean|d| <= 0.003 and max|d| <= 0.006.
+  origin UNREG     d(R1-DEP) +0.0033 -0.0039 -0.0010 +0.0050  mean|d| 0.0033 max 0.0050 -> NOT representative
+  origin REG_FRAME d(R1-DEP) +0.0034 -0.0060 -0.0006 +0.0082  mean|d| 0.0045 max 0.0082 -> NOT representative
+  deliv  UNREG     d(R1-DEP) -0.0005 -0.0009 +0.0012 +0.0069  mean|d| 0.0024 max 0.0069 -> NOT representative
+  deliv  REG_FRAME d(R1-DEP) -0.0003 -0.0023 +0.0019 +0.0098  mean|d| 0.0036 max 0.0098 -> NOT representative
+  explained by ADDENDUM 1: R1C (= R1 + the deployed cv2-mp4v intermediate) vs DEP:
+  origin UNREG     d(R1C-DEP) -0.0013 -0.0001 +0.0001 -0.0001  mean|d| 0.0004 max 0.0013
+  origin REG_FRAME d(R1C-DEP) -0.0017 -0.0008 -0.0003 +0.0001  mean|d| 0.0007 max 0.0017
+  deliv  UNREG     d(R1C-DEP) +0.0000 -0.0002 +0.0001 -0.0001  mean|d| 0.0001 max 0.0002
+  deliv  REG_FRAME d(R1C-DEP) -0.0004 -0.0008 -0.0003 -0.0000  mean|d| 0.0004 max 0.0008
+  -> the depth reconstruction is faithful; the R1-DEP gap is the codec.
+
+PROBE 1 (ORACLE disparity fit, RF vs R1).  P1: mean4 dREG_FRAME <= -0.005 AND >= 3/4 improved; 'every model' = both.
+  origin dREG_FRAME -0.0556 -0.0075 -0.0211 +0.0048  mean -0.0198  3/4  -> P1 PASS
+  origin dUNREG     -0.0853 -0.0768 -0.2440 -0.3067  mean -0.1782  4/4   (RO-R1 dUNREG mean -0.1576 = convergence part)
+  origin dREG_CLIP  -0.0558 -0.0081 -0.0198 +0.0038  mean -0.0200  3/4
+  origin dBLK_LOCAL -0.0450 -0.0013 +0.0041 +0.0107  mean -0.0079  2/4  -> BLK_LOCAL also moves (|mean| >= 0.002)
+  origin vs the DEPLOYED input: RF-DEP dREG_FRAME -0.0522 -0.0134 -0.0217 +0.0130  mean -0.0186 3/4; dUNREG mean -0.1774 4/4
+  deliv  dREG_FRAME -0.0282 -0.0066 -0.0251 +0.0042  mean -0.0139  3/4  -> P1 PASS
+  deliv  dUNREG     -0.0596 -0.0749 -0.2480 -0.3103  mean -0.1732  4/4   (RO-R1 dUNREG mean -0.1585 = convergence part)
+  deliv  dREG_CLIP  -0.0284 -0.0072 -0.0238 +0.0038  mean -0.0139  3/4
+  deliv  dBLK_LOCAL -0.0183 -0.0003 +0.0004 +0.0110  mean -0.0018  2/4  -> gain = GEOMETRIC ALIGNMENT (|mean dBLK_LOCAL| < 0.002)
+  deliv  vs the DEPLOYED input: RF-DEP dREG_FRAME -0.0284 -0.0089 -0.0232 +0.0139  mean -0.0117 3/4; dUNREG mean -0.1715 4/4
+  P1 for every model: PASS
+  deliverable - origin gap (REG_FRAME): on R1 -0.0445 -0.0160 -0.0055 -0.0043 mean -0.0176;  on RF -0.0171 -0.0151 -0.0095 -0.0049 mean -0.0117
+  registration-free sharpness of the OUTPUT (sharp/GT, selfEdgeHF/GT), R1 -> RF:
+  origin 0301 0.367->0.405 / 0.436->0.427  0204 0.686->0.683 / 0.726->0.729  0052 0.684->0.594 / 0.829->0.712  0147 0.947->0.939 / 1.035->1.001
+  deliv  0301 0.450->0.463 / 0.478->0.455  0204 0.798->0.787 / 0.845->0.842  0052 0.727->0.642 / 0.887->0.787  0147 1.053->1.038 / 1.118->1.047
+
+PROBE 2 step B (SS4 = the largest-input-stripe-reduction variant; P2A failed for all six variants, TABLE_P2A_INPUT.txt).
+  P2B: mean4 dREG_FRAME (SS4-R1) <= -0.003 AND >= 3/4 improved AND output stripeE/GT falls on average.
+  origin dREG_FRAME -0.0370 -0.0013 +0.0014 +0.0129  mean -0.0060 2/4; dUNREG mean -0.0075 2/4; output stripeE/GT mean 2.500 -> 2.475  -> P2B FAIL
+  deliv  dREG_FRAME -0.0027 +0.0003 +0.0022 +0.0148  mean +0.0037 1/4; dUNREG mean +0.0019 0/4; output stripeE/GT mean 2.906 -> 2.863  -> P2B FAIL
+
+ADDENDUM 1 codec control.  P3: mean4 dREG_FRAME (R1 - R1C) <= -0.002 AND R1 better on >= 3/4 (lossless helps).
+  origin d(R1-R1C) REG_FRAME +0.0051 -0.0052 -0.0003 +0.0081  mean +0.0019 2/4; UNREG mean +0.0012 2/4 -> P3 FAIL
+  deliv  d(R1-R1C) REG_FRAME +0.0001 -0.0015 +0.0021 +0.0098  mean +0.0026 1/4; UNREG mean +0.0017 2/4 -> P3 FAIL

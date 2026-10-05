@@ -1,0 +1,31 @@
+external_models r2 -- M2SVid (full-attention weights, m2svid_fa_w16: 576x1024, 16-frame windows, 1 step) vs origin / deliverable
+LPIPS-Alex vs the real right eye, SCORE_STEP=4, lossless renders.  origin / deliverable = PUBLISHED GPU values (score_v1); M2SVid scored on CPU (D3/D4; backend error <= 5e-5, see paired check below)
+clips scored: 4 ['0301', '0204', '0052', '0147']
+
+clip  |           UNREG            |         REG_FRAME          |     M2-orig     |    M2-deliv     |  sharp/gtSharp  |  rPSNR REG 
+      |   origin    deliv   M2SVid |   origin    deliv   M2SVid |   UNREG     REG |   UNREG     REG |  origin  M2SVid |  orig    M2
+0301  |   0.4351   0.3965   0.4011 |   0.4051   0.3643   0.3667 | -0.0340 -0.0385 | +0.0046 +0.0023 |   0.466   0.536 | 17.39 17.12
+0204  |   0.2053   0.1867   0.1889 |   0.1340   0.1144   0.1161 | -0.0164 -0.0179 | +0.0022 +0.0017 |   0.564   0.561 | 23.48 23.50
+0052  |   0.4467   0.4395   0.4544 |   0.2231   0.2151   0.2625 | +0.0077 +0.0394 | +0.0149 +0.0474 |   1.314   1.120 | 17.75 17.60
+0147  |   0.5269   0.5244   0.5155 |   0.2100   0.2042   0.2049 | -0.0115 -0.0051 | -0.0089 +0.0007 |   1.584   1.386 | 19.11 19.37
+
+--- REGIME 4-clip set: 4 clips ['0301', '0204', '0052', '0147']
+  UNREG     origin 0.4035 (pub GPU 0.4035)  deliv 0.3868  M2SVid 0.3900  | M2-origin -0.0135 (better 3/4)  M2-deliv +0.0032 (better 1/4)
+  REG_CLIP  origin 0.2446 (pub GPU 0.2446)  deliv 0.2260  M2SVid 0.2389  | M2-origin -0.0056 (better 3/4)  M2-deliv +0.0129 (better 0/4)
+  REG_FRAME origin 0.2431 (pub GPU 0.2431)  deliv 0.2245  M2SVid 0.2375  | M2-origin -0.0055 (better 3/4)  M2-deliv +0.0130 (better 0/4)
+  BLK_LOCAL origin 0.2083 (pub GPU 0.2083)  deliv 0.1901  M2SVid 0.2055  | M2-origin -0.0029 (better 3/4)  M2-deliv +0.0154 (better 0/4)
+  published s25 (GPU): UNREG 0.3872  REG_FRAME 0.2252
+  PAIRED CPU check on ['0301', '0204', '0052', '0147']: M2-origin UNREG -0.0135 REG_FRAME -0.0055;  M2-deliv UNREG +0.0032 REG_FRAME +0.0130
+  sharp/gtSharp: origin 0.982  M2SVid 0.901
+  rightPSNR REG_FRAME: origin 19.433  deliv 19.251  M2SVid 19.398
+  temporal GT      tLP 0.1403  seam ratio (own grid) 0.994  (at M2SVid grid 1.028)
+  temporal origin  tLP 0.1261  seam ratio (own grid) 1.233  (at M2SVid grid 1.010)
+  temporal deliv   tLP 0.1318  seam ratio (own grid) 1.274  (at M2SVid grid 1.019)
+  temporal m2svid  tLP 0.1069  seam ratio (own grid) 1.455  (at M2SVid grid 1.455)
+  LANE RULE vs origin: dUNREG -0.0135 (better 3/4), dREG_FRAME -0.0055 (better 3/4) -> NO CLEAR DIFFERENCE
+  LANE RULE vs deliverable: dUNREG +0.0032 (better 1/4), dREG_FRAME +0.0130 (better 0/4) -> NO CLEAR DIFFERENCE
+
+backend reproduction (CPU vs published GPU, max |d| over 5 variants): 0301 origin 4.7e-05 deliv 3.8e-05, 0204 origin 1.2e-05 deliv 1.4e-05, 0052 origin 2.4e-05 deliv 2.6e-05, 0147 origin 3.6e-05 deliv 1.9e-05
+gates G0/G1: 0301 {'offset_equal': True, 'left_md5_equal_scored': True, 'unreg_two_scripts_equal': True, 'left_md5_all_frames_equal': True} {'frames': True, 'finite': True, 'lossless': True}; 0204 {'offset_equal': True, 'left_md5_equal_scored': True, 'unreg_two_scripts_equal': True, 'left_md5_all_frames_equal': True} {'frames': True, 'finite': True, 'lossless': True}; 0052 {'offset_equal': True, 'left_md5_equal_scored': True, 'unreg_two_scripts_equal': True, 'left_md5_all_frames_equal': True} {'frames': True, 'finite': True, 'lossless': True}; 0147 {'offset_equal': True, 'left_md5_equal_scored': True, 'unreg_two_scripts_equal': True, 'left_md5_all_frames_equal': True} {'frames': True, 'finite': True, 'lossless': True}
+speed (s per 16-frame 576x1024 window on the RTX 4090, official scale-1.0 CFG batch, decode in 8-frame chunks): 0301 7.10, 0204 6.80, 0052 6.94, 0147 6.93
+hole fraction after M2SVid closing+dilation (mean over clip): 0301 0.041, 0204 0.001, 0052 0.031, 0147 0.029

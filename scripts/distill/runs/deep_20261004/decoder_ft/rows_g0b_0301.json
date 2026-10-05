@@ -1,0 +1,41 @@
+{
+ "labels": [
+  "origin_cap__stock",
+  "origin_ll"
+ ],
+ "cells": {
+  "0301": {
+   "origin_cap__stock": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.2464,
+    "lpips": 0.435095,
+    "sharp": 0.023528,
+    "gtSharp": 0.050529,
+    "rightPSNR": 15.4667,
+    "n": 38,
+    "path": "/mnt/ssd_data/deep_20261004/decoder_ft/gate_stock/0301_origin_cap__stock/0301_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/deep_20261004/decoder_ft/g0_unreg_0301.txt"
+    ]
+   },
+   "origin_ll": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.2464,
+    "lpips": 0.435095,
+    "sharp": 0.023528,
+    "gtSharp": 0.050529,
+    "rightPSNR": 15.4667,
+    "n": 38,
+    "path": "outputs/beyond4_lossless/clips/0301_origin_ll/0301_inpainting_results_sbs.mkv",
+    "sources": [
+     "ays_20261004/robust/ROWS_pass1.json"
+    ]
+   }
+  }
+ },
+ "clips": [
+  "0301"
+ ]
+}

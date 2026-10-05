@@ -10986,3 +10986,44 @@ stacking rule. Flicker: AYS8 origin raises warp error +8.0 % at a rate per unit 
 contains the deliverable/25-step rate (1.55) and excludes an unsharp mask's (0.76), so the deliverable's +22 % is the cost
 of generated detail, not an instability of distillation; at matched 5 evaluations it is +22.6 % warp vs AYS5 origin
 (which is not sharper). Right-eye PSNR -0.21 dB vs AYS5 origin (weak evidence; misregistered GT penalises sharpness).
+
+## 2026-10-05 - Deep round: origin cannot be exceeded substantially on this data; the blur comes from the SVD VAE, and GT training still degrades at 215 clips
+
+`scripts/distill/runs/deep_20261004/{scale_gt,blur_diag,sdedit,input_side,external_models,skeptic,decoder_ft,final_judge}/`
+(final report: `final_judge/TABLE_JUDGE_v1.txt`), renders under `outputs/deep_20261004/`. All lossless, pre-registered,
+dev-selected; the judge re-scored every quoted row from disk (148 renders md5-verified).
+
+**Answer to "can we exceed origin by a lot?": no, on this data.** The largest gains anywhere are 0.013-0.018 registered
+LPIPS, every one of them looks nearly the same as origin, and the same level is reachable training-free (AYS8 -0.0114
+registered, 12/12) or with no model at all (the warped input with row-filled cracks scores -0.0512 registered but shows
+visible streaks in the hole bands).
+
+- **GT supervision at scale (scale_gt) - closed for this objective.** Of 333 train_order clips only 291 have a real right
+  eye (< 0310); after pre-registered registration exclusions 215 clips / 754 windows were trained on. Diffusion-loss
+  fine-tuning of origin's 15 up_blocks.3 attn1 tensors toward the registered real right eye still degrades the deployed
+  output: test 8 steps registered 0.2430 -> 0.2896 (+0.0466, CI [+0.029, +0.068], 12/12 worse), 25 steps +0.0207 (12/12).
+  Scale removes 20-35 % of the damage seen with 8 clips but does not flip the sign; the damage appears within 250 steps
+  and plateaus. Held-out denoising MSE improves 3.4-4.0 % while samples get hazier - regression toward the mean. Only
+  45.7 % of textured cells register within 2 px (the real baseline differs from the rendered disparity depth-dependently).
+- **Where the blur comes from (blur_diag).** The SVD VAE's 8x latent round trip is the largest detail-loss stage: on the
+  model's own input it keeps 0.733 of edge energy versus 0.891 for the UNet step after it (VAE loses more on 10/12 clips);
+  a perfect latent of the real right eye round-trips to LPIPS 0.0856 against itself. The input is NOT the blur source: on
+  valid pixels the warped input is closer to the real right eye (registered LPIPS 0.177) than any model output (origin
+  0.235, deliverable 0.222). No-reference NIQE: real right eye 4.34, origin 5.10, deliverable 4.96; origin's edge energy
+  is ~0.5x the real right eye's - the user's "origin is blurry" observation, quantified.
+- **VAE-decoder fine-tune on all 291 clips (decoder_ft) - failed its dev gate.** It improves the round trip of REAL frames
+  (dev 0.0452 -> 0.0423) but worsens decoding of the latents the UNet actually produces (+0.0009..+0.0019 LPIPS, NIQE
+  +0.35..+0.54 on dev at every checkpoint); not run on test.
+- **External model M2SVid (3DV 2026, weights March 2026) - not better.** Fed StereoCrafter's exact left eye, warp and mask:
+  origin -0.0057 registered (9/12, CI spans 0), deliverable +0.0074 (4/12); ghosting and erasure on some clips. Neither a
+  replacement nor a teacher.
+- **Skeptic's ceiling.** Left/right camera sharpness differs per clip unpredictably (36-37 % of clips focus-mismatched);
+  learning the right camera's "look" made origin worse. The real right eye adds almost no learnable information beyond the
+  input; the remaining headroom is fidelity to the input's own pixels (origin 0.2455 -> input + inpaint 0.1916 registered).
+- **Training-free SDEdit start from the noised warp (sdedit).** sigma 1.17 with crack-filled init is the best LPIPS row
+  (deliverable -0.0052 vs the deliverable, 9/12) but was selected on test, lowers MUSIQ and shows streaks in hole bands:
+  a dev re-test candidate, not a result. sigma 7.28 gains too little.
+- **Input side (input_side).** Fitting each clip's disparity to its real right eye helps registered LPIPS only as an
+  oracle (per-clip stereo-strength x0.35..x3.45); on iPhone the deployed disparity is ~3x stronger than the real camera's.
+Next (judge): a blind human comparison of origin / AYS8 / deliverable / s25 / sdedit on 3 clips (30 min, no GPU); then a
+hole-band-aware SDEdit start selected on valid dev clips only; a geometry-consistent GT retrain as an oracle diagnostic.

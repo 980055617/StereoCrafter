@@ -1,0 +1,9 @@
+PREREG ADDENDUM 1 (written after the 2-frame smoke test of job_m3_v1.py on 0301, before any full M3 run).
+Change: O_Ccc's colour map.  PREREG said "per-clip affine colour fit toward TRg on non-hole pixels".  Fitted on the
+pixel pairs (C, TRg), which are geometrically MISREGISTERED (the model geometry differs from the true geometry), a
+least-squares affine fit shrinks contrast (regression dilution) and made the oracle WORSE in the smoke (0301, 2 frames:
+O_C 0.2153 -> naive fit 0.2427).  The colour difference is a property of the camera pair, so O_Ccc now applies the
+colour map MA fitted on the flow-registered (O_A, TRg) consistent pairs.  The PREREG-literal version is still computed
+and reported as O_Ccc_naive.  No other definition changes.  Smoke files: outputs/deep_20261004/skeptic/m3_smoke_v1/
+(crashed after the LPIPS rows on a cv2 Lab reshape bug, fixed in skeplib.lab_mean).
+2026-10-04 22:29:46 JST

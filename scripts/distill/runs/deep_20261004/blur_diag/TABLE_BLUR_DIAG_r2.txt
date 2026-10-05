@@ -1,0 +1,258 @@
+======================================================================================================================
+BLUR DIAG -- where does origin's blur come from?   deep_20261004 / blur_diag   (PREREG.txt; sources: outputs/deep_20261004/blur_diag/scores_r2/{lpips,detail,nr}/<clip>.json)
+======================================================================================================================
+
+GATES
+  G0 scorer reproduction (ORIGIN/DELIV/S25 UNREG+REG within 1e-4 of eval_robustness): PASS on 12/12 clips
+    0042  ORIGIN dU +1.6e-09 dR +0.0e+00  DELIV dU -1.6e-09 dR +1.2e-09  S25 dU +2.4e-09 dR -7.8e-10  left-halves identical True
+    0052  ORIGIN dU -7.8e-09 dR -3.9e-10  DELIV dU -3.9e-09 dR +2.0e-09  S25 dU +3.9e-09 dR +1.6e-09  left-halves identical True
+    0125  ORIGIN dU -9.4e-09 dR +8.6e-09  DELIV dU +1.6e-09 dR -3.1e-09  S25 dU -3.1e-09 dR +5.5e-09  left-halves identical True
+    0128  ORIGIN dU +5.5e-09 dR +2.0e-09  DELIV dU +5.5e-09 dR +2.0e-09  S25 dU -3.1e-09 dR +2.7e-09  left-halves identical True
+    0141  ORIGIN dU -4.7e-09 dR +4.7e-09  DELIV dU -2.4e-09 dR -2.7e-09  S25 dU +4.7e-09 dR +1.2e-09  left-halves identical True
+    0147  ORIGIN dU +4.7e-09 dR +0.0e+00  DELIV dU -3.1e-09 dR +2.7e-09  S25 dU +4.7e-09 dR +1.2e-09  left-halves identical True
+    0170  ORIGIN dU -3.1e-09 dR -1.2e-09  DELIV dU +7.8e-10 dR -2.0e-09  S25 dU +0.0e+00 dR +0.0e+00  left-halves identical True
+    0204  ORIGIN dU +2.4e-09 dR +5.9e-10  DELIV dU +3.9e-10 dR -1.2e-09  S25 dU -1.6e-09 dR -2.0e-10  left-halves identical True
+    0225  ORIGIN dU +1.6e-09 dR -1.2e-09  DELIV dU -3.9e-09 dR +0.0e+00  S25 dU +0.0e+00 dR +1.2e-09  left-halves identical True
+    0251  ORIGIN dU +3.9e-09 dR -3.9e-10  DELIV dU -1.6e-09 dR -7.8e-10  S25 dU -3.9e-09 dR +4.7e-09  left-halves identical True
+    0259  ORIGIN dU +1.6e-09 dR -2.4e-09  DELIV dU -2.4e-09 dR -7.8e-10  S25 dU +1.6e-09 dR -3.9e-09  left-halves identical True
+    0301  ORIGIN dU +7.8e-10 dR +1.6e-09  DELIV dU -7.1e-09 dR +0.0e+00  S25 dU +1.6e-09 dR +3.9e-09  left-halves identical True
+  ALL  means: ORIGIN UNREG   0.3933 REG   0.2432  DELIV UNREG   0.3804 REG   0.2300  S25 UNREG   0.3786 REG   0.2279
+  4400 means: ORIGIN UNREG   0.4614 REG   0.2452  DELIV UNREG   0.4512 REG   0.2345  S25 UNREG   0.4458 REG   0.2286
+  2160 means: ORIGIN UNREG   0.3251 REG   0.2411  DELIV UNREG   0.3096 REG   0.2255  S25 UNREG   0.3115 REG   0.2273
+
+----------------------------------------------------------------------------------------------------------------------
+DECOMPOSITION -- ALL clips  (n clips = 12; HIRES_A/B only on the clips that have them, n shown)
+----------------------------------------------------------------------------------------------------------------------
+  LPIPS: REG = vs registered GT (VAE_GT*/RS_GTx vs their own input); UNREG = published geometry; VALID_GT / VALID_BR = composite, valid pixels
+  GT chain ratios row/GT on valid pixels (edgeHF/edgeGy at GT edges: biased LOW for render-geometry rows); BR chain = registration-free vs input
+  row        n     REG   UNREG  VAL_GT  VAL_BR | edgeHF edgeGy flatHF stripE     b1     b2     b3     b4 | eHF@BR  b1@BR  b2@BR |  sharp |  MUSIQ CLIPIQA   NIQE
+  GT        12  0.0000      --  0.0000      -- |  1.000  1.000  1.000  1.000  1.000  1.000  1.000  1.000 |     --     --     -- |  1.000 |  56.83  0.4121  4.344
+  LEFT      12      --      --      --      -- |     --     --     --     --  1.032  1.070  1.035  0.998 |     --     --     -- |  0.967 |  56.93  0.3955  4.323
+  VAE_GT    12  0.0856      --  0.0848      -- |  0.712  0.709  0.830  1.477  0.784  0.879  0.948  0.985 |     --     --     -- |  0.766 |  55.00  0.4054  5.201
+  VAE_GT32   5  0.0905      --  0.0887      -- |  0.745  0.738  0.805  1.304  0.809  0.892  0.952  0.983 |     --     --     -- |  0.761 |  61.25  0.4843  4.857
+  VAE_GTx   12  0.0572      --  0.0564      -- |  0.706  0.794  0.801  1.349  0.799  0.950  0.990  1.000 |     --     --     -- |  0.829 |  54.59  0.4348  5.399
+  VAE_GTx_L  4  0.0352      --  0.0343      -- |  0.842  0.897  0.894  1.407  0.906  1.005  1.006  1.003 |     --     --     -- |  0.897 |  61.26  0.5046  5.435
+  RS_GTx    12  0.0117      --  0.0114      -- |  0.816  0.889  0.877  1.018  0.871  0.965  0.992  0.998 |     --     --     -- |  0.912 |  55.52  0.4165  4.865
+  RS_GTx_L  12  0.0061      --  0.0058      -- |  0.918  0.966  0.955  1.079  0.965  1.015  1.007  1.002 |     --     --     -- |  0.986 |  56.70  0.4252  4.795
+  BR        12  0.2105  0.3688  0.1771      -- |  0.763  0.704  1.398  2.542  1.038  1.049  1.023  0.990 |  1.000  1.000  1.000 |  1.006 |  58.28  0.3982  4.304
+  VAE_BR    12  0.2380  0.3861  0.2090  0.0793 |  0.591  0.575  1.039  2.211  0.836  0.927  0.972  0.974 |  0.733  0.797  0.885 |  0.785 |  56.98  0.4109  4.712
+  ORIGIN    12  0.2432  0.3933  0.2351  0.1414 |  0.528  0.482  0.906  1.944  0.737  0.798  0.877  0.924 |  0.650  0.697  0.764 |  0.632 |  56.20  0.3973  5.102
+  DELIV     12  0.2300  0.3804  0.2222  0.1255 |  0.592  0.543  1.099  2.345  0.830  0.897  0.949  0.964 |  0.726  0.789  0.857 |  0.722 |  56.41  0.3933  4.956
+  S25       12  0.2279  0.3786  0.2199  0.1248 |  0.550  0.522  1.031  2.284  0.780  0.875  0.931  0.952 |  0.662  0.741  0.836 |  0.706 |  54.95  0.3889  5.190
+  T5NAT     12  0.2312  0.3815  0.2235  0.1273 |  0.601  0.544  1.103  2.340  0.839  0.897  0.951  0.967 |  0.740  0.798  0.858 |  0.723 |  56.80  0.3957  4.899
+  T5PAD     12  0.2318  0.3818  0.2242  0.1273 |  0.597  0.542  1.096  2.330  0.835  0.895  0.949  0.966 |  0.735  0.794  0.855 |  0.721 |  56.71  0.3956  4.903
+  HIRES_A    4  0.1828  0.3327  0.1777  0.1049 |  0.588  0.497  0.901  1.850  0.745  0.773  0.852  0.908 |  0.738  0.747  0.773 |  0.643 |  62.06  0.4749  5.186
+  HIRES_B    2  0.1783  0.3429  0.1744  0.0711 |  0.521  0.528  0.705  1.433  0.684  0.808  0.891  0.947 |  0.633  0.696  0.824 |  0.593 |  58.52  0.4296  6.318
+  HIRES_B_L  2  0.1653  0.3316  0.1614  0.0589 |  0.578  0.564  0.797  1.556  0.745  0.845  0.903  0.950 |  0.711  0.768  0.862 |  0.634 |  59.98  0.4546  6.418
+  (LEFT: b1..b4 are full-frame raw band ratios LEFT/GT -- camera/anchor check; BR row: hole-contaminated in REG/UNREG/sharp/NR)
+
+----------------------------------------------------------------------------------------------------------------------
+DECOMPOSITION -- 4400-px clips (0042 0052 0125 0128 0141 0147)  (n clips = 6; HIRES_A/B only on the clips that have them, n shown)
+----------------------------------------------------------------------------------------------------------------------
+  LPIPS: REG = vs registered GT (VAE_GT*/RS_GTx vs their own input); UNREG = published geometry; VALID_GT / VALID_BR = composite, valid pixels
+  GT chain ratios row/GT on valid pixels (edgeHF/edgeGy at GT edges: biased LOW for render-geometry rows); BR chain = registration-free vs input
+  row        n     REG   UNREG  VAL_GT  VAL_BR | edgeHF edgeGy flatHF stripE     b1     b2     b3     b4 | eHF@BR  b1@BR  b2@BR |  sharp |  MUSIQ CLIPIQA   NIQE
+  GT         6  0.0000      --  0.0000      -- |  1.000  1.000  1.000  1.000  1.000  1.000  1.000  1.000 |     --     --     -- |  1.000 |  48.23  0.2954  5.108
+  LEFT       6      --      --      --      -- |     --     --     --     --  1.025  1.009  0.997  0.989 |     --     --     -- |  0.972 |  48.60  0.3125  5.011
+  VAE_GT     6  0.0539      --  0.0528      -- |  0.802  0.797  0.872  1.720  0.835  0.913  0.968  0.991 |     --     --     -- |  0.849 |  47.37  0.2609  6.118
+  VAE_GT32   2  0.0370      --  0.0340      -- |  0.881  0.871  0.828  1.445  0.879  0.941  0.982  0.995 |     --     --     -- |  0.875 |  52.84  0.3053  5.434
+  VAE_GTx    6  0.0283      --  0.0279      -- |  0.821  0.908  0.857  1.548  0.886  0.982  1.002  1.004 |     --     --     -- |  0.926 |  47.53  0.3155  6.014
+  VAE_GTx_L  2  0.0178      --  0.0161      -- |  0.929  0.973  0.908  1.464  0.968  1.022  1.015  1.007 |     --     --     -- |  0.981 |  53.09  0.3584  5.510
+  RS_GTx     6  0.0050      --  0.0046      -- |  0.870  0.947  0.912  1.071  0.917  0.977  0.994  0.999 |     --     --     -- |  0.953 |  47.45  0.2994  5.631
+  RS_GTx_L   6  0.0021      --  0.0019      -- |  0.959  0.998  0.963  1.109  0.993  1.015  1.006  1.002 |     --     --     -- |  1.000 |  48.39  0.3013  5.334
+  BR         6  0.2389  0.4544  0.1909      -- |  0.796  0.680  1.548  3.364  1.097  1.001  0.985  0.977 |  1.000  1.000  1.000 |  1.114 |  51.40  0.3340  4.819
+  VAE_BR     6  0.2499  0.4574  0.2072  0.0510 |  0.647  0.589  1.201  3.080  0.924  0.911  0.950  0.966 |  0.789  0.827  0.909 |  0.923 |  51.71  0.3249  5.107
+  ORIGIN     6  0.2452  0.4614  0.2343  0.1124 |  0.602  0.534  1.092  2.754  0.856  0.851  0.897  0.936 |  0.726  0.759  0.846 |  0.727 |  49.86  0.2789  5.997
+  DELIV      6  0.2345  0.4512  0.2240  0.0998 |  0.682  0.590  1.341  3.319  0.961  0.935  0.959  0.973 |  0.821  0.862  0.931 |  0.835 |  50.93  0.2849  5.740
+  S25        6  0.2286  0.4458  0.2176  0.0953 |  0.624  0.568  1.244  3.205  0.896  0.905  0.935  0.956 |  0.736  0.799  0.902 |  0.810 |  49.63  0.2894  5.967
+  T5NAT      6  0.2359  0.4525  0.2253  0.1017 |  0.697  0.595  1.346  3.316  0.980  0.945  0.967  0.980 |  0.845  0.880  0.940 |  0.838 |  51.27  0.2850  5.684
+  T5PAD      6  0.2360  0.4524  0.2256  0.1015 |  0.692  0.593  1.333  3.300  0.972  0.940  0.963  0.977 |  0.836  0.872  0.935 |  0.834 |  51.08  0.2853  5.702
+  HIRES_A    2  0.1933  0.4370  0.1842  0.0771 |  0.631  0.518  1.156  2.530  0.855  0.832  0.882  0.924 |  0.834  0.823  0.878 |  0.742 |  54.79  0.3026  5.400
+  HIRES_B    1  0.1424  0.4203  0.1346  0.0505 |  0.601  0.618  1.027  2.372  0.854  0.894  0.946  0.990 |  0.683  0.735  0.864 |  0.780 |  55.11  0.4590  6.286
+  HIRES_B_L  1  0.1393  0.4186  0.1316  0.0454 |  0.650  0.641  1.161  2.577  0.915  0.926  0.956  0.993 |  0.752  0.797  0.896 |  0.827 |  56.14  0.4704  6.354
+  (LEFT: b1..b4 are full-frame raw band ratios LEFT/GT -- camera/anchor check; BR row: hole-contaminated in REG/UNREG/sharp/NR)
+
+----------------------------------------------------------------------------------------------------------------------
+DECOMPOSITION -- 2160-px clips (0170 0204 0225 0251 0259 0301)  (n clips = 6; HIRES_A/B only on the clips that have them, n shown)
+----------------------------------------------------------------------------------------------------------------------
+  LPIPS: REG = vs registered GT (VAE_GT*/RS_GTx vs their own input); UNREG = published geometry; VALID_GT / VALID_BR = composite, valid pixels
+  GT chain ratios row/GT on valid pixels (edgeHF/edgeGy at GT edges: biased LOW for render-geometry rows); BR chain = registration-free vs input
+  row        n     REG   UNREG  VAL_GT  VAL_BR | edgeHF edgeGy flatHF stripE     b1     b2     b3     b4 | eHF@BR  b1@BR  b2@BR |  sharp |  MUSIQ CLIPIQA   NIQE
+  GT         6  0.0000      --  0.0000      -- |  1.000  1.000  1.000  1.000  1.000  1.000  1.000  1.000 |     --     --     -- |  1.000 |  65.43  0.5289  3.580
+  LEFT       6      --      --      --      -- |     --     --     --     --  1.040  1.132  1.074  1.007 |     --     --     -- |  0.963 |  65.25  0.4784  3.635
+  VAE_GT     6  0.1173      --  0.1169      -- |  0.621  0.621  0.789  1.235  0.733  0.846  0.929  0.980 |     --     --     -- |  0.684 |  62.63  0.5500  4.284
+  VAE_GT32   3  0.1262      --  0.1252      -- |  0.654  0.649  0.789  1.209  0.762  0.860  0.932  0.975 |     --     --     -- |  0.684 |  66.86  0.6037  4.472
+  VAE_GTx    6  0.0861      --  0.0848      -- |  0.592  0.681  0.744  1.151  0.713  0.918  0.978  0.995 |     --     --     -- |  0.732 |  61.65  0.5540  4.784
+  VAE_GTx_L  2  0.0526      --  0.0524      -- |  0.754  0.821  0.880  1.350  0.843  0.988  0.997  0.999 |     --     --     -- |  0.813 |  69.44  0.6508  5.360
+  RS_GTx     6  0.0184      --  0.0182      -- |  0.762  0.831  0.841  0.966  0.824  0.954  0.991  0.998 |     --     --     -- |  0.870 |  63.58  0.5337  4.099
+  RS_GTx_L   6  0.0101      --  0.0097      -- |  0.878  0.934  0.947  1.048  0.937  1.016  1.007  1.002 |     --     --     -- |  0.972 |  65.01  0.5491  4.256
+  BR         6  0.1820  0.2831  0.1634      -- |  0.729  0.728  1.248  1.720  0.979  1.097  1.061  1.002 |  1.000  1.000  1.000 |  0.898 |  65.15  0.4625  3.790
+  VAE_BR     6  0.2260  0.3147  0.2108  0.1076 |  0.536  0.560  0.877  1.343  0.748  0.943  0.993  0.983 |  0.677  0.766  0.862 |  0.646 |  62.24  0.4969  4.318
+  ORIGIN     6  0.2411  0.3251  0.2359  0.1703 |  0.453  0.431  0.719  1.135  0.617  0.746  0.857  0.912 |  0.575  0.634  0.681 |  0.537 |  62.54  0.5157  4.207
+  DELIV      6  0.2255  0.3096  0.2205  0.1513 |  0.503  0.496  0.858  1.371  0.698  0.859  0.939  0.955 |  0.630  0.716  0.784 |  0.610 |  61.90  0.5017  4.172
+  S25        6  0.2273  0.3115  0.2221  0.1544 |  0.476  0.476  0.817  1.364  0.665  0.844  0.927  0.948 |  0.587  0.682  0.771 |  0.602 |  60.27  0.4885  4.413
+  T5NAT      6  0.2266  0.3106  0.2217  0.1528 |  0.506  0.492  0.859  1.363  0.698  0.850  0.934  0.955 |  0.635  0.716  0.775 |  0.608 |  62.34  0.5064  4.115
+  T5PAD      6  0.2277  0.3112  0.2228  0.1531 |  0.503  0.491  0.858  1.361  0.698  0.850  0.934  0.955 |  0.634  0.715  0.775 |  0.608 |  62.34  0.5059  4.103
+  HIRES_A    2  0.1722  0.2285  0.1713  0.1328 |  0.546  0.477  0.645  1.170  0.636  0.715  0.823  0.893 |  0.641  0.671  0.668 |  0.543 |  69.34  0.6473  4.973
+  HIRES_B    1  0.2141  0.2654  0.2141  0.0917 |  0.441  0.438  0.384  0.494  0.513  0.722  0.836  0.903 |  0.583  0.658  0.784 |  0.405 |  61.94  0.4002  6.350
+  HIRES_B_L  1  0.1913  0.2445  0.1912  0.0724 |  0.506  0.487  0.433  0.534  0.576  0.763  0.851  0.907 |  0.670  0.739  0.828 |  0.442 |  63.83  0.4388  6.482
+  (LEFT: b1..b4 are full-frame raw band ratios LEFT/GT -- camera/anchor check; BR row: hole-contaminated in REG/UNREG/sharp/NR)
+
+----------------------------------------------------------------------------------------------------------------------
+DESCRIPTIVE: contrast-normalised fine bands (b_k/GT divided by b4/GT; separates blur from a global contrast change)
+----------------------------------------------------------------------------------------------------------------------
+  ALL  (b1/b4, b2/b4): VAE_GT 0.796/0.893  VAE_GT32 0.823/0.908  VAE_GTx 0.800/0.950  VAE_GTx_L 0.903/1.002  RS_GTx 0.872/0.967  RS_GTx_L 0.963/1.013  BR 1.049/1.060  VAE_BR 0.858/0.952  ORIGIN 0.797/0.864  DELIV 0.860/0.930  S25 0.820/0.919  T5NAT 0.867/0.928  T5PAD 0.865/0.926  HIRES_A 0.821/0.851  HIRES_B 0.722/0.853  HIRES_B_L 0.785/0.889
+  4400 (b1/b4, b2/b4): VAE_GT 0.843/0.921  VAE_GT32 0.883/0.946  VAE_GTx 0.882/0.978  VAE_GTx_L 0.962/1.015  RS_GTx 0.918/0.978  RS_GTx_L 0.991/1.013  BR 1.122/1.024  VAE_BR 0.957/0.944  ORIGIN 0.915/0.909  DELIV 0.988/0.961  S25 0.937/0.947  T5NAT 1.000/0.964  T5PAD 0.995/0.962  HIRES_A 0.925/0.900  HIRES_B 0.863/0.903  HIRES_B_L 0.921/0.933
+  2160 (b1/b4, b2/b4): VAE_GT 0.749/0.863  VAE_GT32 0.782/0.882  VAE_GTx 0.716/0.922  VAE_GTx_L 0.844/0.989  RS_GTx 0.826/0.956  RS_GTx_L 0.935/1.014  BR 0.977/1.095  VAE_BR 0.761/0.959  ORIGIN 0.677/0.817  DELIV 0.731/0.899  S25 0.701/0.890  T5NAT 0.732/0.890  T5PAD 0.732/0.890  HIRES_A 0.712/0.801  HIRES_B 0.568/0.799  HIRES_B_L 0.635/0.841
+
+----------------------------------------------------------------------------------------------------------------------
+SEED YARDSTICK (proxy): Y_m = max over clips |m(T5NAT) - m(T5PAD)|; mean |diff| in brackets
+----------------------------------------------------------------------------------------------------------------------
+  LPIPS_REG              Y 0.00378  [0.00097]  n=12
+  LPIPS_UNREG            Y 0.00228  [0.00066]  n=12
+  LPIPS_VALID_BR         Y 0.00281  [0.00071]  n=12
+  edgeHF@BR_ratio        Y 0.04449  [0.01190]  n=12
+  b1/GT                  Y 0.04229  [0.01087]  n=12
+  b2/GT                  Y 0.02578  [0.00813]  n=12
+  edgeHF/GT              Y 0.03346  [0.00909]  n=12
+  flatHF/GT              Y 0.03852  [0.00961]  n=12
+  stripeE/GT             Y 0.06077  [0.01435]  n=12
+  flatHF@BR_ratio        Y 0.02911  [0.00721]  n=12
+  musiq                  Y 0.55053  [0.28030]  n=12
+  clipiqa                Y 0.00361  [0.00169]  n=12
+  niqe                   Y 0.05181  [0.02462]  n=12
+  topiq_nr               Y 0.00663  [0.00269]  n=12
+  clipiqa+               Y 0.00568  [0.00237]  n=12
+  arniqa                 Y 0.00538  [0.00218]  n=12
+
+----------------------------------------------------------------------------------------------------------------------
+R1  STAGE RETENTION (PRIMARY = registration-free input chain).  retention < 1 = detail lost in that stage
+----------------------------------------------------------------------------------------------------------------------
+  clip    VAEin_edgeHF   UNet_edgeHF deliv/orig_edgeHF s25/orig_edgeHF  VAEgt_edgeHF  VAEin_edgeGy   UNet_edgeGy deliv/orig_edgeGy s25/orig_edgeGy  VAEgt_edgeGy      VAEin_b1       UNet_b1 deliv/orig_b1   s25/orig_b1      VAEgt_b1      VAEin_b2       UNet_b2 deliv/orig_b2   s25/orig_b2      VAEgt_b2  VAEin_flatHF   UNet_flatHF deliv/orig_flatHF s25/orig_flatHF  VAEgt_flatHF VAEin_stripeE  UNet_stripeE deliv/orig_stripeE s25/orig_stripeE VAEgt_stripeE       view_b1    left/gt_b1       view_b2    left/gt_b2       view_b3    left/gt_b3       view_b4    left/gt_b4
+  0042           0.880         0.965         1.156         0.966         0.884         0.864         0.895         1.127         1.033         0.876         0.881         0.956         1.167         1.033         0.877         0.925         0.948         1.139         1.065         0.929         0.888         1.243         1.200         1.121         0.872         1.556         1.266         1.250         1.233         1.546         1.117         1.043         1.029         1.027         1.014         1.017         1.007         1.010
+  0052           0.889         0.952         1.063         0.996         0.883         0.874         0.923         1.035         1.015         0.872         0.894         0.941         1.066         1.032         0.886         0.959         0.961         1.041         1.033         0.961         0.849         0.838         1.194         1.180         0.820         1.517         0.864         1.200         1.214         1.395         0.917         0.879         0.859         0.865         0.861         0.870         0.876         0.881
+  0125           0.676         0.945         1.154         0.995         0.694         0.653         0.823         1.107         1.067         0.678         0.728         0.883         1.170         1.063         0.734         0.854         0.826         1.103         1.115         0.859         0.805         0.943         1.215         1.168         0.801         1.327         0.881         1.229         1.279         1.332         1.060         1.064         0.994         1.021         0.979         0.997         0.985         0.998
+  0128           0.624         0.874         1.171         1.078         0.624         0.624         0.798         1.169         1.107         0.632         0.705         0.870         1.215         1.141         0.702         0.832         0.854         1.203         1.161         0.830         0.711         0.934         1.235         1.165         0.701         1.098         0.954         1.277         1.241         1.127         1.002         1.019         1.002         1.023         1.009         1.014         0.982         1.003
+  0141           0.826         0.873         1.153         1.063         0.832         0.862         0.915         1.086         1.053         0.871         0.872         0.924         1.125         1.057         0.873         0.926         0.991         1.074         1.039         0.933         0.950         0.924         1.379         1.194         0.924         2.609         0.877         1.429         1.305         2.439         1.299         1.090         1.073         1.072         1.018         1.046         0.996         1.017
+  0147           0.840         0.900         1.112         1.014         0.895         0.839         0.913         1.078         1.030         0.855         0.884         0.915         1.099         1.018         0.939         0.957         0.989         1.068         1.015         0.965         1.117         0.847         1.358         1.252         1.112         2.513         0.876         1.354         1.299         2.480         1.186         1.053         1.051         1.049         1.027         1.036         1.017         1.024
+  0170           0.859         0.843         1.040         0.989         0.749         0.832         0.804         1.043         1.016         0.750         0.906         0.828         1.061         1.029         0.823         0.949         0.811         1.085         1.063         0.914         0.812         0.799         1.129         1.098         0.761         0.915         0.835         1.112         1.111         0.846         0.780         0.805         0.921         0.933         0.985         0.989         0.989         0.990
+  0204           0.767         0.725         1.207         1.138         0.757         0.754         0.643         1.265         1.191         0.748         0.842         0.712         1.231         1.176         0.853         0.892         0.692         1.235         1.200         0.883         0.941         0.731         1.347         1.296         0.988         1.462         0.854         1.303         1.298         1.845         1.178         1.206         1.266         1.295         1.153         1.171         1.042         1.056
+  0225           0.714         0.749         1.153         1.105         0.667         0.715         0.668         1.207         1.146         0.684         0.808         0.728         1.191         1.150         0.781         0.884         0.701         1.212         1.185         0.861         0.854         0.779         1.235         1.210         0.824         1.055         0.890         1.231         1.242         1.053         1.071         1.082         1.129         1.138         0.990         0.995         0.862         0.862
+  0251           0.701         0.923         1.117         1.002         0.652         0.686         0.851         1.135         1.063         0.647         0.781         0.917         1.120         1.040         0.748         0.869         0.899         1.118         1.090         0.852         0.861         0.921         1.235         1.201         0.851         1.642         0.930         1.278         1.282         1.606         0.885         1.002         1.008         1.073         1.061         1.083         1.048         1.054
+  0259           0.489         1.073         0.981         0.874         0.444         0.459         0.952         1.021         0.954         0.447         0.607         1.023         1.037         0.954         0.581         0.765         0.964         1.080         1.045         0.774         0.649         0.980         1.089         1.012         0.672         0.968         0.987         1.126         1.099         1.051         1.139         1.245         1.257         1.302         1.110         1.113         1.011         1.007
+  0301           0.535         0.867         1.088         1.025         0.458         0.512         0.698         1.136         1.099         0.452         0.652         0.814         1.154         1.133         0.614         0.813         0.695         1.213         1.257         0.790         0.636         0.788         1.203         1.200         0.638         1.019         0.735         1.267         1.347         1.009         0.819         0.898         1.003         1.049         1.068         1.092         1.059         1.075
+  ALL            0.733         0.891         1.116         1.020         0.712         0.723         0.824         1.117         1.065         0.709         0.797         0.876         1.136         1.069         0.784         0.885         0.861         1.131         1.106         0.879         0.839         0.894         1.235         1.175         0.830         1.473         0.913         1.255         1.246         1.477         1.038         1.032         1.049         1.070         1.023         1.035         0.990         0.998
+  4400           0.789         0.918         1.135         1.019         0.802         0.786         0.878         1.100         1.051         0.797         0.827         0.915         1.140         1.057         0.835         0.909         0.928         1.104         1.071         0.913         0.887         0.955         1.263         1.180         0.872         1.770         0.953         1.290         1.262         1.720         1.097         1.025         1.001         1.009         0.985         0.997         0.977         0.989
+  2160           0.677         0.863         1.098         1.022         0.621         0.660         0.769         1.135         1.078         0.621         0.766         0.837         1.132         1.080         0.733         0.862         0.793         1.157         1.140         0.846         0.792         0.833         1.206         1.169         0.789         1.177         0.872         1.220         1.230         1.235         0.979         1.040         1.097         1.132         1.061         1.074         1.002         1.007
+  smallest retention by edgeHF: VAE on the input (BR->VAE_BR)  (VAE on the input (BR->VAE_BR) 0.733, UNet generation (VAE_BR->ORIGIN) 0.891)
+  smallest retention by b1: VAE on the input (BR->VAE_BR)  (VAE on the input (BR->VAE_BR) 0.797, UNet generation (VAE_BR->ORIGIN) 0.876)
+  R1 VERDICT: 'VAE on the input (BR->VAE_BR)' loses most detail (edgeHF and b1 agree)
+  view-stage condition: BR/GT b1 1.038, LEFT/GT b1 1.032 (view counts as a detail loss only if BR/GT < 1 and LEFT/GT >= 1)
+  DESCRIPTIVE log-loss shares, per clip then mean (total = ln X(ORIGIN)/X(BR) = ln r_VAEin + ln r_UNet):
+    edgeHF  VAE-on-input share 0.712  UNet share 0.288  | of the UNet-stage loss, DELIV recovers 1.299, S25 recovers 0.080  (n=12)
+    edgeGy  VAE-on-input share 0.619  UNet share 0.381  | of the UNet-stage loss, DELIV recovers 0.603, S25 recovers 0.221  (n=12)
+    b1      VAE-on-input share 0.631  UNet share 0.369  | of the UNet-stage loss, DELIV recovers 1.195, S25 recovers 0.517  (n=12)
+    b2      VAE-on-input share 0.525  UNet share 0.475  | of the UNet-stage loss, DELIV recovers 2.012, S25 recovers 1.082  (n=12)
+  PER-FORMAT verdicts (same R1 rule) and per-clip counts of the stage with the smaller retention:
+    4400: edgeHF -> VAE-on-input, b1 -> VAE-on-input  (agree); clips where the VAE stage / the UNet stage loses more: edgeHF 6/0  edgeGy 6/0  b1 6/0  b2 5/1
+    2160: edgeHF -> VAE-on-input, b1 -> VAE-on-input  (agree); clips where the VAE stage / the UNet stage loses more: edgeHF 4/2  edgeGy 3/3  b1 3/3  b2 2/4
+    ALL : clips where the VAE stage / the UNet stage loses more: edgeHF 10/2  edgeGy 9/3  b1 9/3  b2 7/5
+  VAE on the INPUT vs VAE on the GT (stripe-free comparator; VAEin < VAEgt => part of the input-VAE 'loss' is artefact removal):
+    ALL  edgeHF: VAEin 0.733 VAEgt 0.712  edgeGy: VAEin 0.723 VAEgt 0.709  b1: VAEin 0.797 VAEgt 0.784  b2: VAEin 0.885 VAEgt 0.879  | input artefacts through the VAE: flatHF 0.839 stripeE 1.473; through the UNet: flatHF 0.894 stripeE 0.913
+    4400 edgeHF: VAEin 0.789 VAEgt 0.802  edgeGy: VAEin 0.786 VAEgt 0.797  b1: VAEin 0.827 VAEgt 0.835  b2: VAEin 0.909 VAEgt 0.913  | input artefacts through the VAE: flatHF 0.887 stripeE 1.770; through the UNet: flatHF 0.955 stripeE 0.953
+    2160 edgeHF: VAEin 0.677 VAEgt 0.621  edgeGy: VAEin 0.660 VAEgt 0.621  b1: VAEin 0.766 VAEgt 0.733  b2: VAEin 0.862 VAEgt 0.846  | input artefacts through the VAE: flatHF 0.792 stripeE 1.177; through the UNet: flatHF 0.833 stripeE 0.872
+  ADDENDUM 7 selection check -- stage retentions with selection-symmetric edge measures (BR chain; VAEgt in GT chain):
+    edgeHF_self ALL  VAEin 0.777  UNet 0.934  VAEgt 0.755 -> larger loss: VAE on the input (BR->VAE_BR)  (VAE loses more on 10/12 clips)
+    edgeHF_self 4400 VAEin 0.817  UNet 0.944  VAEgt 0.825 -> larger loss: VAE on the input (BR->VAE_BR)  (VAE loses more on 6/6 clips)
+    edgeHF_self 2160 VAEin 0.736  UNet 0.924  VAEgt 0.686 -> larger loss: VAE on the input (BR->VAE_BR)  (VAE loses more on 4/6 clips)
+    edgeHF_s1   ALL  VAEin 0.799  UNet 0.910  VAEgt 0.786 -> larger loss: VAE on the input (BR->VAE_BR)  (VAE loses more on 9/12 clips)
+    edgeHF_s1   4400 VAEin 0.839  UNet 0.926  VAEgt 0.849 -> larger loss: VAE on the input (BR->VAE_BR)  (VAE loses more on 6/6 clips)
+    edgeHF_s1   2160 VAEin 0.758  UNet 0.895  VAEgt 0.724 -> larger loss: VAE on the input (BR->VAE_BR)  (VAE loses more on 3/6 clips)
+    edgeHF verdict 'VAE on the input (BR->VAE_BR)' is NOT overturned by both selection-symmetric measures
+
+----------------------------------------------------------------------------------------------------------------------
+R2  VAE CEILING vs ORIGIN (registered LPIPS)
+----------------------------------------------------------------------------------------------------------------------
+  ALL  paired: VAE_GT vs VAE_GT32 on ['0042', '0052', '0170', '0204', '0301']:   0.0906 vs   0.0905 | VAE_GT / VAE_GTx / VAE_GTx_L / RS_GTx / RS_GTx_L on ['0042', '0052', '0170', '0204']:   0.0611 /   0.0434 /   0.0352 /   0.0113 /   0.0063 | b1/GT: 0.860 / 0.817 / 0.906 / 0.861 / 0.955 | edgeHF/GT: 0.818 / 0.750 / 0.842 / 0.812 / 0.910
+  ALL  LPIPS VAE_GT   0.0856  VAE_GT32   0.0905  VAE_GTx   0.0572  RS_GTx   0.0117  | ORIGIN REG   0.2432  -> VAE_GT / ORIGIN = 0.352  | input chain: VAE_BR vs BR   0.0793  ORIGIN vs BR   0.1414
+  4400 paired: VAE_GT vs VAE_GT32 on ['0042', '0052']:   0.0371 vs   0.0370 | VAE_GT / VAE_GTx / VAE_GTx_L / RS_GTx / RS_GTx_L on ['0042', '0052']:   0.0371 /   0.0213 /   0.0178 /   0.0049 /   0.0020 | b1/GT: 0.882 / 0.895 / 0.968 / 0.915 / 0.995 | edgeHF/GT: 0.884 / 0.845 / 0.929 / 0.873 / 0.966
+  4400 LPIPS VAE_GT   0.0539  VAE_GT32   0.0370  VAE_GTx   0.0283  RS_GTx   0.0050  | ORIGIN REG   0.2452  -> VAE_GT / ORIGIN = 0.220  | input chain: VAE_BR vs BR   0.0510  ORIGIN vs BR   0.1124
+  2160 paired: VAE_GT vs VAE_GT32 on ['0170', '0204', '0301']:   0.1264 vs   0.1262 | VAE_GT / VAE_GTx / VAE_GTx_L / RS_GTx / RS_GTx_L on ['0170', '0204']:   0.0852 /   0.0655 /   0.0526 /   0.0178 /   0.0106 | b1/GT: 0.838 / 0.740 / 0.843 / 0.806 / 0.914 | edgeHF/GT: 0.753 / 0.655 / 0.754 / 0.752 / 0.854
+  2160 LPIPS VAE_GT   0.1173  VAE_GT32   0.1262  VAE_GTx   0.0861  RS_GTx   0.0184  | ORIGIN REG   0.2411  -> VAE_GT / ORIGIN = 0.487  | input chain: VAE_BR vs BR   0.1076  ORIGIN vs BR   0.1703
+
+----------------------------------------------------------------------------------------------------------------------
+R3  NO-REFERENCE GAP (clip means; niqe lower = better, others higher = better)
+----------------------------------------------------------------------------------------------------------------------
+  ALL  musiq     GT  56.8317 LEFT  56.9253 VAE_GT  54.9984 VAE_GTx  54.5930 BR  58.2756 VAE_BR  56.9761 ORIGIN  56.2034 DELIV  56.4107 S25  54.9487 | gap(O-GT)  -0.6283 closed: DELIV  0.33 S25 -2.00 | anchor unfair: False
+  ALL  clipiqa   GT   0.4121 LEFT   0.3955 VAE_GT   0.4054 VAE_GTx   0.4348 BR   0.3982 VAE_BR   0.4109 ORIGIN   0.3973 DELIV   0.3933 S25   0.3889 | gap(O-GT)  -0.0148 closed: DELIV -0.27 S25 -0.57 | anchor unfair: True
+  ALL  niqe      GT   4.3437 LEFT   4.3231 VAE_GT   5.2007 VAE_GTx   5.3992 BR   4.3043 VAE_BR   4.7124 ORIGIN   5.1021 DELIV   4.9559 S25   5.1901 | gap(O-GT)   0.7584 closed: DELIV  0.19 S25 -0.12 | anchor unfair: False
+  ALL  topiq_nr  GT   0.4161 LEFT   0.4063 VAE_GT   0.3904 VAE_GTx   0.3825 BR   0.4324 VAE_BR   0.4194 ORIGIN   0.4063 DELIV   0.4032 S25   0.3908 | gap(O-GT)  -0.0098 closed: DELIV -0.32 S25 -1.58 | anchor unfair: False
+  ALL  clipiqa+  GT   0.5279 LEFT   0.5098 VAE_GT   0.5197 VAE_GTx   0.5357 BR   0.4850 VAE_BR   0.5330 ORIGIN   0.5276 DELIV   0.5332 S25   0.5276 | gap(O-GT)  -0.0004 closed: DELIV 15.67 S25  0.06 | anchor unfair: True
+  ALL  arniqa    GT   0.5249 LEFT   0.5328 VAE_GT   0.5211 VAE_GTx   0.5290 BR   0.5781 VAE_BR   0.5681 ORIGIN   0.5811 DELIV   0.5676 S25   0.5543 | gap(O-GT)   0.0562 closed: DELIV  0.24 S25  0.48 | anchor unfair: False
+  4400 musiq     GT  48.2304 LEFT  48.6015 VAE_GT  47.3659 VAE_GTx  47.5320 BR  51.3985 VAE_BR  51.7140 ORIGIN  49.8637 DELIV  50.9261 S25  49.6296 | gap(O-GT)   1.6333 closed: DELIV -0.65 S25  0.14 | anchor unfair: False
+  4400 clipiqa   GT   0.2954 LEFT   0.3125 VAE_GT   0.2609 VAE_GTx   0.3155 BR   0.3340 VAE_BR   0.3249 ORIGIN   0.2789 DELIV   0.2849 S25   0.2894 | gap(O-GT)  -0.0165 closed: DELIV  0.37 S25  0.64 | anchor unfair: True
+  4400 niqe      GT   5.1075 LEFT   5.0112 VAE_GT   6.1176 VAE_GTx   6.0143 BR   4.8190 VAE_BR   5.1069 ORIGIN   5.9974 DELIV   5.7400 S25   5.9673 | gap(O-GT)   0.8898 closed: DELIV  0.29 S25  0.03 | anchor unfair: False
+  4400 topiq_nr  GT   0.3228 LEFT   0.3252 VAE_GT   0.3099 VAE_GTx   0.3142 BR   0.3727 VAE_BR   0.3656 ORIGIN   0.3315 DELIV   0.3381 S25   0.3266 | gap(O-GT)   0.0088 closed: DELIV -0.75 S25  0.56 | anchor unfair: False
+  4400 clipiqa+  GT   0.4245 LEFT   0.4300 VAE_GT   0.4166 VAE_GTx   0.4467 BR   0.4026 VAE_BR   0.4575 ORIGIN   0.4478 DELIV   0.4605 S25   0.4583 | gap(O-GT)   0.0233 closed: DELIV -0.55 S25 -0.45 | anchor unfair: False
+  4400 arniqa    GT   0.4406 LEFT   0.4572 VAE_GT   0.4405 VAE_GTx   0.4412 BR   0.5386 VAE_BR   0.5291 ORIGIN   0.5188 DELIV   0.5078 S25   0.4916 | gap(O-GT)   0.0782 closed: DELIV  0.14 S25  0.35 | anchor unfair: False
+  2160 musiq     GT  65.4331 LEFT  65.2491 VAE_GT  62.6309 VAE_GTx  61.6540 BR  65.1527 VAE_BR  62.2381 ORIGIN  62.5432 DELIV  61.8953 S25  60.2677 | gap(O-GT)  -2.8899 closed: DELIV -0.22 S25 -0.79 | anchor unfair: False
+  2160 clipiqa   GT   0.5289 LEFT   0.4784 VAE_GT   0.5500 VAE_GTx   0.5540 BR   0.4625 VAE_BR   0.4969 ORIGIN   0.5157 DELIV   0.5017 S25   0.4885 | gap(O-GT)  -0.0132 closed: DELIV -1.06 S25 -2.06 | anchor unfair: True
+  2160 niqe      GT   3.5799 LEFT   3.6350 VAE_GT   4.2839 VAE_GTx   4.7840 BR   3.7897 VAE_BR   4.3178 ORIGIN   4.2069 DELIV   4.1717 S25   4.4130 | gap(O-GT)   0.6270 closed: DELIV  0.06 S25 -0.33 | anchor unfair: False
+  2160 topiq_nr  GT   0.5094 LEFT   0.4874 VAE_GT   0.4708 VAE_GTx   0.4507 BR   0.4921 VAE_BR   0.4732 ORIGIN   0.4810 DELIV   0.4682 S25   0.4549 | gap(O-GT)  -0.0284 closed: DELIV -0.45 S25 -0.92 | anchor unfair: False
+  2160 clipiqa+  GT   0.6314 LEFT   0.5897 VAE_GT   0.6228 VAE_GTx   0.6248 BR   0.5673 VAE_BR   0.6084 ORIGIN   0.6074 DELIV   0.6058 S25   0.5969 | gap(O-GT)  -0.0240 closed: DELIV -0.07 S25 -0.44 | anchor unfair: True
+  2160 arniqa    GT   0.6092 LEFT   0.6085 VAE_GT   0.6018 VAE_GTx   0.6168 BR   0.6177 VAE_BR   0.6071 ORIGIN   0.6433 DELIV   0.6275 S25   0.6170 | gap(O-GT)   0.0341 closed: DELIV  0.46 S25  0.77 | anchor unfair: False
+
+----------------------------------------------------------------------------------------------------------------------
+R4  WORKING RESOLUTION: HIRES_B (1.75x upsampled window, 1024x1792) and HIRES_A (context) vs ORIGIN, per clip
+----------------------------------------------------------------------------------------------------------------------
+  HIRES_B edgeHF@BR       0042:  0.8490 ->  0.6834 (d -0.1656)  0170:  0.7240 ->  0.5830 (d -0.1409)   Y 0.0445  WORSE>Y on all
+  HIRES_B b1/GT           0042:  0.9610 ->  0.8544 (d -0.1066)  0170:  0.5849 ->  0.5129 (d -0.0720)   Y 0.0423  WORSE>Y on all
+  HIRES_B b2/GT           0042:  0.9088 ->  0.8941 (d -0.0146)  0170:  0.7085 ->  0.7219 (d  0.0135)   Y 0.0258  mixed/within Y
+  HIRES_B LPIPS_REG       0042:  0.1599 ->  0.1424 (d -0.0175)  0170:  0.2058 ->  0.2141 (d  0.0084)   Y 0.0038  mixed/within Y
+  HIRES_B LPIPS_UNREG     0042:  0.4279 ->  0.4203 (d -0.0075)  0170:  0.2517 ->  0.2654 (d  0.0136)   Y 0.0023  mixed/within Y
+  HIRES_B LPIPS_VALID_BR  0042:  0.0803 ->  0.0505 (d -0.0298)  0170:  0.1174 ->  0.0917 (d -0.0258)   Y 0.0028  BETTER>Y on all
+  HIRES_B musiq           0042: 57.1196 -> 55.1090 (d -2.0106)  0170: 64.5344 -> 61.9361 (d -2.5983)   Y 0.5505  WORSE>Y on all
+  HIRES_B clipiqa         0042:  0.4474 ->  0.4590 (d  0.0116)  0170:  0.5286 ->  0.4002 (d -0.1284)   Y 0.0036  mixed/within Y
+  HIRES_B niqe            0042:  5.6760 ->  6.2865 (d  0.6105)  0170:  6.2137 ->  6.3501 (d  0.1365)   Y 0.0518  WORSE>Y on all
+  HIRES_B topiq_nr        0042:  0.4180 ->  0.3652 (d -0.0528)  0170:  0.5089 ->  0.4780 (d -0.0310)   Y 0.0066  WORSE>Y on all
+  HIRES_B clipiqa+        0042:  0.5626 ->  0.5510 (d -0.0116)  0170:  0.6166 ->  0.5725 (d -0.0441)   Y 0.0057  WORSE>Y on all
+  HIRES_B arniqa          0042:  0.5933 ->  0.5631 (d -0.0302)  0170:  0.6471 ->  0.6549 (d  0.0078)   Y 0.0054  mixed/within Y
+  HIRES_B VERDICT (PRIMARY): sharpness NO CLEAR CHANGE; NO CLEAR FIDELITY CHANGE
+  HIRES_B texture check (row vs ORIGIN; a sharpness gain with no fidelity gain and a flatHF jump = texture, not detail):
+    0042: flatHF/GT 1.027 (ORIGIN 1.414)  stripeE/GT 2.372 (ORIGIN 2.851)  flatHF@BR 0.773 (ORIGIN 1.104)  stripeE@BR 1.410 (ORIGIN 1.971)
+    0170: flatHF/GT 0.384 (ORIGIN 0.443)  stripeE/GT 0.494 (ORIGIN 0.507)  flatHF@BR 0.578 (ORIGIN 0.649)  stripeE@BR 0.684 (ORIGIN 0.764)
+  HIRES_B_L edgeHF@BR       0042:  0.8490 ->  0.7525 (d -0.0965)  0170:  0.7240 ->  0.6698 (d -0.0542)   Y 0.0445  WORSE>Y on all
+  HIRES_B_L b1/GT           0042:  0.9610 ->  0.9149 (d -0.0461)  0170:  0.5849 ->  0.5761 (d -0.0088)   Y 0.0423  mixed/within Y
+  HIRES_B_L b2/GT           0042:  0.9088 ->  0.9264 (d  0.0176)  0170:  0.7085 ->  0.7628 (d  0.0544)   Y 0.0258  mixed/within Y
+  HIRES_B_L LPIPS_REG       0042:  0.1599 ->  0.1393 (d -0.0206)  0170:  0.2058 ->  0.1913 (d -0.0145)   Y 0.0038  BETTER>Y on all
+  HIRES_B_L LPIPS_UNREG     0042:  0.4279 ->  0.4186 (d -0.0092)  0170:  0.2517 ->  0.2445 (d -0.0072)   Y 0.0023  BETTER>Y on all
+  HIRES_B_L LPIPS_VALID_BR  0042:  0.0803 ->  0.0454 (d -0.0349)  0170:  0.1174 ->  0.0724 (d -0.0450)   Y 0.0028  BETTER>Y on all
+  HIRES_B_L musiq           0042: 57.1196 -> 56.1398 (d -0.9798)  0170: 64.5344 -> 63.8294 (d -0.7049)   Y 0.5505  WORSE>Y on all
+  HIRES_B_L clipiqa         0042:  0.4474 ->  0.4704 (d  0.0230)  0170:  0.5286 ->  0.4388 (d -0.0898)   Y 0.0036  mixed/within Y
+  HIRES_B_L niqe            0042:  5.6760 ->  6.3538 (d  0.6779)  0170:  6.2137 ->  6.4824 (d  0.2687)   Y 0.0518  WORSE>Y on all
+  HIRES_B_L topiq_nr        0042:  0.4180 ->  0.3780 (d -0.0400)  0170:  0.5089 ->  0.4945 (d -0.0144)   Y 0.0066  WORSE>Y on all
+  HIRES_B_L clipiqa+        0042:  0.5626 ->  0.5569 (d -0.0057)  0170:  0.6166 ->  0.6040 (d -0.0125)   Y 0.0057  WORSE>Y on all
+  HIRES_B_L arniqa          0042:  0.5933 ->  0.5743 (d -0.0190)  0170:  0.6471 ->  0.6542 (d  0.0071)   Y 0.0054  mixed/within Y
+  HIRES_B_L VERDICT (SENSITIVITY R4-L): sharpness NO CLEAR CHANGE; BETTER FIDELITY
+  HIRES_B_L texture check (row vs ORIGIN; a sharpness gain with no fidelity gain and a flatHF jump = texture, not detail):
+    0042: flatHF/GT 1.161 (ORIGIN 1.414)  stripeE/GT 2.577 (ORIGIN 2.851)  flatHF@BR 0.880 (ORIGIN 1.104)  stripeE@BR 1.576 (ORIGIN 1.971)
+    0170: flatHF/GT 0.433 (ORIGIN 0.443)  stripeE/GT 0.534 (ORIGIN 0.507)  flatHF@BR 0.648 (ORIGIN 0.649)  stripeE@BR 0.745 (ORIGIN 0.764)
+  HIRES_A edgeHF@BR       0042:  0.8490 ->  0.8108 (d -0.0382)  0052:  0.8465 ->  0.8570 (d  0.0105)  0170:  0.7240 ->  0.7606 (d  0.0366)  0204:  0.5562 ->  0.5224 (d -0.0338)   Y 0.0445  mixed/within Y
+  HIRES_A b1/GT           0042:  0.9610 ->  0.9297 (d -0.0313)  0052:  0.7864 ->  0.7799 (d -0.0065)  0170:  0.5849 ->  0.6074 (d  0.0225)  0204:  0.7073 ->  0.6644 (d -0.0429)   Y 0.0423  mixed/within Y
+  HIRES_A b2/GT           0042:  0.9088 ->  0.8872 (d -0.0216)  0052:  0.7936 ->  0.7759 (d -0.0178)  0170:  0.7085 ->  0.6975 (d -0.0110)  0204:  0.7822 ->  0.7326 (d -0.0496)   Y 0.0258  mixed/within Y
+  HIRES_A LPIPS_REG       0042:  0.1599 ->  0.1605 (d  0.0006)  0052:  0.2231 ->  0.2261 (d  0.0030)  0170:  0.2058 ->  0.2060 (d  0.0003)  0204:  0.1340 ->  0.1383 (d  0.0043)   Y 0.0038  mixed/within Y
+  HIRES_A LPIPS_UNREG     0042:  0.4279 ->  0.4263 (d -0.0015)  0052:  0.4467 ->  0.4476 (d  0.0009)  0170:  0.2517 ->  0.2511 (d -0.0007)  0204:  0.2053 ->  0.2058 (d  0.0005)   Y 0.0023  mixed/within Y
+  HIRES_A LPIPS_VALID_BR  0042:  0.0803 ->  0.0820 (d  0.0018)  0052:  0.0689 ->  0.0722 (d  0.0032)  0170:  0.1174 ->  0.1275 (d  0.0101)  0204:  0.1292 ->  0.1380 (d  0.0088)   Y 0.0028  mixed/within Y
+  HIRES_A musiq           0042: 57.1196 -> 57.2700 (d  0.1504)  0052: 51.4602 -> 52.3073 (d  0.8471)  0170: 64.5344 -> 66.5973 (d  2.0629)  0204: 72.1439 -> 72.0732 (d -0.0707)   Y 0.5505  mixed/within Y
+  HIRES_A clipiqa         0042:  0.4474 ->  0.4318 (d -0.0156)  0052:  0.1702 ->  0.1733 (d  0.0031)  0170:  0.5286 ->  0.5620 (d  0.0334)  0204:  0.7352 ->  0.7326 (d -0.0026)   Y 0.0036  mixed/within Y
+  HIRES_A niqe            0042:  5.6760 ->  5.8020 (d  0.1260)  0052:  5.1423 ->  4.9974 (d -0.1449)  0170:  6.2137 ->  6.0800 (d -0.1337)  0204:  3.8482 ->  3.8660 (d  0.0179)   Y 0.0518  mixed/within Y
+  HIRES_A topiq_nr        0042:  0.4180 ->  0.4141 (d -0.0039)  0052:  0.3030 ->  0.3132 (d  0.0101)  0170:  0.5089 ->  0.5306 (d  0.0217)  0204:  0.5911 ->  0.5912 (d  0.0001)   Y 0.0066  mixed/within Y
+  HIRES_A clipiqa+        0042:  0.5626 ->  0.5563 (d -0.0063)  0052:  0.4462 ->  0.4438 (d -0.0025)  0170:  0.6166 ->  0.6353 (d  0.0187)  0204:  0.7182 ->  0.7147 (d -0.0036)   Y 0.0057  mixed/within Y
+  HIRES_A arniqa          0042:  0.5933 ->  0.5941 (d  0.0009)  0052:  0.5192 ->  0.5327 (d  0.0135)  0170:  0.6471 ->  0.6449 (d -0.0022)  0204:  0.7185 ->  0.7155 (d -0.0030)   Y 0.0054  mixed/within Y
+  HIRES_A VERDICT (CONTEXT): sharpness NO CLEAR CHANGE; NO CLEAR FIDELITY CHANGE
+  HIRES_A texture check (row vs ORIGIN; a sharpness gain with no fidelity gain and a flatHF jump = texture, not detail):
+    0042: flatHF/GT 1.384 (ORIGIN 1.414)  stripeE/GT 2.802 (ORIGIN 2.851)  flatHF@BR 1.086 (ORIGIN 1.104)  stripeE@BR 1.954 (ORIGIN 1.971)
+    0052: flatHF/GT 0.929 (ORIGIN 0.940)  stripeE/GT 2.258 (ORIGIN 2.297)  flatHF@BR 0.693 (ORIGIN 0.711)  stripeE@BR 1.286 (ORIGIN 1.310)
+    0170: flatHF/GT 0.455 (ORIGIN 0.443)  stripeE/GT 0.513 (ORIGIN 0.507)  flatHF@BR 0.659 (ORIGIN 0.649)  stripeE@BR 0.775 (ORIGIN 0.764)
+    0204: flatHF/GT 0.835 (ORIGIN 0.824)  stripeE/GT 1.828 (ORIGIN 1.753)  flatHF@BR 0.698 (ORIGIN 0.688)  stripeE@BR 1.309 (ORIGIN 1.250)
+  VAE ceiling at 1.75x (all clips): LPIPS VAE_GT 0.0856 -> VAE_GTx 0.0572 (RS_GTx resampling-only 0.0117); edgeHF/GT 0.7117 -> 0.7064; b1/GT 0.7842 -> 0.7994

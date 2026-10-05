@@ -1,0 +1,5 @@
+# probe 1 smoke on 0301: fitted disparity (RF: s=0.35 o=+5) and offset-only (RO: s=1 o=+12)
+0301 RF_origin origin RF
+0301 RF_deliv deliv RF
+0301 RO_origin origin RO
+0301 RO_deliv deliv RO

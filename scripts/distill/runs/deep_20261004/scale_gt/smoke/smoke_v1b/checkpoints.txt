@@ -1,0 +1,3 @@
+step0 /mnt/ssd_data/deep_20261004/scale_gt/smoke_v2/ck/smoke_v1b/step0.pt md5 2dd7d012169d30f11197d042355ca334
+step10 /mnt/ssd_data/deep_20261004/scale_gt/smoke_v2/ck/smoke_v1b/step10.pt md5 0b8efebc82f6ffbf147f3c56d5fda8a6
+step20 /mnt/ssd_data/deep_20261004/scale_gt/smoke_v2/ck/smoke_v1b/step20.pt md5 57017f7e0358177e5f0a7f68c3f70e22

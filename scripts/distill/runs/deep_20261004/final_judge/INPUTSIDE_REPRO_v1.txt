@@ -1,0 +1,7 @@
+input_side reproduction: max |mine - published| over 4 clips x 2 inputs x 2 models x 4 variants = 0.00e+00
+  origin dREG_FRAME (RF - R1) 0301:-0.0556 0204:-0.0075 0052:-0.0211 0147:+0.0048  mean -0.0198  improved 3/4
+  origin dUNREG     (RF - R1) 0301:-0.0853 0204:-0.0768 0052:-0.2440 0147:-0.3067  mean -0.1782  improved 4/4
+  origin dBLK_LOCAL (RF - R1) 0301:-0.0450 0204:-0.0013 0052:+0.0041 0147:+0.0107  mean -0.0079  improved 2/4
+  deliv  dREG_FRAME (RF - R1) 0301:-0.0282 0204:-0.0066 0052:-0.0251 0147:+0.0042  mean -0.0139  improved 3/4
+  deliv  dUNREG     (RF - R1) 0301:-0.0596 0204:-0.0749 0052:-0.2480 0147:-0.3103  mean -0.1732  improved 4/4
+  deliv  dBLK_LOCAL (RF - R1) 0301:-0.0183 0204:-0.0003 0052:+0.0004 0147:+0.0110  mean -0.0018  improved 2/4

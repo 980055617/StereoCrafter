@@ -1,0 +1,117 @@
+PREREG -- lane "skeptic" (deep_20261004).  CPU ONLY (CUDA_VISIBLE_DEVICES=""), no training, no render, no GPU lock.
+Written BEFORE any new LPIPS / quality number of this lane was computed.  (Done before writing: data-integrity
+check of temporal alignment on 0042/0301 [check_temporal_align_v1_smoke.log], CPU speed benchmarks on random
+tensors, lane-local installs of piq 0.8.0 + VGG16/DISTS/BRISQUE weights under /mnt/ssd_data/deep_20261004/skeptic/.)
+
+QUESTION.  Argue AGAINST "we can substantially exceed origin" with numbers.  What part of origin's registered LPIPS
+(0.2432, 12 test clips) can no model fed this input remove, and what part could a GT fine-tune remove only by
+hacking the metric?  Deliver a realistic ceiling in REGISTERED LPIPS and a definition of a real (non-hacked) gain.
+
+FACTS TAKEN FROM EXISTING RECORDS (quoted, not recomputed, except where gate G2 recomputes them):
+  REG_FRAME 12-clip means [scripts/distill/runs/ays_20261004/robust/TABLE_REG_v1_pass1.txt]: origin 0.2432,
+  AYS8 origin (training-free) 0.2317 (-0.0114, 12/12), deliverable 0.2300 (-0.0132, 11/12), s25 0.2279 (-0.0152,
+  11/12).  Registration shifts: outputs/more_20261004/eval_robustness/score_v1/<clip>.json (score_v1_wide/0125.json
+  for 0125, whose REG_FRAME is flagged ILL-POSED; n=11 sensitivity reported for headline numbers).
+  Provenance [video_data/metadata_v2/README.md, stereo_calibration.tsv, verification.tsv]: AVP 0001-0159
+  (baseline 63.8 mm, base layer = LEFT eye), iPhone 0160-0309 (baseline 19.3 mm, base layer = RIGHT eye; 76/150
+  iPhone clips have |median disparity| <= 2 px).  Test clips: AVP 0042 0052 0125 0128 0141 0147; iPhone 0170 0204
+  0225 0251 0259 0301.  Near-mono test clips (|median disparity| <= 2 px per verification.tsv): 0204 0225 0251 0259 0301.
+  Bundles: train tile and splatting tile are cv2 mp4v (MPEG-4 Part 2); AVP train tile 4400x4400 at ~139 Mb/s,
+  iPhone 3840x2160 at ~392 Mb/s.  Splat disparity = (depth*2-1)*20 px (depth_splatting_inference_origin.py).
+
+GATES (a failed gate stops the dependent measurement; reported, never silently skipped)
+  G0 VALIDITY, every clip this lane reads GT from: id < 0310; readlink -f of video_data/train/<c>_train.mp4 does not
+     contain "train_leftGT_broken"; DC-removed MAD(train TL, train TR) on the deployed window > 5.0 (0-255) at
+     frames 8..19.  Test + dev ids are never used as "train" clips.
+  G1 TEMPORAL ALIGNMENT (12 test clips): best frame offset k = 0 for splat TL vs left_eye_v2 and train TR vs
+     right_eye_v2 (check_temporal_align_v1.py).  k != 0 on a clip -> that clip is excluded from M1/M3 and reported.
+  G2 SCORER REPRODUCTION: my CPU LPIPS-alex (lpips 0.1.4, same calls, batches of 4) with the stored per-frame
+     REG_FRAME shifts reproduces eval_robustness origin_ll UNREG and REG_FRAME per clip (all 38 scored frames)
+     within 2e-4 on all 12 clips.  Fail -> report the deviation and do not compare my oracle rows with published ones.
+
+MEASUREMENTS (frame sets: S38 = the 38 scored frames 0,4,...; S10 = every 4th scored frame 0,16,...,144;
+S6 = scored frames 0,28,56,84,112,140.  Window = deployed 576x1024 window (t0,l0) from the stored JSON.
+Luma Y = 0.299R+0.587G+0.114B in [0,1].  Flows: torchvision RAFT-large C_T_SKHT_V2, 12 updates, on 640x1280
+crops extending the window by 32 px vertically / 128 px horizontally; forward-backward consistency
+|F12(x)+F21(x+F12(x))|^2 <= 0.01(|F12|^2+|F21|^2)+0.5 (Sundaram 2010), plus in-bounds.  Warps: bicubic grid_sample.)
+
+M1 CAMERA DIFFERENCES, left vs real right eye, per clip, per family (Q1)
+  Data versions: (T) train tile TL vs TR (what the metric sees), (V) left_eye_v2 vs right_eye_v2 (crf-12 sources,
+  the cameras themselves), on the deployed window, test clips at S10, plus a broad sample of VALID TRAIN clips
+  (24 per family, every k-th of the sorted valid list, 3 frames 10/40/70; G0 applied to each).
+  (a) band amplitude ratio rho_b = sqrt(P_R(b)/P_L(b)), Hann-windowed radially averaged power of Y, bands
+      b1 [1/32,1/16) b2 [1/16,1/8) b3 [1/8,1/4) b4 [1/4,1/2] cycles/px (shift-invariant: no registration needed).
+  (b) mean-gradient ratio sharp(R)/sharp(L), sharp = score_clip_ll definition (mean |horizontal diff| of RGB).
+  (c) relative blur on RAFT-consistent pixels (test clips, S10): sigma_R = argmin_s MSE(G_s*Lw, R),
+      sigma_L = argmin_s MSE(Lw, G_s*R), s in {0,0.25,...,2.5}, after a per-frame luma gain/offset fit;
+      sigma_rel = sigma_R - sigma_L (> 0: right eye softer).  Control: the same estimator on (R, R round-tripped
+      through the forward+backward warp) gives the warp-induced bias, which is subtracted and reported.
+  (d) exposure/colour on the registered overlap: mean Y difference (8-bit), contrast ratio std(Y_R)/std(Y_L),
+      CIELAB mean offsets (dL*, da*, db*), PSNR gain of a per-clip affine 3x4 colour fit.
+  (e) noise sigma (Immerkaer 1996) of Y, 8-bit units, L and R.
+  RULE R1: family F "GT SOFTER than input" iff median rho_b3 < 0.87 in BOTH (T) and (V) [test+train clips pooled];
+     "GT SHARPER than input" iff median rho_b3 > 1.15 in both; else "no material asymmetry".  Only (T) -> attribute
+     to the bundle codec, not the camera.   RULE R2: sigma_rel material iff |median bias-corrected sigma_rel| >= 0.5 px.
+
+M2 COPY-LEFT ROWS (the input left eye output as the "right eye"; a no-stereo output) (Q1/Q4)
+  CL-UNREG / CL-REG: output = the render's own left half (bit-identical across rows), scored as UNREG / REG_FRAME, S38.
+  CL-OPT: LPIPS(left half, TR crop at the per-frame integer shift that maximises PSNR against the LEFT half),
+      search ddy [-4,4], ddx [-80,16], S38.  On near-mono clips this approximates the pure camera floor.
+  RULE R3: "on near-mono clips copying the left eye beats origin" iff CL-OPT < origin REG_FRAME on >= 4 of the 5
+     near-mono clips.  CL-UNREG and CL-REG vs origin are reported per clip as the no-stereo hack baseline.
+
+M3 ORACLES = the ceiling (Q2), test clips, S10, target = REG_FRAME GT crop (TRg)
+  O_A  camera floor at TRUE geometry: left eye warped into TRg by RAFT(TRg->TL); inconsistent / out-of-bounds pixels
+       filled with TRg (oracle).  O_Acc: + per-clip affine colour fit toward TRg (oracle colour).
+  O_B  geometric floor: TRg content moved to the MODEL geometry by RAFT(BR->TRg) (BR holes inpainted with cv2 Telea
+       for the flow only); BR-hole pixels and inconsistent pixels keep TRg.  = a perfect right camera at the input
+       geometry with perfect holes.
+  O_C  copy-left at the input geometry + perfect holes: BR (the model input itself, splat tile) on non-hole pixels,
+       O_B on hole pixels.  O_Ccc: + per-clip affine colour fit toward TRg on non-hole pixels (oracle colour).
+  Controls: K1 TRg bicubic-shifted by (0.5,0.5) px (pure resampling), K2 TRg round-tripped through RAFT(BR->TRg)
+       then RAFT(TRg->BR) (flow+resampling machinery; two warps, an upper bound for the one-warp oracles).
+  Rows on the same frames: origin, AYS8, deliverable, s25 (REG_FRAME).  Spatial LPIPS maps (spatial=True) give the
+  mean over model-hole pixels / non-hole pixels / true-occluded pixels.
+  RULE R4 (observable headroom): H_C = origin - O_C and H_Ccc = origin - O_Ccc (12-clip means, S10).
+     H <= 0.015 "no headroom beyond what s25/AYS already take"; 0.015 < H <= 0.05 "modest"; H > 0.05 "substantial in
+     principle".  RULE R5: clip "geometry-dominated" iff O_B >= 0.5 x origin REG_FRAME on that clip.
+
+M4 UNOBSERVABLE SHARE (Q2): U1 model-hole fraction (splat BL > 127.5, S38, from the stored JSON); U2 true-occlusion
+  fraction of TRg (RAFT inconsistency + out-of-bounds, S10); U3 share of consistent pixels with
+  |Y(O_Acc) - Y(TRg)| > 24/255 (view-dependent + flow-failure upper bound); U4 share of origin's spatial-LPIPS mass in
+  model holes and in true-occluded pixels.
+
+M5 SEED SPREAD (Q3): LPIPS / PSNR between deliv_g100_T5nat and deliv_g100_T5pad (lossless; same model/schedule,
+  different noise in windows >= 1) on S38 frames with window_k >= 1, 12 clips; share of that spatial mass in holes.
+  Labelled supplement only: outputs/fulldata/seedfloor 0042 origin s1/s2/s3 (mp4v, lossy) pairwise, with the codec
+  control LPIPS(mp4v, lossless) of the identical-pre-encode 0301 student pair (skeptic1 FAITHFULNESS_skeptic.txt).
+
+M6 LPIPS HACKABILITY (Q4): GT-INDEPENDENT post-processing of origin's lossless right half, 12 test clips
+  P0 identity; P1-P6 unsharp y = x + a(x - G_s*x), s in {1,2}, a in {0.3,0.6,1.0}; P7-P8 Gaussian blur s in
+  {0.5,1.0}; P9-P10 grain N(0,(2/255)^2), N(0,(4/255)^2) (seed = frame index); P11 per-family affine colour map
+  TL->TR fitted on the M1 train sample (registered overlap); P12 per-family filter chosen among P0-P10 by
+  LPIPS(P(TL), TR registered to TL) on the M1 train sample; P13 = P12 after P11.  Reference rows: AYS8,
+  deliverable, s25.  All outputs clipped to [0,1] and quantised to 8 bit before scoring.
+  Metrics: LPIPS-alex UNREG + REG_FRAME (S38), PSNR REG_FRAME (S38), sharp/gtSharp (S38); LPIPS-VGG (lpips 0.1.4
+  vgg, torchvision VGG16) REG_FRAME, DISTS (piq 0.8.0) REG_FRAME, BRISQUE (piq, NR) and reviewlib flatHF / edgeHF /
+  stripeE against TRg (S6).  Selection by cross-fitting: best P1-P10 by REG_FRAME LPIPS-alex on AVP -> reported on
+  iPhone, and vice versa (no test-set selection for the headline).
+  RULE R6: the round's bar ("registered LPIPS >= 0.005 better than origin on >= 9/12 clips") is GAMEABLE iff a
+     cross-fitted P, or P11/P12/P13 (fitted on train clips only), reaches mean REG_FRAME delta <= -0.005 with >= 9/12
+     improved; the full grid is reported descriptively either way.
+  RULE R7: a held-out metric (LPIPS-VGG, DISTS) "catches" a hack iff it does not improve (delta >= 0) for a P that
+     improves REG_FRAME LPIPS-alex by >= 0.005; it "confirms" a real gain iff AYS8 / deliverable / s25 improve on it.
+
+M7 STEREO RETENTION (Q4 signature): per output O in {origin, AYS8, deliverable, s25, copy-left}, DIS-flow horizontal
+  displacement d_O(x) of O relative to the left half and d_BR(x) of the input BR, on textured (|grad Y| > 0.02)
+  non-hole pixels, S6.  Slope of the OLS fit d_O ~ d_BR (1 = geometry kept, 0 = collapsed to the left eye) and
+  mean |d_O - d_BR|.  Proposed as a held-out check for GT-trained models; baselines reported here.
+
+SYNTHESIS (stated in RESULTS with each number's source file):
+  realistic ceiling = origin REG_FRAME minus (i) what training-free rows already take (AYS8 / s25), (ii) camera
+  colour bias (O_Ccc vs O_C, P11), (iii) observable detail headroom (origin minus O_C on non-hole pixels), (iv) the
+  unobservable region bounded by the seed floor x area share.  LPIPS receptive fields cross region boundaries, so the
+  decomposition is APPROXIMATE and is labelled so.  A "real" gain = definition given in RESULTS, built from R3-R7.
+
+FAILURE HANDLING: a failed run is retried once at most; every number cites its source file; nothing existing is
+overwritten (new files get an _r2 suffix if a name exists); outputs under outputs/deep_20261004/skeptic/.

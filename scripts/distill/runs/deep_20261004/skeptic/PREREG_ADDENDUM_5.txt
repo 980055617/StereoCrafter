@@ -1,0 +1,11 @@
+PREREG ADDENDUM 5 -- EXPLORATORY, non-gating (written before job_bookkeep_v1.py produced any number; suggested by review).
+Concern: REG_FRAME aligns the GT to the model input BR, so rows that sit exactly on BR's geometry (O_C, BR_raw, COMP_*) are
+favoured over origin, whose output deviates from BR's geometry by ~0.5-2 px (M7), while a 0.5 px shift alone costs
+0.02-0.08 LPIPS (K1).  Control on S10 (the M3 frame set), target REG_FRAME GT, BRt = BR with Telea-filled holes:
+  X  = BRt warped by DIS(origin -> BRt)  (BR content at origin's geometry);
+  X0 = BRt warped by DIS(Bb -> BRt), Bb = BRt blurred to origin's per-clip b3 amplitude ratio (zero true displacement:
+       interpolation + flow-noise control);  bookkeeping = LPIPS(X) - LPIPS(X0).
+  Og = origin warped by DIS(BRt -> origin) (origin content at BR geometry; optimistic, may also move texture).
+Use: H_C and the COMP gain are reported both raw and minus the per-clip bookkeeping; if the control is unusable they are
+labelled upper bounds with the K1 calibration next to them.
+2026-10-05 00:21:40 JST
