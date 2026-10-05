@@ -1,0 +1,4 @@
+cd seed 20261005, 0040 deliv_cap frames 0..13 (window 0), gpu 0
+run1 md5 e5b53d01990d02b40d0014b85566f6df  run2 md5 e5b53d01990d02b40d0014b85566f6df  render /mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0040_deliv_cap__cd/0040_inpainting_results_sbs.mkv frames 0..13 md5 e5b53d01990d02b40d0014b85566f6df
+run1 == run2: True; run1 == render (other process): True; max|run1-render| 0
+GATE D3 PASS

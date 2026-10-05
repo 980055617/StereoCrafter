@@ -1,0 +1,56 @@
+GATES: D1 stock md5 == capture: True; D2 stock rows reproduce decoder_ft scorer values: max|d| 0.00e+00 -> True; D3 cd determinism: True; shared left half/alignment: asserted
+  stock origin: REG_FRAME 5-clip 0.2568  UNREG 6-clip 0.4616  (decoder_ft TABLE_DEV_main_v1: origin 0.2568/0.4616, deliverable 0.2507/0.4561)
+  stock deliverable: REG_FRAME 5-clip 0.2507  UNREG 6-clip 0.4561  (decoder_ft TABLE_DEV_main_v1: origin 0.2568/0.4616, deliverable 0.2507/0.4561)
+
+DEV deltas vs the STOCK decoder on the same latents (REG_*, rPSNR, DISTS, VGG, decompose: 5 registered clips; UNREG, NIQE, MUSIQ, temporal: 6 clips)
+row      model        dREG_FRAME  better  dREG_CLIP  dBLK_LOC  dUNREG  better  drPSNR   dNIQE  dMUSIQ  dDISTS   dVGG   edgeHF/st flatHF/st stripe/st dhalo%  tLP/st warp/st dseam  pair
+stock32  origin      -0.0002     3/5   -0.0002   -0.0001  -0.0003  4/6   +0.001  +0.022  +0.08  +0.0004 -0.0014  0.998     0.922     0.954   -0.045  0.999  0.992  +0.005 0.976
+stock32  deliverable -0.0000     3/5   -0.0000   +0.0000  -0.0002  4/6   +0.001  +0.021  +0.08  +0.0003 -0.0009  0.999     0.953     0.968   -0.050  0.999  0.994  +0.003 1.000
+ftmse    origin      -0.0032     4/5   -0.0034   -0.0032  -0.0027  6/6   -0.033  -0.608  +0.20  -0.0046 +0.0006  1.170     1.259     1.138   +0.233  1.028  1.040  +0.037 0.998
+ftmse    deliverable -0.0026     5/5   -0.0027   -0.0026  -0.0018  4/6   -0.042  -0.901  +0.39  -0.0034 +0.0006  1.136     1.268     1.168   +0.169  1.061  1.073  +0.018 0.999
+ftema    origin      -0.0038     4/5   -0.0041   -0.0038  -0.0030  5/6   -0.138  -0.853  +1.71  -0.0070 +0.0024  1.276     1.287     1.175   +1.200  1.060  1.102  +0.026 0.998
+ftema    deliverable -0.0019     3/5   -0.0021   -0.0016  -0.0015  4/6   -0.188  -1.135  +2.08  -0.0037 +0.0035  1.275     1.345     1.237   +1.548  1.099  1.153  +0.003 0.999
+cd       origin      -0.0015     4/5   -0.0017   -0.0014  -0.0032  5/6   -0.051  -1.120  -1.51  -0.0066 +0.0057  1.079     1.475     1.303   +0.084  0.999  1.070  +0.073 0.997
+cd       deliverable -0.0000     4/5   -0.0002   +0.0002  -0.0020  5/6   -0.084  -1.055  -1.18  -0.0035 +0.0055  1.077     1.341     1.258   +0.154  1.025  1.086  +0.060 0.999
+
+DECODER EFFECT net of precision: candidate minus STOCK32 (same temporal decoder in fp32) on the same latents
+ftmse    origin      dREG_FRAME -0.0030 (4/5)  dUNREG -0.0023  drPSNR -0.034  dNIQE -0.629  edgeHF 1.173 flatHF 1.370 stripeE 1.197  warp 1.049
+ftmse    deliverable dREG_FRAME -0.0026 (5/5)  dUNREG -0.0016  drPSNR -0.043  dNIQE -0.922  edgeHF 1.138 flatHF 1.334 stripeE 1.210  warp 1.079
+ftema    origin      dREG_FRAME -0.0036 (4/5)  dUNREG -0.0027  drPSNR -0.139  dNIQE -0.875  edgeHF 1.279 flatHF 1.398 stripeE 1.236  warp 1.111
+ftema    deliverable dREG_FRAME -0.0019 (3/5)  dUNREG -0.0013  drPSNR -0.189  dNIQE -1.156  edgeHF 1.276 flatHF 1.413 stripeE 1.281  warp 1.160
+cd       origin      dREG_FRAME -0.0013 (4/5)  dUNREG -0.0029  drPSNR -0.052  dNIQE -1.141  edgeHF 1.081 flatHF 1.630 stripeE 1.382  warp 1.079
+cd       deliverable dREG_FRAME -0.0000 (4/5)  dUNREG -0.0018  drPSNR -0.085  dNIQE -1.076  edgeHF 1.079 flatHF 1.415 stripeE 1.305  warp 1.092
+
+per-clip REG_FRAME change vs stock (deliverable | origin):
+  stock32  0040 -0.0001|+0.0001  0082 -0.0003|-0.0008  0184 -0.0001|-0.0001  0245 +0.0003|+0.0002  0268 +0.0001|-0.0004
+  ftmse    0040 -0.0007|-0.0021  0082 -0.0029|-0.0045  0184 -0.0048|-0.0068  0245 -0.0016|+0.0015  0268 -0.0032|-0.0042
+  ftema    0040 +0.0013|-0.0014  0082 -0.0019|-0.0048  0184 -0.0060|-0.0100  0245 +0.0044|+0.0081  0268 -0.0072|-0.0108
+  cd       0040 -0.0015|-0.0033  0082 -0.0038|-0.0037  0184 -0.0030|-0.0041  0245 +0.0161|+0.0138  0268 -0.0080|-0.0101
+
+absolute levels (5-clip / 6-clip means as above):
+  origin      stock    REG_FRAME 0.2568 UNREG 0.4616 rPSNR 20.093 NIQE 6.449 MUSIQ 58.12 DISTS 0.1273 edgeHF 0.05724 flatHF 0.00972 stripeE 0.00522 tLP 0.0698 warp 0.01274
+  origin      stock32  REG_FRAME 0.2566 UNREG 0.4612 rPSNR 20.094 NIQE 6.470 MUSIQ 58.20 DISTS 0.1276 edgeHF 0.05717 flatHF 0.00944 stripeE 0.00514 tLP 0.0697 warp 0.01264
+  origin      ftmse    REG_FRAME 0.2535 UNREG 0.4589 rPSNR 20.060 NIQE 5.841 MUSIQ 58.33 DISTS 0.1226 edgeHF 0.06815 flatHF 0.01237 stripeE 0.00601 tLP 0.0709 warp 0.01335
+  origin      ftema    REG_FRAME 0.2530 UNREG 0.4586 rPSNR 19.955 NIQE 5.595 MUSIQ 59.83 DISTS 0.1203 edgeHF 0.07565 flatHF 0.01343 stripeE 0.00645 tLP 0.0729 warp 0.01430
+  origin      cd       REG_FRAME 0.2553 UNREG 0.4583 rPSNR 20.042 NIQE 5.329 MUSIQ 56.61 DISTS 0.1207 edgeHF 0.06370 flatHF 0.01314 stripeE 0.00646 tLP 0.0695 warp 0.01384
+  deliverable stock    REG_FRAME 0.2507 UNREG 0.4561 rPSNR 19.935 NIQE 6.001 MUSIQ 58.48 DISTS 0.1144 edgeHF 0.06378 flatHF 0.01160 stripeE 0.00612 tLP 0.0773 warp 0.01510
+  deliverable stock32  REG_FRAME 0.2507 UNREG 0.4559 rPSNR 19.936 NIQE 6.022 MUSIQ 58.56 DISTS 0.1147 edgeHF 0.06372 flatHF 0.01139 stripeE 0.00606 tLP 0.0772 warp 0.01502
+  deliverable ftmse    REG_FRAME 0.2481 UNREG 0.4543 rPSNR 19.893 NIQE 5.100 MUSIQ 58.88 DISTS 0.1110 edgeHF 0.07293 flatHF 0.01445 stripeE 0.00710 tLP 0.0808 warp 0.01635
+  deliverable ftema    REG_FRAME 0.2488 UNREG 0.4546 rPSNR 19.747 NIQE 4.866 MUSIQ 60.56 DISTS 0.1107 edgeHF 0.08297 flatHF 0.01630 stripeE 0.00783 tLP 0.0834 warp 0.01782
+  deliverable cd       REG_FRAME 0.2507 UNREG 0.4541 rPSNR 19.851 NIQE 4.946 MUSIQ 57.31 DISTS 0.1110 edgeHF 0.07001 flatHF 0.01534 stripeE 0.00768 tLP 0.0786 warp 0.01670
+  GT (real right eye)  NIQE 4.907 MUSIQ 59.03 edgeHF 0.11141 flatHF 0.00704 stripeE 0.00186 tLP 0.0825 warp 0.00813 seam ratio 1.002 pair ratio 0.998
+
+decode cost (GPU-synchronised decode seconds; per-frame decoders decode only kept frames, stock decodes whole windows):
+  stock    0.176 s/decoded frame; 35.0 s/clip as run; 35.4 s/clip if whole 14-frame windows are decoded
+  stock32  0.274 s/decoded frame; 54.3 s/clip as run; 55.0 s/clip if whole 14-frame windows are decoded
+  ftmse    0.165 s/decoded frame; 25.7 s/clip as run; 33.1 s/clip if whole 14-frame windows are decoded
+  ftema    0.165 s/decoded frame; 25.7 s/clip as run; 33.1 s/clip if whole 14-frame windows are decoded
+  cd       1.712 s/decoded frame; 267.2 s/clip as run; 343.4 s/clip if whole 14-frame windows are decoded
+
+PASS RULE (PREREG section 3): P1 deliv REG_FRAME >=4/5 & mean<0 | P2 origin mean<=0 | G1 dNIQE<=+0.05 | G2 drPSNR>=-0.30 | G3 dUNREG<=+0.001 | G4 warp ratio<=1.10 or <=GT | G5 dseam<=+0.05 | G6 stripeE & flatHF ratio<=1.10 or <=GT
+  ftmse  P1 ok  P2 ok  G1 ok  G2 ok  G3 ok  G4 ok  G5 ok  G6 FAIL  PASS FAIL
+  ftema  P1 FAIL  P2 ok  G1 ok  G2 ok  G3 ok  G4 FAIL  G5 ok  G6 FAIL  PASS FAIL
+  cd     P1 ok  P2 ok  G1 ok  G2 ok  G3 ok  G4 ok  G5 FAIL  G6 FAIL  PASS FAIL
+
+SELECTED for test: NONE (no candidate passes; nothing goes to test)
+wrote scripts/distill/runs/vae_20261005/decoder_swap/SELECTION_DEV_v1.json

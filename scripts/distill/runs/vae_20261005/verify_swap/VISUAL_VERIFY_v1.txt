@@ -1,0 +1,43 @@
+vae_20261005 / verify_swap -- V5 VISUAL NOTE (my own viewing; PREREG.txt V5).  Written 2026-10-05 ~18:25 JST after viewing.
+Frame 76, deliverable latents unless stated.  Panels: outputs/vae_20261005/verify_swap/panels_v5/ (built by v5_panels_v1.py; crop
+positions in crops_v5.json: 0268 = decoder_swap's crops.json, 0184 = same rule computed here -- 0184 has no 384 window with >= 5 % hole,
+so F = flattest window overall).  Every panel is 1160 px wide and was viewed at 100 %; zooms are 2x / 4x nearest-neighbour.
+Viewed: 0268_E_unet, 0268_E_unetzoom, 0268_E_unetdiff, 0268_E_hr, 0268_E_hrzoom, 0268_F_unet, 0184_E_unet, 0184_E_unetzoom,
+0184_E_unetdiff, 0184_E_hr, 0184_E_hrzoom, 0184_F_unet, 0184_F_unetdiff, 0184_F_unetzoom, spot_0268_f076_4x (inspection aid, not
+pre-registered), and decoder_swap's panels_dev_v1/0245_f076_E_main.png and 0040_f076_F_main.png (100 %).  Not viewed: 0268_F_*diff/
+zoom/hr (sky, nothing changes), 0184_F_hr/hrzoom.
+
+UNET LATENTS (what the shipped pipeline would produce with a swapped decoder)
+* 0268 E (grainy blue surface; registration (+1,+1), so GT is pixel-comparable).  GT has dense fine dark speckle.  origin+stock and
+  deliverable+stock are smoothed versions.  ft-mse adds a little grain (barely visible at 100 %), ft-ema more, consistency more.  The
+  |ft-mse - stock| x8 map is uniform fine noise over the textured area, not concentrated on structures; at 2x the GT's speckle pattern
+  is NOT reproduced -- the added grain is texture of a GT-like kind, not GT detail.
+  A small feature near the bottom-left (frame position y545 x427): GT = a dark speckle cluster; stock (both models) = dark spot with a
+  pink crescent; ft-mse = dark blue; ft-ema = dark with a yellow-green rim; consistency = a bright cyan glow ~30 px wide.  The UNet's
+  latent already carries a small spot that flickers there: the STOCK row's mean level in a 24x24 box dips at frame 76 (135 vs 148 /
+  147 at frames 75 / 77) and also at frames 68, 71, 72, 74 (130, 133, 131, 137); ft-mse also bumps at 76 (|ft-mse - stock| 10 levels
+  vs 2-5 in frames 60-92).  The consistency decoder turns the frame-76 instance into the bright cyan blob: |cd - stock| 26 levels at
+  frame 76 vs 3-8 in the other frames 60-92 [panels_v5/spot_0268.json].  One crop, one frame -- an example, not a rate.
+* 0268 F (sky): all rows practically identical; no stripes, no banding visible at 100 %.
+* 0184 E / F (foosball; registration (0,-38), multi-depth scene: foreground figures do not line up with GT, so GT shows the KIND of
+  detail).  GT is crisp (sculpted hair on the figures, floor speckle, crisp line edges).  origin is softer; deliverable a bit crisper
+  than origin.  ft-mse / ft-ema / consistency are nearly indistinguishable from deliverable+stock at 100 %; at 2x a little more
+  micro-texture on the floor and hair.  GT's sculpted hair is not recovered by any decoder.  Difference maps put the change on object
+  outlines and the textured floor; one colour fringe at a figure's head where the stock output already has a pink blotch (the
+  decoders re-colour it: greenish ft-mse/ft-ema, red consistency).  No ringing/halo visible at 100 % or 2x; no stripes.
+* decoder_swap's 0245 E (foliage, 100 %): GT's serrated, hairy leaf edges are absent from both stock and ft-mse; ft-mse ~ stock.
+  0040 F (weight plate, 100 %): ft-mse at most marginally crisper lettering.
+
+HEADROOM (real-right-eye latents -> decoder; GT pixel-exact)
+* 0184 E: every decoder's round trip is close to GT (hair strands, floor scratches kept); ft-mse marginally crisper than stock at 2x.
+* 0268 E: round trips keep most of the speckle; ft-mse slightly closer to GT's grain than stock.
+* The SAME stock decoder renders the clean real-eye latent visibly sharper than the UNet's latent at the same crop (compare
+  <clip>_E_hr.png "round trip: stock dec" with <clip>_E_unet.png "deliverable + stock dec") -> the softness of the outputs sits
+  UPSTREAM of the decoder, in the latent, which a different decoder cannot undo.  This does NOT separate the encoding of the warped
+  input from the UNet's generation (the deep round's edge-energy split, encode of the input 0.733 vs UNet step 0.891,
+  blur_diag/TABLE_BLUR_DIAG_r2.txt line 147, was not re-tested here).
+
+VERDICT (per PREREG V5 categories):  real detail recovered (present in GT): none identified in any crop.  Invented texture: yes, fine
+grain from ft-mse < ft-ema < consistency, plus re-coloured small structures; consistency also renders one instance of a small spot
+that already flickers in the UNet's latent as a bright cyan blob (0268 f76; one crop, one frame).  Ringing/halo: none visible.  Stripes: none added.  "Visibly sharper than origin" at 100 %: the deliverable is a little crisper
+than origin; swapping the decoder adds nothing a viewer would call sharper.

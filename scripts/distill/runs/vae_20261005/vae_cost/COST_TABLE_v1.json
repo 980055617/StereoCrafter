@@ -1,0 +1,236 @@
+{
+ "sources": {
+  "ada_wp": "https://images.nvidia.com/aem-dam/Solutions/geforce/ada/nvidia-ada-gpu-architecture.pdf",
+  "a100": "https://www.nvidia.com/en-us/data-center/a100/",
+  "h100": "https://www.nvidia.com/en-us/data-center/h100/",
+  "a800": "https://lenovopress.lenovo.com/lp1813-thinksystem-nvidia-a800-pcie-gpu",
+  "v100": "https://images.nvidia.com/content/technologies/volta/pdf/tesla-volta-v100-datasheet-letter-fnl-web.pdf",
+  "zero": "https://arxiv.org/abs/1910.02054",
+  "kaplan": "https://arxiv.org/abs/2001.08361",
+  "ckpt": "https://arxiv.org/abs/1604.06174",
+  "stereocrafter": "https://arxiv.org/pdf/2409.07447",
+  "m2svid": "https://arxiv.org/html/2505.16565v2",
+  "stereoworld": "https://arxiv.org/html/2512.09363v2",
+  "stereopilot": "https://arxiv.org/html/2512.16915v1",
+  "dcvideogen": "https://arxiv.org/html/2509.25182v1",
+  "dcgen": "https://hanlab.mit.edu/projects/dc-gen",
+  "pixartsigma": "https://arxiv.org/html/2403.04692v2",
+  "sd3": "https://arxiv.org/html/2403.03206",
+  "hunyuan": "https://arxiv.org/html/2412.03603",
+  "wan21": "https://github.com/Wan-Video/Wan2.1",
+  "wan21_generate_py": "https://raw.githubusercontent.com/Wan-Video/Wan2.1/main/generate.py",
+  "videox_fun": "https://github.com/aigc-apps/VideoX-Fun",
+  "cogft": "https://github.com/THUDM/CogVideo/tree/main/finetune",
+  "musubi": "https://github.com/kohya-ss/musubi-tuner",
+  "rose": "https://arxiv.org/pdf/2508.18633",
+  "videopainter": "https://arxiv.org/html/2503.05639",
+  "spatialdreamer": "https://arxiv.org/html/2411.11934v2",
+  "grt": "https://huggingface.co/papers/2607.05354.md",
+  "stereo4d": "https://arxiv.org/html/2412.09621v2",
+  "svd_card": "https://huggingface.co/stabilityai/stable-video-diffusion-img2vid-xt",
+  "sdvae_ftmse": "https://huggingface.co/stabilityai/sd-vae-ft-mse",
+  "civitai_translator": "https://civitai.com/articles/18185",
+  "ostris16ch": "https://huggingface.co/ostris/vae-kl-f8-d16",
+  "pixartalpha_vae_cfg": "https://huggingface.co/PixArt-alpha/PixArt-XL-2-1024-MS/raw/main/vae/config.json",
+  "sdxl_vae_cfg_local": "/home/kawa/master_project/third_party/VideoPainter/ckpt/sdxl_inpainting/vae/config.json",
+  "timing": "scripts/distill/runs/finalcheck_20261004/speed/TABLE_TIMING_final.txt",
+  "decoder_ft": "scripts/distill/runs/deep_20261004/decoder_ft/RESULTS.txt",
+  "scale_gt": "scripts/distill/runs/deep_20261004/scale_gt/RESULTS.txt",
+  "clips_valid": "scripts/distill/runs/deep_20261004/scale_gt/clips_valid_v1.json",
+  "blur_diag": "scripts/distill/runs/deep_20261004/blur_diag/TABLE_BLUR_DIAG_r2.txt",
+  "local_facts": "scripts/distill/runs/vae_20261005/vae_cost/local_facts_v1.log",
+  "changelog": "docs/agents/model-change-log.md (2026-09-29 entry, positive controls)"
+ },
+ "assumption_labels": {},
+ "inputs": {
+  "tflops_dense": {
+   "4090": {
+    "value": 165.2,
+    "src": "ada_wp (Peak BF16 Tensor TFLOPS w/ FP32 accumulate 165.2/330.4)"
+   },
+   "A100": {
+    "value": 312.0,
+    "src": "a100 (BF16 312 | 624*, *=sparsity)"
+   },
+   "A800": {
+    "value": 312.0,
+    "src": "a800 (BF16 312)"
+   },
+   "H100_SXM": {
+    "value": 989.5,
+    "src": "h100 (BF16 1,979* with sparsity -> dense = /2)"
+   },
+   "V100": {
+    "value": 125.0,
+    "src": "v100 (Tensor 125)"
+   }
+  },
+  "mem_bw_GBs": {
+   "4090": 1008.0,
+   "A100": 2039.0,
+   "H100_SXM": 3350.0
+  }
+ },
+ "derived": {
+  "spec_ratio_vs_4090": {
+   "compute": {
+    "4090": 1.0,
+    "A100": 1.889,
+    "A800": 1.889,
+    "H100_SXM": 5.99,
+    "V100": 0.757
+   },
+   "bandwidth": {
+    "4090": 1.0,
+    "A100": 2.023,
+    "H100_SXM": 3.323
+   },
+   "formula": "ratio = spec(GPU) / spec(RTX 4090); 1 GPU-h on GPU ~= ratio 4090-h (optimistic for a 24 GB card)"
+  },
+  "full_ft_weights_grads_adam_GB_before_activations": {
+   "stereocrafter_unet": 24.4,
+   "wan21_1p3b_dit": 25.0,
+   "cogvideox_5b_dit": 90.0,
+   "per_gpu_with_zero2_over_2gpus_unet": 13.7,
+   "formula": "params x 16 B (ZeRO paper, mixed-precision Adam); ZeRO-2 over 2 GPUs: 2 B + (2+12)/2 B per param per GPU",
+   "note": "24 GB card: full fine-tune of any of the three needs sharding + CPU optimizer offload or LoRA; the 14/25-frame 576x1024 whole-UNet fit is UNMEASURED here (the project's whole-UNet runs used 2-frame chunks)."
+  },
+  "svd_unet_train_s_per_sample_4090": {
+   "fwd_14f_s": 0.526,
+   "train_14f_s": [
+    1.58,
+    2.1
+   ],
+   "train_25f_s": [
+    2.82,
+    3.76
+   ],
+   "formula": "k x t_fwd(14 frames, 576x1024), k = 3 (fwd+bwd) .. 4 (+recompute); 25 frames scaled linearly",
+   "label": "ESTIMATE, compute only: no optimizer/CPU-offload, data loading, eval or failed runs"
+  },
+  "route1a_anchor_stereocrafter_volume": {
+   "samples": 208000,
+   "4090_h": [
+    163,
+    217
+   ],
+   "calendar_days_2x4090": [
+    3.4,
+    4.5
+   ],
+   "formula": "26,000 iterations x 8 GPUs x batch 1 (stereocrafter) x train_25f_s / 3600",
+   "label": "ESTIMATE, lower bound per training run. FLOOR ONLY: this is StereoCrafter's fine-tune volume INSIDE SVD's own latent space (no latent swap); not a latent-swap estimate"
+  },
+  "route1a_anchor_dcvideogen_volume": {
+   "samples": 768000,
+   "4090_h_14f": [
+    337,
+    449
+   ],
+   "4090_h_25f": [
+    601,
+    802
+   ],
+   "calendar_days_2x4090_14f": [
+    7.0,
+    9.4
+   ],
+   "calendar_days_2x4090_25f": [
+    12.5,
+    16.7
+   ],
+   "formula": "(4k head steps + 20k LoRA steps) x batch 32 (dcvideogen, Wan-2.1-1.3B) x train_s_per_sample / 3600",
+   "label": "ESTIMATE, lower bound per training run; the LATENT-SWAP anchor (their samples are Wan videos, used here only as a step-count anchor). Compute-only k x forward method -- NOT comparable 1:1 with route 2's converted wall time"
+  },
+  "route2_anchor_stereoworld": {
+   "A800_gpu_h": 2112,
+   "A800_gpu_s_per_clip": 53.3,
+   "4090_h": [
+    3989,
+    4272
+   ],
+   "calendar_days_2x4090": [
+    83.1,
+    89.0
+   ],
+   "formula": "8 GPUs x 11 days x 24 h; x A800->4090 compute ratio (and A100 bandwidth ratio as 2nd bound); /2 GPUs /24",
+   "label": "ESTIMATE (spec-ratio conversion of a published wall time); same data volume assumed"
+  },
+  "route2_stereoworld_naive_vs_reported": {
+   "wan13_fwd_s_upper_4090": 2.4,
+   "naive_4090_h": [
+    285,
+    380
+   ],
+   "naive_calendar_days_2x4090": [
+    5.9,
+    7.9
+   ],
+   "reported_wall_converted_4090_h": [
+    3989,
+    4272
+   ],
+   "reported_over_naive_ratio": [
+    10.5,
+    15.0
+   ],
+   "formula": "142,520 clips x k (3..4) x 2.4 s / 3600; ratio = converted reported wall time / naive estimate",
+   "label": "ESTIMATE. Shows that a k x forward compute floor can sit ~an order of magnitude below a real pipeline's wall time (StereoWorld also conditions on the left view, adds a geometry loss, data loading, etc.)"
+  },
+  "published_costs_in_4090_terms": {
+   "dcvideogen_wan14b": {
+    "gpu": "H100_SXM",
+    "gpu_h": 240,
+    "4090_h": [
+     798,
+     1438
+    ],
+    "calendar_days_2x4090": [
+     16.6,
+     29.9
+    ]
+   },
+   "dcgen_flux12b": {
+    "gpu": "H100_SXM",
+    "gpu_h": 960,
+    "4090_h": [
+     3190,
+     5750
+    ],
+    "calendar_days_2x4090": [
+     66.5,
+     119.8
+    ]
+   },
+   "pixartsigma_vae_swap_4ch_to_4ch": {
+    "gpu": "V100",
+    "gpu_h": 120,
+    "4090_h": [
+     91,
+     91
+    ],
+    "calendar_days_2x4090": [
+     1.9,
+     1.9
+    ]
+   },
+   "note": "dcvideogen/dcgen adapt 14B/12B models that do not train on 24 GB cards at all; pixartsigma swapped PixArt-alpha's VAE (latent_channels 4, scaling 0.18215: pixartalpha_vae_cfg) for SDXL's VAE (latent_channels 4: sdxl_vae_cfg_local) -> a same-shape swap, not evidence for a 4->16 channel change"
+  },
+  "route3_measured_decoder_ft": {
+   "train_gpu_h": 1.64,
+   "encode_gpu_h": 0.25,
+   "src": "decoder_ft RESULTS.txt (2000 steps 5908 s; encode 890 s); failed its dev gate"
+  },
+  "data_scale": {
+   "local_clips": 291,
+   "local_frames": 43843,
+   "share_of_stereocrafter_25M_frames": 0.00175,
+   "share_of_stereoworld_11M_frames": 0.00399,
+   "clips_vs_stereoworld_142520": 0.00204,
+   "clips_vs_stereopilot_60k_plus_48k": 0.00269,
+   "clips_vs_dcvideogen_417k": 0.000698,
+   "formula": "local / published"
+  },
+  "interface_16ch_share_of_unet_pct": 0.0093
+ }
+}

@@ -1,0 +1,15 @@
+vae_20261005 / decoder_swap -- PRE-REGISTRATION ADDENDUM 1 (2026-10-05 16:30 JST, file mtime).  Written AFTER the one-clip 0040 smoke printed
+its numbers (headroom + real-latent scores of that one clip, see item 3) and BEFORE the other five dev clips and any test number.
+No threshold, rule or candidate of PREREG.txt is changed; this only fixes the 0125 procedure that section 4 left to a check.
+
+1. 0125 registration (the check PREREG section 4 asked for, done now): eval_robustness scored 0125 with its standard grid
+   (score_v1/, ddy [-10,10], ddx [-120,40]); its widened addendum grid (score_v1_wide/, ddy [-20,20], ddx [-240,40]) was declared
+   ILL-POSED (multi-plane) (scripts/distill/runs/more_20261004/eval_robustness/TABLE_ROBUSTNESS_v1.txt line 19), and decoder_ft's
+   test chain used score_registered_df_v1.py (the standard grid) for all 12 clips.  This lane therefore uses the STANDARD grid
+   (this lane's byte-identical copy of score_registered_df_v1.py) for every row of every test clip including 0125; 0125's
+   registered values are reported with the flag "registration ill-posed (multi-plane)" and the 12-clip counts are also given
+   without 0125 (11 clips) as a sensitivity line -- the verdict uses the 12-clip values as PREREG section 4 states.
+2. Test registered guards (G2 rPSNR, G6 stripeE/flatHF) use all 12 clips (the registered scorer returns values for all 12).
+3. The one-clip smokes of 0040 (redecode, headroom, scorers) wrote: redec_dev/0040_* renders (same code as the dev run; kept as
+   the dev rows), outputs/vae_20261005/decoder_swap/headroom_dev_v1/0040.json (kept as the headroom row), and smoke-only scores
+   in outputs/vae_20261005/decoder_swap/smoke_0040/ (NOT used by the analysis; 0040 is re-scored by the dev chain).

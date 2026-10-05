@@ -1,0 +1,51 @@
+STEP 3 HEADROOM (dev, 6 clips): decoder round trip of the REAL right eye (deployed bf16 encode, latents shared by all decoders) scored against the encoded frames themselves (registration-free), frames 0,4,8,...  source outputs/vae_20261005/decoder_swap/headroom_dev_v1/<clip>.json
+HR0 reproduction gate (stock row vs decoder_ft ROUNDTRIP_DEV_main_v1.json):
+  0040: md5 EQUAL; LPIPS 0.023778 vs 0.023778 (d -1.9e-09) -> PASS
+  0082: md5 EQUAL; LPIPS 0.019647 vs 0.019647 (d +2.6e-08) -> PASS
+  0091: md5 EQUAL; LPIPS 0.030626 vs 0.030626 (d -3.2e-08) -> PASS
+  0184: md5 EQUAL; LPIPS 0.041467 vs 0.041467 (d -5.3e-08) -> PASS
+  0245: md5 EQUAL; LPIPS 0.070288 vs 0.070288 (d +9.5e-08) -> PASS
+  0268: md5 EQUAL; LPIPS 0.085231 vs 0.085231 (d +2.3e-08) -> PASS
+
+decoder    LPIPS    PSNR   DISTS   NIQE  MUSIQ edgeHF/GT flatHF/GT stripe/GT  halo%  LPIPS better than stock (of 6)  s/frame
+stock     0.0452  35.526  0.0285  5.617  58.21     0.813     1.224     2.432  1.780  0/6                           0.177
+stock32   0.0451  35.512  0.0284  5.669  58.22     0.813     1.083     2.214  1.778  5/6                           0.275
+ftmse     0.0350  35.755  0.0222  4.728  58.43     0.872     1.538     2.912  2.379  6/6                           0.166
+ftema     0.0344  35.226  0.0218  4.744  59.41     0.967     1.621     3.135  3.692  6/6                           0.166
+cd        0.0412  34.057  0.0280  4.705  57.48     0.830     1.834     3.364  3.922  5/6                           1.776
+sd15      0.0432  33.785  0.0286  4.869  58.84     0.896     1.765     3.361  3.520  3/6                           0.165
+GT                                4.898  59.04     1.000     1.000     1.000  0.000
+  (/GT ratios: nanmean over clips; a clip whose GT region value is exactly 0 gives NaN and is left out -- 0082: stripeE)
+
+per-clip LPIPS-Alex (lower = closer to the real right eye):
+  clip      stock  stock32    ftmse    ftema       cd     sd15
+  0040     0.0238   0.0239   0.0202   0.0213   0.0247   0.0278
+  0082     0.0196   0.0196   0.0152   0.0162   0.0173   0.0246
+  0091     0.0306   0.0306   0.0218   0.0222   0.0283   0.0323
+  0184     0.0415   0.0414   0.0334   0.0338   0.0386   0.0412
+  0245     0.0703   0.0703   0.0505   0.0484   0.0619   0.0605
+  0268     0.0852   0.0848   0.0686   0.0643   0.0763   0.0730
+
+per-clip PSNR (dB):
+  0040     38.526   38.515   38.150   37.682   36.458   36.465
+  0082     40.900   40.902   42.235   41.733   40.391   38.702
+  0091     38.075   37.993   39.658   39.289   37.677   37.308
+  0184     33.551   33.549   33.167   32.645   31.920   31.574
+  0245     30.632   30.647   30.012   29.407   28.477   29.026
+  0268     31.469   31.464   31.310   30.598   29.422   29.634
+
+HR-SEED (consistency decoder noise dependence on the REAL right eye's latents; mean |a-b| RGB in [0,1], frames 0,4,8,..):
+  0040 cd vs cd@1       all 0.00742  GT-edge 0.02231  GT-flat 0.00368
+  0040 cd vs cd@2       all 0.00740  GT-edge 0.02221  GT-flat 0.00369
+  0040 cd@1 vs cd@2     all 0.00745  GT-edge 0.02233  GT-flat 0.00373
+  0040 cd vs stock      all 0.00891  GT-edge 0.02156  GT-flat 0.00614
+  0040 ftmse vs stock   all 0.00584  GT-edge 0.01433  GT-flat 0.00391
+  0040 cd vs GT         all 0.00880  GT-edge 0.02440  GT-flat 0.00492
+  0040 stock vs GT      all 0.00749  GT-edge 0.01939  GT-flat 0.00474
+  0268 cd vs cd@1       all 0.02146  GT-edge 0.09414  GT-flat 0.00339
+  0268 cd vs cd@2       all 0.02153  GT-edge 0.09425  GT-flat 0.00337
+  0268 cd@1 vs cd@2     all 0.02161  GT-edge 0.09451  GT-flat 0.00340
+  0268 cd vs stock      all 0.02106  GT-edge 0.07731  GT-flat 0.00871
+  0268 ftmse vs stock   all 0.01236  GT-edge 0.04878  GT-flat 0.00357
+  0268 cd vs GT         all 0.02422  GT-edge 0.10513  GT-flat 0.00581
+  0268 stock vs GT      all 0.01983  GT-edge 0.08897  GT-flat 0.00483

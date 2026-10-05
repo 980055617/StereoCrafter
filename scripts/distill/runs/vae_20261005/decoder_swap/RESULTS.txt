@@ -1,0 +1,164 @@
+vae_20261005 / decoder_swap -- RESULTS.  Can a different, stronger DECODER for the same latent space give a sharper, more faithful right
+eye from the latents the UNet already produces, without retraining the generator?  2026-10-05 15:50 -> 18:10 JST.
+Records: scripts/distill/runs/vae_20261005/decoder_swap/ (this dir).  Scores/panels: outputs/vae_20261005/decoder_swap/.
+Videos/latents: /mnt/ssd_data/vae_20261005/decoder_swap/.  Every number below cites its file (this dir unless a path is given).
+
+=====================================================================================================================================
+0. ANSWER
+=====================================================================================================================================
+NO -- not under the pre-registered rule.  None of the three swap-in decoders (sd-vae-ft-mse, sd-vae-ft-ema, OpenAI consistency decoder)
+passed on dev, so nothing went to the 12 test clips (PREREG section 3; SELECTION_DEV_v1.json "selected": null).
+  * They CAN read the UNet's latents (step 1: SVD's encoder IS the SD kl-f8 encoder, bit-identical), and on CLEAN latents of the real
+    right eye they are much better decoders than SVD's: decoder-only round trip LPIPS-Alex 0.0452 (stock) -> 0.0350 (ft-mse, 6/6
+    clips better, PSNR +0.23 dB) / 0.0344 (ft-ema) / 0.0412 (consistency) [TABLE_HEADROOM_v1.txt].
+  * On the UNet's OWN latents the gain shrinks to a small one and comes with added texture.  Best case ft-mse on the deliverable:
+    registered LPIPS (REG_FRAME) -0.0026 (5/5 dev clips better), UNREG -0.0018, NIQE -0.90 (6/6), registered PSNR -0.04 dB, warp
+    error x1.07 -- but flat-region high-frequency energy x1.27 and stripe energy x1.17 vs the stock decoder (guard G6, limit 1.10;
+    stock's flat energy is already 1.65x the real eye's, ft-mse's 2.05x) [TABLE_DEV_v1.txt].  -0.0026 is also below the 0.005
+    "visible gain" tier.  ft-ema: same picture, stronger (flat x1.34, warp x1.15, only 3/5 clips better).  Consistency decoder: no
+    registered gain on the deliverable (-0.00003), flat x1.34, seam ratio +0.06, ~10x the decode time, and its edge detail is set by
+    its noise seed, not by the latent (section 4).
+  * Visually (section 6): at 100 % ft-mse is only slightly crisper than stock in textured crops and indistinguishable elsewhere -- a
+    modest local crispening, not a visibly sharper image, and both stay far softer than the real eye; at 2-4x the candidates add
+    crisper edges plus fine grain; no new stripes or visible ringing; the consistency decoder re-draws small structures (embossed
+    lettering) differently.
+  * Against ORIGIN (dev, 5 registered clips, REG_FRAME; NOT test): origin + stock decoder 0.2568; deliverable + stock 0.2507 (-0.0061);
+    deliverable + ft-mse 0.2481 (-0.0087, of which -0.0026 is the decoder's); origin + ft-mse 0.2535 (-0.0033) [TABLE_DEV_v1.txt
+    absolute levels].  The published test-set figure for the deliverable vs origin is REG_FRAME -0.0132, 11/12
+    [scripts/distill/runs/more_20261004/eval_robustness/TABLE_ROBUSTNESS_v1.txt] -- a different clip set, not comparable.
+  * Precision is not the reason: the same SVD decoder in fp32 (control "stock32") is indistinguishable from the deployed bf16 one
+    (REG_FRAME -0.0000, flat x0.95).
+  * Cost/time: this lane needed no training -- about 2 h of wall time on 2 GPUs for the whole dev evaluation.  A swap is free at run
+    time for ft-mse/ft-ema (0.165 s/frame vs 0.176 s/frame stock) and ~10x for the consistency decoder (1.71 s/frame, ~+5 min per
+    150-frame clip on top of a ~3 min render).  Replacing the VAE with one that has a DIFFERENT latent space (e.g. 16-channel video
+    VAEs) is a different job, not a longer version of this one: the whole generator must be retrained for the new latent space (new
+    input/output layers and every layer's statistics).  For scale, the deep round's GT fine-tune moved only 15 attn1 tensors of
+    up_blocks.3 for 3000 steps (52 min, 1.03 s/step) and still made outputs worse (test REG_FRAME +0.0466, 12/12 clips)
+    [scripts/distill/runs/deep_20261004/scale_gt/RESULTS.txt]; its decoder fine-tune (63.6M decoder parameters, 2000 steps, 5908 s)
+    failed its dev gate [deep_20261004/decoder_ft/RESULTS.txt].  No GPU-hour figure for a full retrain is claimed here.
+  * Reading (an interpretation, not a test): the decoder headroom is real on clean latents but mostly does not reach the generated
+    latents; what a stronger decoder adds there is texture of a plausible kind, which helps no-reference scores (NIQE) much more than
+    fidelity to the real eye.  This is consistent with the missing detail not being in the UNet's latents in a form a decoder can
+    recover (the registered metric's content/registration floor also dilutes any decoder gain; the two LPIPS numbers above are not
+    on the same scale and are not compared as a ratio).
+
+=====================================================================================================================================
+1. STEP 1 -- COMPATIBILITY  [COMPAT_v1.json, COMPAT_ATTN_v1.json, compat_v1.log]
+=====================================================================================================================================
+* Weights: SVD VAE (fp32 file) encoder + quant_conv vs sd-vae-ft-mse and sd-vae-ft-ema: 100/100 name-matched tensors bit-identical
+  (max|d| 0) + the 8 mid-block attention tensors after the legacy name mapping (query/key/value/proj_attn -> to_q/to_k/to_v/to_out.0),
+  10/10 identical incl. group_norm.  SD1.5 base VAE and the consistency decoder's encoder: 108/108 identical at fp16.  The SD-family
+  DECODERS differ from each other (0/140 identical, ft-mse vs ft-ema), i.e. ft-mse/ft-ema fine-tuned only the decoder, as published.
+* Latents: 14 real-right-eye frames of 0040 and 0268, fp32 encode by SVD's VAE vs by sd-vae-ft-mse: bit-identical (max|d| 0).
+  (In bf16 the two loads differ by relative RMS 1.3-1.6 % only because the deployed path rounds fp32->fp16->bf16; the deployed bf16
+  encode itself differs from its fp32 encode by 1.4-2.2 % relative RMS -- an aside, not investigated.)
+* Scaling: every config has scaling_factor 0.18215; AutoencoderKL.decode and ConsistencyDecoderVAE.decode both take z = latent/0.18215
+  (the consistency decoder multiplies by 0.18215 again and normalises with its own means/stds).  Every candidate received
+  bf16(1/0.18215 * latent), the deployed decode_latents expression, cast exactly to its dtype (dswap_lib.py).
+
+=====================================================================================================================================
+2. STEP 3 -- HEADROOM (dev, descriptive)  [TABLE_HEADROOM_v1.txt; outputs/vae_20261005/decoder_swap/headroom_dev_v1/<clip>.json]
+=====================================================================================================================================
+Real right eye -> deployed bf16 encode (once, shared) -> each decoder -> vs the encoded frames (registration-free), 6 clips.
+Gate HR0: the stock row reproduces decoder_ft ROUNDTRIP_DEV_main_v1.json md5-exactly on 6/6 clips.
+  decoder   LPIPS   PSNR    DISTS   NIQE   edgeHF/GT flatHF/GT stripe/GT halo%   better than stock   s/frame
+  stock     0.0452  35.526  0.0285  5.617  0.813     1.224     2.432     1.780   --                  0.177
+  stock32   0.0451  35.512  0.0284  5.669  0.813     1.083     2.214     1.778   5/6                 0.275
+  ftmse     0.0350  35.755  0.0222  4.728  0.872     1.538     2.912     2.379   6/6                 0.166
+  ftema     0.0344  35.226  0.0218  4.744  0.967     1.621     3.135     3.692   6/6                 0.166
+  cd        0.0412  34.057  0.0280  4.705  0.830     1.834     3.364     3.922   5/6                 1.776
+  sd15      0.0432  33.785  0.0286  4.869  0.896     1.765     3.361     3.520   3/6                 0.165
+  GT NIQE 4.898.  (stripe/GT: nanmean over 5 clips; 0082's GT stripe value is exactly 0)
+  -> On clean latents ft-mse/ft-ema remove ~23 % of the stock decoder's LPIPS loss and reach the real eye's NIQE, but even here they
+     add flat-region energy (flatHF/GT 1.54-1.62 vs 1.22) and halo.
+HR-SEED (consistency decoder, two other seeds, 0040 and 0268): mean |seed - seed'| at GT-edge pixels 0.022 / 0.094 vs the stock
+decoder's own distance to GT there 0.019 / 0.089 -- at edges the consistency decoder's output varies with the noise as much as stock
+differs from the real eye.
+
+=====================================================================================================================================
+3. STEPS 4-5 -- DEV ON THE MODELS' OWN LATENTS (the selection)  [TABLE_DEV_v1.txt, SELECTION_DEV_v1.json]
+=====================================================================================================================================
+6 dev clips x {origin, deliverable} x {stock, stock32, ftmse, ftema, cd}; registered metrics on 5 clips (0091 outside the grid).
+Gates: D1 stock re-decode md5 == capture on 12/12 cells [GATE_D1_dev.txt]; D2 stock rows reproduce decoder_ft's scorer values,
+max|d| 0.0 (REG_FRAME 0.2568/0.2507, UNREG 0.4616/0.4561); D3 consistency decoder deterministic [GATE_D3_cd_determinism.txt].
+Deltas vs the stock decoder on the same latents (deliverable | origin):
+                 dREG_FRAME (better/5)   dUNREG    drPSNR   dNIQE   edgeHF x  flatHF x  stripeE x  warp x   dseam
+  stock32 ctrl   -0.0000 (3) | -0.0002   -0.0002   +0.001   +0.02   1.00      0.95      0.97       0.99     +0.003
+  ftmse          -0.0026 (5) | -0.0032   -0.0018   -0.042   -0.90   1.14      1.27      1.17       1.07     +0.018
+  ftema          -0.0019 (3) | -0.0038   -0.0015   -0.188   -1.13   1.27      1.34      1.24       1.15     +0.003
+  cd             -0.0000 (4) | -0.0015   -0.0020   -0.084   -1.05   1.08      1.34      1.26       1.09     +0.060
+  (ratios are 5-clip / 6-clip means of per-clip ratios; full table incl. REG_CLIP, BLK_LOCAL, DISTS, MUSIQ, tLP, pair flicker in
+  TABLE_DEV_v1.txt.  Absolute deliverable levels: REG_FRAME stock 0.2507 / ftmse 0.2481 / ftema 0.2488 / cd 0.2507; flatHF 0.0116 /
+  0.0145 / 0.0163 / 0.0153 vs GT 0.0070; warp 0.0151 / 0.0163 / 0.0178 / 0.0167 vs GT 0.0081.)
+Per clip, deliverable REG_FRAME: ftmse -0.0007 -0.0029 -0.0048 -0.0016 -0.0032; ftema +0.0013 -0.0019 -0.0060 +0.0044 -0.0072;
+cd -0.0015 -0.0038 -0.0030 +0.0161 -0.0080 (0040 0082 0184 0245 0268).
+PASS RULE: ftmse fails G6 only (flat x1.27, stripe x1.17 > 1.10); ftema fails P1 (3/5), G4 (warp x1.15), G6; cd fails G5 (seam
++0.060) and G6.  SELECTED: none -> no test evaluation (PREREG section 3/4).
+Reference (decoder_ft, same stock rows): the GT-free unsharp mask us_s1a0.15 had dREG +0.0002 [decoder_ft/TABLE_DEV_main_v1.txt];
+decoder_ft's own fine-tuned decoder +0.0009..+0.0019.  ft-mse's -0.0026 is better than both, but still small and texture-adding.
+
+=====================================================================================================================================
+4. DIAGNOSTICS (never selection inputs)
+=====================================================================================================================================
+* Precision control stock32 (same SVD decoder, fp32): every delta ~0 (above); stock32 vs stock mean |d| 0.0008 (seed_diag).
+* DS-SEED, consistency decoder on the deliverable's own latents (36 frames each; regions from the model input) [outputs/vae_20261005/
+  decoder_swap/seed_diag_v1/<clip>_deliv_cap.json, seed_diag_v1.log]:
+     mean |d| (RGB 0-1)        input-edge   flat      hole
+     0040 cd vs other seed     0.0203       0.0039    0.0078
+     0040 cd vs stock          0.0202       0.0086    0.0119
+     0268 cd vs other seed     0.0392       0.0029    0.0289   (hole = 0.1 % of pixels)
+     0268 cd vs stock          0.0340       0.0046    0.0424
+  At edges, what the consistency decoder changes relative to stock is as large as what a different noise seed changes: its edge
+  detail is chosen by the noise, i.e. invented, not read from the latent.  (ft-mse vs stock at edges: 0.0127 / 0.0241.)
+
+=====================================================================================================================================
+5. COST  [SELECTION_DEV_v1.json "timing"; redec_dev/<cell>/redecode.json; capture timing /mnt/ssd_data/deep_20261004/decoder_ft/capture/timing_gpu0.txt]
+=====================================================================================================================================
+GPU-synchronised decode time on an RTX 4090: stock 0.176 s/frame (35 s per clip as deployed, whole 14-frame windows); stock32 0.274;
+ft-mse / ft-ema 0.165 (33 s per clip with whole windows); consistency decoder 1.71 s/frame (343 s per clip with whole windows).
+A deployed render of one dev clip takes ~165-187 s in total (capture timing), so ft-mse/ft-ema cost nothing extra and the consistency
+decoder would roughly triple the render time.  This lane: no training; ~2 h wall time for compatibility + headroom + the full dev run.
+
+=====================================================================================================================================
+6. VISUAL  [VISUAL_DEV_v1.txt; panels outputs/vae_20261005/decoder_swap/panels_dev_v1/ (pre-registered crops, 100 %); inspection aids
+          panels_dev_v1_zoom2x/, panels_dev_v1_diff8/, panels_dev_v1_zoom_regions/]
+=====================================================================================================================================
+0040 / 0245 / 0268, frame 76, deliverable latents.  Viewed: GT | stock | ft-mse at 100 % (all six crops); the all-decoder rows at ~86 %
+(viewer downscale) and 2-4x zooms.  At 100 % ft-mse is slightly crisper than stock in the textured crops (0245 leaves/foliage, 0268
+speckle, 0040 lettering) and indistinguishable in 0040 E / 0268 sky; at 2-4x ft-mse/ft-ema give slightly crisper edges plus fine grain; the |row - stock| maps put most of the change into textured areas (dense foliage in 0245) rather than
+onto object edges; on 0268's grainy surface the added grain resembles the real eye's character (where the metric gains come from);
+the consistency decoder adds more grain, re-draws the embossed lettering on 0040's plate and slightly cools the white.  No new
+splatting stripes and no visible ringing were seen.  Real detail present in the real eye could not be identified as recovered.
+
+=====================================================================================================================================
+7. NOT TESTED (scope of this NO)
+=====================================================================================================================================
+* Test clips: not evaluated (no dev pass); the latents for all 12 are captured (decoder_ft) and the tools here re-decode any clip.
+* Decoders adapted to the UNet's sampled latents (decoder_ft's untested variant), the SVD temporal decoder with a longer
+  decode_chunk_size, other per-frame decoders for SD latents (e.g. asymmetric/conditional decoders), tiled/up-sampled decoding.
+* VAEs with a different latent space (SDXL, 16-channel video VAEs): require retraining the generator; cost not measured here.
+* The pass rule's G6 encodes the user's "no fake texture" requirement; with a looser texture rule ft-mse alone would have gone to
+  test -- its dev magnitude (-0.0026) is below the 0.005 visible tier either way.
+
+=====================================================================================================================================
+8. WHAT THIS CHANGES IN THE EARLIER SUMMARY (deep_20261004: "ぼやけの最大の原因は VAE", "根本対策は VAE の交換")
+=====================================================================================================================================
+* Swapping the DECODER half of the VAE is not the fix: three stronger decoders, no retraining, small dev gains that come with added
+  texture, none passes; the decoder_ft fine-tune also failed.
+* The blur claim should be scoped: the VAE round trip does lose detail, and on CLEAN latents part of that loss is decoder capacity
+  (ft-mse removes ~23 % of the round-trip LPIPS).  On the UNet's latents a better decoder barely helps, so the blur that matters for
+  the outputs sits in the latent / generator path (what the UNet writes into the 4-channel latent), not in the decoder.
+* This lane neither supports nor rules out a full VAE replacement with a different, richer latent space: that changes the latent
+  itself, which is exactly what a decoder swap cannot do -- and it requires retraining the generator.
+
+=====================================================================================================================================
+9. FILES
+=====================================================================================================================================
+PREREG.txt (+ PREREG.md5), PREREG_ADDENDUM_1.txt, PROCEDURE_LOG.txt, TOOL_MD5_v1.txt (byte-identical scorer copies), dswap_lib.py,
+redecode_swap_v1.py, headroom_v1.py, score_headroom_v1.py, analyze_headroom_v1.py, analyze_dev_v1.py, seed_diag_v1.py,
+cd_determinism_v1.py, check_md5_swap_v1.py, chain_dev_v1.sh, orchestrate_dev_v1.sh, panels_v1.py (+ inspection-aid scripts
+zoom_panels_v1.py, diff_panels_v1.py, zoom_region_v1.py), logs *.log.
+Dev renders (SBS FFV1, left half = capture): /mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/<clip>_<origin_cap|deliv_cap>__<decoder>/
+Headroom decodes (single eye FFV1): /mnt/ssd_data/vae_20261005/decoder_swap/headroom_dev/; GT latents: .../gt_lat_dev/<clip>/
+Scores: outputs/vae_20261005/decoder_swap/{score_reg_dev_v1,score_aux_dev_v1,temporal_dev_v1,pairflicker_dev_v1,headroom_dev_v1,
+seed_diag_v1}/; smoke-only scores outputs/vae_20261005/decoder_swap/smoke_0040/ (not used).

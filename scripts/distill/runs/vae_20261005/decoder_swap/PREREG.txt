@@ -1,0 +1,124 @@
+vae_20261005 / decoder_swap lane -- PRE-REGISTRATION
+Written 2026-10-05 16:04 JST (file mtime), BEFORE any quality number of this lane exists.  Numbers seen so far carry no quality
+information about any candidate: step-1 weight/latent equality (COMPAT_v1.json, COMPAT_ATTN_v1.json) and the feasibility
+smoke (smoke_speed_v1.log: speed, memory, same-seed determinism, output range of one window).
+Records: scripts/distill/runs/vae_20261005/decoder_swap/ (this dir).  Images/videos/arrays: outputs/vae_20261005/decoder_swap/
+and /mnt/ssd_data/vae_20261005/decoder_swap/.  Nothing tracked is edited; /mnt/ssd_data/deep_20261004/ is read only.
+
+=====================================================================================================================
+0. QUESTION
+=====================================================================================================================
+Does a different, stronger DECODER for the same latent space give a sharper, more faithful right eye from the latents
+the UNet already produces (origin and the shipped deliverable), with no retraining of the generator, and without
+invented texture, splatting stripes or flicker?
+
+STEP 1 (done, before this file): SVD's VAE encoder and quant_conv are bit-identical to the sd-vae-ft-mse / sd-vae-ft-ema
+encoders (fp32 files: 100/100 name-matched tensors max|d| 0, plus the 8 mid-block attention tensors after the legacy name
+mapping, COMPAT_ATTN_v1.json) and to the SD1.5 base VAE / consistency-decoder encoders at fp16 (108/108).  fp32 encodes of
+14 real-right-eye frames of 0040 and 0268 by the SVD VAE and by sd-vae-ft-mse are bit-identical (max|d| 0).  So the UNet's
+latents ARE SD kl-f8 latents; any kl-f8 decoder can read them.  Scaling: every candidate receives the UNSCALED latent
+z = latent / 0.18215 (AutoencoderKL.decode takes z; ConsistencyDecoderVAE.decode takes z and itself computes
+(z * 0.18215 - means) / stds); all configs carry scaling_factor 0.18215.
+
+=====================================================================================================================
+1. DECODERS
+=====================================================================================================================
+Input to every decoder: the captured bf16 latent window L ([1,14,4,72,128], scaled), z_bf16 = bf16(1/0.18215 * L)
+computed exactly as the deployed decode_latents does, then (for non-bf16 decoders) upcast/cast EXACTLY to the decoder's
+dtype (bf16 -> fp32 and bf16 -> fp16 are exact for these values), so every decoder sees the same input values.
+Output path for every decoder: [-1,1] frames -> the pipeline's tensor2vid(output_type="pil") -> np.array -> /255 ->
+x255 -> uint8 (redecode_v1.py's path, verbatim), keep rule of inpainting_inference.main (14/3 windows).
+  stock    BASELINE.  SVD temporal decoder, bf16, decode_latents(decode_chunk_size=2) on the full window (deployed path).
+           Gate: SBS md5 == the capture render md5 (decoder_ft capture, C1-gated against the published renders).
+  stock32  CONTROL (never selectable, never tested).  The same temporal decoder in fp32 (cudnn TF32 default), same full
+           window, chunk 2.  Purpose: separate the precision effect (stock32 - stock) from the decoder effect
+           (candidate - stock32).
+  ftmse    CANDIDATE.  stabilityai/sd-vae-ft-mse AutoencoderKL (post_quant_conv + decoder), fp32, per frame (batch 2).
+  ftema    CANDIDATE.  stabilityai/sd-vae-ft-ema, same as ftmse.
+  cd       CANDIDATE.  openai/consistency-decoder (ConsistencyDecoderVAE, fp16 weights as released, 2 steps), per frame,
+           batch 1, a fresh torch.Generator('cuda').manual_seed(20261005) before EVERY frame (identical noise for every
+           frame: frame-constant noise, chosen to avoid seed flicker); assert finite output.  Not via decode_latents.
+  sd15     HEADROOM-ONLY reference: the original SD1.5 kl-f8 decoder (VideoPainter sd15_base copy, fp16 file, run fp32).
+Per-frame decoders decode only the frames the keep rule retains (exact: no state crosses frames).  Timing: GPU-
+synchronised decode seconds per clip and per decoded frame are recorded; for per-frame decoders the deployed-structure
+cost (per-frame time x 14 x n_windows, since the pipeline decodes whole windows) is also reported.
+
+=====================================================================================================================
+2. STEP 3 -- HEADROOM (dev, descriptive only; never a selection input)
+=====================================================================================================================
+Dev clips 0040 0082 0091 0184 0245 0268.  Real right eye at the deployed window (decoder_ft gt_dev/<clip>_TR.npy, read
+only), encoded ONCE per deployed window with the deployed encode (VAE fp16 variant -> bf16, image_processor.preprocess,
+_encode_vae_frames n_frames_per_time=5, mode, then bf16(z * sf)) and stored; every decoder decodes the same stored latents.
+Metrics on frames 0,4,8,... against the encoded frames themselves (registration-free): LPIPS-Alex (batches of 4), PSNR,
+DISTS, reviewlib.decompose with regions from the GT frame (edgeHF, flatHF, stripeE, haloFrac, each also / GT), NIQE and
+MUSIQ (pyiqa, lane-local copy of blur_diag's install).  Reproduction gate HR0: the stock row's per-clip uint8 md5 equals
+decoder_ft ROUNDTRIP_DEV_main_v1.json; if not (that script notes the encoder is not bit-deterministic across calls), per-clip
+LPIPS-Alex must agree within 1e-4 and the difference is reported.  Diagnostic HR-SEED: cd decoded with two extra seeds
+(1, 2) on 0040 and 0268: mean |difference| between seeds overall / on GT-edge / GT-flat pixels (what the noise, i.e. not
+the latent, decides).  All candidates proceed to step 4 regardless of headroom.
+
+=====================================================================================================================
+3. STEP 4 -- DEV EVALUATION ON THE MODELS' OWN LATENTS (the selection)
+=====================================================================================================================
+Cells: 6 dev clips x {origin_cap, deliv_cap} (decoder_ft captures).  Rows: stock, stock32, ftmse, ftema, cd, each an SBS
+FFV1 whose left half is the capture render's left half (identical for every row of a clip).
+Gates before any score is used:  D1 stock SBS md5 == capture md5 on all 12 cells.  D2 the registered/UNREG scorer stock
+rows reproduce decoder_ft (REG_FRAME 5-clip means origin 0.2568 / deliverable 0.2507, UNREG 6-clip 0.4616 / 0.4561,
+TABLE_DEV_main_v1.txt) within 1e-4.  D3 cd decoded twice on one window gives identical uint8 output.
+Scorers (byte-identical copies in this dir, md5 in TOOL_MD5_v1.txt): score_clip_ll.py (UNREG, SCORE_STEP 4, stock rows),
+make_rows (shared left half, decoder_ft make_rows_shared_v1.py logic), score_registered_df_v1.py (REG_FRAME / REG_CLIP /
+BLK_LOCAL LPIPS-Alex, rPSNR), score_aux_v1.py (DISTS, NIQE, MUSIQ, LPIPS-VGG, decompose on the REG_FRAME-registered GT),
+score_temporal_ll.py (tLP, RAFT warp error with flow on the GT window, window-seam ratio; all frames), score_pairflicker_v1.py.
+Registered metrics: 5 clips (0040 0082 0184 0245 0268) -- 0091's real right eye lies outside the scorer's [-120,40] px grid,
+as in decoder_ft/scale_gt; this is why the counts below are "of 5", not "of 6".  UNREG, NIQE, MUSIQ, temporal: 6 clips.
+Every delta = candidate minus stock on the SAME latents (same clip, same model).
+
+PASS RULE for a candidate D (all must hold):
+  P1  deliverable: REG_FRAME LPIPS-Alex better than stock on >= 4 of 5 registered dev clips AND 5-clip mean change < 0
+  P2  origin:      REG_FRAME 5-clip mean change <= 0            (the gain must not be specific to one model's latents)
+  G1  deliverable: NIQE 6-clip mean change <= +0.05              (blur_diag seed yardstick 0.052; lower NIQE = better)
+  G2  deliverable: registered PSNR (REG_FRAME rPSNR) 5-clip mean change >= -0.30 dB
+  G3  deliverable: UNREG LPIPS-Alex 6-clip mean change <= +0.001
+  G4  deliverable: RAFT warp error: 6-clip mean of per-clip ratio D/stock <= 1.10, OR D's 6-clip mean warp <= the real
+      right eye's 6-clip mean warp (a genuinely sharper frame raises warp error without flicker; GT is the ceiling)
+  G5  deliverable: window-seam ratio 6-clip mean change <= +0.05
+  G6  deliverable: no invented texture / stripes: 5-clip mean of per-clip ratio D/stock <= 1.10 for stripeE AND for flatHF,
+      unless D's 5-clip mean value stays <= the registered real right eye's (score_aux GT row)
+SELECTION: if several pass, the lowest deliverable 5-clip mean REG_FRAME change; within 0.0005 of it -> the cheaper decoder
+(ftmse/ftema before cd).  EXACTLY ONE candidate (or none) goes to test.  stock32 is reported, never selected.
+Reported, not gating: REG_CLIP, BLK_LOCAL, DISTS, MUSIQ, LPIPS-VGG, tLP, edgeHF, haloFrac, decode-pair flicker ratio
+(meaningless for per-frame decoders, which have no pairs), per-clip values, origin's guards, and the GT-free unsharp
+reference from decoder_ft (us_s1a0.15 dREG +0.0002, TABLE_DEV_main_v1.txt; same stock rows, md5-identical).
+Diagnostic DS-SEED (never selection): cd with seeds 1 and 2 on the kept frames of windows 0, 4, 8 of 0040 and 0268
+(deliverable latents): mean |cd_s - cd_s'| in render-geometry regions defined from the model input BR (edge = top decile of
+BR gradient, flat = bottom half, both excluding the dilated disocclusion mask) and in the dilated hole, next to |cd - stock|
+and |ftmse - stock| in the same regions.  Seed-dependent energy is, by construction, not information from the latent.
+
+=====================================================================================================================
+4. STEP 5 -- TEST (once, only if a candidate D* passes)
+=====================================================================================================================
+12 test clips 0042 0052 0125 0128 0141 0147 0170 0204 0225 0251 0259 0301, both models, latents already captured by
+decoder_ft (C1-gated).  Gate T-D1: my stock re-decode md5 == capture md5 on all 24 cells.  Rows stock, D* (both models)
+scored with the same scorers.  0125: before scoring, check how eval_robustness / decoder_ft registered it (eval_robustness
+used a wide-grid score_v1_wide for 0125); the same grid is used for every row of 0125, decided before any test number.
+Verdict per model (deltas vs stock on the same latents; REG_FRAME primary; REG_CLIP, BLK_LOCAL, UNREG always alongside):
+  DECODER GAIN  REG_FRAME 12-clip mean change <= -0.005 AND better on >= 9/12 AND UNREG mean change < 0 AND guards
+                G1-G6 (same thresholds, 12-clip means; registered ones over the clips the scorer registers) pass
+  SMALL GAIN    REG_FRAME mean change < 0, better on >= 9/12, guards pass, magnitude < 0.005 (not called visible)
+  NO GAIN       anything else (failed guards named)
+Also reported: deliverable+D* vs origin(stock) (the user's bar; the deliverable's own gain is not credited to D*).
+Per-clip |d| < 0.004 are reported as unresolved (skeptic's seed spread) next to the raw counts.
+WORDING: "sharper" only if edgeHF ratio D/stock >= 1.05 AND flatHF and stripeE ratios <= 1.05 (12-clip means); "visibly"
+only with DECODER GAIN plus the visual note below.
+
+=====================================================================================================================
+5. STEP 6 -- VISUAL (pre-registered crops; written down before the verdict is stated)
+=====================================================================================================================
+Dev: clips 0040 (AVP), 0245, 0268 (iPhone), frame 76, deliverable latents.  Test (if run): 0301, 0170, 0052, frame 76.
+Two 384x384 crops per clip at 100 % (no resampling), chosen from the registered real right eye (REG_FRAME shift of that
+frame) and the hole mask only, before any candidate image is looked at:  E = the window (stride 32) with the highest
+fraction of GT top-decile-gradient pixels; F = the window with the highest fraction of GT bottom-half-gradient pixels among
+windows containing >= 5 % disocclusion pixels (if none, the highest flat fraction overall).
+Panels: GT | stock | best candidate (dev: the selected one, or if none passes the lowest deliverable dev REG_FRAME change),
+plus a full row GT | stock | stock32 | ftmse | ftema | cd.  The note says, per crop, whether the candidate shows real
+recovered detail (present in GT), invented texture (absent from GT), ringing/halo, or stripes.

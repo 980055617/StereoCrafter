@@ -1,0 +1,16 @@
+START 2026-10-05_17:19:47 gpu=1 scripts/distill/runs/vae_20261005/decoder_swap/score_clip_ll.py 0184=/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0184_origin_cap__stock/0184_inpainting_results_sbs.mkv 0184=/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0184_deliv_cap__stock/0184_inpainting_results_sbs.mkv
+/home/kawa/miniconda3/envs/stereocrafter/lib/python3.11/site-packages/torchvision/models/_utils.py:208: UserWarning: The parameter 'pretrained' is deprecated since 0.13 and may be removed in the future, please use 'weights' instead.
+  warnings.warn(
+/home/kawa/miniconda3/envs/stereocrafter/lib/python3.11/site-packages/torchvision/models/_utils.py:223: UserWarning: Arguments other than a weight enum or `None` for 'weights' are deprecated since 0.13 and may be removed in the future. The current behavior is equivalent to passing `weights=AlexNet_Weights.IMAGENET1K_V1`. You can also use `weights=AlexNet_Weights.DEFAULT` to get the most up-to-date weights.
+  warnings.warn(msg)
+/home/kawa/miniconda3/envs/stereocrafter/lib/python3.11/site-packages/lpips/lpips.py:107: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  self.load_state_dict(torch.load(model_path, map_location='cpu'), strict=False)
+Setting up [LPIPS] perceptual loss: trunk [alex], v[0.1], spatial [off]
+Loading model from: /home/kawa/miniconda3/envs/stereocrafter/lib/python3.11/site-packages/lpips/weights/v0.1/alex.pth
+clip/config                           offset  leftPSNR    LPIPS    sharp    rPSNR   nf
+--- 0184 GT ---                                          0.0000   0.0103
+0184_origin_cap__stock               (-28,0)     39.68   0.5037   0.0083   11.429   38
+ROW clip=0184 tag=0184_origin_cap__stock dy=-28 dx=0 leftPSNR=39.6799 lpips=0.503703 sharp=0.008263 gtSharp=0.010259 rightPSNR=11.4290 n=38 path=/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0184_origin_cap__stock/0184_inpainting_results_sbs.mkv
+0184_deliv_cap__stock                (-28,0)     39.68   0.4935   0.0094   11.401   38
+ROW clip=0184 tag=0184_deliv_cap__stock dy=-28 dx=0 leftPSNR=39.6799 lpips=0.493500 sharp=0.009366 gtSharp=0.010259 rightPSNR=11.4010 n=38 path=/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0184_deliv_cap__stock/0184_inpainting_results_sbs.mkv
+END rc=0 2026-10-05_17:20:29

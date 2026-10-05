@@ -11027,3 +11027,31 @@ visible streaks in the hole bands).
   oracle (per-clip stereo-strength x0.35..x3.45); on iPhone the deployed disparity is ~3x stronger than the real camera's.
 Next (judge): a blind human comparison of origin / AYS8 / deliverable / s25 / sdedit on 3 clips (30 min, no GPU); then a
 hole-band-aware SDEdit start selected on valid dev clips only; a geometry-consistent GT retrain as an oracle diagnostic.
+
+## 2026-10-05 - Decoder swap: no drop-in decoder sharpens the output; the detail is already missing in the UNet's latents. Whole-VAE replacement costs weeks to months
+
+`scripts/distill/runs/vae_20261005/{decoder_swap,vae_cost,verify_swap}/`, images under `outputs/vae_20261005/`, decodes
+under `/mnt/ssd_data/vae_20261005/`. Pre-registered, dev-selected; nothing passed, so no test evaluation was made.
+
+- **Compatibility.** SVD's VAE encoder is bit-identical to the SD kl-f8 encoder (100/100 name-matched tensors plus 10/10
+  after legacy-name mapping), so any SD kl-f8 decoder reads our latents with no generator retraining.
+- **Headroom on CLEAN latents is real.** Round-tripping the real right eye: stock SVD temporal decoder 0.0452 LPIPS,
+  sd-vae-ft-mse 0.0350 (6/6 better, +0.23 dB), ft-ema 0.0344, OpenAI Consistency Decoder 0.0412.
+- **On the latents the UNet actually produces it barely transfers.** Best (ft-mse) on the deliverable: registered
+  -0.0026 (5/5, but 4 of 5 below the 0.004 seed yardstick), and it FAILS the fake-texture gate: flat-region energy x1.27,
+  stripe energy x1.17 (limit 1.10), moving away from the real right eye. ft-ema fails (3/5, warp x1.15). The Consistency
+  Decoder gains ~0 (-0.00003), worsens seams, is ~10x slower (1.71 s/frame), and its edge detail changes with its noise
+  seed by as much as it differs from the stock decoder - invented, not recovered. No real right-eye detail is recovered
+  by any decoder at 100 %; the same stock decoder reproduces sharp detail from the real right eye's latent but not from the
+  UNet's latent (outputs/vae_20261005/verify_swap/panels_v5/0184_E_hr.png vs 0184_E_unet.png).
+- **CORRECTION of the 2026-10-05 deep-round entry:** "the blur comes mainly from the VAE" overstated it. The DECODER is not
+  the cause; the detail is already missing in the latents. Whether it is lost when the input is compressed or during the
+  UNet's generation was not separated.
+- **Cost of replacing the whole VAE (vae_cost, with sources).** A new latent space means re-teaching the 1.52 B-parameter
+  UNet: keeping the SVD UNet with a 16-channel image VAE is a compute floor of 7-17 days per attempt on 2x RTX 4090 (no
+  peer-reviewed precedent for 4->16 channels on SD/SVD; DC-VideoGen reports collapse to noise without an alignment stage);
+  a new backbone with a 16-channel video VAE, as StereoWorld did (Wan2.1-1.3B, 142,520 stereo clips, 8 A800 x 11 days),
+  converts to ~83-89 days of exclusive use of both GPUs. Our data is 291 clips (0.18 % of StereoCrafter's training frames).
+  Not realistic as the thesis's main line.
+- **Next (judge):** a blind human comparison of origin / AYS / deliverable / 25 steps / SDEdit before any further GPU work -
+  if the -0.0132 gain is not visible, the ~0.005 SDEdit candidate will not be either.

@@ -1,0 +1,16 @@
+INTEGRITY BASELINE 2026-10-05 18:09:10
+StereoCrafter HEAD 285f43e87fc9caf6f602415f72e62f4c95ec6262 branch attn1_only_version
+tracked changes (porcelain, no untracked):
+[end]
+master_project HEAD 40a68100722be04fe16eeca94e50b7602f1a71a9 branch tidy/uncommitted-backlog-20261003
+[end]
+third_party/DiffuEraser HEAD 25a595fcb3928d8aa1e07f484fe16e31c9a77f14
+[end]
+third_party/VideoPainter HEAD 05280d7fc5d638acaf14da64fe8fc24c6bd8e51c
+[end]
+--- files modified since 2026-10-05 15:50 under checkpoint / read-only roots:
+/mnt/ssd_data/stereocrafter_weights : 0
+/home/kawa/master_project/StereoCrafter/weights/ : 0
+/home/kawa/master_project/third_party/DiffuEraser/weights/sd-vae-ft-mse : 0
+/home/kawa/master_project/third_party/VideoPainter/ckpt/sd15_base/vae : 0
+/mnt/ssd_data/deep_20261004 : 0

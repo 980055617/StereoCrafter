@@ -1,0 +1,202 @@
+{
+ "ftmse": {
+  "n": 10,
+  "n_identical": 10,
+  "rows": [
+   {
+    "legacy": "encoder.mid_block.attentions.0.group_norm.bias",
+    "svd": "encoder.mid_block.attentions.0.group_norm.bias",
+    "shape": [
+     512
+    ],
+    "bit_identical": true,
+    "max_abs_diff": 0.0
+   },
+   {
+    "legacy": "encoder.mid_block.attentions.0.group_norm.weight",
+    "svd": "encoder.mid_block.attentions.0.group_norm.weight",
+    "shape": [
+     512
+    ],
+    "bit_identical": true,
+    "max_abs_diff": 0.0
+   },
+   {
+    "legacy": "encoder.mid_block.attentions.0.key.bias",
+    "svd": "encoder.mid_block.attentions.0.to_k.bias",
+    "shape": [
+     512
+    ],
+    "bit_identical": true,
+    "max_abs_diff": 0.0
+   },
+   {
+    "legacy": "encoder.mid_block.attentions.0.key.weight",
+    "svd": "encoder.mid_block.attentions.0.to_k.weight",
+    "shape": [
+     512,
+     512
+    ],
+    "bit_identical": true,
+    "max_abs_diff": 0.0
+   },
+   {
+    "legacy": "encoder.mid_block.attentions.0.proj_attn.bias",
+    "svd": "encoder.mid_block.attentions.0.to_out.0.bias",
+    "shape": [
+     512
+    ],
+    "bit_identical": true,
+    "max_abs_diff": 0.0
+   },
+   {
+    "legacy": "encoder.mid_block.attentions.0.proj_attn.weight",
+    "svd": "encoder.mid_block.attentions.0.to_out.0.weight",
+    "shape": [
+     512,
+     512
+    ],
+    "bit_identical": true,
+    "max_abs_diff": 0.0
+   },
+   {
+    "legacy": "encoder.mid_block.attentions.0.query.bias",
+    "svd": "encoder.mid_block.attentions.0.to_q.bias",
+    "shape": [
+     512
+    ],
+    "bit_identical": true,
+    "max_abs_diff": 0.0
+   },
+   {
+    "legacy": "encoder.mid_block.attentions.0.query.weight",
+    "svd": "encoder.mid_block.attentions.0.to_q.weight",
+    "shape": [
+     512,
+     512
+    ],
+    "bit_identical": true,
+    "max_abs_diff": 0.0
+   },
+   {
+    "legacy": "encoder.mid_block.attentions.0.value.bias",
+    "svd": "encoder.mid_block.attentions.0.to_v.bias",
+    "shape": [
+     512
+    ],
+    "bit_identical": true,
+    "max_abs_diff": 0.0
+   },
+   {
+    "legacy": "encoder.mid_block.attentions.0.value.weight",
+    "svd": "encoder.mid_block.attentions.0.to_v.weight",
+    "shape": [
+     512,
+     512
+    ],
+    "bit_identical": true,
+    "max_abs_diff": 0.0
+   }
+  ]
+ },
+ "ftema": {
+  "n": 10,
+  "n_identical": 10,
+  "rows": [
+   {
+    "legacy": "encoder.mid_block.attentions.0.group_norm.bias",
+    "svd": "encoder.mid_block.attentions.0.group_norm.bias",
+    "shape": [
+     512
+    ],
+    "bit_identical": true,
+    "max_abs_diff": 0.0
+   },
+   {
+    "legacy": "encoder.mid_block.attentions.0.group_norm.weight",
+    "svd": "encoder.mid_block.attentions.0.group_norm.weight",
+    "shape": [
+     512
+    ],
+    "bit_identical": true,
+    "max_abs_diff": 0.0
+   },
+   {
+    "legacy": "encoder.mid_block.attentions.0.key.bias",
+    "svd": "encoder.mid_block.attentions.0.to_k.bias",
+    "shape": [
+     512
+    ],
+    "bit_identical": true,
+    "max_abs_diff": 0.0
+   },
+   {
+    "legacy": "encoder.mid_block.attentions.0.key.weight",
+    "svd": "encoder.mid_block.attentions.0.to_k.weight",
+    "shape": [
+     512,
+     512
+    ],
+    "bit_identical": true,
+    "max_abs_diff": 0.0
+   },
+   {
+    "legacy": "encoder.mid_block.attentions.0.proj_attn.bias",
+    "svd": "encoder.mid_block.attentions.0.to_out.0.bias",
+    "shape": [
+     512
+    ],
+    "bit_identical": true,
+    "max_abs_diff": 0.0
+   },
+   {
+    "legacy": "encoder.mid_block.attentions.0.proj_attn.weight",
+    "svd": "encoder.mid_block.attentions.0.to_out.0.weight",
+    "shape": [
+     512,
+     512
+    ],
+    "bit_identical": true,
+    "max_abs_diff": 0.0
+   },
+   {
+    "legacy": "encoder.mid_block.attentions.0.query.bias",
+    "svd": "encoder.mid_block.attentions.0.to_q.bias",
+    "shape": [
+     512
+    ],
+    "bit_identical": true,
+    "max_abs_diff": 0.0
+   },
+   {
+    "legacy": "encoder.mid_block.attentions.0.query.weight",
+    "svd": "encoder.mid_block.attentions.0.to_q.weight",
+    "shape": [
+     512,
+     512
+    ],
+    "bit_identical": true,
+    "max_abs_diff": 0.0
+   },
+   {
+    "legacy": "encoder.mid_block.attentions.0.value.bias",
+    "svd": "encoder.mid_block.attentions.0.to_v.bias",
+    "shape": [
+     512
+    ],
+    "bit_identical": true,
+    "max_abs_diff": 0.0
+   },
+   {
+    "legacy": "encoder.mid_block.attentions.0.value.weight",
+    "svd": "encoder.mid_block.attentions.0.to_v.weight",
+    "shape": [
+     512,
+     512
+    ],
+    "bit_identical": true,
+    "max_abs_diff": 0.0
+   }
+  ]
+ }
+}

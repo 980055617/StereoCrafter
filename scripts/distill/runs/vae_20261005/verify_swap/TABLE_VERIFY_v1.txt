@@ -1,0 +1,52 @@
+V1 RE-SCORE on the UNet's own latents (my registration + library metrics), clips 0184, 0268  [rescore_v1/<clip>.json]
+
+0184: registration -- my exact-SSE shifts vs decoder_swap: raw differ at 0/150 frames, smoothed differ at 0/150; min best-vs-2nd margin 0.0000 dB; GT NIQE 3.658; GT flatHF 0.01364 edgeHF 0.14544 stripeE 0.00305
+  label                md5 REG_FRAME d_vs_stock    UNREG d_vs_stock    rPSNR   NIQE flatHF x stripeE x edgeHF x | max|mine-lane| LPIPS
+  origin_cap__stock    ok     0.1914    +0.0000   0.5037    +0.0000   22.206  6.091    1.000     1.000    1.000 | 4.7e-09
+  origin_cap__ftmse    ok     0.1845    -0.0068   0.4984    -0.0053   22.199  5.790    1.279     1.133    1.099 | 1.1e-08
+  origin_cap__ftema    ok     0.1814    -0.0100   0.4969    -0.0068   22.159  5.519    1.278     1.150    1.131 | 2.0e-09
+  origin_cap__cd       ok     0.1872    -0.0041   0.4970    -0.0067   22.172  5.421    1.146     1.096    0.938 | 3.1e-09
+  deliv_cap__stock     ok     0.1783    +0.0000   0.4935    +0.0000   21.980  5.563    1.000     1.000    1.000 | 1.2e-08
+  deliv_cap__ftmse     ok     0.1735    -0.0048   0.4889    -0.0046   21.959  4.953    1.216     1.132    1.071 | 3.1e-09
+  deliv_cap__ftema     ok     0.1723    -0.0060   0.4876    -0.0059   21.873  4.588    1.286     1.196    1.125 | 2.4e-09
+  deliv_cap__cd        ok     0.1753    -0.0030   0.4865    -0.0070   21.936  4.760    1.152     1.144    0.965 | 2.4e-09
+  deliverable+ftmse vs ORIGIN (origin_cap__stock): REG_FRAME -0.0178; deliverable+stock vs origin -0.0130
+
+0268: registration -- my exact-SSE shifts vs decoder_swap: raw differ at 0/151 frames, smoothed differ at 0/151; min best-vs-2nd margin 0.0000 dB; GT NIQE 4.337; GT flatHF 0.00143 edgeHF 0.20052 stripeE 0.00020
+  label                md5 REG_FRAME d_vs_stock    UNREG d_vs_stock    rPSNR   NIQE flatHF x stripeE x edgeHF x | max|mine-lane| LPIPS
+  origin_cap__stock    ok     0.1951    +0.0000   0.1971    +0.0000   24.601  6.683    1.000     1.000    1.000 | 2.9e-09
+  origin_cap__ftmse    ok     0.1908    -0.0042   0.1940    -0.0031   24.486  4.747    1.146     1.157    1.308 | 2.9e-09
+  origin_cap__ftema    ok     0.1843    -0.0108   0.1881    -0.0090   24.193  4.510    1.176     1.202    1.570 | 2.5e-09
+  origin_cap__cd       ok     0.1850    -0.0101   0.1883    -0.0088   24.192  3.888    1.718     1.635    1.307 | 9.8e-10
+  deliv_cap__stock     ok     0.1766    +0.0000   0.1785    +0.0000   24.226  5.666    1.000     1.000    1.000 | 2.2e-09
+  deliv_cap__ftmse     ok     0.1734    -0.0032   0.1768    -0.0017   24.093  3.504    1.275     1.271    1.229 | 9.8e-10
+  deliv_cap__ftema     ok     0.1695    -0.0072   0.1733    -0.0052   23.706  3.469    1.343     1.354    1.527 | 2.2e-09
+  deliv_cap__cd        ok     0.1687    -0.0080   0.1725    -0.0061   23.759  3.856    1.482     1.471    1.244 | 5.3e-09
+  deliverable+ftmse vs ORIGIN (origin_cap__stock): REG_FRAME -0.0216; deliverable+stock vs origin -0.0184
+
+worst |mine - decoder_swap| per-clip LPIPS (REG_FRAME, UNREG) over 16 cells: 1.2e-08
+
+V2 HEADROOM re-score (real-right-eye latents -> decoder, vs the encoded frames; registration-free)  [headroom_v2/<clip>.json]
+  0184 stock  md5 ok LPIPS 0.0415 (|d| vs lane 0e+00) PSNR 33.551 flatHF/GT 0.848 edgeHF/GT 0.926
+  0184 ftmse  md5 ok LPIPS 0.0334 (|d| vs lane 0e+00) PSNR 33.167 flatHF/GT 1.114 edgeHF/GT 0.954
+  0184 ftema  md5 ok LPIPS 0.0338 (|d| vs lane 0e+00) PSNR 32.645 flatHF/GT 1.201 edgeHF/GT 1.003
+  0184 cd     md5 ok LPIPS 0.0386 (|d| vs lane 0e+00) PSNR 31.920 flatHF/GT 1.084 edgeHF/GT 0.916
+  0268 stock  md5 ok LPIPS 0.0852 (|d| vs lane 0e+00) PSNR 31.469 flatHF/GT 1.744 edgeHF/GT 0.555
+  0268 ftmse  md5 ok LPIPS 0.0686 (|d| vs lane 0e+00) PSNR 31.310 flatHF/GT 1.943 edgeHF/GT 0.662
+  0268 ftema  md5 ok LPIPS 0.0643 (|d| vs lane 0e+00) PSNR 30.598 flatHF/GT 2.111 edgeHF/GT 0.876
+  0268 cd     md5 ok LPIPS 0.0763 (|d| vs lane 0e+00) PSNR 29.422 flatHF/GT 2.777 edgeHF/GT 0.744
+
+V3 DECODER IDENTITY / V4 CONSISTENCY-DECODER DETERMINISM  [decode_v3v4/<clip>_w<k>.json]
+  0268 window 6 (frames 69..79), run on GPU 0:
+    ftmse  vs render (made on GPU 1): bit-exact True (differing values 0)
+    stock  vs render (made on GPU 1): bit-exact True (differing values 0)
+    cd     vs render (made on GPU 1): bit-exact True (differing values 0)
+    headroom ftmse (real-eye latents) vs headroom mkv: bit-exact True
+    cd run1 == run2 (float): True; uint8 equal True
+    mean |a-b| at input EDGES: cd(seed 20261005) vs cd(seed 1) 0.0184; cd vs stock 0.0167; ftmse vs stock 0.0116  -> seed claim holds: True
+  0184 window 9 (frames 102..112), run on GPU 1:
+    ftmse  vs render (made on GPU 0): bit-exact True (differing values 0)
+    stock  vs render (made on GPU 0): bit-exact True (differing values 0)
+    cd     vs render (made on GPU 0): bit-exact True (differing values 0)
+    cd run1 == run2 (float): True; uint8 equal True
+    mean |a-b| at input EDGES: cd(seed 20261005) vs cd(seed 1) 0.0303; cd vs stock 0.0316; ftmse vs stock 0.0228  -> seed claim holds: True

@@ -1,0 +1,77 @@
+vae_20261005 / verify_swap -- RESULTS of the independent verification of the decoder_swap lane (and spot checks of vae_cost).
+2026-10-05 18:09 -> ~18:30 JST.  PREREG.txt (md5 in PREREG.md5) written before any number of this lane.  Every number cites its file
+(this dir unless a path is given).  Test clips: NOT touched (decoder_swap selected nothing, so its PREREG sends nothing to test).
+
+=====================================================================================================================================
+0. OUTCOME
+=====================================================================================================================================
+decoder_swap's numbers reproduce exactly and its "NO" stands.  Nothing found that changes its verdict; three additions:
+ (a) a small spot that already flickers in the UNet's latent (0268, stock level dips at frames 68/71/72/74/76) is rendered by the
+     consistency decoder, at frame 76 only, as a bright cyan blob (|cd - stock| 26 levels vs 3-8 in frames 60-92); one crop, one
+     frame -- an example, not a rate [panels_v5/spot_0268.json];
+ (b) NIQE is not a fidelity signal here: on 0268 the swapped decoders score BETTER than the real right eye itself
+     (deliverable ft-mse 3.50, ft-ema 3.47, consistency 3.86 vs real eye 4.34 on the same frames) [TABLE_VERIFY_v1.txt];
+ (c) the same stock decoder renders the real eye's clean latent visibly sharper than the UNet's latent at the same crop, so the
+     softness sits upstream of the decoder, in the latent (VISUAL_VERIFY_v1.txt).  This does not separate the encoding of the warped
+     input from the UNet's generation; the deep round's edge-energy split (0.733 / 0.891) was not re-tested.
+
+=====================================================================================================================================
+1. CHECKS
+=====================================================================================================================================
+V0 aggregation [AGG_CHECK_v1.txt]: every quoted dev mean / count / ratio (4 rows x 2 models x 10 quantities) recomputed with my own
+   code from decoder_swap's per-clip JSONs equals SELECTION_DEV_v1.json "summary": worst |d| 0.0.  Headroom 6-clip means equal
+   TABLE_HEADROOM_v1.txt (stock 0.0452, ft-mse 0.0350, ft-ema 0.0344, cd 0.0412; ft-mse removes 22.6 % of stock's round-trip LPIPS).
+V1 re-score, clips 0184 + 0268, rows {origin, deliverable} x {stock, ft-mse, ft-ema, cd} = 16 cells [TABLE_VERIFY_v1.txt,
+   outputs/vae_20261005/verify_swap/rescore_v1/<clip>.json]:  every render's SBS md5 == its sidecar (16/16); my exact-integer
+   registration gives the same raw and smoothed shift as decoder_swap on every frame (0/150 and 0/151 differ); per-clip LPIPS
+   (REG_FRAME, UNREG) within 1.2e-8 of decoder_swap's JSONs; rPSNR, NIQE and decompose identical (|d| 0).
+   Deliverable, ft-mse minus stock: 0184 REG_FRAME -0.0048, 0268 -0.0032 (= decoder_swap's per-clip values); flatHF x1.216 / x1.275,
+   stripeE x1.132 / x1.271, edgeHF x1.071 / x1.229.  (These two clips carry ~61 % of the 5-clip gain; they are the most favourable
+   pair, so their deltas are NOT representative -- the 5-clip dev values verified in V0 are the ones to quote.)
+V2 headroom re-score, 0184 + 0268 [outputs/.../headroom_v2/<clip>.json]: md5 ok 8/8; LPIPS and PSNR |d| 0 vs decoder_swap.
+V3 decoder identity [outputs/.../decode_v3v4/<clip>_w<k>.json]: my own diffusers decode (dswap_lib not imported) of 0268 window 6
+   (frames 69-79, on GPU0; renders were made on GPU1) and 0184 window 9 (frames 102-112, on GPU1; renders made on GPU0) is bit-exact
+   with the renders for ft-mse, stock and consistency (0 differing values); 0268 window 6 of the real-eye latents with ft-mse is
+   bit-exact with headroom_dev/0268__ftmse.mkv.  The deployed /255*255 truncation step changes no value (round-only path identical).
+V4 consistency-decoder determinism: fixed seed -> run1 == run2 (float tensors equal) and == the render made on the other GPU, on both
+   clips.  Seed swap (20261005 vs 1), mean |d| at input edges: 0268 0.0184 vs cd-vs-stock 0.0167; 0184 0.0303 vs 0.0316 -> the
+   edge change the consistency decoder makes is as large as what its noise seed changes (claim holds on both clips).
+V5 visual [VISUAL_VERIFY_v1.txt]: no GT detail recovered in any crop; fine grain added (ft-mse < ft-ema < cd); no new stripes, no
+   visible ringing; consistency decoder renders a spot that already flickers in the UNet latent as a bright cyan blob at 0268 f76
+   (|cd - stock| 26 levels in a 24x24 box vs 3-8 in frames 60-92) [panels_v5/spot_0268.json, spot_0268_f076_4x.png].
+V6 integrity [INTEGRITY_BASELINE.txt, INTEGRITY_FINAL.txt]: StereoCrafter HEAD 285f43e, no tracked change (only the untracked
+   scripts/distill/runs/vae_20261005/); master_project and DiffuEraser / VideoPainter submodules: no tracked change; 0 files newer
+   than 15:50 under /mnt/ssd_data/stereocrafter_weights, StereoCrafter/weights/, the sd-vae-ft-mse and sd15 VAE dirs and
+   /mnt/ssd_data/deep_20261004; 0 decoder_swap files modified after 18:09; ft-ema / consistency safetensors md5 == download_v1.log;
+   sd-vae-ft-mse sha256 == its Hugging Face download etag (a1d99348...).
+Web spot checks of vae_cost's two anchor sources (WebFetch, 2026-10-05):  StereoWorld (arXiv 2512.09363v2): "Training is performed
+   on 8 NVIDIA A800 GPUs", "approximately 9k optimization steps", "approximately 11 days", 142,520 clips, 480x832, 81 frames, LoRA
+   rank 128 -- as vae_cost states.  DC-VideoGen (arXiv 2509.25182v1): "the model's output degrades to random noise after 20K training
+   steps" (without alignment), "accelerating Wan-2.1-14B ... requires only 10 H100 GPU days", 257K + 160K videos, LoRA 20k steps
+   batch 32 (1.3B) -- as stated.  NOTE: the fetch also reports (summariser reading of the paper's Table 8) a 20k-step, batch-32
+   patch-embedder alignment stage before the 4k-step output-head stage; COST_TABLE's 768K-sample anchor (4k head + 20k LoRA steps)
+   does not count it, so route 1a's 7.0-16.7 days is a floor in this respect too (the conclusion does not change).  The cost arithmetic in vae_cost/COST_TABLE_v1.json was re-done by hand: 8 x 11 x 24 = 2112 A800-h
+   -> x1.889 / x2.023 = 3989.6 / 4272.6 4090-h -> /48 = 83.1 / 89.0 days on 2 GPUs; 768,000 samples x 1.58-2.10 s = 7.0-9.4 days (14 f),
+   x 2.82-3.76 s = 12.5-16.7 days (25 f); 0.526 s = 4.21 s / 8 calls [finalcheck_20261004/speed/TABLE_TIMING_final.txt line 18].
+
+=====================================================================================================================================
+2. CAVEATS FOR ANY WRITE-UP
+=====================================================================================================================================
+* NIQE: this lane's dev values (real eye 4.907, origin 6.449, deliverable 6.001, deliverable+ft-mse 5.100; 6 clips) are a different
+  clip set / crop from the earlier "real eye 4.34 / origin 5.10 / deliverable 4.96" -- never put them side by side.
+* The warp-error ratio is a flicker PROXY (decoder_swap's PREREG itself notes a genuinely sharper frame raises it).
+* "0.005 = visible" is this project's own pre-registered tier, not a perceptual standard; 4 of ft-mse's 5 per-clip dev gains
+  (-0.0007, -0.0029, -0.0016, -0.0032; 0184's -0.0048 excepted) are below the 0.004 seed-spread yardstick.
+* Deliverable vs origin on dev (5 clips) is -0.0061 (stock decoder) [TABLE_DEV_v1.txt]; the published -0.0132 is the 12 TEST clips.
+* The RAFT warp / seam / tLP values were verified only at the aggregation level (V0), not re-scored.
+
+=====================================================================================================================================
+3. FILES
+=====================================================================================================================================
+Records (this dir): PREREG.txt, PREREG.md5, INTEGRITY_BASELINE.txt, INTEGRITY_FINAL.txt, AGG_CHECK_v1.txt, TABLE_VERIFY_v1.txt,
+  VISUAL_VERIFY_v1.txt, VERIFY_RESULTS.txt; scripts v0_aggregate_v1.py, v1_rescore_v1.py, v2_headroom_v1.py, v3v4_decode_v1.py,
+  v5_panels_v1.py, v5b_spot_v1.py, v9_table_v1.py, run_gpu_v1.sh; logs smoke_v1_0268.log, v1_rescore_<clip>.log,
+  v2_headroom_<clip>.log, v3v4_<clip>_w<k>.log, v5_panels_v1.log, v5b_spot_v1.log.
+Outputs: /home/kawa/master_project/StereoCrafter/outputs/vae_20261005/verify_swap/ {smoke_v1/, rescore_v1/, headroom_v2/,
+  decode_v3v4/, panels_v5/ (20 panels + crops_v5.json + spot_0268_f076_4x.png + spot_0268.json)}.
+Arrays: /mnt/ssd_data/vae_20261005/verify_swap/v3v4_<clip>_w<k>.npz (my decodes); torch_home/ and pylib/ are byte copies used read-only.

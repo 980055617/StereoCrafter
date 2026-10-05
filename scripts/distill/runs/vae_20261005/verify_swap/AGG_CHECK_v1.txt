@@ -1,0 +1,123 @@
+V0 aggregation check: my recomputation from decoder_swap per-clip JSONs vs SELECTION_DEV_v1.json summary
+cand     model        quantity                 mine    selection       |d|
+stock32  origin       dREG_FRAME          -0.000200    -0.000200  0.00e+00
+stock32  origin       REG_better           3.000000     3.000000  0.00e+00
+stock32  origin       dUNREG              -0.000342    -0.000342  0.00e+00
+stock32  origin       drPSNR               0.000756     0.000756  0.00e+00
+stock32  origin       dNIQE                0.021577     0.021577  0.00e+00
+stock32  origin       edgeHF_ratio         0.997692     0.997692  0.00e+00
+stock32  origin       flatHF_ratio         0.921585     0.921585  0.00e+00
+stock32  origin       stripeE_ratio        0.953619     0.953619  0.00e+00
+stock32  origin       warp_ratio           0.991647     0.991647  0.00e+00
+stock32  origin       dseam                0.005069     0.005069  0.00e+00
+stock32  origin       per-clip dREG_FRAME 0040:+0.0001 0082:-0.0008 0184:-0.0001 0245:+0.0002 0268:-0.0004
+stock32  deliverable  dREG_FRAME          -0.000003    -0.000003  0.00e+00
+stock32  deliverable  REG_better           3.000000     3.000000  0.00e+00
+stock32  deliverable  dUNREG              -0.000193    -0.000193  0.00e+00
+stock32  deliverable  drPSNR               0.000952     0.000952  0.00e+00
+stock32  deliverable  dNIQE                0.021428     0.021428  0.00e+00
+stock32  deliverable  edgeHF_ratio         0.998529     0.998529  0.00e+00
+stock32  deliverable  flatHF_ratio         0.953189     0.953189  0.00e+00
+stock32  deliverable  stripeE_ratio        0.968468     0.968468  0.00e+00
+stock32  deliverable  warp_ratio           0.994410     0.994410  0.00e+00
+stock32  deliverable  dseam                0.003439     0.003439  0.00e+00
+stock32  deliverable  per-clip dREG_FRAME 0040:-0.0001 0082:-0.0003 0184:-0.0001 0245:+0.0003 0268:+0.0001
+ftmse    origin       dREG_FRAME          -0.003232    -0.003232  0.00e+00
+ftmse    origin       REG_better           4.000000     4.000000  0.00e+00
+ftmse    origin       dUNREG              -0.002682    -0.002682  0.00e+00
+ftmse    origin       drPSNR              -0.033020    -0.033020  0.00e+00
+ftmse    origin       dNIQE               -0.607534    -0.607534  0.00e+00
+ftmse    origin       edgeHF_ratio         1.169893     1.169893  0.00e+00
+ftmse    origin       flatHF_ratio         1.258943     1.258943  0.00e+00
+ftmse    origin       stripeE_ratio        1.137565     1.137565  0.00e+00
+ftmse    origin       warp_ratio           1.040488     1.040488  0.00e+00
+ftmse    origin       dseam                0.037089     0.037089  0.00e+00
+ftmse    origin       per-clip dREG_FRAME 0040:-0.0021 0082:-0.0045 0184:-0.0068 0245:+0.0015 0268:-0.0042
+ftmse    deliverable  dREG_FRAME          -0.002644    -0.002644  0.00e+00
+ftmse    deliverable  REG_better           5.000000     5.000000  0.00e+00
+ftmse    deliverable  dUNREG              -0.001809    -0.001809  0.00e+00
+ftmse    deliverable  drPSNR              -0.041875    -0.041875  0.00e+00
+ftmse    deliverable  dNIQE               -0.900683    -0.900683  0.00e+00
+ftmse    deliverable  edgeHF_ratio         1.136261     1.136261  0.00e+00
+ftmse    deliverable  flatHF_ratio         1.268004     1.268004  0.00e+00
+ftmse    deliverable  stripeE_ratio        1.168121     1.168121  0.00e+00
+ftmse    deliverable  warp_ratio           1.073199     1.073199  0.00e+00
+ftmse    deliverable  dseam                0.017857     0.017857  0.00e+00
+ftmse    deliverable  per-clip dREG_FRAME 0040:-0.0007 0082:-0.0029 0184:-0.0048 0245:-0.0016 0268:-0.0032
+ftema    origin       dREG_FRAME          -0.003767    -0.003767  0.00e+00
+ftema    origin       REG_better           4.000000     4.000000  0.00e+00
+ftema    origin       dUNREG              -0.003021    -0.003021  0.00e+00
+ftema    origin       drPSNR              -0.138070    -0.138070  0.00e+00
+ftema    origin       dNIQE               -0.853340    -0.853340  0.00e+00
+ftema    origin       edgeHF_ratio         1.276172     1.276172  0.00e+00
+ftema    origin       flatHF_ratio         1.286894     1.286894  0.00e+00
+ftema    origin       stripeE_ratio        1.174796     1.174796  0.00e+00
+ftema    origin       warp_ratio           1.102147     1.102147  0.00e+00
+ftema    origin       dseam                0.026144     0.026144  0.00e+00
+ftema    origin       per-clip dREG_FRAME 0040:-0.0014 0082:-0.0048 0184:-0.0100 0245:+0.0081 0268:-0.0108
+ftema    deliverable  dREG_FRAME          -0.001880    -0.001880  0.00e+00
+ftema    deliverable  REG_better           3.000000     3.000000  0.00e+00
+ftema    deliverable  dUNREG              -0.001524    -0.001524  0.00e+00
+ftema    deliverable  drPSNR              -0.187839    -0.187839  0.00e+00
+ftema    deliverable  dNIQE               -1.134666    -1.134666  0.00e+00
+ftema    deliverable  edgeHF_ratio         1.274595     1.274595  0.00e+00
+ftema    deliverable  flatHF_ratio         1.344900     1.344900  0.00e+00
+ftema    deliverable  stripeE_ratio        1.237449     1.237449  0.00e+00
+ftema    deliverable  warp_ratio           1.153226     1.153226  0.00e+00
+ftema    deliverable  dseam                0.002722     0.002722  0.00e+00
+ftema    deliverable  per-clip dREG_FRAME 0040:+0.0013 0082:-0.0019 0184:-0.0060 0245:+0.0044 0268:-0.0072
+cd       origin       dREG_FRAME          -0.001482    -0.001482  0.00e+00
+cd       origin       REG_better           4.000000     4.000000  0.00e+00
+cd       origin       dUNREG              -0.003232    -0.003232  0.00e+00
+cd       origin       drPSNR              -0.050977    -0.050977  0.00e+00
+cd       origin       dNIQE               -1.119763    -1.119763  0.00e+00
+cd       origin       edgeHF_ratio         1.078581     1.078581  0.00e+00
+cd       origin       flatHF_ratio         1.474701     1.474701  0.00e+00
+cd       origin       stripeE_ratio        1.302854     1.302854  0.00e+00
+cd       origin       warp_ratio           1.069772     1.069772  0.00e+00
+cd       origin       dseam                0.072661     0.072661  0.00e+00
+cd       origin       per-clip dREG_FRAME 0040:-0.0033 0082:-0.0037 0184:-0.0041 0245:+0.0138 0268:-0.0101
+cd       deliverable  dREG_FRAME          -0.000034    -0.000034  0.00e+00
+cd       deliverable  REG_better           4.000000     4.000000  0.00e+00
+cd       deliverable  dUNREG              -0.002032    -0.002032  0.00e+00
+cd       deliverable  drPSNR              -0.083879    -0.083879  0.00e+00
+cd       deliverable  dNIQE               -1.054542    -1.054542  0.00e+00
+cd       deliverable  edgeHF_ratio         1.077249     1.077249  0.00e+00
+cd       deliverable  flatHF_ratio         1.340813     1.340813  0.00e+00
+cd       deliverable  stripeE_ratio        1.258126     1.258126  0.00e+00
+cd       deliverable  warp_ratio           1.085968     1.085968  0.00e+00
+cd       deliverable  dseam                0.060253     0.060253  0.00e+00
+cd       deliverable  per-clip dREG_FRAME 0040:-0.0015 0082:-0.0038 0184:-0.0030 0245:+0.0161 0268:-0.0080
+
+absolute REG_FRAME 5-clip means (registered clips):
+  origin       stock  0.2568
+  origin       ftmse  0.2535
+  origin       ftema  0.2530
+  origin       cd     0.2553
+  deliverable  stock  0.2507
+  deliverable  ftmse  0.2481
+  deliverable  ftema  0.2488
+  deliverable  cd     0.2507
+absolute NIQE 6-clip means:
+  origin       stock  6.449
+  origin       ftmse  5.841
+  deliverable  stock  6.001
+  deliverable  ftmse  5.100
+  GT (registered real right eye, score_aux) 4.907
+absolute flatHF / edgeHF 5-clip means (deliverable):
+  stock  flatHF 0.01160 edgeHF 0.06378
+  ftmse  flatHF 0.01445 edgeHF 0.07293
+  ftema  flatHF 0.01630 edgeHF 0.08297
+  cd     flatHF 0.01534 edgeHF 0.07001
+  GT     flatHF 0.00704 edgeHF 0.11141
+
+headroom (real right eye latents, 6 clips): my means from headroom_dev_v1/<clip>.json
+  stock    LPIPS 0.0452  PSNR 35.526  better than stock 0/6  flatHF/GT 1.224  edgeHF/GT 0.813
+  stock32  LPIPS 0.0451  PSNR 35.512  better than stock 5/6  flatHF/GT 1.083  edgeHF/GT 0.813
+  ftmse    LPIPS 0.0350  PSNR 35.755  better than stock 6/6  flatHF/GT 1.538  edgeHF/GT 0.872
+  ftema    LPIPS 0.0344  PSNR 35.226  better than stock 6/6  flatHF/GT 1.621  edgeHF/GT 0.967
+  cd       LPIPS 0.0412  PSNR 34.057  better than stock 5/6  flatHF/GT 1.834  edgeHF/GT 0.830
+  sd15     LPIPS 0.0432  PSNR 33.785  better than stock 3/6  flatHF/GT 1.765  edgeHF/GT 0.896
+  ftmse removes 22.6 % of the stock decoder's round-trip LPIPS-Alex
+
+worst |mine - selection| over all compared quantities: 0.00e+00  -> AGREE (<= 1e-4)

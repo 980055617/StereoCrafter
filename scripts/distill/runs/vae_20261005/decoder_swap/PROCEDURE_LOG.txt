@@ -1,0 +1,37 @@
+vae_20261005 / decoder_swap -- PROCEDURE LOG (what was run, in order, including failures and fixes).  Times JST 2026-10-05.
+
+15:50  downloads (download_v1.log): stabilityai/sd-vae-ft-ema @f04b2c4b (config + safetensors md5 e3ecfa36...) and
+       openai/consistency-decoder @63b7a488 (config + safetensors md5 ba08701d...) into /mnt/ssd_data/vae_20261005/decoder_swap/hf_home.
+       sd-vae-ft-mse: third_party/DiffuEraser/weights/sd-vae-ft-mse (on disk).  SD1.5 base VAE: third_party/VideoPainter/ckpt/sd15_base/vae.
+15:55  STEP 1 compat_v1.py (GPU0) -> COMPAT_v1.json / compat_v1.log; compat_attn_v1.py (CPU) -> COMPAT_ATTN_v1.json.
+15:56  lane-local copies (read only sources): blur_diag pylib + skeptic pylib -> /mnt/ssd_data/vae_20261005/decoder_swap/pylib;
+       decoder_ft torch_home (pyiqa NIQE/MUSIQ, VGG16, DISTS, AlexNet) + ~/.cache/torch RAFT -> .../torch_home.
+15:57  feasibility smoke smoke_speed_v1.py (GPU0): speed / memory / same-seed determinism only (smoke_speed_v1.log).
+16:04  PREREG.txt written (md5 in PREREG.md5, recorded 16:06 after a one-line timestamp correction of its header).
+16:07  one-clip smokes attempt 1 FAILED at once: the last window of inpainting_inference.main has 11 frames, dswap_lib/headroom
+       asserted 14 (logs *_FAILED_attempt1.log; partial GT latents moved to gt_lat_dev/0040_FAILED_attempt1_shortwindow, kept).
+       Fix: dswap_lib.win_len / keep_local(W, n) (checked against score_registered_v1.py's window logic for n = 147..165).
+16:09  smokes attempt 2 (GPU0 redecode 0040 x 2 models x 5 decoders; GPU1 headroom 0040 x 6 decoders + cd@1, cd@2): OK.
+       Stock md5 == capture on 0040 both models; headroom stock md5 == decoder_ft ROUNDTRIP_DEV md5.  These outputs ARE the dev
+       rows / headroom row of 0040 (same code as the full run).
+16:24  scorer smoke on 0040 (smoke_score_0040_v1.sh -> outputs/vae_20261005/decoder_swap/smoke_0040/, smoke_*0040*): every scorer
+       ran; stock rows equal decoder_ft's scorer values; smoke scores are NOT used by the analysis.
+16:24  headroom score smoke 0040 -> headroom_dev_v1/0040.json (HR0 md5 EQUAL).
+16:24  orchestrate_dev_v1.sh gpu1 launched (systemd unit dswap-dev-gpu1); 16:29 gpu0 (dswap-dev-gpu0).
+16:30  PREREG_ADDENDUM_1.txt (0125 test registration procedure; smoke disclosure).  No rule changed.
+17:15  extra unit dswap-hrscore-rest (headroom scores of the other 5 clips on GPU1 while it waited).  0082 FAILED:
+       ZeroDivisionError -- 0082's GT stripeE is exactly 0 (its GT-flat pixels have zero horizontal difference), so the "/GT"
+       ratio divided by zero.  Fix: score_headroom_v1.py returns NaN for a /GT ratio whose GT value is 0 (all other values
+       unchanged); analyze_headroom_v1.py uses nanmean for /GT ratios and names the excluded clip.  0091 had already started with
+       the pre-fix file and finished normally (no zero); 0082 rerun 17:29 OK.
+17:27  GATE D1 ALL PASS (12/12 dev cells: stock re-decode md5 == capture md5).  17:28 GATE D3 PASS (cd seed-fixed decode identical
+       in-process and to the earlier render).
+17:30-17:50  dev scoring (orchestrate_dev_v1.sh): UNREG (stock rows) -> rows_dev_v1.json -> registered + aux -> temporal -> DS-SEED
+       (0040, 0268 deliverable) on both GPUs; all rc=0 (orchestrate_dev_v1_gpu*.log).
+17:50  the orchestrator had no "pair" stage (omission): decode-pair flicker run by hand on CPU (chain_dev_v1.sh pair, pair_stage_*.log),
+       before the analysis.
+17:51  analyze_headroom_v1.py -> TABLE_HEADROOM_v1.txt; analyze_dev_v1.py -> TABLE_DEV_v1.txt + SELECTION_DEV_v1.json (gates D1/D2/D3
+       pass; no candidate passes; nothing goes to test).
+17:55  panels_v1.py (pre-registered crops, best = ftmse = lowest deliverable dev REG_FRAME change) -> outputs/.../panels_dev_v1/.
+18:00  inspection aids (not pre-registered): zoom_panels_v1.py, diff_panels_v1.py, zoom_region_v1.py -> panels_dev_v1_zoom2x/,
+       panels_dev_v1_diff8/, panels_dev_v1_zoom_regions/.  VISUAL_DEV_v1.txt, RESULTS.txt written.

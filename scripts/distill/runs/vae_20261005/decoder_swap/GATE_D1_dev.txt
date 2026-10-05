@@ -1,0 +1,13 @@
+0040 origin_cap capture 97389cd5ad56abd52f113cd81f0bee9b stock re-decode 97389cd5ad56abd52f113cd81f0bee9b -> PASS; other rows cd differs, ftema differs, ftmse differs, stock32 differs
+0040 deliv_cap  capture 0a1ca849573980dbdd6490a7c29ca632 stock re-decode 0a1ca849573980dbdd6490a7c29ca632 -> PASS; other rows cd differs, ftema differs, ftmse differs, stock32 differs
+0082 origin_cap capture 774b68d5723aeae6db62c13b2af02b0d stock re-decode 774b68d5723aeae6db62c13b2af02b0d -> PASS; other rows cd differs, ftema differs, ftmse differs, stock32 differs
+0082 deliv_cap  capture 56c056174b0676e532b2e8fa9fd8f3c5 stock re-decode 56c056174b0676e532b2e8fa9fd8f3c5 -> PASS; other rows cd differs, ftema differs, ftmse differs, stock32 differs
+0091 origin_cap capture be0c784b35aeba5bd4d1796e339bcdcf stock re-decode be0c784b35aeba5bd4d1796e339bcdcf -> PASS; other rows cd differs, ftema differs, ftmse differs, stock32 differs
+0091 deliv_cap  capture dec24c798a2c7c5298a5c6f1766a9424 stock re-decode dec24c798a2c7c5298a5c6f1766a9424 -> PASS; other rows cd differs, ftema differs, ftmse differs, stock32 differs
+0184 origin_cap capture d285af4763af42a03de3c2f52f82e44c stock re-decode d285af4763af42a03de3c2f52f82e44c -> PASS; other rows cd differs, ftema differs, ftmse differs, stock32 differs
+0184 deliv_cap  capture aec0e35e211bb3178ff1806f6b4257a4 stock re-decode aec0e35e211bb3178ff1806f6b4257a4 -> PASS; other rows cd differs, ftema differs, ftmse differs, stock32 differs
+0245 origin_cap capture 979e0f433457e293c76c0a102a1ae260 stock re-decode 979e0f433457e293c76c0a102a1ae260 -> PASS; other rows cd differs, ftema differs, ftmse differs, stock32 differs
+0245 deliv_cap  capture e0f70d1c5c17b1046f1d662b66c1acc6 stock re-decode e0f70d1c5c17b1046f1d662b66c1acc6 -> PASS; other rows cd differs, ftema differs, ftmse differs, stock32 differs
+0268 origin_cap capture 5d042fcbd870cc3f57d90a68377a271b stock re-decode 5d042fcbd870cc3f57d90a68377a271b -> PASS; other rows cd differs, ftema differs, ftmse differs, stock32 differs
+0268 deliv_cap  capture a5b78f6b9d7274ba308ac7fc94c9afab stock re-decode a5b78f6b9d7274ba308ac7fc94c9afab -> PASS; other rows cd differs, ftema differs, ftmse differs, stock32 differs
+GATE D1 ALL PASS

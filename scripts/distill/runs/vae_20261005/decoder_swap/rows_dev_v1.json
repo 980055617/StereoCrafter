@@ -1,0 +1,732 @@
+{
+ "labels": [
+  "origin_cap__stock",
+  "origin_cap__stock32",
+  "origin_cap__ftmse",
+  "origin_cap__ftema",
+  "origin_cap__cd",
+  "deliv_cap__stock",
+  "deliv_cap__stock32",
+  "deliv_cap__ftmse",
+  "deliv_cap__ftema",
+  "deliv_cap__cd"
+ ],
+ "cells": {
+  "0040": {
+   "origin_cap__stock": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 39.9129,
+    "lpips": 0.5076,
+    "sharp": 0.007297,
+    "gtSharp": 0.004318,
+    "rightPSNR": 12.7385,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0040_origin_cap__stock/0040_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/vae_20261005/decoder_swap/dev_unreg_0040.txt"
+    ]
+   },
+   "origin_cap__stock32": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 39.9129,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0040_origin_cap__stock32/0040_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "origin_cap__ftmse": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 39.9129,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0040_origin_cap__ftmse/0040_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "origin_cap__ftema": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 39.9129,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0040_origin_cap__ftema/0040_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "origin_cap__cd": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 39.9129,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0040_origin_cap__cd/0040_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "deliv_cap__stock": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 39.9129,
+    "lpips": 0.502867,
+    "sharp": 0.00778,
+    "gtSharp": 0.004318,
+    "rightPSNR": 12.7862,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0040_deliv_cap__stock/0040_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/vae_20261005/decoder_swap/dev_unreg_0040.txt"
+    ]
+   },
+   "deliv_cap__stock32": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 39.9129,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0040_deliv_cap__stock32/0040_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "deliv_cap__ftmse": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 39.9129,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0040_deliv_cap__ftmse/0040_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "deliv_cap__ftema": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 39.9129,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0040_deliv_cap__ftema/0040_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "deliv_cap__cd": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 39.9129,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0040_deliv_cap__cd/0040_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   }
+  },
+  "0082": {
+   "origin_cap__stock": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.1472,
+    "lpips": 0.377106,
+    "sharp": 0.004858,
+    "gtSharp": 0.003094,
+    "rightPSNR": 14.6397,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0082_origin_cap__stock/0082_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/vae_20261005/decoder_swap/dev_unreg_0082.txt"
+    ]
+   },
+   "origin_cap__stock32": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.1472,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0082_origin_cap__stock32/0082_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "origin_cap__ftmse": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.1472,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0082_origin_cap__ftmse/0082_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "origin_cap__ftema": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.1472,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0082_origin_cap__ftema/0082_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "origin_cap__cd": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.1472,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0082_origin_cap__cd/0082_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "deliv_cap__stock": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.1472,
+    "lpips": 0.372374,
+    "sharp": 0.005496,
+    "gtSharp": 0.003094,
+    "rightPSNR": 14.5886,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0082_deliv_cap__stock/0082_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/vae_20261005/decoder_swap/dev_unreg_0082.txt"
+    ]
+   },
+   "deliv_cap__stock32": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.1472,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0082_deliv_cap__stock32/0082_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "deliv_cap__ftmse": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.1472,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0082_deliv_cap__ftmse/0082_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "deliv_cap__ftema": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.1472,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0082_deliv_cap__ftema/0082_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "deliv_cap__cd": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.1472,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0082_deliv_cap__cd/0082_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   }
+  },
+  "0091": {
+   "origin_cap__stock": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.2881,
+    "lpips": 0.647698,
+    "sharp": 0.003807,
+    "gtSharp": 0.003117,
+    "rightPSNR": 12.9491,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0091_origin_cap__stock/0091_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/vae_20261005/decoder_swap/dev_unreg_0091.txt"
+    ]
+   },
+   "origin_cap__stock32": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.2881,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0091_origin_cap__stock32/0091_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "origin_cap__ftmse": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.2881,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0091_origin_cap__ftmse/0091_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "origin_cap__ftema": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.2881,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0091_origin_cap__ftema/0091_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "origin_cap__cd": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.2881,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0091_origin_cap__cd/0091_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "deliv_cap__stock": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.2881,
+    "lpips": 0.643113,
+    "sharp": 0.004476,
+    "gtSharp": 0.003117,
+    "rightPSNR": 12.9182,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0091_deliv_cap__stock/0091_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/vae_20261005/decoder_swap/dev_unreg_0091.txt"
+    ]
+   },
+   "deliv_cap__stock32": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.2881,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0091_deliv_cap__stock32/0091_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "deliv_cap__ftmse": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.2881,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0091_deliv_cap__ftmse/0091_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "deliv_cap__ftema": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.2881,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0091_deliv_cap__ftema/0091_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "deliv_cap__cd": {
+    "dy": -12,
+    "dx": -12,
+    "leftPSNR": 40.2881,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0091_deliv_cap__cd/0091_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   }
+  },
+  "0184": {
+   "origin_cap__stock": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 39.6799,
+    "lpips": 0.503703,
+    "sharp": 0.008263,
+    "gtSharp": 0.010259,
+    "rightPSNR": 11.429,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0184_origin_cap__stock/0184_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/vae_20261005/decoder_swap/dev_unreg_0184.txt"
+    ]
+   },
+   "origin_cap__stock32": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 39.6799,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0184_origin_cap__stock32/0184_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "origin_cap__ftmse": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 39.6799,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0184_origin_cap__ftmse/0184_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "origin_cap__ftema": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 39.6799,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0184_origin_cap__ftema/0184_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "origin_cap__cd": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 39.6799,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0184_origin_cap__cd/0184_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "deliv_cap__stock": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 39.6799,
+    "lpips": 0.4935,
+    "sharp": 0.009366,
+    "gtSharp": 0.010259,
+    "rightPSNR": 11.401,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0184_deliv_cap__stock/0184_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/vae_20261005/decoder_swap/dev_unreg_0184.txt"
+    ]
+   },
+   "deliv_cap__stock32": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 39.6799,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0184_deliv_cap__stock32/0184_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "deliv_cap__ftmse": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 39.6799,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0184_deliv_cap__ftmse/0184_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "deliv_cap__ftema": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 39.6799,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0184_deliv_cap__ftema/0184_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "deliv_cap__cd": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 39.6799,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0184_deliv_cap__cd/0184_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   }
+  },
+  "0245": {
+   "origin_cap__stock": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.6934,
+    "lpips": 0.53628,
+    "sharp": 0.019073,
+    "gtSharp": 0.019571,
+    "rightPSNR": 13.3245,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0245_origin_cap__stock/0245_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/vae_20261005/decoder_swap/dev_unreg_0245.txt"
+    ]
+   },
+   "origin_cap__stock32": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.6934,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0245_origin_cap__stock32/0245_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "origin_cap__ftmse": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.6934,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0245_origin_cap__ftmse/0245_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "origin_cap__ftema": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.6934,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0245_origin_cap__ftema/0245_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "origin_cap__cd": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.6934,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0245_origin_cap__cd/0245_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "deliv_cap__stock": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.6934,
+    "lpips": 0.546244,
+    "sharp": 0.021802,
+    "gtSharp": 0.019571,
+    "rightPSNR": 13.2373,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0245_deliv_cap__stock/0245_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/vae_20261005/decoder_swap/dev_unreg_0245.txt"
+    ]
+   },
+   "deliv_cap__stock32": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.6934,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0245_deliv_cap__stock32/0245_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "deliv_cap__ftmse": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.6934,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0245_deliv_cap__ftmse/0245_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "deliv_cap__ftema": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.6934,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0245_deliv_cap__ftema/0245_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "deliv_cap__cd": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.6934,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0245_deliv_cap__cd/0245_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   }
+  },
+  "0268": {
+   "origin_cap__stock": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.9714,
+    "lpips": 0.197105,
+    "sharp": 0.008523,
+    "gtSharp": 0.020219,
+    "rightPSNR": 23.9376,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0268_origin_cap__stock/0268_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/vae_20261005/decoder_swap/dev_unreg_0268.txt"
+    ]
+   },
+   "origin_cap__stock32": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.9714,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0268_origin_cap__stock32/0268_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "origin_cap__ftmse": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.9714,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0268_origin_cap__ftmse/0268_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "origin_cap__ftema": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.9714,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0268_origin_cap__ftema/0268_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "origin_cap__cd": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.9714,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0268_origin_cap__cd/0268_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "deliv_cap__stock": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.9714,
+    "lpips": 0.17853,
+    "sharp": 0.009438,
+    "gtSharp": 0.020219,
+    "rightPSNR": 23.5883,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0268_deliv_cap__stock/0268_inpainting_results_sbs.mkv",
+    "sources": [
+     "scripts/distill/runs/vae_20261005/decoder_swap/dev_unreg_0268.txt"
+    ]
+   },
+   "deliv_cap__stock32": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.9714,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0268_deliv_cap__stock32/0268_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "deliv_cap__ftmse": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.9714,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0268_deliv_cap__ftmse/0268_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "deliv_cap__ftema": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.9714,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0268_deliv_cap__ftema/0268_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   },
+   "deliv_cap__cd": {
+    "dy": -28,
+    "dx": 0,
+    "leftPSNR": 40.9714,
+    "lpips": NaN,
+    "n": 38,
+    "path": "/mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/0268_deliv_cap__cd/0268_inpainting_results_sbs.mkv",
+    "sources": [
+     "shared left half: dy/dx from origin_cap__stock ROW"
+    ]
+   }
+  }
+ },
+ "clips": [
+  "0040",
+  "0082",
+  "0091",
+  "0184",
+  "0245",
+  "0268"
+ ]
+}

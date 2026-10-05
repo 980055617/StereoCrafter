@@ -1,0 +1,75 @@
+vae_20261005 / verify_swap lane -- PRE-REGISTRATION (independent verification of the decoder_swap lane)
+Written 2026-10-05 ~18:11 JST, BEFORE any number of this lane exists.  Numbers seen before writing: only decoder_swap's own published
+records (RESULTS.txt, TABLE_DEV_v1.txt, TABLE_HEADROOM_v1.txt, per-clip JSONs) and this lane's integrity baseline
+(INTEGRITY_BASELINE.txt: no tracked change, no checkpoint file newer than 15:50).
+Records: scripts/distill/runs/vae_20261005/verify_swap/ (this dir).  Images/JSON: outputs/vae_20261005/verify_swap/.
+Arrays: /mnt/ssd_data/vae_20261005/verify_swap/.  Nothing tracked is edited; decoder_swap's and deep_20261004's files are only read.
+Env: conda stereocrafter, PYTHONDONTWRITEBYTECODE=1, HF_HUB_OFFLINE=1, TORCH_HOME and PYTHONPATH = this lane's copies
+(/mnt/ssd_data/vae_20261005/verify_swap/{torch_home,pylib}, byte-copied from decoder_swap's, md5 checked).  Every GPU call under
+flock /tmp/claude-gpu<N>.lock with CUDA_VISIBLE_DEVICES=<N>.  Smoke = clip 0268, one row (deliv_cap__stock), before the rest.
+
+SCOPE.  No candidate passed decoder_swap's dev rule (SELECTION_DEV_v1.json "selected": null), so its PREREG sends nothing to test.
+THIS LANE DOES NOT TOUCH ANY OF THE 12 TEST CLIPS.  It makes no selection.  It re-measures what would be quoted as a gain.
+
+CLIPS.  0184 and 0268 (registered dev clips).  Chosen because they carry the largest part of the headline: ftmse deliverable
+REG_FRAME per clip -0.0048 (0184) and -0.0032 (0268) of a 5-clip sum of -0.0132 (TABLE_DEV_v1.txt), i.e. ~61 %; if the gain is an
+artefact of the pipeline it should show there.  0268 = iPhone; 0268 also has decoder_swap's visual crops and DS-SEED.
+
+V0  AGGREGATION (CPU).  From decoder_swap's per-clip JSONs (score_reg_dev_v1, score_aux_dev_v1, temporal_dev_v1, headroom_dev_v1),
+    recompute with my own code the TABLE_DEV_v1 / TABLE_HEADROOM_v1 means quoted in its answer (ftmse/ftema/cd minus stock:
+    dREG_FRAME 5-clip mean and better-count, dUNREG 6-clip, dNIQE 6-clip, flatHF/stripeE/edgeHF 5-clip means of per-clip ratios,
+    warp 6-clip mean of per-clip ratios, seam; headroom LPIPS/PSNR means).  Tolerance: |d| <= 1e-4 (printed 4 decimals).
+
+V1  RE-SCORE ON THE UNET'S LATENTS (GPU), clips 0184 and 0268, rows {origin_cap, deliv_cap} x {stock, ftmse, ftema, cd}
+    (the renders in /mnt/ssd_data/vae_20261005/decoder_swap/redec_dev/).  MY OWN data path:
+    * render integrity: md5 of the decoded SBS uint8 array == the .md5 sidecar, every scored cell;
+    * deployed window (st0, sl0) = ((Hs//128*128-576)//2, (Ws//128*128-1024)//2) of the splatting video;
+    * registration: masked PSNR of the real right eye (train TR quadrant) vs the model input (splatting BR, holes = BL mean > 127.5
+      excluded) over ddy in [-10,10] x ddx in [-120,40] for ALL n_g frames, SSE accumulated EXACTLY (float64 of integer squares),
+      argmax per frame (first maximum in ddy-major order), edge-padded median-of-5 over the full sequence, THEN sampled at the
+      scored frames 0,4,8,...;  compared frame by frame with decoder_swap's reg.smooth_ddy/smooth_ddx;
+    * metrics by library call on that data: LPIPS-Alex (lpips 0.1, batches of 4) for REG_FRAME and UNREG (zero shift), rPSNR
+      (REG_FRAME, 10 log10(1/mean per-frame MSE)), NIQE (pyiqa, per frame, mean), reviewlib.decompose (flatHF, edgeHF, stripeE,
+      haloFrac; regions from the registered GT stack).
+    If my shifts differ from decoder_swap's on any scored frame, every row is ALSO scored with decoder_swap's shifts (to separate
+    a registration difference from a scoring difference) and both are reported.
+    Tolerances vs decoder_swap's per-clip JSON values: shifts identical; LPIPS |d| <= 1e-5; rPSNR |d| <= 1e-3 dB; NIQE |d| <= 1e-3;
+    decompose values relative |d| <= 1e-4.  Deltas (candidate - stock, same latents) are recomputed from my values.
+
+V2  HEADROOM RE-SCORE (GPU), clips 0184 and 0268, rows stock, ftmse, ftema, cd (decoder_swap headroom_dev/<clip>__<dec>.mkv) vs the
+    encoded real right eye decoder_ft gt_dev/<clip>_TR.npy, frames 0,4,8,...: LPIPS-Alex (batches of 4, sum/n), PSNR (mean of
+    per-frame), decompose flatHF/edgeHF with regions from the GT frames.  Integrity: md5 of each mkv's uint8 array == its .json md5.
+    Tolerances as V1.
+
+V3  DECODER IDENTITY (GPU).  My own decode, written from the diffusers API (not dswap_lib), of ONE NON-FIRST window per clip:
+    0268_deliv_cap window 6 and 0184_deliv_cap window 9 with sd-vae-ft-mse (AutoencoderKL fp32, z = bf16(L/0.18215) -> fp32, kept
+    frames decoded in pairs) and with the stock SVD temporal decoder (bf16, decode_latents-equivalent, chunks of 2 over the full
+    window); plus window 6 of the 0268 real-right-eye latents (gt_lat_dev) with sd-vae-ft-mse vs headroom_dev/0268__ftmse.mkv.
+    uint8 path reproduced: (x/2+0.5).clamp(0,1) -> round(x*255) -> /255 -> *255 -> truncating uint8 cast (deployed tensor2vid/PIL
+    path).  Expected: bit-exact with the render's kept frames.  Reported: number of differing values and max |d| (also for a
+    plain round-only path).
+
+V4  CONSISTENCY-DECODER DETERMINISM (GPU, fresh processes, CROSS-GPU).  0268_deliv_cap window 6 on GPU0 (its render was made on
+    GPU1) and 0184_deliv_cap window 9 on GPU1 (render made on GPU0): cd (fp16, 2 steps, Generator('cuda').manual_seed(20261005)
+    before every frame, cudnn deterministic) decoded twice -> run1 == run2 bitwise, and == the render's kept frames.
+    Seed swap on the same frames: seed 1.  Mean |a-b| (RGB, [0,1]) in regions from the model input (decoder_swap DS-SEED
+    definition: BR gradient top decile = EDGE, bottom half = FLAT, both outside the 8-px-dilated hole; HOLE = dilated hole) for
+    cd(20261005) vs cd(1), cd vs stock, ftmse vs stock.  Claim checked: "at edges, what cd changes vs stock is as large as what the
+    seed changes" -> holds if mad_edge(cd vs cd@1) >= 0.8 x mad_edge(cd vs stock) on both clips.
+
+V5  VISUAL (CPU panels, then viewed by me at 100 %).  Frame 76 (decoder_swap's pre-registered frame), deliverable latents.
+    Crops 384x384 chosen by decoder_swap's rule (E = highest GT top-decile-gradient fraction, stride 32; F = highest GT flat
+    fraction among windows with >= 5 % hole, else overall) from the registered GT and the hole mask only: 0268 = decoder_swap's
+    crops.json positions; 0184 computed by the same rule.  Panels <= 1168 px wide so they are viewed at 100 %:
+    row 1 GT | stock | ftmse, row 2 ftema | cd | |ftmse - stock| x 8.  HEADROOM panels at the same positions and frame:
+    GT (pixel-exact, gt_dev) | stock | ftmse / ftema | cd | |ftmse - stock| x 8 -- the only place where real-vs-invented detail can
+    be judged without registration error.  Each crop gets one of: real detail recovered (present in GT) / invented texture (absent
+    from GT) / ringing-halo / stripes / no visible change.
+
+V6  INTEGRITY at the end: git status (tracked) of StereoCrafter (HEAD 285f43e), master_project and the DiffuEraser/VideoPainter
+    submodules empty; no file newer than 15:50 under /mnt/ssd_data/stereocrafter_weights, StereoCrafter/weights/, the sd-vae-ft-mse
+    and sd15 VAE dirs, /mnt/ssd_data/deep_20261004; ftema/cd safetensors md5 == download_v1.log; sd-vae-ft-mse sha256 == its HF
+    download etag.
+
+MISMATCH RULE.  A value outside tolerance is reported with my value next to decoder_swap's and the discrepancy named; my value is
+the one quoted.  A failed run is retried once at most.  Nothing here changes decoder_swap's selection (none) or sends anything to test.

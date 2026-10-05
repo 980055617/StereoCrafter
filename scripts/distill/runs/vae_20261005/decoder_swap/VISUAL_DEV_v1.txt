@@ -1,0 +1,47 @@
+vae_20261005 / decoder_swap -- STEP 6 VISUAL NOTE (dev, deliverable latents, frame 76; PREREG.txt section 5).
+Written 2026-10-05 ~18:05 JST after looking at the panels; SUMMARY corrected ~18:15 after viewing all six _main panels at true size.
+WHAT WAS VIEWED AT WHAT SCALE: the six <clip>_f076_<E|F>_main.png (GT | stock | ftmse, 1160 px wide) at 100 %; the six _all.png rows
+(GT | stock | stock32 | ftmse | ftema | cd, 2324 px wide) only as shown by the viewer, i.e. downscaled to ~86 %; ftema and cd at
+true or larger scale only through the 2x / 4x nearest-neighbour zooms and the x8 difference maps.  The dev pass/selection (TABLE_DEV_v1.txt, SELECTION_DEV_v1.json) had already
+been computed mechanically (none passes); this note does not change it.  No test was run, so there is no test verdict to precede.
+Panels (pre-registered, 100 %): outputs/vae_20261005/decoder_swap/panels_dev_v1/<clip>_f076_<E|F>_{main,all,holemask}.png, crops.json
+  ("best candidate" = ftmse, the lowest deliverable dev REG_FRAME change, since none passed).
+Inspection aids (NOT pre-registered; nearest-neighbour zooms and |row - stock| x8 maps of the same crops):
+  outputs/vae_20261005/decoder_swap/panels_dev_v1_zoom2x/, panels_dev_v1_diff8/, panels_dev_v1_zoom_regions/
+Caveat for every crop: the "GT reg" tile is the real right eye moved by one global shift per frame; where the scene has a large depth
+range (0245) its content does not line up with the model's output, so it shows what kind of detail the real eye has, not the same pixels.
+
+0040 E (window frame + branches; GT soft-ish, blinds lines visible in GT)
+  At 100 % stock, stock32, ftmse, ftema and cd look almost the same.  At 2-4x ftmse/ftema make branch and blind lines slightly
+  crisper with a little more micro-contrast; cd is similar with somewhat more grain.  The region right of the frame differs from GT
+  in CONTENT for every row (generated trees vs. a building in GT): no decoder changes that.  No ringing seen at the frame edge (4x).
+0040 F (dark weight plate + handle against a light background; 6 % hole)
+  The x8 difference maps show ftmse/ftema change mainly the object outlines plus faint texture on the plate; the flat background is
+  almost untouched.  cd changes more: broad bands along edges, texture on the plate, a faint low-frequency colour shift in the
+  background (the white looks slightly cooler), and at 4x it re-draws the embossed "1h" lettering into a different shape -- an
+  INVENTED change of fine structure, not detail that is in GT.  No stripes added by any decoder.
+0245 E / F (dense foliage, iPhone; 9 % / 6 % hole)
+  All three candidates change the busy background foliage everywhere (mean |row - stock| 5.0 / 5.9 / 7.9 levels for ftmse / ftema / cd
+  on crop E) while the large smooth leaves stay almost unchanged: the added energy is a fine, worm-like texture in textured areas,
+  not concentrated on object edges.  At 2x leaf edges are a little crisper with ftmse/ftema; cd looks more "painted".  GT has
+  serrated, hairy leaf edges that NONE of the outputs has with any decoder.  (Numbers agree: 0245 deliverable REG_FRAME
+  ftmse -0.0016, ftema +0.0044, cd +0.0161 [TABLE_DEV_v1.txt].)
+0268 E / F (blue speckled surface; sky; iPhone; no hole in these crops)
+  GT is grainy (fine speckle).  stock is a smoothed version; ftmse < ftema < cd add progressively more speckle/grain, which makes the
+  surface LOOK closer to GT's character -- this is where the candidates gain on the metric (0268 deliverable REG_FRAME -0.0032 /
+  -0.0072 / -0.0080), but the extra grain is texture of the right kind, not the same speckles (cd's grain moves with the noise seed:
+  DS-SEED, seed_diag_v1/0268_deliv_cap.json).  In flat sky (F) all decoders change < 1.1 level on average; the change sits in the
+  few textured pixels; the cd difference map shows faint vertical banding.
+SUMMARY
+  * At 100 % (the _main panels, GT | stock | ftmse): ftmse is SLIGHTLY crisper than stock in the textured crops -- 0245 E leaf veins and
+    background foliage, 0245 F background foliage and bark, 0268 E speckle, 0040 F embossed lettering -- nearly indistinguishable (at most marginally
+    crisper branches) in 0040 E, and indistinguishable in 0268 F (sky).  It is a modest local crispening, not a visibly sharper image; stock and ftmse both stay far softer than the
+    real eye (e.g. 0245's serrated, hairy leaf edges are absent in both).  ftema and cd (seen at ~86 % and in 2-4x zooms) go further
+    in the same direction with more grain; cd also alters small structures.
+  * Real recovered detail that is present in GT could not be identified in any crop; the gains are of the "more texture of a GT-like
+    kind" type (0268 E, where the added speckle resembles the real eye's grain), and in dense foliage the change is mostly texture
+    (0245 difference maps).
+  * 0268 E aside: a small feature near the bottom of the crop is rendered pinkish by the stock decoder and dark blue by ftmse --
+    decoders can also differ in the colour of small structures.
+  * No new splatting stripes and no visible ringing in the crops viewed (ftema's haloFrac rises by 1.5 points on dev, which I could
+    not see at 4x on the 0040 window edge).
