@@ -11055,3 +11055,19 @@ under `/mnt/ssd_data/vae_20261005/`. Pre-registered, dev-selected; nothing passe
   Not realistic as the thesis's main line.
 - **Next (judge):** a blind human comparison of origin / AYS / deliverable / 25 steps / SDEdit before any further GPU work -
   if the -0.0132 gain is not visible, the ~0.005 SDEdit candidate will not be either.
+
+## 2026-10-06 - Human visual check: no visible difference. The quality race on this data is closed
+
+The user looked through all the comparison material (the 36-item blind page, the AYS review videos, the final-judge
+panels for origin / AYS8 / deliverable / 25 steps / SDEdit, and the decoder-swap panels) and reports no visible
+difference: "全部ざっと見ました、変わらないです". Together with the earlier blind page (4 of 5 answers "no visible
+difference", 1 preferring the deliverable, 0 origin), every quality difference measured in this project (at most
+0.013-0.018 registered LPIPS) is below what the user can see.
+Consequences: (1) quality claims in the thesis are "measurably better on LPIPS, visually equivalent", never "visibly
+better"; (2) the remaining quality levers (hole-band-aware SDEdit, expected ~0.005; geometry-consistent GT retraining;
+1.75x working resolution) are not pursued - if -0.0132 is invisible, they will be too; (3) the project's contribution is
+efficiency at equal perceived quality: the Mamba UNet's -20 % per UNet call at 1024x1792 (about neutral end-to-end at
+576x1024), plus the step-distilled blocks that hold quality at 5 UNet evaluations per window (numerically ahead of
+origin's best 5-evaluation schedule, -0.0112, 12/12); and the negative results with clean evidence (GT diffusion
+training degrades even at 215 clips, decoder swaps do not recover detail, detail is already missing in the UNet's
+latents) plus the evaluation lessons (lossy mp4v scoring, GT misregistration, the need for an AYS baseline).
